@@ -75,7 +75,7 @@ The roadmap delivers the following capabilities in stages:
 
 ******
 
-1. Install the plugin APK from [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) on a device with AutoJs6 build 5278 (6.8.0) or later.
+1. Install the plugin APK from [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) on a device with AutoJs6 build 5279 (6.8.0) or later.
 2. Open the AutoJs6 plugin center, confirm that `MCP Server` is recognized, and enable it. Official release packages pass signature verification automatically.
 3. Turn on the MCP server from the AutoJs6 drawer or the plugin settings page; the phone shows the endpoint address and the pairing token.
 4. On the PC, run `adb forward tcp:9637 tcp:9637` and point the MCP client at `http://127.0.0.1:9637/mcp` with the token as a bearer credential.
@@ -129,7 +129,7 @@ service action: org.autojs.plugin.MCP_SERVER
 service category: mcp-server
 info action: org.autojs.plugin.INFO
 aidl interface: org.autojs.plugin.mcp.server.api.IMcpServerPlugin
-minimum host build: 5278 (6.8.0)
+minimum host build: 5279 (6.8.0)
 default endpoint: http://127.0.0.1:9637/mcp
 ```
 

@@ -4,7 +4,7 @@ El proyecto está en la etapa de esqueleto: esta versión registra el plugin en 
 
 ### Uso
 
-1. Instale el APK del plugin desde [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) en un dispositivo con AutoJs6 build 5278 (6.8.0) o posterior.
+1. Instale el APK del plugin desde [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) en un dispositivo con AutoJs6 build 5279 (6.8.0) o posterior.
 2. Abra el centro de plugins de AutoJs6, confirme que `MCP Server` se reconoce y actívelo. Los paquetes oficiales superan la verificación de firma automáticamente.
 3. Encienda el servidor MCP desde el panel lateral de AutoJs6 o la página de ajustes del plugin; el teléfono muestra la dirección del punto de conexión y el token de emparejamiento.
 4. En el PC, ejecute `adb forward tcp:9637 tcp:9637` y apunte el cliente MCP a `http://127.0.0.1:9637/mcp` con el token como credencial bearer.
