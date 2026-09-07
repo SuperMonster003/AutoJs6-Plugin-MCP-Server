@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plugin_description">透過 Model Context Protocol 向 AI 代理開放裝置自動化能力</string>
+</resources>

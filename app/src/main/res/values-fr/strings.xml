@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plugin_description">Expose l\'automatisation de l\'appareil aux agents IA via le Model Context Protocol</string>
+</resources>

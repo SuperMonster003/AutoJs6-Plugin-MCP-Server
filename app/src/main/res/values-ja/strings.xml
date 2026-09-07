@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plugin_description">Model Context Protocol を通じて AI エージェントにデバイス自動化機能を公開</string>
+</resources>

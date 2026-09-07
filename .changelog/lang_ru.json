@@ -1,0 +1,19 @@
+{
+  "changelog_label_hint": "Подсказка",
+  "changelog_label_feature": "Функция",
+  "changelog_label_fix": "Исправление",
+  "changelog_label_improvement": "Улучшение",
+  "changelog_label_dependency": "Зависимость",
+  "$data": {
+    "v1.0.0": {
+      "released_date": "2026/09/07",
+      "hint": [
+        "Предварительная версия для разработки: плагин регистрируется в центре плагинов AutoJs6, но конечная точка MCP и ее инструменты пока недоступны"
+      ],
+      "feature": [
+        "Идентификатор плагина `mcp-server` со службой INFO, Wake Activity и каркасом службы `org.autojs.plugin.MCP_SERVER` для обнаружения хостом",
+        "README, инструкции центра плагинов и журнал изменений на 10 языках"
+      ]
+    }
+  }
+}
