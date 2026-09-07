@@ -29,7 +29,7 @@ class McpServerPluginRuntimeInfoTest {
         assertEquals(1L, info.versionCode)
         assertEquals("Sep 7, 2026", info.versionDate)
         assertArrayEquals(emptyArray<String>(), info.supportedAbis)
-        assertEquals(5278L, info.requiresHostVersion)
+        assertEquals(5279L, info.requiresHostVersion)
         assertEquals(McpServerPlugin.REQUIRED_HOST_VERSION, info.requiresHostVersion)
     }
 

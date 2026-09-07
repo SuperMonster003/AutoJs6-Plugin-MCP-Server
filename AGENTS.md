@@ -24,7 +24,7 @@
 | 服务发现 action / category | `org.autojs.plugin.MCP_SERVER` / `mcp-server` |
 | INFO 服务 | `McpServerPluginInfoService`, action `org.autojs.plugin.INFO`, category `mcp-server` |
 | 专用 API | `mcp-server-api` (宿主 `plugin-api/mcp-server-api`, AIDL 包 `org.autojs.plugin.mcp.server.api`, 路线图 P1.1 落地后以 AAR 形式进入 `libs/`) |
-| 最低宿主 versionCode | `McpServerPlugin.REQUIRED_HOST_VERSION` (当前 5278, 路线图 P1.4 提升到交付契约的宿主构建) |
+| 最低宿主 versionCode | `McpServerPlugin.REQUIRED_HOST_VERSION` (当前 5279, 即交付 MCP 契约模块与能力代理的宿主构建, 路线图 P1.4) |
 | 默认端点 | `http://127.0.0.1:9637/mcp` (仅回环; 端口为路线图决策 D16) |
 | 平台版本插件 | `io.github.supermonster003.autojs6-platform-versions` 1.7.4 |
 | 发布文件名 | `autojs6-plugin-mcp-server-v{VERSION_NAME}-{CRC32}.apk` (单 APK) |
