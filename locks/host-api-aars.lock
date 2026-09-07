@@ -1,0 +1,8 @@
+# AutoJs6 host protocol distribution lock.
+# Staged from the AutoJs6 6.8.0 host release distribution
+# (host HEAD afca7b14c4ba3971b60a9ce3587e2f10bfd0ab1e, clean source tree).
+# The digest is identical to the artifact consumed by AutoJs6-Plugin-Three-Stone-AI and
+# AutoJs6-Plugin-Python-Runtime.
+format=1
+common-plugin-api.file=common-plugin-api.aar
+common-plugin-api.sha256=c526f4fd0adbf38b36a7bf54f9931385e6cc20050d6ea8fb741c60496af635d5
