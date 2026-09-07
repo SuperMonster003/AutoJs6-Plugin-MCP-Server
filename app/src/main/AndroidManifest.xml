@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="org.autojs.permission.PLUGIN" />
+
+    <!--
+        The MCP server (roadmap P0.2 onwards) listens for HTTP connections from PC agents inside the
+        plugin's own :mcp_server process, hosted by a foreground service while it is switched on.
+        The plugin never opens outbound connections on its own.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <queries>
+        <package android:name="org.autojs.autojs6" />
+    </queries>
+
+    <!--
+        usesCleartextTraffic is intentionally true: the MCP endpoint is plain HTTP on the loopback
+        interface (reached through adb forward) or, only after an explicit opt-in, on the local
+        network. It applies to the plugin's own listener; there is no outbound cleartext traffic.
+    -->
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:localeConfig="@xml/locales_config"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="33">
+
+        <meta-data
+            android:name="org.autojs.plugin.WAKE_ACTIVITY"
+            android:value=".WakeActivity" />
+        <meta-data
+            android:name="org.autojs.plugin.info.AUTHOR"
+            android:value="@string/plugin_author" />
+
+        <activity
+            android:name=".WakeActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:finishOnTaskLaunch="true"
+            android:permission="org.autojs.permission.PLUGIN"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="org.autojs.plugin.action.WAKE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".McpServerPluginInfoService"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="org.autojs.permission.PLUGIN">
+            <intent-filter>
+                <action android:name="org.autojs.plugin.INFO" />
+                <category android:name="mcp-server" />
+            </intent-filter>
+            <meta-data
+                android:name="requiresHostVersion"
+                android:value="5278" />
+        </service>
+
+        <service
+            android:name=".McpServerPluginService"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="org.autojs.permission.PLUGIN"
+            android:process=":mcp_server">
+            <intent-filter>
+                <action android:name="org.autojs.plugin.MCP_SERVER" />
+                <category android:name="mcp-server" />
+            </intent-filter>
+            <meta-data
+                android:name="requiresHostVersion"
+                android:value="5278" />
+        </service>
+
+    </application>
+
+</manifest>
