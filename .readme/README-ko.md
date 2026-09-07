@@ -1,0 +1,243 @@
+<!--suppress HtmlDeprecatedAttribute, HttpUrlsUsage -->
+
+<div align="center">
+  <p>
+    <picture>
+      <source srcset="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap-night/ic_launcher.png?raw=true" media="(prefers-color-scheme: dark)" />
+      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap/ic_launcher.png?raw=true" alt="autojs6-plugin-mcp-server-ic-launcher" border="0" width="128" />
+    </picture>
+  </p>
+
+  <p>Model Context Protocol을 통해 AI 에이전트에 기기 자동화 기능을 제공</p>
+
+  <p>
+    <a href="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/SuperMonster003/AutoJs6-Plugin-MCP-Server?label=Release"/></a>
+    <a href="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/issues"><img alt="GitHub closed issues" src="https://img.shields.io/github/issues/SuperMonster003/AutoJs6-Plugin-MCP-Server?color=A24232&label=Issues"/></a>
+    <a href="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/LICENSE"><img alt="GitHub License" src="https://img.shields.io/github/license/SuperMonster003/AutoJs6-Plugin-MCP-Server?color=534BAE&label=License"/></a>
+  </p>
+</div>
+
+******
+
+### 언어
+
+******
+
+현재 README.md는 다음 언어를 지원합니다:
+
+- [简体中文 [zh-Hans]](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/.readme/README-zh-Hans.md)
+- [繁體中文 (香港) [zh-Hant-HK]](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/.readme/README-zh-Hant-HK.md)
+- [繁體中文 (台灣) [zh-Hant-TW]](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/.readme/README-zh-Hant-TW.md)
+- [English [en]](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/.readme/README-en.md)
+- [Français [fr]](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/.readme/README-fr.md)
+- [Español [es]](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/.readme/README-es.md)
+- [日本語 [ja]](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/.readme/README-ja.md)
+- 한국어 [ko] # 현재
+- [Русский [ru]](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/.readme/README-ru.md)
+- [العربية [ar]](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/.readme/README-ar.md)
+
+******
+
+### 소개
+
+******
+
+MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol](https://modelcontextprotocol.io) 서버로 만듭니다. Claude Code, Cursor, MCP Inspector 같은 PC의 AI 에이전트가 USB 또는 Wi-Fi로 휴대폰에 연결하고, 도구를 사용해 스크립트 실행, 로그 읽기, 접근성 노드 트리 확인, 탭과 입력, 스크린샷 촬영, 파일과 앱 작업을 수행합니다.
+
+서버는 플러그인 자체 프로세스 안에서 실행되며 단일 Streamable HTTP 엔드포인트로 접근합니다. AutoJs6는 Binder를 통해 플러그인에 기능 브로커를 전달하므로 모든 도구 호출은 호스트가 기존 권한, 엔진, 접근성 서비스로 실행합니다. 플러그인은 호스트 기능을 복제하지 않습니다.
+
+******
+
+### 현재 상태
+
+******
+
+프로젝트는 뼈대 단계입니다. 이 릴리스는 AutoJs6 플러그인 센터에 플러그인을 등록하고 빌드, 문서, 테스트 인프라를 준비합니다. MCP 엔드포인트와 그 도구는 아직 사용할 수 없습니다. 진행 상황은 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md)에서 항목별로 추적합니다.
+
+******
+
+### 예정된 기능
+
+******
+
+로드맵은 다음 기능을 단계별로 제공합니다:
+
+- 스크립트 실행: AutoJs6 안에서 텍스트 또는 파일의 JavaScript를 실행하고, 엔진을 나열하거나 중지하며, 최근 콘솔 출력을 읽습니다.
+- 접근성 UI: 노드 트리를 간결한 텍스트 형식으로 덤프하고, AutoJs6 선택자 문법으로 노드를 찾고, 클릭, 길게 누르기, 스크롤, 텍스트 설정, 뒤로와 홈 같은 전역 키를 누릅니다.
+- 스크린샷: 멀티모달 모델에 적합한 크기 제한으로 화면을 PNG 또는 JPEG로 캡처합니다.
+- 파일, 앱, 기기: AutoJs6 작업 디렉터리의 파일을 읽고 쓰며, 앱을 실행하고, 전면 창을 조회하고, 기기 정보를 보고합니다.
+- 연결 경로: `adb forward`를 통한 USB, 명시적으로 켜야 하는 로컬 네트워크, PC 측 stdio 브리지, 그리고 OAuth 2.1을 갖춘 선택적 공개 터널.
+- 보안: 교체 가능한 Bearer 토큰, 휴대폰에서의 최초 페어링 확인, 그룹별 도구 스위치. 서버는 기본적으로 루프백 인터페이스에서만 수신합니다.
+
+******
+
+### 사용 방법
+
+******
+
+1. AutoJs6 빌드 5278 (6.8.0) 이상이 설치된 기기에 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases)에서 플러그인 APK를 설치합니다.
+2. AutoJs6 플러그인 센터를 열어 `MCP Server`가 인식되었는지 확인하고 활성화합니다. 공식 릴리스 패키지는 서명 검증을 자동으로 통과합니다.
+3. AutoJs6 드로어 또는 플러그인 설정 페이지에서 MCP 서버를 켭니다. 휴대폰에 엔드포인트 주소와 페어링 토큰이 표시됩니다.
+4. PC에서 `adb forward tcp:9637 tcp:9637`를 실행하고, MCP 클라이언트가 토큰을 Bearer 자격 증명으로 사용해 `http://127.0.0.1:9637/mcp`에 연결하도록 설정합니다.
+
+> 3단계와 4단계는 계획된 워크플로를 설명하며 해당 로드맵 단계가 완료되면 사용할 수 있습니다. 플러그인은 Android 7.0 (API 24) 이상을 지원합니다.
+
+******
+
+### 클라이언트 설정
+
+******
+
+Claude Code는 명령 하나로 서버를 등록합니다. 다른 클라이언트는 MCP 설정에서 같은 URL과 헤더를 사용합니다:
+
+```shell
+adb forward tcp:9637 tcp:9637
+claude mcp add --transport http autojs6 http://127.0.0.1:9637/mcp --header "Authorization: Bearer <token>"
+```
+
+토큰은 휴대폰에 표시된 값으로 바꾸세요. 이 명령은 서버를 시작할 수 있게 된 뒤에만 동작합니다 (`현재 상태` 참고).
+
+******
+
+### 권한과 보안
+
+******
+
+플러그인은 명확한 경계를 따릅니다:
+
+- Binder 진입점은 `org.autojs.permission.PLUGIN` 서명 권한으로 보호되므로 AutoJs6만 바인딩할 수 있습니다.
+- INTERNET 권한은 플러그인 자체 HTTP 리스너에만 사용됩니다. 플러그인은 외부 요청을 보내지 않으며 데이터를 수집하지 않습니다.
+- 도구 호출은 AutoJs6 기능 브로커를 거치며 호스트 자체에 허용된 범위를 절대 넘지 않습니다. 셸 명령과 파일 삭제 같은 위험한 그룹은 사용자가 켜기 전까지 꺼져 있습니다.
+- 백업은 비활성화되어 있으며 토큰은 플러그인의 비공개 저장소에만 보관됩니다.
+
+플러그인은 공식 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) 페이지 또는 AutoJs6 플러그인 센터에서만 받으세요. 출처를 알 수 없는 패키지는 버전 번호가 같아 보여도 호스트 검증에 실패하거나 위험을 동반할 수 있습니다.
+
+******
+
+### 플러그인 인터페이스
+
+******
+
+다음 정보는 AutoJs6 호스트와 플러그인 개발자를 위한 것입니다. 호스트는 이 식별자로 플러그인을 발견하고 호환성을 협상합니다:
+
+```text
+application id: io.github.supermonster003.autojs6.plugin.mcp.server
+plugin id: mcp-server
+engine: mcp-server
+variant: default
+service action: org.autojs.plugin.MCP_SERVER
+service category: mcp-server
+info action: org.autojs.plugin.INFO
+aidl interface: org.autojs.plugin.mcp.server.api.IMcpServerPlugin
+minimum host build: 5278 (6.8.0)
+default endpoint: http://127.0.0.1:9637/mcp
+```
+
+`McpServerPluginService`는 `org.autojs.plugin.MCP_SERVER` 액션 (카테고리 `mcp-server`)에 응답하며 `:mcp_server` 프로세스에서 실행됩니다. AIDL 계약 `org.autojs.plugin.mcp.server.api.IMcpServerPlugin`는 호스트의 `mcp-server-api` 모듈에서 정의되며 로드맵 P1 단계와 함께 도입됩니다. 그 전까지 서비스는 계약 설명자만 노출합니다. `McpServerPluginInfoService`는 표준 `PluginInfo`로 `org.autojs.plugin.INFO`에 응답하고, `WakeActivity`는 새로 설치된 앱을 중지 상태로 유지하는 기기에서 호스트가 플러그인 프로세스를 깨울 수 있게 합니다.
+
+******
+
+### 로드맵
+
+******
+
+플러그인의 계획과 진행 상황은 ROADMAP.md에 체크 가능한 목록으로 관리되며, 단계별로 수락 기준과 증거 수준이 함께 기록됩니다. 체크되지 않은 항목은 현재 기능이 아니라 의도를 나타냅니다. Issues를 통한 논의를 환영합니다.
+
+- [ROADMAP.md 보기](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md)
+
+******
+
+### 릴리스 기록
+
+******
+
+#### v1.0.0
+
+_2026/09/07_
+
+- `힌트` 개발 미리보기: 플러그인은 AutoJs6 플러그인 센터에 등록되지만 MCP 엔드포인트와 도구는 아직 사용할 수 없습니다
+- `기능` 호스트 발견을 위한 INFO 서비스, Wake Activity, `org.autojs.plugin.MCP_SERVER` 서비스 뼈대를 갖춘 플러그인 ID `mcp-server`
+- `기능` 10개 언어의 README, 플러그인 센터 안내, 변경 기록
+
+##### 더 많은 릴리스 기록
+
+* [CHANGELOG.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/assets/doc/CHANGELOG-ko.md)
+
+******
+
+### 빌드와 검증
+
+******
+
+이 섹션은 소스에서 플러그인을 빌드하려는 개발자를 위한 것입니다. 일반 사용자는 Releases 페이지의 미리 빌드된 APK를 설치하면 됩니다.
+
+디버그 APK 빌드:
+
+```powershell
+.\gradlew.bat :app:assembleDebug
+```
+
+JVM 단위 테스트 실행 및 계측 테스트 APK 빌드:
+
+```powershell
+.\gradlew.bat :app:testDebugUnitTest :app:assembleDebugAndroidTest
+```
+
+릴리스 APK 빌드:
+
+```powershell
+.\gradlew.bat :app:assembleRelease
+```
+
+릴리스 산출물을 수집하고 파일 이름에 버전과 CRC32 다이제스트를 추가:
+
+```powershell
+.\gradlew.bat :app:appendDigestToReleasedFiles
+```
+
+다국어 문서 소스와 생성된 산출물이 동기화되어 있는지 검증 (CI에서도 적용):
+
+```powershell
+py .python\generate_markdown.py --check
+```
+
+빌드에는 JDK 21 이상과 Android SDK 36이 필요합니다. Gradle과 플러그인 버전은 `version.properties`와 `io.github.supermonster003.autojs6-platform-versions`로 중앙에서 관리됩니다.
+
+******
+
+### 현지화와 문서 생성
+
+******
+
+```text
+.readme/common.json
+.readme/lang_*.json
+.readme/template_readme.md
+.readme/template_plugin_instruction.md
+.changelog/lang_*.json
+.changelog/template_changelog.md
+.python/generate_markdown.py
+app/src/main/assets/doc/CHANGELOG-*.md
+app/src/main/res/raw-*/plugin_instruction.md
+```
+
+`.readme/`와 `.changelog/`의 언어 JSON 파일이 README, 플러그인 센터 안내, 변경 기록의 유일한 소스입니다. 항상 이 JSON 소스를 편집하고 `py .python/generate_markdown.py`를 다시 실행하세요. 생성된 README, `plugin_instruction.md`, 변경 기록 산출물은 절대 손으로 편집하지 않습니다. `py .python/generate_markdown.py --check`를 실행하면 모든 생성 산출물을 검증할 수 있습니다.
+
+******
+
+### 라이선스
+
+******
+
+프로젝트 코드는 [Mozilla Public License 2.0](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/LICENSE)에 따라 제공됩니다. 서드파티 구성 요소와 라이선스는 [서드파티 고지](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/THIRD_PARTY_NOTICES.md)에 나열되어 있습니다.
+
+******
+
+### 링크
+
+******
+
+- AutoJs6 프로젝트: https://github.com/SuperMonster003/AutoJs6
+- AutoJs6 문서: https://docs.autojs6.com
+- Model Context Protocol 사양: https://modelcontextprotocol.io
+- 서드파티 고지: https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/THIRD_PARTY_NOTICES.md

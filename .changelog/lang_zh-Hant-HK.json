@@ -1,0 +1,19 @@
+{
+  "changelog_label_hint": "提示",
+  "changelog_label_feature": "新增",
+  "changelog_label_fix": "修復",
+  "changelog_label_improvement": "優化",
+  "changelog_label_dependency": "依賴",
+  "$data": {
+    "v1.0.0": {
+      "released_date": "2026/09/07",
+      "hint": [
+        "開發預覽版: 外掛已可在 AutoJs6 外掛中心註冊, 但 MCP 端點及其工具尚未可用"
+      ],
+      "feature": [
+        "外掛識別碼 `mcp-server`, 含 INFO 服務, Wake Activity 以及供主程式發現的 `org.autojs.plugin.MCP_SERVER` 服務骨架",
+        "10 種語言的 README, 外掛中心說明與更新日誌"
+      ]
+    }
+  }
+}
