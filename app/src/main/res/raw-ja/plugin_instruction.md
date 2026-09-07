@@ -4,7 +4,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 
 ### 使い方
 
-1. AutoJs6 ビルド 5278 (6.8.0) 以降を搭載したデバイスに, [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) からプラグインの APK をインストールします.
+1. AutoJs6 ビルド 5279 (6.8.0) 以降を搭載したデバイスに, [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) からプラグインの APK をインストールします.
 2. AutoJs6 のプラグインセンターを開き, `MCP Server` が認識されていることを確認して有効にします. 公式リリースパッケージは署名検証を自動的に通過します.
 3. AutoJs6 のドロワーまたはプラグインの設定ページから MCP サーバーをオンにします. スマートフォンにエンドポイントのアドレスとペアリングトークンが表示されます.
 4. PC で `adb forward tcp:9637 tcp:9637` を実行し, MCP クライアントを `http://127.0.0.1:9637/mcp` に向け, トークンを Bearer 資格情報として指定します.

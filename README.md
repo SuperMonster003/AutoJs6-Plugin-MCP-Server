@@ -75,7 +75,7 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 
 ******
 
-1. 在安装了 AutoJs6 构建 5278 (6.8.0) 或更高版本的设备上, 从 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) 下载并安装插件 APK.
+1. 在安装了 AutoJs6 构建 5279 (6.8.0) 或更高版本的设备上, 从 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) 下载并安装插件 APK.
 2. 打开 AutoJs6 插件中心, 确认 `MCP Server` 已被识别并启用. 官方发布包会自动通过签名校验.
 3. 在 AutoJs6 抽屉或插件设置页开启 MCP 服务器; 手机上会显示端点地址与配对令牌.
 4. 在电脑上执行 `adb forward tcp:9637 tcp:9637`, 并让 MCP 客户端连接 `http://127.0.0.1:9637/mcp`, 以令牌作为 Bearer 凭据.
@@ -129,7 +129,7 @@ service action: org.autojs.plugin.MCP_SERVER
 service category: mcp-server
 info action: org.autojs.plugin.INFO
 aidl interface: org.autojs.plugin.mcp.server.api.IMcpServerPlugin
-minimum host build: 5278 (6.8.0)
+minimum host build: 5279 (6.8.0)
 default endpoint: http://127.0.0.1:9637/mcp
 ```
 
