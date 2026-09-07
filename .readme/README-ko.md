@@ -158,6 +158,8 @@ _2026/09/07_
 - `힌트` 개발 미리보기: 플러그인은 AutoJs6 플러그인 센터에 등록되지만 MCP 엔드포인트와 도구는 아직 사용할 수 없습니다
 - `기능` 호스트 발견을 위한 INFO 서비스, Wake Activity, `org.autojs.plugin.MCP_SERVER` 서비스 뼈대를 갖춘 플러그인 ID `mcp-server`
 - `기능` 10개 언어의 README, 플러그인 센터 안내, 변경 기록
+- `기능` `http://127.0.0.1:9637/mcp`의 Streamable HTTP 엔드포인트와 `device_ping` 도구. adb 또는 호스트가 켜고 끌 수 있는 포그라운드 서비스가 제공 (개발 프리뷰)
+- `의존성` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`)과 Ktor 3.5.1 CIO 엔진
 
 ##### 더 많은 릴리스 기록
 
