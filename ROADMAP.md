@@ -25,12 +25,12 @@ MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平
 | D1 | Server 先行, Client 预留 | 本 Roadmap 只交付 MCP Server 插件. MCP Client (脚本调用外部 MCP 服务器的工具) 作为第二个关联插件 `AutoJs6-Plugin-MCP-Client` 在附录 E 预留仓库名, 契约边界与接入点, 不排期. |
 | D2 | 插件进程运行监听, 宿主下发能力代理 | HTTP 监听运行在插件自己的进程 (`:mcp_server`, 前台服务). 宿主像对待 Node / Python 插件一样发起绑定, 通过 AIDL 把 "宿主能力代理" Binder 交给插件; 插件把 MCP 工具映射到宿主 `NodeBridgeProtocol` 的模块 / 方法上, 不在插件内重新实现设备能力. 插件永远拿不到宿主 `Context`. |
 | D3 | 第一期工具面为四组 | 脚本执行与日志, 无障碍 UI 观察与操作, 截图, 文件 / 应用 / 设备. 工具清单与参数草案见附录 A. |
-| D4 | 协议实现选官方 Kotlin SDK | `io.modelcontextprotocol:kotlin-sdk-server` 0.15.0 + Ktor 3.5.1 `CIO` 引擎. P0 先做 Android `minSdk 24` 可行性 spike; 不可行则退回自研最小实现 (退路见附录 D.2), 由 P0 末尾的决策点决定, 不拖到 P2. |
+| D4 | 协议实现选官方 Kotlin SDK | `io.modelcontextprotocol:kotlin-sdk-server` 0.15.0 + Ktor 3.5.1 `CIO` 引擎. P0 先做 Android `minSdk 24` 可行性 spike; 不可行则退回自研最小实现 (退路见附录 D.2), 由 P0 末尾的决策点决定, 不拖到 P2. **P0.2 结论 (2026-09-08)**: 成立. Kotlin 2.3.20 直接编译 SDK 0.15.0 (kotlin-stdlib 2.4.0 元数据), API 24 / 28 / 35 运行正常, release 仅需两条 `-dontwarn java.lang.management.*`, APK 增量 0.90 MiB; 证据见 `docs/dev/p0-spike-evidence.md`. |
 | D5 | 四条连接路径全部纳入 | USB (`adb forward` 到 `127.0.0.1`, 默认) 与局域网 Wi-Fi 直连 (显式开启) 在 P5 交付; PC 端 stdio 桥接程序为 P5 后段; 公网隧道 + OAuth 2.1 为可选的 P8, 不阻塞 1.0.0 发布. |
 | D6 | 令牌 + 首次配对确认 + 工具组开关 | 自动生成可轮换的 Bearer 令牌; 持有效令牌的新客户端首次 `tools/call` 前必须在手机上确认配对 (元数据类请求如 `tools/list` 不需要); 已配对客户端持久化并可撤销; 每个工具组可单独启用 / 禁用; `shell`, 文件删除, 坐标手势 (`ui_swipe` / `ui_gesture`) 默认关闭; 局域网监听默认关闭. |
 | D7 | 宿主抽屉开关 + 插件设置页 | 宿主抽屉新增 "MCP 服务器" 开关 (与 "客户端模式 / 服务端模式" 同形; 未安装时引导安装, 未激活时引导激活); 插件自带设置 Activity 承载端口 / 监听范围 / 令牌 / 已配对客户端 / 工具组开关 / 客户端配置片段 / 发行历史; 宿主插件中心与抽屉均可跳转到插件设置页. |
 | D8 | 路线图与仓库 | 本文件位于 `D:/idea-projects/AutoJs6-Plugin-MCP-Server/ROADMAP.md` (文件名沿用插件仓库多数约定的大写). 本次会话只落盘路线图, 仓库骨架与 `git init` 在 P0 生成. Client 仓库名预留 `AutoJs6-Plugin-MCP-Client`. |
-| D9 | 协议版本双模 | 单端点 `/mcp` 同时服务 `2026-07-28` 无状态模型 (无 `initialize`, 每请求携带 `MCP-Protocol-Version` / `Mcp-Method` / `Mcp-Name` 头与 `_meta` 版本字段, 结果带 `resultType`) 与 `2025-06-18` / `2025-11-25` 有状态模型 (`initialize` 握手 + `Mcp-Session-Id`), 按请求头与方法分派. 当前主流客户端 (Claude Code / Cursor / Inspector) 仍以有状态模型为主, 因此有状态路径是 1.0.0 的验收主线, 无状态路径以 SDK 的 `mcpStatelessStreamableHttp` 为准. 若 P0 证明 SDK 不支持单端点双模, 则 `/mcp` 走有状态, 无状态模型另设路径并写入配置片段. 已废弃的 HTTP+SSE 传输不支持. |
+| D9 | 协议版本双模 | 单端点 `/mcp` 同时服务 `2026-07-28` 无状态模型 (无 `initialize`, 每请求携带 `MCP-Protocol-Version` / `Mcp-Method` / `Mcp-Name` 头与 `_meta` 版本字段, 结果带 `resultType`) 与 `2025-06-18` / `2025-11-25` 有状态模型 (`initialize` 握手 + `Mcp-Session-Id`), 按请求头与方法分派. 当前主流客户端 (Claude Code / Cursor / Inspector) 仍以有状态模型为主, 因此有状态路径是 1.0.0 的验收主线, 无状态路径以 SDK 的 `mcpStatelessStreamableHttp` 为准. 若 P0 证明 SDK 不支持单端点双模, 则 `/mcp` 走有状态, 无状态模型另设路径并写入配置片段. 已废弃的 HTTP+SSE 传输不支持. **P0.2 实测 (2026-09-08)**: SDK 0.15.0 只声明 2024-11-05 / 2025-03-26 / 2025-06-18 / 2025-11-25, 任何携带 `MCP-Protocol-Version: 2026-07-28` 的请求 (含 `initialize`, `server/discover`, `Mcp-Method` / `Mcp-Name` 头) 一律 400 Unsupported protocol version; `mcpStreamableHttp` 对无会话请求回 400 Server not initialized, `mcpStatelessStreamableHttp` 是无会话的 2025 版语义 (无需 `initialize`, GET / DELETE 405), 两者是互斥的路由挂载, 不存在单端点双模. 定稿: `/mcp` 只挂 `mcpStreamableHttp` (有状态, 1.0.0 验收主线); 无状态模型按本决策的退路另设路径 (P2.1), 其中 SDK 的无会话挂载可直接复用, 2026-07-28 的 `server/discover` / `_meta` / `HeaderMismatch` 语义需自研分派或等待 SDK 支持, 是否纳入 1.0.0 由维护者在 P2.1 前拍板. |
 | D10 | 宿主契约模块与信封 | 宿主新增 `plugin-api/mcp-server-api` (包 `org.autojs.plugin.mcp.server.api`). 控制面 (打开 / 停止服务器, 状态回调) 与数据面 (能力代理) 均采用 Node 家族的 `Bundle` + 字符串常量 + JSON 信封形态, 因为数据面负载本来就是 `NodeBridgeRequest` / `NodeBridgeResponse` JSON, 宿主侧可直接复用 `NodeJsHostCapabilityBroker` 的分派逻辑; 大负载 (截图位图, 文件正文) 走 `ParcelFileDescriptor`. 契约版本用 `McpServerContract.CONTRACT_VERSION` + `MIN/MAX` 区间协商, 不做异常嗅探. (TaggedWire 二进制信封的备选已由 Q1 否决, 2026-09-07.) |
 | D11 | 工具命名与描述来源 | 工具名为无前缀 snake_case, 形如 `<组>_<动作>` (`script_run`, `ui_dump`, `screen_capture`, `files_read`); 客户端会按服务器名自行加命名空间 (如 Claude Code 的 `mcp__autojs6__ui_dump`). 工具名, 描述, JSON Schema, 所属权限组, 默认开关, 映射的 bridge 模块 / 方法全部以数据表 (`ToolCatalog`) 定义, 既驱动 `tools/list`, 也生成 README 的工具清单与 JVM 快照测试. |
 | D12 | 节点树紧凑表示与节点引用 | `ui_dump` 默认返回宿主 `NodeDump` 的 TEXT 格式经插件二次压缩的紧凑文本 (每节点一行, 只列非空属性, 含 `#n<序号>` 引用, 中心点与边界), 并返回 `snapshotId`; 动作类工具接受 `nodeRef` (上一次快照的 `#n12`), `selector` (`BridgeSelector` 方言的 JSON) 或坐标三者之一. 节点引用按指纹 (类名 / 文本 / 描述 / id / 边界) 在动作时重新定位, 失效时返回 `NODE_REF_STALE` 并提示重新 `ui_dump`. 草案见附录 B. |
@@ -227,13 +227,13 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 ### P0.2 SDK 可行性 spike
 
-- [ ] (插件) 引入 `io.modelcontextprotocol:kotlin-sdk-server:0.15.0` + `io.ktor:ktor-server-cio` (Ktor BOM 3.5.1) + `kotlinx-serialization-json`; 在 `:mcp_server` 进程用 `embeddedServer(CIO, host = "127.0.0.1", port = 9637) { mcpStreamableHttp { server } }` 挂载一个 `device_ping` 工具 (返回插件版本与时间戳); 前台服务临时以最简形式启动.
-- [ ] (插件) 记录: `minSdk 24` 上的启动与运行 (AVD API 24 x86 + 一台 API 33+ 实体机), release 构建的 R8 规则 (Ktor / kotlinx-serialization / SDK 反射点), APK 体积增量, 首个请求延迟, 空闲内存; 16 KB 页无关 (无原生库) 记为不适用.
-- [ ] (测试) `adb forward tcp:9637 tcp:9637` 后, PC 端: `npx @modelcontextprotocol/inspector` 连接 `http://127.0.0.1:9637/mcp` 完成 `initialize` + `tools/list` + `tools/call device_ping`; `curl` 分别以有状态 (`initialize`) 与无状态 (`MCP-Protocol-Version: 2026-07-28` + `Mcp-Method` / `Mcp-Name` 头, `server/discover`) 两种形态各打一轮, 记录 SDK 对单端点双模的真实行为 (D9 的分派方式据此定稿).
-- [ ] (测试) Claude Code: `claude mcp add --transport http autojs6 http://127.0.0.1:9637/mcp --header "Authorization: Bearer test"` (令牌此时仅回显) 后 `/mcp` 显示 connected 并能调用 `device_ping`; 记录客户端版本.
-- [ ] (文档) 决策点: 以上全部通过则 D4 成立并关闭本节; 任一硬性失败 (无法在 API 24 运行, 或 R8 后不可用, 或体积增量 > 6 MiB 且无法裁剪) 则启用附录 D.2 退路并回填 D4.
+- [x] (插件) 引入 `io.modelcontextprotocol:kotlin-sdk-server:0.15.0` + `io.ktor:ktor-server-cio` (Ktor BOM 3.5.1) + `kotlinx-serialization-json`; 在 `:mcp_server` 进程用 `embeddedServer(CIO, host = "127.0.0.1", port = 9637) { mcpStreamableHttp { server } }` 挂载一个 `device_ping` 工具 (返回插件版本与时间戳); 前台服务临时以最简形式启动. (SOURCE: McpHttpServer / DevicePingTool / McpServerService, 目录 ktor 3.5.1 BOM + mcp-kotlin-sdk 0.15.0; ANDROID_BUILD: assembleDebug / assembleRelease / lintDebug 通过, Kotlin 2.3.20 直接读取 SDK 的 2.4.0 元数据; 前台服务以 DUMP 权限守卫导出供 adb 启停; commit 873c7f2)
+- [x] (插件) 记录: `minSdk 24` 上的启动与运行 (AVD API 24 x86 + 一台 API 33+ 实体机), release 构建的 R8 规则 (Ktor / kotlinx-serialization / SDK 反射点), APK 体积增量, 首个请求延迟, 空闲内存; 16 KB 页无关 (无原生库) 记为不适用. (DOCS: docs/dev/p0-spike-evidence.md; DEVICE: AVD API 24 x86, Sony G8441 API 28 (release 包), Xiaomi 23046RP50C API 35, 2026-09-08; release +0.90 MiB, R8 仅需两条 -dontwarn java.lang.management.*, PC 端首请求 197 ~ 428 ms, 空闲 PSS 14.7 MB (release) / 26.4 MB (debug AVD); 16 KB 页不适用, release 无 lib/)
+- [x] (测试) `adb forward tcp:9637 tcp:9637` 后, PC 端: `npx @modelcontextprotocol/inspector` 连接 `http://127.0.0.1:9637/mcp` 完成 `initialize` + `tools/list` + `tools/call device_ping`; `curl` 分别以有状态 (`initialize`) 与无状态 (`MCP-Protocol-Version: 2026-07-28` + `Mcp-Method` / `Mcp-Name` 头, `server/discover`) 两种形态各打一轮, 记录 SDK 对单端点双模的真实行为 (D9 的分派方式据此定稿). (CLIENT_E2E: MCP Inspector 2.5.0 --cli 经 adb forward 完成 tools/list + tools/call device_ping, 2026-09-08; HTTP 探针 (Python urllib 代替 curl) 有状态全链路与 2026-07-28 无状态形态各一轮: SDK 0.15.0 仅声明 2024-11-05 ~ 2025-11-25, 无会话请求一律 400, mcpStatelessStreamableHttp 为 2025 版无会话语义, D9 据此定稿; BINDER: McpServerSpikeTest 2 用例 x 3 台设备)
+- [x] (测试) Claude Code: `claude mcp add --transport http autojs6 http://127.0.0.1:9637/mcp --header "Authorization: Bearer test"` (令牌此时仅回显) 后 `/mcp` 显示 connected 并能调用 `device_ping`; 记录客户端版本. (CLIENT_E2E: Claude Code 2.1.257 print 模式 --mcp-config (http 传输 + Authorization: Bearer test 头) 调用 device_ping 并原样返回 JSON 载荷, 2026-09-08; 以临时 --mcp-config 代替 claude mcp add 以免改写维护者全局配置, 交互式 /mcp 状态页未验证)
+- [x] (文档) 决策点: 以上全部通过则 D4 成立并关闭本节; 任一硬性失败 (无法在 API 24 运行, 或 R8 后不可用, 或体积增量 > 6 MiB 且无法裁剪) 则启用附录 D.2 退路并回填 D4. (DOCS: D4 成立, 附录 D.2 退路不启用; D9 定稿见决策表与 docs/dev/p0-spike-evidence.md 第 6.2 节)
 
-验收条件: `:app:assembleDebug` / `testDebugUnitTest` / `assembleDebugAndroidTest` 通过; Inspector 与 Claude Code 各完成一次真实工具调用 (`CLIENT_E2E`); 证据 (设备, API, 客户端版本, APK 体积) 写入本节与 `docs/dev/p0-spike-evidence.md`.
+验收条件: `:app:assembleDebug` / `testDebugUnitTest` / `assembleDebugAndroidTest` 通过; Inspector 与 Claude Code 各完成一次真实工具调用 (`CLIENT_E2E`); 证据 (设备, API, 客户端版本, APK 体积) 写入本节与 `docs/dev/p0-spike-evidence.md`. 已满足 (2026-09-08): 构建与测试见 P0.1 / P0.2 条目, Inspector 与 Claude Code 各一次真实 `device_ping` 调用, 证据文件已提交.
 
 ---
 
@@ -285,7 +285,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 ### P2.1 传输与协议模式
 
 - [ ] (插件) `McpHttpServer`: Ktor CIO, 绑定地址与端口来自 `ServerConfigStore`; 请求体上限 (SDK `maxRequestBodySize`) 1 MiB; 空闲连接与请求超时; 启动失败 (端口占用, 权限) 转为 `STOPPED(reason=BIND_FAILED)` 状态并附提示.
-- [ ] (插件) `ProtocolModeRouter`: 单端点 `/mcp` 按 D9 分派到 `mcpStreamableHttp` (有状态) 与 `mcpStatelessStreamableHttp` (无状态); 无状态路径实现 `server/discover`, 每结果 `_meta` 携带 `io.modelcontextprotocol/serverInfo`, 列表结果携带 `ttlMs` / `cacheScope: "private"`, 头与正文版本不一致返回 `HeaderMismatch (-32020)`; 有状态路径实现 `initialize` 协商 (声明 `2025-06-18` 与 `2025-11-25`), `Mcp-Session-Id` 与 `DELETE` 关闭.
+- [ ] (插件) 传输挂载 (按 D9 的 P0.2 定稿): `/mcp` 只挂 `mcpStreamableHttp` (有状态); 无状态路径另设 `/mcp/stateless`, 先复用 SDK 的 `mcpStatelessStreamableHttp` (2025 版无会话语义), 2026-07-28 模型 (`server/discover`, 每结果 `_meta` 携带 `io.modelcontextprotocol/serverInfo`, 列表结果携带 `ttlMs` / `cacheScope: "private"`, 头与正文版本不一致返回 `HeaderMismatch (-32020)`; 有状态路径实现 `initialize` 协商 (声明 `2025-06-18` 与 `2025-11-25`), `Mcp-Session-Id` 与 `DELETE` 关闭.
 - [ ] (插件) DNS rebinding 保护: 回环模式允许 `localhost` / `127.0.0.1`; 局域网模式把当前 IPv4 (及可选主机名) 加入允许 Host 列表, IP 变化时刷新; CORS 默认关闭, 仅 "开发者模式" 开关允许 Inspector 的浏览器来源.
 - [ ] (插件) 服务器信息: `Implementation(name = "autojs6-mcp-server", version = 插件 versionName)`; 能力声明 `tools(listChanged = true)`, `resources`, `prompts`; 工具列表顺序确定 (按目录顺序) 以利客户端缓存.
 - [ ] (测试) JVM: 路由分派与头校验的纯逻辑测试; instrumentation: 在设备上启动服务器后用 Ktor 客户端跑有状态 / 无状态两套最小会话.
@@ -662,6 +662,7 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 
 ### 2026-09-08
 
-- 完成: P0.1 全部条目 (仓库骨架, 宿主注册契约, 10 语言资源与文档生成, 测试与 CI, 共 5 个提交); 三台设备 (API 24 模拟器, API 28 与 API 35 实体机) 的 instrumentation 契约测试通过; 平台插件 1.7.4 与宿主 AAR 哈希锁定验证通过.
-- 未做: P0.2 SDK spike, 任何宿主改动.
-- 下次会话建议起点: P0.2 spike (先在 AVD API 24 与一台实体机上跑通 device_ping, 再做 Inspector / curl / Claude Code 三段验证并写 docs/dev/p0-spike-evidence.md); spike 通过后开始 P1.1 契约模块.
+- 完成: P0.1 全部条目 (仓库骨架, 宿主注册契约, 10 语言资源与文档生成, 测试与 CI, 共 5 个提交); P0.2 spike 全部条目 (SDK 0.15.0 + Ktor CIO 的 `device_ping` 端点与前台服务, API 24 / 28 / 35 三台设备, release R8 验证, Inspector 2.5.0 与 Claude Code 2.1.257 真实调用, `docs/dev/p0-spike-evidence.md`); D4 成立, D9 定稿为 `/mcp` 只走有状态; P0 关闭.
+- 未做: 任何宿主改动 (P1); 交互式 Claude Code `/mcp` 状态页未验证; CI 工作流尚未在 GitHub 上运行 (仓库未推送).
+- 待维护者拍板: 2026-07-28 无状态模型是否纳入 1.0.0 (见 D9 的 P0.2 实测段与 P2.1 首条).
+- 下次会话建议起点: P1.1 契约模块 (宿主仓库), 参照 `8e25c22e5` / `b07a09890` 模板; P1.2 能力代理可与之同会话.
