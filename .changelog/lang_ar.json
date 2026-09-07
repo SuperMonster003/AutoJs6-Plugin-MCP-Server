@@ -1,0 +1,19 @@
+{
+  "changelog_label_hint": "تلميح",
+  "changelog_label_feature": "ميزة",
+  "changelog_label_fix": "إصلاح",
+  "changelog_label_improvement": "تحسين",
+  "changelog_label_dependency": "تبعية",
+  "$data": {
+    "v1.0.0": {
+      "released_date": "2026/09/07",
+      "hint": [
+        "معاينة تطويرية: يسجل المكون الإضافي نفسه في مركز المكونات الإضافية في AutoJs6, لكن نقطة نهاية MCP وأدواتها غير متاحة بعد"
+      ],
+      "feature": [
+        "هوية المكون الإضافي `mcp-server` مع خدمة INFO و Wake Activity وهيكل خدمة `org.autojs.plugin.MCP_SERVER` لاكتشاف المضيف",
+        "README وتعليمات مركز المكونات الإضافية وسجل التغييرات بـ 10 لغات"
+      ]
+    }
+  }
+}
