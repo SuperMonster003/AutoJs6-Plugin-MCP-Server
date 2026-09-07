@@ -1,0 +1,108 @@
+name: Build integrity
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-build:
+    name: Unit tests and debug/release APKs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Run unit tests and assemble debug, androidTest, and release APKs
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :app:assembleRelease :app:lintDebug --console=plain --stacktrace
+
+      - name: Upload debug, release, and test APKs
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-test-apks
+          path: app/build/outputs/apk
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+      - name: Upload test and lint reports after failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reports
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  verify-contract:
+    name: Plugin contract on the emulator (API ${{ matrix.api-level }}, ${{ matrix.arch }})
+    needs: verify-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api-level: 24
+            arch: x86
+            profile: Nexus 5
+          - api-level: 35
+            arch: x86_64
+            profile: pixel_7
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run discovery, binding, and PluginInfo instrumentation tests
+        uses: reactivecircus/android-emulator-runner@v2.38.0
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: ${{ matrix.arch }}
+          profile: ${{ matrix.profile }}
+          script: |
+            chmod +x gradlew
+            ./gradlew :app:connectedDebugAndroidTest --console=plain --stacktrace
+
+      - name: Upload instrumentation reports after failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: instrumentation-reports-api${{ matrix.api-level }}
+          path: app/build/reports/androidTests/
+          if-no-files-found: ignore
+          retention-days: 7
