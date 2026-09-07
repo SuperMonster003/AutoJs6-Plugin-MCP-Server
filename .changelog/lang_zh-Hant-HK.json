@@ -12,7 +12,11 @@
       ],
       "feature": [
         "外掛識別碼 `mcp-server`, 含 INFO 服務, Wake Activity 以及供主程式發現的 `org.autojs.plugin.MCP_SERVER` 服務骨架",
-        "10 種語言的 README, 外掛中心說明與更新日誌"
+        "10 種語言的 README, 外掛中心說明與更新日誌",
+        "位於 `http://127.0.0.1:9637/mcp` 的 Streamable HTTP 端點及 `device_ping` 工具, 由可經 adb 或宿主啟停的前台服務承載 (開發預覽)"
+      ],
+      "dependency": [
+        "MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 與 Ktor 3.5.1 CIO 引擎"
       ]
     }
   }

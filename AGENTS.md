@@ -161,6 +161,7 @@ AutoJs6-Plugin-MCP-Server/
 - 工具按分组提供开关; Shell, 文件删除, 坐标手势等危险分组默认关闭. 工具实现只能通过宿主能力代理执行, 不得在插件内复制宿主功能.
 - 不记录脚本正文, 文件内容, 节点树或截图到普通日志; 诊断日志只保留大小, 耗时和错误分类.
 - 服务器只在用户开启时运行 (前台服务 + 通知), 不自动启动 (路线图 D15), 关闭后释放端口与 Binder 引用.
+- 开发期 adb 控制面 (P0.2 起生效): `McpServerService` 以 `android.permission.DUMP` 守卫导出, 只有 adb shell 与系统能经 `am start-foreground-service` (API 24 / 25 用 `am startservice`) 携带 `action.START_SERVER` / `action.STOP_SERVER` 启停它; MUST NOT 为其它调用方放宽该权限或改为无守卫导出. 宿主与插件自身界面运行在同一 UID, 无需该权限.
 
 ## 10. 主项目职责
 
@@ -218,7 +219,8 @@ AutoJs6-Plugin-MCP-Server/
 ### 15.2 Android instrumentation (`app/src/androidTest`)
 
 - `McpServerPluginContractTest` MUST 覆盖: Wake Activity 契约, INFO 服务发现与真实 `getInfo()` 往返 (包版本, 本地化描述, ID / engine / variant, 显式空 `supportedAbis`, `REQUIRES_HOST_VERSION`), `McpServerPluginService` 发现, `:mcp_server` 进程, 显式绑定与 Binder descriptor.
-- 路线图 P2 起补充: 真实 HTTP 往返, 鉴权失败, 大小上限与错误传播, 绑定 / 解绑 / 进程重建不泄漏.
+- `McpServerSpikeTest` (P0.2 起) MUST 覆盖: 启动 `McpServerService` 后在回环地址完成 `initialize` -> `notifications/initialized` -> `tools/list` -> `tools/call device_ping` 的有状态全链路 (会话头, `serverInfo`, 工具清单, `device_ping` 载荷与 `:mcp_server` 进程名), 并把无会话请求的状态码记录到 logcat 而不断言 SDK 的具体语义.
+- 路线图 P2 起补充: 鉴权失败, 大小上限与错误传播, 绑定 / 解绑 / 进程重建不泄漏.
 - 有设备或模拟器时执行 `:app:connectedDebugAndroidTest`; 性能度量与正确性测试分开.
 
 ## 16. CI 基线
@@ -236,6 +238,7 @@ py .python/generate_markdown.py --check
 .\gradlew.bat :app:testDebugUnitTest
 .\gradlew.bat :app:assembleDebug :app:assembleDebugAndroidTest
 .\gradlew.bat :app:lintDebug
+.\gradlew.bat :app:assembleRelease             # 引入或升级运行时依赖后 MUST 执行: R8 缺失类只会在这里以构建失败暴露
 .\gradlew.bat :app:connectedDebugAndroidTest   # 有设备或模拟器时
 ```
 

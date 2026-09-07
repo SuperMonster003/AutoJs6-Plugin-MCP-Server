@@ -200,6 +200,12 @@ androidComponents {
 dependencies {
     implementation(files(commonPluginApiAar))
 
+    // MCP endpoint (roadmap P0.2 / D4): official Kotlin SDK server module on the Ktor CIO engine.
+    // The SDK pins Ktor 3.5.1; the BOM keeps the engine on the same line.
+    implementation(platform(libs.ktor.bom))
+    implementation(libs.ktor.server.cio)
+    implementation(libs.mcp.kotlin.sdk.server)
+
     testImplementation(libs.junit)
 
     androidTestImplementation(libs.test.runner)

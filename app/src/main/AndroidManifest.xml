@@ -85,6 +85,26 @@
                 android:value="5278" />
         </service>
 
+
+        <!--
+            Foreground service that hosts the HTTP listener in the :mcp_server process. It is exported
+            only to callers holding android.permission.DUMP (adb shell and the system), which gives
+            developers an adb start / stop switch without letting third-party apps open the endpoint.
+            The host broker and the plugin's own settings page run under the same UID and need no
+            permission to start it.
+        -->
+        <service
+            android:name=".McpServerService"
+            android:enabled="true"
+            android:exported="true"
+            android:foregroundServiceType="specialUse"
+            android:permission="android.permission.DUMP"
+            android:process=":mcp_server">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Hosts the local Model Context Protocol endpoint for PC agents while the user keeps it switched on" />
+        </service>
+
     </application>
 
 </manifest>
