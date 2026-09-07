@@ -59,7 +59,7 @@ class ManifestContractTest {
     @Test
     fun `info service and mcp server service match the identity constants`() {
         val services = manifest.child("application").children("service").associateBy { it.androidAttribute("name") }
-        assertEquals(setOf(".McpServerPluginInfoService", ".McpServerPluginService"), services.keys)
+        assertEquals(setOf(".McpServerPluginInfoService", ".McpServerPluginService", ".McpServerService"), services.keys)
 
         val info = services.getValue(".McpServerPluginInfoService")
         assertDiscoveryContract(info, McpServerPlugin.INFO_ACTION)
@@ -68,6 +68,25 @@ class ManifestContractTest {
         val server = services.getValue(".McpServerPluginService")
         assertDiscoveryContract(server, McpServerPlugin.SERVICE_ACTION)
         assertEquals(":mcp_server", server.androidAttribute("process"))
+    }
+
+    @Test
+    fun `listener service is a special-use foreground service guarded by the DUMP permission`() {
+        val services = manifest.child("application").children("service").associateBy { it.androidAttribute("name") }
+        val listener = services.getValue(".McpServerService")
+        assertEquals("true", listener.androidAttribute("exported"))
+        assertEquals("true", listener.androidAttribute("enabled"))
+        assertEquals("android.permission.DUMP", listener.androidAttribute("permission"))
+        assertEquals("specialUse", listener.androidAttribute("foregroundServiceType"))
+        assertEquals(":mcp_server", listener.androidAttribute("process"))
+        assertTrue(listener.children("intent-filter").isEmpty())
+        val property = listener.child("property")
+        assertEquals("android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE", property.androidAttribute("name"))
+        assertTrue(property.androidAttribute("value").isNotBlank())
+
+        val permissions = manifest.children("uses-permission").map { it.androidAttribute("name") }
+        assertTrue("android.permission.FOREGROUND_SERVICE" in permissions)
+        assertTrue("android.permission.FOREGROUND_SERVICE_SPECIAL_USE" in permissions)
     }
 
     private fun assertDiscoveryContract(service: Element, action: String) {
