@@ -15,5 +15,8 @@
 * `新增` `/mcp` 端點的傳輸加固: 綁定位址與連接埠來自伺服器設定存放區, 請求本體上限 1 MiB, 閒置連線 60 秒後關閉, 連接埠被佔用或綁定被拒絕時以 `port_in_use` / `bind_failed` 狀態附帶提示結束而非當機
 * `新增` SDK 傳輸前置的 DNS rebinding 保護: 迴環模式只接受 `localhost` / `127.0.0.1` / `[::1]` 作為 `Host`, 區域網路模式加入裝置目前的 IPv4 位址與可選的額外主機名稱並在網路變化時重新整理; 瀏覽器來源一律拒絕, 僅 "開發者模式" 開關經 CORS 放行 Inspector 的迴環來源
 * `新增` 伺服器識別 `autojs6-mcp-server` 攜帶外掛程式版本, 並宣告 tools (`listChanged`), resources 與 prompts 能力; `tools/list` 保持註冊順序以便用戶端快取
+* `新增` 每個 `/mcp` 請求的 Bearer 權杖鑑權: 首次啟動時產生 32 位元組權杖, 以 Android Keystore 的 AES-GCM 金鑰包裹後存放在外掛程式私有且不參與備份的儲存空間; `Authorization` 標頭缺失或錯誤時經常數時間比較後以 `401` + `WWW-Authenticate: Bearer` 與 JSON-RPC `-32001` 錯誤拒絕; 權杖不寫入日誌
+* `新增` 傳輸前置的首次配對: 未配對用戶端可以 `initialize` 並列出 tools, resources 與 prompts, 但首次 `tools/call`, `resources/read`, `resources/subscribe` 或 `prompts/get` 回傳 `PAIRING_REQUIRED` (`-32002`), 直到 60 秒內在手機上確認; 拒絕或逾時後 30 秒內回傳 `PAIRING_DENIED` (`-32003`); 用戶端按 `clientInfo` 名稱 (缺失時用 `User-Agent`) 加位址類別 (迴環 / 區域網路) 識別, 因此權杖輪換不影響既有配對, 最多可配對 32 個用戶端
+* `新增` 手機上的配對確認走雙通道: 帶允許 / 拒絕動作的高優先級通知, 以及螢幕解鎖時彈出的對話框; 伺服器設定, 權杖與已配對用戶端保存在原子替換的檔案中, 伺服器程序與設定頁共享且不會讀到過期快取
 * `相依性` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 與 Ktor 3.5.1 CIO 引擎
 * `相依性` 附加 Ktor 3.5.1 `ktor-server-test-host` 用於 JVM 傳輸測試 (僅測試範圍)

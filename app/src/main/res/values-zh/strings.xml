@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="pairing_address_lan">局域网</string>
+    <string name="pairing_address_loopback">经 USB (adb) 连接的这台电脑</string>
+    <string name="pairing_allow">允许</string>
+    <string name="pairing_channel_name">配对请求</string>
+    <string name="pairing_deny">拒绝</string>
+    <string name="pairing_dialog_message">%1$s 请求通过 MCP 服务器控制此设备 (来自 %2$s, 令牌尾号 %3$s). 是否允许?</string>
+    <string name="pairing_dialog_title">配对 MCP 客户端</string>
+    <string name="pairing_notification_text">来自 %2$s 的 %1$s (令牌尾号 %3$s) 正在等待你的确认</string>
+    <string name="pairing_notification_title">MCP 客户端请求配对</string>
     <string name="plugin_description">通过 Model Context Protocol 向 AI 代理开放设备自动化能力</string>
 </resources>

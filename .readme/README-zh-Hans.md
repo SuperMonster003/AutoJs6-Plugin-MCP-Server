@@ -162,6 +162,9 @@ _2026/09/10_
 - `新增` `/mcp` 端点的传输加固: 绑定地址与端口来自服务器配置存储, 请求体上限 1 MiB, 空闲连接 60 秒后关闭, 端口被占用或绑定被拒绝时以 `port_in_use` / `bind_failed` 状态附带提示结束而非崩溃
 - `新增` SDK 传输前置的 DNS rebinding 保护: 回环模式只接受 `localhost` / `127.0.0.1` / `[::1]` 作为 `Host`, 局域网模式加入设备当前 IPv4 地址与可选的额外主机名并在网络变化时刷新; 浏览器来源一律拒绝, 仅 "开发者模式" 开关经 CORS 放行 Inspector 的回环来源
 - `新增` 服务器标识 `autojs6-mcp-server` 携带插件版本, 并声明 tools (`listChanged`), resources 与 prompts 能力; `tools/list` 保持注册顺序以便客户端缓存
+- `新增` 每个 `/mcp` 请求的 Bearer 令牌鉴权: 首次启动时生成 32 字节令牌, 以 Android Keystore 的 AES-GCM 密钥包裹后存放在插件私有且不参与备份的存储中; `Authorization` 头缺失或错误时经常量时间比较后以 `401` + `WWW-Authenticate: Bearer` 与 JSON-RPC `-32001` 错误拒绝; 令牌不写入日志
+- `新增` 传输前置的首次配对: 未配对客户端可以 `initialize` 并列出 tools, resources 与 prompts, 但首次 `tools/call`, `resources/read`, `resources/subscribe` 或 `prompts/get` 返回 `PAIRING_REQUIRED` (`-32002`), 直到 60 秒内在手机上确认; 拒绝或超时后 30 秒内返回 `PAIRING_DENIED` (`-32003`); 客户端按 `clientInfo` 名称 (缺失时用 `User-Agent`) 加地址类别 (回环 / 局域网) 识别, 因此令牌轮换不影响已有配对, 最多可配对 32 个客户端
+- `新增` 手机上的配对确认走双通道: 带允许 / 拒绝动作的高优先级通知, 以及屏幕解锁时弹出的对话框; 服务器配置, 令牌与已配对客户端保存在原子替换的文件中, 服务器进程与设置页共享且不会读到过期缓存
 - `依赖` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 与 Ktor 3.5.1 CIO 引擎
 - `依赖` 附加 Ktor 3.5.1 `ktor-server-test-host` 用于 JVM 传输测试 (仅测试范围)
 

@@ -7,15 +7,20 @@ import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.BindFailures
+import io.github.supermonster003.autojs6.plugin.mcp.server.server.McpErrors
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.McpHttpServer
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.McpServerFactory
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.ServerStatus
+import io.github.supermonster003.autojs6.plugin.mcp.server.store.PairedClientStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfig
+import io.github.supermonster003.autojs6.plugin.mcp.server.store.TokenStore
+import io.github.supermonster003.autojs6.plugin.mcp.server.ui.PairingDecisionReceiver
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -27,15 +32,15 @@ import java.net.Socket
 import java.net.URL
 
 /**
- * On-device evidence for roadmap P0.2 and P2.1: starts [McpServerService], then drives the
+ * On-device evidence for roadmap P0.2, P2.1, and P2.2: starts [McpServerService], then drives the
  * Streamable HTTP endpoint on the loopback interface exactly like a PC client would after
  * `adb forward`.
  *
  * The stateful sequence (`initialize` -> `notifications/initialized` -> `tools/list` ->
- * `tools/call device_ping`) must succeed; a foreign `Host` header must be refused by the request
- * gate; a second listener on the same port must report `port_in_use`. The behaviour of a request
- * without a session is only recorded in logcat because the SDK, not this plugin, decides it
- * (roadmap D9).
+ * `tools/call device_ping`) must succeed for a paired client; a request without the bearer token
+ * is refused with 401; an unpaired client is held back with `PAIRING_REQUIRED` until the
+ * confirmation arrives through the notification action path; a foreign `Host` header must be
+ * refused by the request gate; a second listener on the same port must report `port_in_use`.
  */
 @RunWith(AndroidJUnit4::class)
 class McpServerSpikeTest {
@@ -44,10 +49,14 @@ class McpServerSpikeTest {
 
     private val port = McpServerPlugin.DEFAULT_PORT
 
+    private lateinit var token: String
+
     @Before
     fun startServer() {
+        PairedClientStore(context).clear()
         send(McpServerService.startIntent(context, port))
         awaitListener()
+        token = TokenStore(context).current()
     }
 
     /** Stops through the production path (`ACTION_STOP`) and waits until the port is closed. */
@@ -55,10 +64,11 @@ class McpServerSpikeTest {
     fun stopServer() {
         send(McpServerService.stopIntent(context))
         awaitClosed()
+        PairedClientStore(context).clear()
     }
 
     @Test
-    fun statefulSessionListsAndCallsDevicePing() {
+    fun statefulSessionListsAndCallsDevicePingOncePaired() {
         val init = post(initializeRequest(), sessionId = null)
         assertEquals("initialize status", 200, init.status)
         val sessionId = init.header("mcp-session-id")
@@ -81,10 +91,25 @@ class McpServerSpikeTest {
         val names = (0 until tools.length()).map { tools.getJSONObject(it).getString("name") }
         assertEquals(listOf(DevicePingTool.NAME), names)
 
+        val held = post(toolsCallRequest(DevicePingTool.NAME), sessionId)
+        assertEquals("gated call status", 200, held.status)
+        val error = held.json().getJSONObject("error")
+        assertEquals(McpErrors.PAIRING_REQUIRED, error.getInt("code"))
+        val data = error.getJSONObject("data")
+        assertEquals(CLIENT_NAME, data.getString("client"))
+        assertEquals("loopback", data.getString("addressClass"))
+        val fingerprint = data.getString("fingerprint")
+        Log.i(TAG, "pairing required: ${error.getString("message")}")
+
+        context.sendBroadcast(PairingDecisionReceiver.intent(context, fingerprint, allow = true))
+        awaitDecision(sessionId) { it.optJSONObject("error") == null }
+        assertEquals(listOf(CLIENT_NAME), PairedClientStore(context).all().map { it.name })
+
         val startedAt = System.nanoTime()
         val call = post(toolsCallRequest(DevicePingTool.NAME), sessionId)
         val elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000
         assertEquals("tools/call status", 200, call.status)
+        assertNull("no error after pairing", call.json().optJSONObject("error"))
         val content = call.json().getJSONObject("result").getJSONArray("content").getJSONObject(0)
         assertEquals("text", content.getString("type"))
         val payload = JSONObject(content.getString("text"))
@@ -94,6 +119,31 @@ class McpServerSpikeTest {
         assertEquals(Build.VERSION.SDK_INT, payload.getInt("androidApi"))
         assertEquals("${context.packageName}:mcp_server", payload.getString("process"))
         Log.i(TAG, "device_ping round trip ${elapsedMillis} ms: $payload")
+    }
+
+    @Test
+    fun deniedPairingIsReportedWithACooldown() {
+        val init = post(initializeRequest(), sessionId = null)
+        val sessionId = init.header("mcp-session-id")
+        post(initializedNotification(), sessionId)
+        val held = post(toolsCallRequest(DevicePingTool.NAME), sessionId)
+        val fingerprint = held.json().getJSONObject("error").getJSONObject("data").getString("fingerprint")
+        context.sendBroadcast(PairingDecisionReceiver.intent(context, fingerprint, allow = false))
+        val error = awaitDecision(sessionId) { it.optJSONObject("error")?.optInt("code") == McpErrors.PAIRING_DENIED }
+            .json().getJSONObject("error")
+        assertEquals("denied", error.getJSONObject("data").getString("reason"))
+        assertTrue(PairedClientStore(context).all().isEmpty())
+        Log.i(TAG, "pairing denied: ${error.getString("message")}")
+    }
+
+    @Test
+    fun requestWithoutTokenIsUnauthorized() {
+        val response = post(initializeRequest(), sessionId = null, authorization = null)
+        assertEquals(401, response.status)
+        assertEquals("Bearer realm=\"autojs6-mcp-server\"", response.header("www-authenticate"))
+        assertEquals(McpErrors.UNAUTHORIZED, response.json().getJSONObject("error").getInt("code"))
+        val wrong = post(initializeRequest(), sessionId = null, authorization = "Bearer ${"x".repeat(43)}")
+        assertEquals(401, wrong.status)
     }
 
     @Test
@@ -108,6 +158,7 @@ class McpServerSpikeTest {
         val body = initializeRequest().toByteArray()
         val request = "POST ${McpServerPlugin.ENDPOINT_PATH} HTTP/1.1\r\n" +
                 "Host: evil.example:$port\r\n" +
+                "Authorization: Bearer $token\r\n" +
                 "Content-Type: application/json\r\n" +
                 "Accept: application/json, text/event-stream\r\n" +
                 "MCP-Protocol-Version: $PROTOCOL_VERSION\r\n" +
@@ -179,7 +230,20 @@ class McpServerSpikeTest {
         }
     }
 
-    private fun post(body: String, sessionId: String?): Response {
+    /** Repeats the gated call until the decision taken on the phone is visible to the client. */
+    private fun awaitDecision(sessionId: String?, applied: (JSONObject) -> Boolean): Response {
+        val deadline = System.currentTimeMillis() + 10_000
+        while (true) {
+            val response = post(toolsCallRequest(DevicePingTool.NAME), sessionId)
+            if (response.status == 200 && applied(response.json())) return response
+            if (System.currentTimeMillis() > deadline) {
+                throw AssertionError("The pairing decision was not applied within 10 s: ${response.status} ${response.body.take(300)}")
+            }
+            Thread.sleep(250)
+        }
+    }
+
+    private fun post(body: String, sessionId: String?, authorization: String? = "Bearer $token"): Response {
         val connection = URL(McpHttpServer.endpointUrl(port)).openConnection() as HttpURLConnection
         connection.requestMethod = "POST"
         connection.connectTimeout = 5_000
@@ -188,6 +252,7 @@ class McpServerSpikeTest {
         connection.setRequestProperty("Content-Type", "application/json")
         connection.setRequestProperty("Accept", "application/json, text/event-stream")
         connection.setRequestProperty("MCP-Protocol-Version", PROTOCOL_VERSION)
+        authorization?.let { connection.setRequestProperty("Authorization", it) }
         sessionId?.let { connection.setRequestProperty("Mcp-Session-Id", it) }
         connection.outputStream.use { it.write(body.toByteArray()) }
         val status = connection.responseCode
@@ -221,7 +286,7 @@ class McpServerSpikeTest {
 
     private fun initializeRequest(): String = """
         {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"$PROTOCOL_VERSION",
-        "capabilities":{},"clientInfo":{"name":"McpServerSpikeTest","version":"1"}}}
+        "capabilities":{},"clientInfo":{"name":"$CLIENT_NAME","version":"1"}}}
     """.trimIndent()
 
     private fun initializedNotification(): String = """{"jsonrpc":"2.0","method":"notifications/initialized"}"""
@@ -233,6 +298,7 @@ class McpServerSpikeTest {
 
     private companion object {
         const val TAG = "McpServerSpikeTest"
+        const val CLIENT_NAME = "McpServerSpikeTest"
         const val PROTOCOL_VERSION = "2025-06-18"
     }
 }

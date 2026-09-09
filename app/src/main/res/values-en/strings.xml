@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="pairing_address_lan">the local network</string>
+    <string name="pairing_address_loopback">this computer over USB (adb)</string>
+    <string name="pairing_allow">Allow</string>
+    <string name="pairing_channel_name">Pairing requests</string>
+    <string name="pairing_deny">Deny</string>
+    <string name="pairing_dialog_message">%1$s wants to control this device through the MCP server (from %2$s, token ending in %3$s). Allow it?</string>
+    <string name="pairing_dialog_title">Pair MCP client</string>
+    <string name="pairing_notification_text">%1$s from %2$s (token ending in %3$s) is waiting for your confirmation</string>
+    <string name="pairing_notification_title">MCP client wants to pair</string>
     <string name="plugin_description">Exposes device automation to AI agents over the Model Context Protocol</string>
 </resources>

@@ -1,34 +1,53 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server.store
 
-import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import java.io.IOException
 
 /**
- * Persists the [ServerConfig] in the plugin's private preferences (roadmap P2.1).
+ * Persists the [ServerConfig] as one JSON document in the plugin's private storage (roadmap P2.1).
  *
  * Values are stored as strings and decoded with [ServerConfig.fromMap], so a value written by a
- * newer or older build degrades to the default instead of breaking the server. Writes use
- * `commit()` because the settings page (P4.2) and the `:mcp_server` process are different
- * processes and the server reads the file right after the user saved it.
+ * newer or older build degrades to the default instead of breaking the server. The document is
+ * read on every [load] and replaced atomically, because the settings page (P4.2) and the
+ * `:mcp_server` process are different processes and the server must see what the user just
+ * saved even when its process is still alive from an earlier run.
  */
 class ServerConfigStore(context: Context) {
 
-    private val preferences = context.applicationContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+    private val document = ProcessSharedFile(context, FILE_NAME)
 
-    fun load(): ServerConfig = ServerConfig.fromMap(ServerConfig.KEYS.associateWith { key -> preferences.getString(key, null) })
+    fun load(): ServerConfig = ServerConfig.fromMap(decode(document.read()))
 
-    /** Synchronous on purpose: another process reads the file right after the user saved it. */
-    @SuppressLint("ApplySharedPref")
     fun save(config: ServerConfig) {
-        val editor = preferences.edit()
-        config.toMap().forEach { (key, value) -> editor.putString(key, value) }
-        editor.commit()
+        try {
+            document.write(encode(config))
+        } catch (e: IOException) {
+            Log.w(TAG, "Cannot store the server configuration (${e.javaClass.simpleName})")
+        }
     }
 
     fun update(transform: (ServerConfig) -> ServerConfig): ServerConfig = transform(load()).also(::save)
 
+    private fun encode(config: ServerConfig): String = buildJsonObject {
+        config.toMap().forEach { (key, value) -> put(key, value) }
+    }.toString()
+
+    private fun decode(text: String?): Map<String, String?> {
+        val stored = text?.let { runCatching { Json.parseToJsonElement(it).jsonObject }.getOrNull() }
+        return ServerConfig.KEYS.associateWith { key -> stored?.get(key)?.let { runCatching { it.jsonPrimitive.contentOrNull }.getOrNull() } }
+    }
+
     companion object {
 
-        const val PREFERENCES_NAME = "mcp_server_config"
+        const val FILE_NAME = "config.json"
+
+        private const val TAG = "ServerConfigStore"
     }
 }

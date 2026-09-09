@@ -14,6 +14,8 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.server.McpHttpServer
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.ServerStatus
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfig
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfigStore
+import java.io.FileDescriptor
+import java.io.PrintWriter
 import java.util.concurrent.Executors
 
 /**
@@ -39,6 +41,10 @@ import java.util.concurrent.Executors
  *
  * A listener that cannot bind leaves a `failed` status (`port_in_use`, `bind_failed`, or
  * `invalid_config`) in the log and stops the service; the host session (P2.3) reports it.
+ *
+ * `adb shell dumpsys activity service <pkg>/.McpServerService` prints the status and the paired
+ * clients, and in developer mode also the bearer token: until the settings page (P4.2) exists, the
+ * adb control plane is the only way to read it. Nothing printed there reaches logcat.
  */
 class McpServerService : Service() {
 
@@ -49,6 +55,9 @@ class McpServerService : Service() {
 
     @Volatile
     private var foreground = false
+
+    @Volatile
+    private var activeConfig: ServerConfig? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -69,6 +78,7 @@ class McpServerService : Service() {
                 stopSelf()
             }
             else -> lifecycle.execute {
+                activeConfig = config
                 val status = try {
                     server.start(config)
                 } catch (e: Throwable) {
@@ -93,6 +103,23 @@ class McpServerService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun dump(fd: FileDescriptor?, writer: PrintWriter?, args: Array<out String>?) {
+        val out = writer ?: return
+        val status = server.status
+        out.println("state: ${status.state}")
+        status.endpointUrl?.let { out.println("endpoint: $it") }
+        status.errorCode?.let { out.println("error: $it: ${status.message}") }
+        val developerMode = activeConfig?.developerMode == true
+        out.println("developerMode: $developerMode")
+        out.println("tokenFingerprint: ${server.tokenStore.fingerprint()}")
+        if (developerMode) out.println("token: ${server.tokenStore.current()}")
+        val clients = server.pairedClients.all()
+        out.println("pairedClients: ${clients.size}")
+        clients.forEach { client ->
+            out.println("  ${client.fingerprint} \"${client.name}\" ${client.addressClass.id} firstPairedAt=${client.firstPairedAt} lastSeenAt=${client.lastSeenAt}")
+        }
+    }
 
     private fun resolveConfig(intent: Intent?): ServerConfig {
         val stored = configStore.load()

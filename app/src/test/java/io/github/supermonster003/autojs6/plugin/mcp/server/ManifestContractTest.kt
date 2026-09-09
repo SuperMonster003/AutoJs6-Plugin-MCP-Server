@@ -44,8 +44,8 @@ class ManifestContractTest {
         assertEquals("@string/plugin_author", metaData["org.autojs.plugin.info.AUTHOR"])
 
         val activities = application.children("activity")
-        assertEquals(listOf(".WakeActivity"), activities.map { it.androidAttribute("name") })
-        val wake = activities.single()
+        assertEquals(listOf(".WakeActivity", ".ui.PairingConfirmActivity"), activities.map { it.androidAttribute("name") })
+        val wake = activities.first()
         assertEquals("true", wake.androidAttribute("exported"))
         assertEquals("true", wake.androidAttribute("excludeFromRecents"))
         assertEquals("true", wake.androidAttribute("finishOnTaskLaunch"))
@@ -54,6 +54,18 @@ class ManifestContractTest {
         val filter = wake.child("intent-filter")
         assertEquals(listOf("org.autojs.plugin.action.WAKE"), filter.children("action").map { it.androidAttribute("name") })
         assertEquals(listOf("android.intent.category.DEFAULT"), filter.children("category").map { it.androidAttribute("name") })
+
+        val pairing = activities.last()
+        assertEquals("false", pairing.androidAttribute("exported"))
+        assertEquals("true", pairing.androidAttribute("excludeFromRecents"))
+        assertEquals(":mcp_server", pairing.androidAttribute("process"))
+        assertTrue(pairing.children("intent-filter").isEmpty())
+
+        val receivers = application.children("receiver")
+        assertEquals(listOf(".ui.PairingDecisionReceiver"), receivers.map { it.androidAttribute("name") })
+        assertEquals("false", receivers.single().androidAttribute("exported"))
+        assertEquals(":mcp_server", receivers.single().androidAttribute("process"))
+        assertTrue(receivers.single().children("intent-filter").isEmpty())
     }
 
     @Test

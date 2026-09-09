@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="pairing_address_lan">ローカルネットワーク</string>
+    <string name="pairing_address_loopback">USB (adb) で接続されたこのパソコン</string>
+    <string name="pairing_allow">許可</string>
+    <string name="pairing_channel_name">ペアリング要求</string>
+    <string name="pairing_deny">拒否</string>
+    <string name="pairing_dialog_message">%1$s が MCP サーバー経由でこのデバイスの操作を求めています (%2$s から, トークン末尾 %3$s). 許可しますか?</string>
+    <string name="pairing_dialog_title">MCP クライアントのペアリング</string>
+    <string name="pairing_notification_text">%2$s からの %1$s (トークン末尾 %3$s) が確認を待っています</string>
+    <string name="pairing_notification_title">MCP クライアントがペアリングを求めています</string>
     <string name="plugin_description">Model Context Protocol を通じて AI エージェントにデバイス自動化機能を公開</string>
 </resources>

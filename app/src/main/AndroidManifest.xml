@@ -87,6 +87,24 @@
 
 
         <!--
+            Pairing confirmation (roadmap P2.2): the dialog and the notification-action receiver run
+            in the :mcp_server process next to the listener and are not exported; the notification
+            actions and the instrumentation tests reach the receiver as this app only.
+        -->
+        <activity
+            android:name=".ui.PairingConfirmActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:process=":mcp_server"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <receiver
+            android:name=".ui.PairingDecisionReceiver"
+            android:exported="false"
+            android:process=":mcp_server" />
+
+        <!--
             Foreground service that hosts the HTTP listener in the :mcp_server process. It is exported
             only to callers holding android.permission.DUMP (adb shell and the system), which gives
             developers an adb start / stop switch without letting third-party apps open the endpoint.

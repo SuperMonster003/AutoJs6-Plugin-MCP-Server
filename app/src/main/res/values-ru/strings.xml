@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="pairing_address_lan">локальная сеть</string>
+    <string name="pairing_address_loopback">этот компьютер по USB (adb)</string>
+    <string name="pairing_allow">Разрешить</string>
+    <string name="pairing_channel_name">Запросы на сопряжение</string>
+    <string name="pairing_deny">Отклонить</string>
+    <string name="pairing_dialog_message">%1$s запрашивает управление этим устройством через сервер MCP (источник: %2$s, токен заканчивается на %3$s). Разрешить?</string>
+    <string name="pairing_dialog_title">Сопряжение клиента MCP</string>
+    <string name="pairing_notification_text">%1$s (источник: %2$s, токен заканчивается на %3$s) ожидает вашего подтверждения</string>
+    <string name="pairing_notification_title">Клиент MCP запрашивает сопряжение</string>
     <string name="plugin_description">Открывает автоматизацию устройства для ИИ-агентов по протоколу Model Context Protocol</string>
 </resources>
