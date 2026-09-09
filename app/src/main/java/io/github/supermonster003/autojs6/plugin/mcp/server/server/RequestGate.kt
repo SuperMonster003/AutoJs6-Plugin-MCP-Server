@@ -78,7 +78,7 @@ object RequestGate {
     const val STATUS_PAYLOAD_TOO_LARGE = 413
 
     /** JSON-RPC `Invalid Request`, the code the SDK also uses for rejected hosts. */
-    const val JSON_RPC_INVALID_REQUEST = -32600
+    const val JSON_RPC_INVALID_REQUEST = McpErrors.INVALID_REQUEST
 
     fun evaluate(request: GateRequest, policy: GatePolicy): GateDecision {
         val hostname = HostHeaders.hostnameOf(request.host)

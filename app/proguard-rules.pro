@@ -4,6 +4,8 @@
 -keep class io.github.supermonster003.autojs6.plugin.mcp.server.McpServerPluginService { *; }
 -keep class io.github.supermonster003.autojs6.plugin.mcp.server.McpServerService { *; }
 -keep class io.github.supermonster003.autojs6.plugin.mcp.server.WakeActivity { *; }
+-keep class io.github.supermonster003.autojs6.plugin.mcp.server.ui.PairingConfirmActivity { *; }
+-keep class io.github.supermonster003.autojs6.plugin.mcp.server.ui.PairingDecisionReceiver { *; }
 
 -keep class org.autojs.plugin.common.api.** { *; }
 

@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="pairing_address_lan">الشبكة المحلية</string>
+    <string name="pairing_address_loopback">هذا الحاسوب عبر USB (adb)</string>
+    <string name="pairing_allow">السماح</string>
+    <string name="pairing_channel_name">طلبات الاقتران</string>
+    <string name="pairing_deny">رفض</string>
+    <string name="pairing_dialog_message">يطلب %1$s التحكم بهذا الجهاز عبر خادم MCP (من %2$s, ينتهي الرمز بـ %3$s). هل تسمح بذلك?</string>
+    <string name="pairing_dialog_title">اقتران عميل MCP</string>
+    <string name="pairing_notification_text">%1$s من %2$s (ينتهي الرمز بـ %3$s) في انتظار تأكيدك</string>
+    <string name="pairing_notification_title">عميل MCP يطلب الاقتران</string>
     <string name="plugin_description">يتيح أتمتة الجهاز لوكلاء الذكاء الاصطناعي عبر Model Context Protocol</string>
 </resources>

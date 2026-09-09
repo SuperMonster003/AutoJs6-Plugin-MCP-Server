@@ -7,7 +7,9 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.DevicePingTool
 import io.github.supermonster003.autojs6.plugin.mcp.server.McpServerPlugin
 import io.github.supermonster003.autojs6.plugin.mcp.server.mcpServerPluginRuntimeInfo
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.BindScope
+import io.github.supermonster003.autojs6.plugin.mcp.server.store.PairedClientStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfig
+import io.github.supermonster003.autojs6.plugin.mcp.server.store.TokenStore
 import io.ktor.server.application.serverConfig
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EmbeddedServer
@@ -25,6 +27,9 @@ import kotlinx.coroutines.CoroutineExceptionHandler
  * `port_in_use` / `bind_failed` code and a hint. In LAN scope a [LanAddressWatcher] keeps the
  * gate's allowed `Host` list in step with the device's addresses. Every status change reaches
  * [statusListener], which the foreground service and the session Binder (P2.3) observe.
+ *
+ * Every request must carry the bearer token of [tokenStore], and gated calls of clients the user
+ * has not confirmed are held back by the [PairingGate] (roadmap P2.2).
  */
 class McpHttpServer(context: Context, private val statusListener: (ServerStatus) -> Unit = {}) {
 
@@ -32,9 +37,21 @@ class McpHttpServer(context: Context, private val statusListener: (ServerStatus)
 
     private val lock = Any()
 
+    /** The bearer token store; shared with the settings page (P4.2). */
+    val tokenStore: TokenStore = TokenStore(this.context)
+
+    /** The paired clients; shared with the settings page (P4.2). */
+    val pairedClients: PairedClientStore = PairedClientStore(this.context)
+
     private var engine: EmbeddedServer<*, *>? = null
     private var activeConfig: ServerConfig? = null
     private var lanWatcher: LanAddressWatcher? = null
+    private var pairingCoordinator: PairingCoordinator? = null
+
+    /** The pairing state machine of the running listener; null while stopped. */
+    @Volatile
+    var pairingGate: PairingGate? = null
+        private set
 
     @Volatile
     private var policy: GatePolicy = GatePolicy.loopback()
@@ -68,6 +85,11 @@ class McpHttpServer(context: Context, private val statusListener: (ServerStatus)
         val watcher = if (config.bindScope == BindScope.LAN) LanAddressWatcher(context, ::refreshPolicy) else null
         watcher?.start()
         policy = GatePolicy.forConfig(config, watcher?.addresses.orEmpty())
+        val coordinator = PairingCoordinator(context) { tokenStore.tail() }
+        val gate = PairingGate(pairedClients, listener = coordinator)
+        coordinator.attach(gate)
+        val token = tokenStore.current()
+        Log.i(TAG, "Bearer token fingerprint ${BearerTokens.fingerprint(token)}, ${pairedClients.all().size} paired client(s)")
         val startedAt = SystemClock.elapsedRealtime()
         // The CIO accept loop runs in a root coroutine under the application's parent context; a
         // failed bind() completes start() exceptionally AND fails that coroutine, and on Android an
@@ -76,7 +98,14 @@ class McpHttpServer(context: Context, private val statusListener: (ServerStatus)
             parentCoroutineContext = CoroutineExceptionHandler { _, error ->
                 Log.w(TAG, "Listener coroutine failed: ${error.javaClass.name}: ${error.message}")
             }
-            module { mcpServerModule(mcpServer, policy = { this@McpHttpServer.policy }) }
+            module {
+                mcpServerModule(
+                    mcpServer,
+                    policy = { this@McpHttpServer.policy },
+                    tokenProvider = { tokenStore.current() },
+                    pairingGate = gate,
+                )
+            }
         }
         val server = embeddedServer(CIO, rootConfig) {
             connector {
@@ -99,6 +128,9 @@ class McpHttpServer(context: Context, private val statusListener: (ServerStatus)
         engine = server
         activeConfig = config
         lanWatcher = watcher
+        pairingCoordinator = coordinator
+        pairingGate = gate
+        PairingCoordinator.instance = coordinator
         val endpoint = endpointUrl(config, watcher?.addresses.orEmpty())
         Log.i(TAG, "MCP endpoint listening on $endpoint [${config.bindScope.id}] (${SystemClock.elapsedRealtime() - startedAt} ms to bind)")
         return publish(ServerStatus.running(endpoint))
@@ -111,6 +143,10 @@ class McpHttpServer(context: Context, private val statusListener: (ServerStatus)
         activeConfig = null
         lanWatcher?.stop()
         lanWatcher = null
+        if (PairingCoordinator.instance === pairingCoordinator) PairingCoordinator.instance = null
+        pairingCoordinator?.dispose()
+        pairingCoordinator = null
+        pairingGate = null
         running.stop(STOP_GRACE_MILLIS, STOP_TIMEOUT_MILLIS)
         policy = GatePolicy.loopback()
         Log.i(TAG, "MCP endpoint stopped")

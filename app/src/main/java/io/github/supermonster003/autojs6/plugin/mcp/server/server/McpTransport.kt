@@ -23,26 +23,28 @@ import io.ktor.utils.io.readRemaining
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.mcpStreamableHttp
 import kotlinx.io.readByteArray
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonObject
 
 /**
- * The Ktor module of the MCP endpoint (roadmap P2.1): the [RequestGate] runs in front of the
- * SDK's stateful Streamable HTTP mount at [path] (decision D9 as amended on 2026-09-10: the
- * stateless model waits for SDK support and has no route).
+ * The Ktor module of the MCP endpoint (roadmap P2.1 / P2.2): the [RequestGate], the bearer
+ * check, and the pairing gate run in that order in front of the SDK's stateful Streamable HTTP
+ * mount at [path] (decision D9 as amended on 2026-09-10: the stateless model waits for SDK
+ * support and has no route).
  *
  * `initialize` negotiation (`2025-06-18` / `2025-11-25`), the `Mcp-Session-Id` header, and the
  * `DELETE` session close are the SDK's behaviour; the SDK's own DNS rebinding validator is off
- * because [policy] changes at runtime (LAN addresses) and the gate covers every route.
+ * because [policy] changes at runtime (LAN addresses) and the gate covers every route. A null
+ * [tokenProvider] or [pairingGate] leaves that layer out, which only the JVM tests use.
  */
 fun Application.mcpServerModule(
     server: Server,
     policy: () -> GatePolicy,
+    tokenProvider: (() -> String?)? = null,
+    pairingGate: PairingGate? = null,
     path: String = McpServerPlugin.ENDPOINT_PATH,
 ) {
     installRequestGate(policy)
+    if (tokenProvider != null) installBearerAuth(tokenProvider)
+    if (pairingGate != null) installPairingGate(server, pairingGate)
     mcpStreamableHttp(path, false) { server }
 }
 
@@ -95,7 +97,8 @@ fun Application.installRequestGate(policy: () -> GatePolicy) {
     }
 }
 
-private val BUFFERED_BODY = AttributeKey<ByteArray>("McpRequestGate.bufferedBody")
+/** The POST body the gate read, replayed to the transport and inspected by the pairing gate. */
+internal val BUFFERED_BODY = AttributeKey<ByteArray>("McpRequestGate.bufferedBody")
 
 private const val CORS_ALLOWED_HEADERS = "Content-Type, Accept, Authorization, Mcp-Session-Id, MCP-Protocol-Version, Last-Event-ID"
 private const val CORS_EXPOSED_HEADERS = "Mcp-Session-Id, MCP-Protocol-Version"
@@ -103,7 +106,7 @@ private const val CORS_MAX_AGE_SECONDS = 600
 
 private suspend fun ApplicationCall.reject(decision: GateDecision.Reject) {
     respondText(
-        jsonRpcError(decision.code, decision.message),
+        McpErrors.error(null, decision.code, decision.message).toString(),
         ContentType.Application.Json,
         HttpStatusCode.fromValue(decision.status),
     )
@@ -114,12 +117,3 @@ private fun ApplicationResponse.appendCorsHeaders(origin: String) {
     header(HttpHeaders.Vary, HttpHeaders.Origin)
     header(HttpHeaders.AccessControlExposeHeaders, CORS_EXPOSED_HEADERS)
 }
-
-private fun jsonRpcError(code: Int, message: String): String = buildJsonObject {
-    put("jsonrpc", "2.0")
-    putJsonObject("error") {
-        put("code", code)
-        put("message", message)
-    }
-    put("id", JsonNull)
-}.toString()
