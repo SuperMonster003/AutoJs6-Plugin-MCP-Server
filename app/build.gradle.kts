@@ -159,6 +159,12 @@ android {
         resValues = true
     }
 
+    testOptions {
+        // The MCP SDK logs through kotlin-logging's Android variant; the JVM transport tests
+        // only need android.util.Log to answer quietly instead of throwing.
+        unitTests.isReturnDefaultValues = true
+    }
+
     sourceSets.named("main") {
         kotlin.directories += "src/main/java"
     }
@@ -207,6 +213,8 @@ dependencies {
     implementation(libs.mcp.kotlin.sdk.server)
 
     testImplementation(libs.junit)
+    // Runs the SDK transport behind the request gate on Ktor's test engine (roadmap P2.1).
+    testImplementation(libs.ktor.server.test.host)
 
     androidTestImplementation(libs.test.runner)
     androidTestImplementation(libs.test.rules)

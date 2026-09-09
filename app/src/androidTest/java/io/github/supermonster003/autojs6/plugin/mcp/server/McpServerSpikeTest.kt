@@ -6,9 +6,15 @@ import android.os.Build
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import io.github.supermonster003.autojs6.plugin.mcp.server.server.BindFailures
+import io.github.supermonster003.autojs6.plugin.mcp.server.server.McpHttpServer
+import io.github.supermonster003.autojs6.plugin.mcp.server.server.McpServerFactory
+import io.github.supermonster003.autojs6.plugin.mcp.server.server.ServerStatus
+import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfig
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -21,12 +27,15 @@ import java.net.Socket
 import java.net.URL
 
 /**
- * Roadmap P0.2 on-device evidence: starts [McpServerService], then drives the Streamable HTTP
- * endpoint on the loopback interface exactly like a PC client would after `adb forward`.
+ * On-device evidence for roadmap P0.2 and P2.1: starts [McpServerService], then drives the
+ * Streamable HTTP endpoint on the loopback interface exactly like a PC client would after
+ * `adb forward`.
  *
  * The stateful sequence (`initialize` -> `notifications/initialized` -> `tools/list` ->
- * `tools/call device_ping`) must succeed; the behaviour of a request without a session is only
- * recorded in logcat because the SDK, not this plugin, decides it (roadmap D9).
+ * `tools/call device_ping`) must succeed; a foreign `Host` header must be refused by the request
+ * gate; a second listener on the same port must report `port_in_use`. The behaviour of a request
+ * without a session is only recorded in logcat because the SDK, not this plugin, decides it
+ * (roadmap D9).
  */
 @RunWith(AndroidJUnit4::class)
 class McpServerSpikeTest {
@@ -37,18 +46,15 @@ class McpServerSpikeTest {
 
     @Before
     fun startServer() {
-        val intent = McpServerService.startIntent(context, port)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent)
-        } else {
-            context.startService(intent)
-        }
+        send(McpServerService.startIntent(context, port))
         awaitListener()
     }
 
+    /** Stops through the production path (`ACTION_STOP`) and waits until the port is closed. */
     @After
     fun stopServer() {
-        context.stopService(Intent(context, McpServerService::class.java))
+        send(McpServerService.stopIntent(context))
+        awaitClosed()
     }
 
     @Test
@@ -58,8 +64,12 @@ class McpServerSpikeTest {
         val sessionId = init.header("mcp-session-id")
         assertNotNull("initialize must return Mcp-Session-Id", sessionId)
         val initResult = init.json().getJSONObject("result")
-        assertEquals(McpServerPlugin.ID, initResult.getJSONObject("serverInfo").getString("name"))
-        assertTrue(initResult.getJSONObject("capabilities").has("tools"))
+        assertEquals(McpServerFactory.SERVER_NAME, initResult.getJSONObject("serverInfo").getString("name"))
+        assertEquals(context.mcpServerPluginRuntimeInfo().versionName, initResult.getJSONObject("serverInfo").getString("version"))
+        val capabilities = initResult.getJSONObject("capabilities")
+        assertTrue(capabilities.getJSONObject("tools").getBoolean("listChanged"))
+        assertTrue(capabilities.has("resources"))
+        assertTrue(capabilities.has("prompts"))
         Log.i(TAG, "initialize: protocolVersion=${initResult.optString("protocolVersion")} session=$sessionId")
 
         val initialized = post(initializedNotification(), sessionId)
@@ -93,18 +103,79 @@ class McpServerSpikeTest {
         assertTrue("unexpected status ${list.status}", list.status == 200 || list.status in 400..499)
     }
 
+    @Test
+    fun foreignHostHeaderIsRefusedByTheRequestGate() {
+        val body = initializeRequest().toByteArray()
+        val request = "POST ${McpServerPlugin.ENDPOINT_PATH} HTTP/1.1\r\n" +
+                "Host: evil.example:$port\r\n" +
+                "Content-Type: application/json\r\n" +
+                "Accept: application/json, text/event-stream\r\n" +
+                "MCP-Protocol-Version: $PROTOCOL_VERSION\r\n" +
+                "Content-Length: ${body.size}\r\n" +
+                "Connection: close\r\n\r\n"
+        val statusLine = Socket(McpHttpServer.LOOPBACK_HOST, port).use { socket ->
+            socket.soTimeout = 5_000
+            socket.getOutputStream().apply {
+                write(request.toByteArray())
+                write(body)
+                flush()
+            }
+            socket.getInputStream().bufferedReader().readLine().orEmpty()
+        }
+        Log.i(TAG, "foreign Host header: $statusLine")
+        assertTrue(statusLine, statusLine.contains(" 403 "))
+    }
+
+    @Test
+    fun secondListenerOnTheSamePortReportsPortInUse() {
+        val second = McpHttpServer(context)
+        val status = second.start(ServerConfig(port = port))
+        Log.i(TAG, "second listener on port $port: ${status.state} ${status.errorCode}: ${status.message}")
+        assertEquals(ServerStatus.STATE_FAILED, status.state)
+        assertEquals(BindFailures.CODE_PORT_IN_USE, status.errorCode)
+        assertFalse(second.isRunning)
+        assertEquals(status, second.stop())
+    }
+
+    @Test
+    fun invalidPortIsRefusedWithoutBinding() {
+        val status = McpHttpServer(context).start(ServerConfig(port = 80))
+        assertEquals(ServerStatus.STATE_FAILED, status.state)
+        assertEquals(McpHttpServer.ERROR_INVALID_CONFIG, status.errorCode)
+    }
+
+    private fun send(intent: Intent) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+    }
+
+    private fun isListening(): Boolean = try {
+        Socket().use { it.connect(InetSocketAddress(McpHttpServer.LOOPBACK_HOST, port), 500) }
+        true
+    } catch (e: Exception) {
+        false
+    }
+
     private fun awaitListener() {
         val deadline = System.currentTimeMillis() + 20_000
-        while (true) {
-            try {
-                Socket().use { it.connect(InetSocketAddress(McpHttpServer.LOOPBACK_HOST, port), 500) }
-                return
-            } catch (e: Exception) {
-                if (System.currentTimeMillis() > deadline) {
-                    throw AssertionError("The MCP listener did not open port $port within 20 s", e)
-                }
-                Thread.sleep(250)
+        while (!isListening()) {
+            if (System.currentTimeMillis() > deadline) {
+                throw AssertionError("The MCP listener did not open port $port within 20 s")
             }
+            Thread.sleep(250)
+        }
+    }
+
+    private fun awaitClosed() {
+        val deadline = System.currentTimeMillis() + 20_000
+        while (isListening()) {
+            if (System.currentTimeMillis() > deadline) {
+                throw AssertionError("The MCP listener did not close port $port within 20 s")
+            }
+            Thread.sleep(250)
         }
     }
 

@@ -6,10 +6,14 @@
 
 # v1.0.0
 
-###### 2026/09/07
+###### 2026/09/10
 
 * `提示` 开发预览版: 插件已可在 AutoJs6 插件中心注册, 但 MCP 端点及其工具尚不可用
 * `新增` 插件标识 `mcp-server`, 含 INFO 服务, Wake Activity 以及供宿主发现的 `org.autojs.plugin.MCP_SERVER` 服务骨架
 * `新增` 10 种语言的 README, 插件中心说明与更新日志
 * `新增` 位于 `http://127.0.0.1:9637/mcp` 的 Streamable HTTP 端点及 `device_ping` 工具, 由可经 adb 或宿主启停的前台服务承载 (开发预览)
+* `新增` `/mcp` 端点的传输加固: 绑定地址与端口来自服务器配置存储, 请求体上限 1 MiB, 空闲连接 60 秒后关闭, 端口被占用或绑定被拒绝时以 `port_in_use` / `bind_failed` 状态附带提示结束而非崩溃
+* `新增` SDK 传输前置的 DNS rebinding 保护: 回环模式只接受 `localhost` / `127.0.0.1` / `[::1]` 作为 `Host`, 局域网模式加入设备当前 IPv4 地址与可选的额外主机名并在网络变化时刷新; 浏览器来源一律拒绝, 仅 "开发者模式" 开关经 CORS 放行 Inspector 的回环来源
+* `新增` 服务器标识 `autojs6-mcp-server` 携带插件版本, 并声明 tools (`listChanged`), resources 与 prompts 能力; `tools/list` 保持注册顺序以便客户端缓存
 * `依赖` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 与 Ktor 3.5.1 CIO 引擎
+* `依赖` 附加 Ktor 3.5.1 `ktor-server-test-host` 用于 JVM 传输测试 (仅测试范围)
