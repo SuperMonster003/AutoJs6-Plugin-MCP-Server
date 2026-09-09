@@ -20,7 +20,7 @@ enum class BindScope(val id: String, val bindAddress: String) {
 
 /**
  * The listener configuration (roadmap P2.1). It is a plain value so the JVM tests cover the
- * validation and the persistence codec; [ServerConfigStore] keeps it in the plugin's preferences
+ * validation and the persistence codec; [ServerConfigStore] keeps it in the plugin's private storage
  * and the host may override [port] and [bindScope] through `openServer` (P2.3).
  *
  * [extraAllowedHosts] are additional `Host` header names accepted in LAN mode, such as an mDNS

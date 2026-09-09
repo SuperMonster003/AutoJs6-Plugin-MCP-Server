@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="pairing_address_lan">la red local</string>
+    <string name="pairing_address_loopback">este equipo por USB (adb)</string>
+    <string name="pairing_allow">Permitir</string>
+    <string name="pairing_channel_name">Solicitudes de emparejamiento</string>
+    <string name="pairing_deny">Denegar</string>
+    <string name="pairing_dialog_message">%1$s quiere controlar este dispositivo a través del servidor MCP (desde %2$s, token que termina en %3$s). Desea permitirlo?</string>
+    <string name="pairing_dialog_title">Emparejar cliente MCP</string>
+    <string name="pairing_notification_text">%1$s desde %2$s (token que termina en %3$s) espera tu confirmación</string>
+    <string name="pairing_notification_title">Un cliente MCP quiere emparejarse</string>
     <string name="plugin_description">Expone la automatización del dispositivo a agentes de IA mediante el Model Context Protocol</string>
 </resources>

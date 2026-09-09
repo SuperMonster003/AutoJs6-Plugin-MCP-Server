@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="pairing_address_lan">로컬 네트워크</string>
+    <string name="pairing_address_loopback">USB (adb)로 연결된 이 컴퓨터</string>
+    <string name="pairing_allow">허용</string>
+    <string name="pairing_channel_name">페어링 요청</string>
+    <string name="pairing_deny">거부</string>
+    <string name="pairing_dialog_message">%1$s이(가) MCP 서버를 통해 이 기기를 제어하려고 합니다 (%2$s에서, 토큰 끝자리 %3$s). 허용하시겠습니까?</string>
+    <string name="pairing_dialog_title">MCP 클라이언트 페어링</string>
+    <string name="pairing_notification_text">%2$s의 %1$s (토큰 끝자리 %3$s)이(가) 확인을 기다리고 있습니다</string>
+    <string name="pairing_notification_title">MCP 클라이언트가 페어링을 요청합니다</string>
     <string name="plugin_description">Model Context Protocol을 통해 AI 에이전트에 기기 자동화 기능을 제공</string>
 </resources>
