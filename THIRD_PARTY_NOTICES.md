@@ -28,6 +28,7 @@ own licenses. Runtime dependencies are added to this list in the same commit tha
 - Component: `io.ktor:ktor-server-cio` 3.5.1 (HTTP engine) and the server modules the SDK requires (`ktor-server-core`, `ktor-server-sse`, `ktor-server-content-negotiation`, `ktor-server-websockets`, `ktor-serialization-kotlinx-json`) with their `ktor-http`, `ktor-io`, `ktor-network`, `ktor-utils`, and `ktor-events` runtime
 - Source: <https://github.com/ktorio/ktor>
 - License: Apache License 2.0
+- Test scope only (not shipped in the APK): `io.ktor:ktor-server-test-host` 3.5.1 with its `ktor-client-core` and `kotlinx-coroutines-test` runtime, used by the JVM transport tests
 
 ## kotlinx libraries
 

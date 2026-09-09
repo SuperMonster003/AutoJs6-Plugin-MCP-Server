@@ -6,17 +6,21 @@
   "changelog_label_dependency": "依存関係",
   "$data": {
     "v1.0.0": {
-      "released_date": "2026/09/07",
+      "released_date": "2026/09/10",
       "hint": [
         "開発プレビュー: プラグインは AutoJs6 のプラグインセンターに登録されますが, MCP エンドポイントとそのツールはまだ利用できません"
       ],
       "feature": [
         "ホスト検出用の INFO サービス, Wake Activity, `org.autojs.plugin.MCP_SERVER` サービスの骨組みを備えたプラグイン ID `mcp-server`",
         "10 言語の README, プラグインセンターの説明, 変更履歴",
-        "`http://127.0.0.1:9637/mcp` の Streamable HTTP エンドポイントと `device_ping` ツール. adb またはホストから起動と停止ができるフォアグラウンドサービスが提供 (開発プレビュー)"
+        "`http://127.0.0.1:9637/mcp` の Streamable HTTP エンドポイントと `device_ping` ツール. adb またはホストから起動と停止ができるフォアグラウンドサービスが提供 (開発プレビュー)",
+        "`/mcp` エンドポイントのトランスポート強化: バインドアドレスとポートはサーバー設定ストアから取得し, リクエスト本文は 1 MiB まで, アイドル接続は 60 秒で閉じ, ポートが使用中またはバインドが拒否された場合はクラッシュせず `port_in_use` / `bind_failed` 状態とヒントで終了します",
+        "SDK トランスポート前段の DNS rebinding 保護: ループバックモードでは `Host` として `localhost` / `127.0.0.1` / `[::1]` のみを受け付け, LAN モードではデバイスの現在の IPv4 アドレスと任意の追加ホスト名を加えてネットワーク変化時に更新します; ブラウザのオリジンは拒否され, \"開発者モード\" スイッチのみが Inspector のループバックオリジンを CORS で許可します",
+        "サーバー識別子 `autojs6-mcp-server` にプラグインのバージョンを添え, tools (`listChanged`), resources, prompts の機能を宣言します; `tools/list` は登録順を保ち, クライアントがキャッシュできるようにします"
       ],
       "dependency": [
-        "MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) と Ktor 3.5.1 CIO エンジン"
+        "MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) と Ktor 3.5.1 CIO エンジン",
+        "JVM トランスポートテスト用に Ktor 3.5.1 `ktor-server-test-host` を追加 (テストスコープのみ)"
       ]
     }
   }
