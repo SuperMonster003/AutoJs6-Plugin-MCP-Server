@@ -6,7 +6,7 @@
 
 # v1.0.0
 
-###### 2026/09/10
+###### 2026/09/11
 
 * `تلميح` معاينة تطويرية: يسجل المكون الإضافي نفسه في مركز المكونات الإضافية في AutoJs6, لكن نقطة نهاية MCP وأدواتها غير متاحة بعد
 * `ميزة` هوية المكون الإضافي `mcp-server` مع خدمة INFO و Wake Activity وهيكل خدمة `org.autojs.plugin.MCP_SERVER` لاكتشاف المضيف
@@ -23,6 +23,7 @@
 * `ميزة` يعرض إشعار خدمة المقدمة نقطة النهاية وحالة اتصال AutoJs6 وعدد العملاء المقترنين مع إجراء إيقاف; وعند حظر الإشعارات تظهر رسالة toast بنقطة النهاية; ويطبع `dumpsys activity service` إضافة إلى ذلك جلسة المضيف ومفاتيح المجموعات والأدوات المسجلة
 * `ميزة` اكتمال مجموعة السكربتات: `script_run_file` يشغل ملف سكربت على الجهاز, و `script_stop` / `script_stop_all` يوقفان تنفيذا واحدا أو كل تنفيذات AutoJs6, و `script_list` يسرد التنفيذات الجارية, و `console_tail` يعيد أحدث سطور وحدة التحكم مع مؤشر `nextSinceId` ومرشح مستوى; يعيد `script_run` و `script_run_file` الآن `executionId` و `status` (`finished` / `error` / `running`) و `durationMs` والاستثناء مع رقم سطره وأحدث سطور وحدة التحكم, وأثناء الانتظار يرسلان كل 2 ث إشعار تقدم يحمل أحدث سطر في وحدة التحكم
 * `ميزة` ردود نقطة نهاية MCP تبث الآن كأحداث مرسلة من الخادم (لا يستخدم وضع استجابة JSON في SDK), وبذلك يصل الإشعار المرتبط بطلب, مثل نبض التقدم لسكربت قيد التشغيل, إلى العميل ضمن استجابة ذلك الطلب
+* `ميزة` إضافة مجموعة واجهة المستخدم (roadmap P3.2): يعيد `ui_dump` النافذة النشطة كشجرة عقد مضغوطة مع مراجع `#n` (`format` هو text / json / xml, و `maxNodes` حتى 400, و `maxDepth`, و `visibleOnly`, و `window`), ويستطلع `ui_find` / `ui_wait_for` محددا, ويبلغ `ui_current_window` و `ui_explain_selector` عن النافذة وسبب فشل المحدد, ويعمل `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` على `nodeRef` (يعاد تحديد موقعه ببصمته, و `NODE_REF_STALE` إذا اختفى) أو `selector`, ويضغط `ui_press_key` على back / home / recents / notifications / quick_settings / power_dialog / lock_screen, وتضيف مجموعة `ui_gesture` (معطلة افتراضيا) `ui_swipe` و `ui_gesture` والشكل الإحداثي لأدوات النقر (`TOOL_DISABLED` ما دامت المجموعة معطلة); تزداد لقطة كتالوج الأدوات إلى 20 أداة; تحتاج إيماءات الإحداثيات إلى مضيف AutoJs6 مبني بتاريخ 2026-09-11 أو بعده (يجيب المضيف الأقدم عشوائيا بـ "the system cancelled ...")
 * `تبعية` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) على محرك Ktor 3.5.1 CIO
 * `تبعية` إضافة Ktor 3.5.1 `ktor-server-test-host` لاختبارات النقل على JVM (نطاق الاختبار فقط)
 * `تبعية` أضيف `mcp-server-api.aar` (وحدة AutoJs6 `plugin-api/mcp-server-api`, بناء المضيف 6.8.0 / 5279, MPL 2.0) عقدا لـ Binder بين AutoJs6 والإضافة, مع تثبيت التجزئة في `locks/host-api-aars.lock`

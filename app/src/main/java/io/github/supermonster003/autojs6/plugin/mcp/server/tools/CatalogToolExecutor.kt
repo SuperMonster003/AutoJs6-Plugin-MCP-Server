@@ -25,20 +25,22 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.put
 
 /**
- * Executes catalog tools (roadmap P2.3 / P3.1): validates the arguments, records the `tool_call`
- * event, runs plugin-local tools in process, and sends the others through the [HostBridgeClient]
- * of the open session. While a host call is pending and the client asked for progress
- * (`_meta.progressToken`), a heartbeat notification goes out every [heartbeatMs]; the two script
- * run tools use the faster [scriptHeartbeatMs] and add the newest console line to it, so long
- * script runs show what they are doing. The heartbeat is sent as a notification related to the
- * pending request, so the SDK writes it into that request's own response stream and a client
- * needs no standalone GET stream to see it.
+ * Executes catalog tools (roadmap P2.3 / P3.1 / P3.2): validates the arguments, records the
+ * `tool_call` event, runs plugin-local tools in process, hands the tools that need several host
+ * calls to their [ToolFlows] (the `ui` group), and sends the others through the
+ * [HostBridgeClient] of the open session as one call. While a host call is pending and the
+ * client asked for progress (`_meta.progressToken`), a heartbeat notification goes out every
+ * [heartbeatMs]; the two script run tools use the faster [scriptHeartbeatMs] and add the newest
+ * console line to it, so long script runs show what they are doing. The heartbeat is sent as a
+ * notification related to the pending request, so the SDK writes it into that request's own
+ * response stream and a client needs no standalone GET stream to see it.
  */
 class CatalogToolExecutor(
     private val bridge: () -> HostBridgeClient?,
     private val local: Map<String, suspend (JsonObject) -> JsonObject>,
     private val clientNameOf: (sessionId: String?) -> String?,
     private val onToolCall: (toolName: String, clientName: String?) -> Unit,
+    private val flows: ToolFlows? = null,
     private val heartbeatMs: Long = HEARTBEAT_MS,
     private val scriptHeartbeatMs: Long = SCRIPT_HEARTBEAT_MS,
 ) : ToolExecutor {
@@ -70,14 +72,38 @@ class CatalogToolExecutor(
         }
         val method = spec.bridge ?: return ToolResults.failure(ToolFailure.internal("tool ${spec.name} has no host method"))
         val client = bridge() ?: return ToolResults.failure(ToolFailure.hostUnavailable())
+        val token = request.meta?.progressToken
+        val relatedRequestId = currentCoroutineContext()[RequestHandlerExtra.Key]?.requestId
+        Log.d(TAG, "${spec.name}: progress token ${if (token != null) "present" else "absent"}, related request id ${if (relatedRequestId != null) "present" else "absent"}")
+        val flow = try {
+            flows?.planFor(spec, arguments)
+        } catch (e: ToolArgumentException) {
+            return ToolResults.failure(e.failure)
+        }
+        if (flow != null) {
+            val caller = BridgeCaller { module, name, args, timeoutMs, permissions -> client.call(module, name, args, timeoutMs, permissions, clientName) }
+            return try {
+                val result = withHeartbeat(connection, token, relatedRequestId, heartbeatMs, flow.progressTotalMs, followConsole = false, client, clientName) {
+                    flow.run(caller)
+                }
+                ToolResults.success(result.structured, result.text)
+            } catch (e: ToolArgumentException) {
+                ToolResults.failure(e.failure)
+            } catch (e: ToolFailureException) {
+                ToolResults.failure(e.failure)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "${spec.name} failed", e)
+                ToolResults.failure(ToolFailure.internal("${spec.name} failed: ${e.message ?: e.javaClass.simpleName}"))
+            }
+        }
         val call = try {
             prepare(spec, arguments)
         } catch (e: ToolArgumentException) {
             return ToolResults.failure(e.failure)
         }
-        val relatedRequestId = currentCoroutineContext()[RequestHandlerExtra.Key]?.requestId
-        Log.d(TAG, "${spec.name}: progress token ${if (request.meta?.progressToken != null) "present" else "absent"}, related request id ${if (relatedRequestId != null) "present" else "absent"}")
-        val outcome = withHeartbeat(connection, request.meta?.progressToken, relatedRequestId, call, client, clientName) {
+        val outcome = withHeartbeat(connection, token, relatedRequestId, call.progressMs, call.timeoutMs, call.followConsole, client, clientName) {
             client.call(method.module, method.method, call.args, call.timeoutMs, spec.permissions, clientName)
         }
         return when (outcome) {
@@ -108,7 +134,9 @@ class CatalogToolExecutor(
         connection: ClientConnection,
         token: RequestId?,
         relatedRequestId: RequestId?,
-        call: BridgeCall,
+        progressMs: Long,
+        totalMs: Long,
+        followConsole: Boolean,
         client: HostBridgeClient,
         clientName: String?,
         block: suspend () -> T,
@@ -118,15 +146,15 @@ class CatalogToolExecutor(
             val startedAt = System.currentTimeMillis()
             val ticker = launch {
                 while (isActive) {
-                    delay(call.progressMs)
+                    delay(progressMs)
                     val elapsed = System.currentTimeMillis() - startedAt
                     val message = buildString {
                         append("waiting for AutoJs6 (${elapsed / 1000} s)")
-                        if (call.followConsole) latestConsoleLine(client, clientName)?.let { append("; last output: ").append(it) }
+                        if (followConsole) latestConsoleLine(client, clientName)?.let { append("; last output: ").append(it) }
                     }
                     runCatching {
                         connection.notification(
-                            ProgressNotification(ProgressNotificationParams(token, elapsed.toDouble(), call.timeoutMs.toDouble(), message)),
+                            ProgressNotification(ProgressNotificationParams(token, elapsed.toDouble(), totalMs.toDouble(), message)),
                             relatedRequestId,
                         )
                     }

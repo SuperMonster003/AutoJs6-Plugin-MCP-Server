@@ -20,6 +20,9 @@ object ToolErrorCodes {
 
     /** The arguments failed validation (plugin side) or the host rejected the request shape. */
     const val INVALID_ARGUMENTS = "INVALID_ARGUMENTS"
+
+    /** The node or the system was found but refused the accessibility action (P3.2). */
+    const val ACTION_FAILED = "ACTION_FAILED"
 }
 
 /**
@@ -54,7 +57,8 @@ data class ToolFailure(
     companion object {
 
         const val HINT_HOST = "start AutoJs6 and switch the MCP server on again; the listener keeps running"
-        const val HINT_ACCESSIBILITY = "enable the AutoJs6 accessibility service on the phone"
+        const val HINT_ACCESSIBILITY = "enable the AutoJs6 accessibility service on the phone (Settings > Accessibility); " +
+                "on Android 13+ open the AutoJs6 app info page and allow restricted settings first"
         const val HINT_CAPABILITY = "the host grant or the AutoJs6 permission set does not cover this method"
         const val HINT_TIMEOUT = "raise timeoutMs or split the work into smaller calls"
         const val HINT_RATE = "retry after a short pause"
@@ -74,6 +78,30 @@ data class ToolFailure(
         )
 
         fun invalidArguments(message: String): ToolFailure = ToolFailure(ToolErrorCodes.INVALID_ARGUMENTS, message)
+
+        /** A `#n` reference that no longer resolves (roadmap D12). */
+        fun nodeRefStale(ref: String, detail: String): ToolFailure = ToolFailure(
+            ToolErrorCodes.NODE_REF_STALE,
+            "$ref $detail",
+            "call ui_dump again and use a reference from the new snapshot, or give a selector",
+        )
+
+        /** A selector without a match in the active window. */
+        fun nodeNotFound(message: String): ToolFailure = ToolFailure(
+            ToolErrorCodes.NODE_NOT_FOUND,
+            message,
+            "ui_dump shows the current window and ui_explain_selector reports which condition fails",
+        )
+
+        /** The node (or the system) was reached but did not perform the action. */
+        fun actionFailed(message: String, hint: String): ToolFailure = ToolFailure(ToolErrorCodes.ACTION_FAILED, message, hint)
+
+        /** Decision D22: a coordinate form of a `ui` tool while the `ui_gesture` group is off. */
+        fun coordinatesDisabled(toolName: String): ToolFailure = ToolFailure(
+            ToolErrorCodes.TOOL_DISABLED,
+            "$toolName with x and y is a coordinate gesture and the ui_gesture group is switched off",
+            "use nodeRef or selector to act on a node, or enable the ui_gesture group in the plugin settings on the phone",
+        )
 
         fun timeout(module: String?, method: String?, timeoutMs: Long): ToolFailure = ToolFailure(
             ToolErrorCodes.TIMEOUT,
@@ -101,7 +129,7 @@ data class ToolFailure(
             )
             return when (error.category) {
                 BridgeError.CATEGORY_PROCESS_DEAD -> base.copy(code = ToolErrorCodes.HOST_UNAVAILABLE, hint = HINT_HOST)
-                BridgeError.CATEGORY_UNAVAILABLE -> if (error.module == "accessibility") {
+                BridgeError.CATEGORY_UNAVAILABLE -> if (error.module == "accessibility" || error.module == "keys") {
                     base.copy(code = ToolErrorCodes.A11Y_SERVICE_NOT_RUNNING, hint = HINT_ACCESSIBILITY)
                 } else {
                     base.copy(code = ToolErrorCodes.HOST_UNAVAILABLE, hint = HINT_HOST)
