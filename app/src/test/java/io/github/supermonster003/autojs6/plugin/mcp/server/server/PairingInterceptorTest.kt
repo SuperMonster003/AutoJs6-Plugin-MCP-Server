@@ -172,7 +172,7 @@ class PairingInterceptorTest {
     private suspend fun HttpResponse.bodyJson(): JsonObject {
         val text = bodyAsText()
         val payload = if (contentType()?.match(ContentType.Text.EventStream) == true) {
-            text.lineSequence().first { it.startsWith("data:") }.removePrefix("data:").trim()
+            text.lineSequence().filter { it.startsWith("data:") }.map { it.removePrefix("data:").trim() }.first { it.isNotEmpty() }
         } else {
             text
         }

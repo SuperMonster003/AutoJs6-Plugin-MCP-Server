@@ -21,7 +21,6 @@ import io.ktor.util.AttributeKey
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readRemaining
 import io.modelcontextprotocol.kotlin.sdk.server.Server
-import io.modelcontextprotocol.kotlin.sdk.server.mcpStreamableHttp
 import kotlinx.io.readByteArray
 
 /**
@@ -35,7 +34,10 @@ import kotlinx.io.readByteArray
  * because [policy] changes at runtime (LAN addresses) and the gate covers every route. A null
  * [tokenProvider], [pairingGate], or [toolGate] leaves that layer out, which only the JVM tests
  * and the default `device_ping`-only listener use. The tool gate (roadmap P2.3) runs last, after
- * the client is admitted, so unpaired clients learn nothing about the catalog.
+ * the client is admitted, so unpaired clients learn nothing about the catalog. The mount
+ * itself is [mcpStreamableSse] (roadmap P3.1): the SDK's `mcpStreamableHttp` answers in JSON
+ * and drops the notifications that belong to a request, so responses stream as server-sent
+ * events instead.
  */
 fun Application.mcpServerModule(
     server: Server,
@@ -49,7 +51,7 @@ fun Application.mcpServerModule(
     if (tokenProvider != null) installBearerAuth(tokenProvider)
     if (pairingGate != null) installPairingGate(server, pairingGate)
     if (toolGate != null) installToolGate(toolGate)
-    mcpStreamableHttp(path, false) { server }
+    mcpStreamableSse(path) { server }
 }
 
 /**

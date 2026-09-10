@@ -61,7 +61,7 @@ instrumentation `McpServerSpikeTest` (2 用例) 在三台设备上全部通过; 
 `mcpStreamableHttp` (有状态, `/mcp` 的正式挂载):
 
 - `initialize` (2025-06-18) -> 200 `application/json`, 返回 `Mcp-Session-Id` (UUID), `serverInfo.name = mcp-server`, `capabilities.tools.listChanged = false`.
-- `notifications/initialized` -> 202 无正文; `tools/list` / `tools/call` -> 200 `application/json` (单响应不走 SSE).
+- `notifications/initialized` -> 202 无正文; `tools/list` / `tools/call` -> 200 `application/json` (单响应不走 SSE). P3.1 起插件改用自有挂载 (`server/SseStreamableMount`), 带请求的 POST 一律以 `text/event-stream` 应答, 见 `docs/dev/p3-tools.md`.
 - 带会话的 GET -> 200 `text/event-stream` (独立通知流); DELETE -> 200, 之后同一会话 -> 404 `-32000 Session not found`.
 - 无会话的任何请求 (含 `server/discover`, 含 `Mcp-Method` / `Mcp-Name` 头) -> 400 `-32000 Bad Request: Server not initialized`; 无会话 GET -> 200 `text/event-stream` (SDK 行为, 与规范期望的 400 不同, P2.1 鉴权层会先于它拦截).
 - `MCP-Protocol-Version: 2026-07-28` 的 `initialize` -> 400 `Unsupported protocol version (supported versions: 2025-11-25, 2025-06-18, 2025-03-26, 2024-11-05)`.

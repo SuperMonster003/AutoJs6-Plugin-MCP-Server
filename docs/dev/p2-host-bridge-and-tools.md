@@ -119,7 +119,8 @@ closed schemas, D6 defaults, and a committed snapshot (`src/test/resources/tool-
   `notifications/tools/list_changed` to the open sessions. A call to a known but switched-off tool
   is answered by the gate with `isError` + `TOOL_DISABLED` before the SDK sees it.
 
-`script_run` maps onto `engines.execScript(name, source, options)`:
+`script_run` maps onto `engines.execScript(name, source, options)`; P3.1 reshaped its result and
+added the rest of the script group (see `p3-tools.md`). What stays from P2.3:
 
 - `name` is the task name AutoJs6 shows; the host's `StringScriptSource` is JavaScript by
   construction and appends `.js` itself, so a given `.js` suffix is dropped (the first manual run
@@ -128,10 +129,8 @@ closed schemas, D6 defaults, and a committed snapshot (`src/test/resources/tool-
   `timeoutMs` capped at 290 s when `waitForCompletion` (default), else 0; the bridge timeout is the
   larger of the two plus 10 s so a script that just finished still answers.
 - `workingDirectory` becomes `options.cwd` unless it is `.`; `arguments` is forwarded when non-empty.
-- The host's `console.entries` are trimmed to the newest `maxConsoleLines` (default 200, max 500)
-  with `console.returned` and `console.truncated` set.
-- With a `_meta.progressToken`, a progress notification goes out every 5 s while the host call
-  is pending.
+- With a `_meta.progressToken`, a progress notification goes out every 5 s while a host call is
+  pending; the two run tools use 2 s and add the newest console line since P3.1.
 
 ## Foreground service
 

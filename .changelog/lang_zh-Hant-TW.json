@@ -22,7 +22,9 @@
         "手機上的配對確認走雙通道: 帶允許 / 拒絕動作的高優先級通知, 以及螢幕解鎖時彈出的對話框; 伺服器設定, 權杖與已配對用戶端保存在原子替換的檔案中, 伺服器程序與設定頁共享且不會讀到過期快取",
         "帶分組開關的工具目錄 (決策 D6): `device_ping` (外掛本機), `device_info` (AutoJs6 `device.info`) 與 `script_run` (AutoJs6 `engines.execScript`: 執行 JavaScript, 最多等待 `timeoutMs` 直到指令碼結束, 回傳結果與最新的主控台行, 執行期間送出進度通知); 每個工具宣告封閉的 JSON Schema (`additionalProperties: false`), 參數在送達 AutoJs6 之前完成驗證; 分組開關 `script` / `ui` / `ui_gesture` / `screen` / `files` / `files_delete` / `device` / `shell` 存放於 `tool_groups.json`, 關閉的分組自下一次請求起從 `tools/list` 消失, 其工具回應 `TOOL_DISABLED`",
         "宿主橋接: `org.autojs.plugin.MCP_SERVER` 服務實作真實的 `IMcpServerPlugin` Binder (`getInfo` / `getCapabilities` 回報契約版本 1, 工具分組, MCP 協定版本與 SDK 版本; `openServer` 只接受已安裝且同簽章的 AutoJs6, 回傳帶 `getStatus` / `updateConfig` / `stop` / `close` 的 `IMcpServerSession`); 工具呼叫經宿主能力代理傳遞, 帶單調遞增的請求 id, 每次呼叫的逾時, 4 路並行上限, 宿主錯誤類別映射為 `HOST_UNAVAILABLE` / `A11Y_SERVICE_NOT_RUNNING` / `CAPABILITY_DENIED` / `LIMIT_EXCEEDED` / `RATE_LIMITED` / `TIMEOUT` / `HOST_ERROR`; AutoJs6 結束時監聽器繼續執行, 依賴宿主的工具回應 `HOST_UNAVAILABLE` 直到宿主重新連線; 狀態與事件 (`pairing_requested`, `client_paired`, `tool_call`, `warning`) 經回呼送達宿主",
-        "前景服務通知顯示端點, AutoJs6 連線狀態與已配對用戶端數, 並提供停止動作; 通知被停用時以 toast 提示端點; `dumpsys activity service` 額外列印宿主工作階段, 工具分組開關與已註冊工具"
+        "前景服務通知顯示端點, AutoJs6 連線狀態與已配對用戶端數, 並提供停止動作; 通知被停用時以 toast 提示端點; `dumpsys activity service` 額外列印宿主工作階段, 工具分組開關與已註冊工具",
+        "補全指令碼分組: `script_run_file` 執行裝置上的指令碼檔案, `script_stop` / `script_stop_all` 停止一個或全部 AutoJs6 執行, `script_list` 列出執行中的執行, `console_tail` 回傳最新的主控台行並帶 `nextSinceId` 游標與層級篩選; `script_run` 與 `script_run_file` 現在回傳 `executionId`, `status` (`finished` / `error` / `running`), `durationMs`, 含行號的例外與最新的主控台行, 等待期間每 2 s 送出一則攜帶最新主控台行的進度通知",
+        "MCP 端點的回應改為以伺服器傳送事件 (SSE) 串流回傳 (不再使用 SDK 的 JSON 回應模式), 屬於某個請求的通知 (如執行中指令碼的進度心跳) 會隨該請求自身的回應送達用戶端"
       ],
       "dependency": [
         "MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 與 Ktor 3.5.1 CIO 引擎",
