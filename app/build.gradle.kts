@@ -213,6 +213,8 @@ dependencies {
     // The SDK pins Ktor 3.5.1; the BOM keeps the engine on the same line.
     implementation(platform(libs.ktor.bom))
     implementation(libs.ktor.server.cio)
+    // The SSE session of a POST response (server/SseStreamableMount, roadmap P3.1); the SDK exposes it as an API dependency already.
+    implementation(libs.ktor.server.sse)
     implementation(libs.mcp.kotlin.sdk.server)
 
     testImplementation(libs.junit)

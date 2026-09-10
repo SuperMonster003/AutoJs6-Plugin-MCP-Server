@@ -17,11 +17,18 @@ import io.ktor.server.testing.testApplication
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.writeFully
 import io.modelcontextprotocol.kotlin.sdk.server.Server
+import io.modelcontextprotocol.kotlin.sdk.shared.RequestHandlerExtra
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.ProgressNotification
+import io.modelcontextprotocol.kotlin.sdk.types.ProgressNotificationParams
+import io.modelcontextprotocol.kotlin.sdk.types.RequestId
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -33,7 +40,8 @@ import org.junit.Test
 
 /**
  * Runs the real SDK transport behind the request gate on Ktor's test engine: the stateful
- * session flow, the deterministic tool order, and every rejection the gate adds.
+ * session flow, the deterministic tool order, the server-sent-event responses that carry a
+ * request's own notifications, and every rejection the gate adds.
  */
 class McpTransportTest {
 
@@ -88,6 +96,44 @@ class McpTransportTest {
         }
         assertEquals(HttpStatusCode.OK, close.status)
         assertEquals(HttpStatusCode.NotFound, post(TOOLS_LIST, sessionId).status)
+    }
+
+    @Test
+    fun postResponsesStreamAsEventsWithTheirRelatedNotificationsFirst() = testApplication {
+        val server = mcpServer("plain_tool").also { server ->
+            server.addTool(name = "slow_tool", description = "sends a related notification before its result") { request ->
+                // The transport returns from the POST before this handler runs; the delay makes that visible.
+                delay(SLOW_TOOL_MS)
+                val related = currentCoroutineContext()[RequestHandlerExtra.Key]?.requestId
+                val token = request.meta?.progressToken ?: RequestId.StringId("none")
+                notification(ProgressNotification(ProgressNotificationParams(token, 1.0, 2.0, "half way")), related)
+                CallToolResult(content = listOf(TextContent(text = "ok slow_tool")))
+            }
+        }
+        mount(server)
+        val init = post(INITIALIZE, sessionId = null)
+        assertEquals(HttpStatusCode.OK, init.status)
+        assertTrue("initialize streams: ${init.contentType()}", init.contentType()?.match(ContentType.Text.EventStream) == true)
+        val sessionId = init.headers[SESSION_HEADER]!!
+        assertEquals(HttpStatusCode.Accepted, post(INITIALIZED, sessionId).status)
+
+        val call = post(
+            """{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"slow_tool","arguments":{},"_meta":{"progressToken":"hb"}}}""",
+            sessionId,
+        )
+        assertEquals(HttpStatusCode.OK, call.status)
+        assertTrue("tools/call streams: ${call.contentType()}", call.contentType()?.match(ContentType.Text.EventStream) == true)
+        val events = call.bodyEvents()
+        assertEquals(listOf("notifications/progress", null), events.map { it["method"]?.jsonPrimitive?.contentOrNull })
+        val progress = events[0]["params"]!!.jsonObject
+        assertEquals("hb", progress["progressToken"]!!.jsonPrimitive.content)
+        assertEquals("half way", progress["message"]!!.jsonPrimitive.content)
+        assertEquals(7, events[1]["id"]!!.jsonPrimitive.int)
+        val content = events[1]["result"]!!.jsonObject["content"]!!.jsonArray.first().jsonObject
+        assertEquals("ok slow_tool", content["text"]!!.jsonPrimitive.content)
+
+        // A tool without a notification still answers on a stream with the response alone.
+        assertEquals(1, post(toolsCall("plain_tool"), sessionId).bodyEvents().size)
     }
 
     @Test
@@ -180,15 +226,19 @@ class McpTransportTest {
         setBody(body)
     }
 
-    private suspend fun HttpResponse.bodyJson(): JsonObject {
+    /** Every JSON document of the response: the `data:` payloads of a stream, or the one JSON body. */
+    private suspend fun HttpResponse.bodyEvents(): List<JsonObject> {
         val text = bodyAsText()
-        val payload = if (contentType()?.match(ContentType.Text.EventStream) == true) {
-            text.lineSequence().first { it.startsWith("data:") }.removePrefix("data:").trim()
+        val payloads = if (contentType()?.match(ContentType.Text.EventStream) == true) {
+            text.lineSequence().filter { it.startsWith("data:") }.map { it.removePrefix("data:").trim() }.filter { it.isNotEmpty() }.toList()
         } else {
-            text
+            listOf(text)
         }
-        return Json.parseToJsonElement(payload).jsonObject
+        return payloads.map { Json.parseToJsonElement(it).jsonObject }
     }
+
+    /** The JSON-RPC response: the last document of a stream, or the JSON body. */
+    private suspend fun HttpResponse.bodyJson(): JsonObject = bodyEvents().last()
 
     private fun toolsCall(name: String): String =
         """{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"$name","arguments":{}}}"""
@@ -205,5 +255,6 @@ class McpTransportTest {
         const val INITIALIZE = """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"McpTransportTest","version":"1"}}}"""
         const val INITIALIZED = """{"jsonrpc":"2.0","method":"notifications/initialized"}"""
         const val TOOLS_LIST = """{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}"""
+        const val SLOW_TOOL_MS = 300L
     }
 }

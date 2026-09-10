@@ -48,7 +48,7 @@
   {
     "name": "script_run",
     "title": "Run script",
-    "description": "Runs JavaScript source in AutoJs6 (its Rhino engine with the full AutoJs6 API), by default waits for the script to finish, and returns the outcome plus the console lines it printed. Use it for automation steps: toasts, UI actions, file work, app launches. Long-running scripts keep running after the wait; the result then says outcome = running.",
+    "description": "Runs JavaScript source in AutoJs6 (its Rhino engine with the full AutoJs6 API) and by default waits for it to finish. Use it for automation steps: toasts, UI actions, file work, app launches. The result carries executionId, status (finished, error, running), durationMs, the exception with its line when the script threw, and the newest console lines. A script still running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output.",
     "group": "script",
     "defaultEnabled": true,
     "bridge": "engines.execScript",
@@ -98,14 +98,14 @@
         },
         "timeoutMs": {
           "type": "integer",
-          "description": "How long to wait for the script to finish, in milliseconds",
+          "description": "How long to wait for the script to finish, in milliseconds; a script still running afterwards is not killed",
           "minimum": 1000,
           "maximum": 300000,
           "default": 60000
         },
         "waitForCompletion": {
           "type": "boolean",
-          "description": "Wait for the script to finish before answering",
+          "description": "Wait for the script to finish before answering; false returns the executionId at once",
           "default": true
         },
         "captureConsole": {
@@ -124,6 +124,212 @@
       "required": [
         "source"
       ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "script_run_file",
+    "title": "Run script file",
+    "description": "Runs a script file that already exists on the device (AutoJs6 picks the engine from the suffix) and by default waits for it to finish. The result carries executionId, status (finished, error, running), durationMs, the exception with its line when the script threw, and the newest console lines. A script still running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output.",
+    "group": "script",
+    "defaultEnabled": true,
+    "bridge": "engines.execScriptFile",
+    "permissions": [
+      "engines",
+      "engines.exec"
+    ],
+    "timeoutMs": 60000,
+    "maxTimeoutMs": 300000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "POSIX-style path of the script file, relative to the working directory; it cannot escape it",
+          "maxLength": 512
+        },
+        "workingDirectory": {
+          "type": "string",
+          "description": "POSIX-style path relative to the AutoJs6 working directory; the script cannot escape it",
+          "maxLength": 512,
+          "default": "."
+        },
+        "arguments": {
+          "type": "object",
+          "description": "Values exposed to the script through engines.myEngine().execArgv",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "null"
+            ]
+          }
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "How long to wait for the script to finish, in milliseconds; a script still running afterwards is not killed",
+          "minimum": 1000,
+          "maximum": 300000,
+          "default": 60000
+        },
+        "waitForCompletion": {
+          "type": "boolean",
+          "description": "Wait for the script to finish before answering; false returns the executionId at once",
+          "default": true
+        },
+        "captureConsole": {
+          "type": "boolean",
+          "description": "Include the console lines printed while the script ran",
+          "default": true
+        },
+        "maxConsoleLines": {
+          "type": "integer",
+          "description": "Keep at most this many of the newest console lines",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 200
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "script_stop",
+    "title": "Stop script",
+    "description": "Stops one running AutoJs6 script by the executionId that script_run, script_run_file, or script_list reported.",
+    "group": "script",
+    "defaultEnabled": true,
+    "bridge": "engines.stop",
+    "permissions": [
+      "engines"
+    ],
+    "timeoutMs": 10000,
+    "maxTimeoutMs": 10000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "executionId": {
+          "type": "integer",
+          "description": "Execution id of the script to stop",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "executionId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "script_stop_all",
+    "title": "Stop all scripts",
+    "description": "Stops every script AutoJs6 is running, including ones started on the phone, and returns how many were stopped.",
+    "group": "script",
+    "defaultEnabled": true,
+    "bridge": "engines.stopAll",
+    "permissions": [
+      "engines"
+    ],
+    "timeoutMs": 10000,
+    "maxTimeoutMs": 10000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "script_list",
+    "title": "List scripts",
+    "description": "Lists the scripts AutoJs6 is running or starting, with executionId, name, path, working directory, state, and uptime.",
+    "group": "script",
+    "defaultEnabled": true,
+    "bridge": "engines.list",
+    "permissions": [
+      "engines"
+    ],
+    "timeoutMs": 10000,
+    "maxTimeoutMs": 10000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "console_tail",
+    "title": "Console tail",
+    "description": "Returns the newest lines of the AutoJs6 console, which every script shares; optionally only entries after sinceId or at least a level. nextSinceId in the result continues from where this call ended.",
+    "group": "script",
+    "defaultEnabled": true,
+    "bridge": "console.tail",
+    "permissions": [
+      "console"
+    ],
+    "timeoutMs": 10000,
+    "maxTimeoutMs": 10000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "lines": {
+          "type": "integer",
+          "description": "How many of the newest lines to return",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 100
+        },
+        "sinceId": {
+          "type": "integer",
+          "description": "Only entries with an id above this one (the nextSinceId of a previous call)",
+          "minimum": 0
+        },
+        "level": {
+          "type": "string",
+          "description": "Lowest level to include",
+          "enum": [
+            "verbose",
+            "debug",
+            "info",
+            "warn",
+            "error",
+            "assert"
+          ]
+        }
+      },
       "additionalProperties": false
     }
   }

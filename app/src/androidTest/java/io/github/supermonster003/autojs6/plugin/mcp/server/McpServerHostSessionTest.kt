@@ -132,9 +132,14 @@ class McpServerHostSessionTest {
             .json().getJSONObject("result")
         assertFalse(run.toString(), run.optBoolean("isError"))
         val runResult = run.getJSONObject("structuredContent")
-        assertEquals("success", runResult.getString("outcome"))
-        assertEquals(1, runResult.getJSONObject("console").getJSONArray("entries").length())
-        assertTrue(runResult.getJSONObject("console").getBoolean("truncated"))
+        assertEquals("finished", runResult.getString("status"))
+        assertEquals(3, runResult.getInt("executionId"))
+        assertEquals("demo", runResult.getString("name"))
+        assertEquals(12L, runResult.getLong("durationMs"))
+        assertEquals(1, runResult.getJSONArray("console").length())
+        assertEquals(2, runResult.getInt("consoleCount"))
+        assertTrue(runResult.getBoolean("consoleTruncated"))
+        assertFalse(runResult.has("hint"))
         val runRequest = broker.requests.last()
         assertEquals("engines", runRequest.getString("module"))
         assertEquals("execScript", runRequest.getString("method"))
@@ -148,6 +153,22 @@ class McpServerHostSessionTest {
         assertEquals(listOf("engines", "engines.exec"), runRequest.getJSONArray("permissions").toStringList())
         Log.i(TAG, "script_run envelope: $runRequest")
 
+        // A slow run with a progress token: the 2 s heartbeat travels on the request's own response
+        // stream (related request id) and carries the newest console line of the fake host.
+        val progress = post(
+            """{"jsonrpc":"2.0","id":31,"method":"tools/call","params":{"name":"${ToolCatalog.SCRIPT_RUN}","arguments":{"source":"slow script","timeoutMs":5000},"_meta":{"progressToken":"hb1"}}}""",
+            sessionId,
+        )
+        val heartbeats = progress.events.map { JSONObject(it) }.filter { it.optString("method") == "notifications/progress" }
+        Log.i(TAG, "slow script_run: ${progress.events.size} stream events, ${heartbeats.size} heartbeats")
+        assertTrue("a slow script_run sends its heartbeat on the request stream: ${progress.events}", heartbeats.isNotEmpty())
+        val heartbeat = heartbeats.first().getJSONObject("params")
+        assertEquals("hb1", heartbeat.getString("progressToken"))
+        val heartbeatMessage = heartbeat.getString("message")
+        assertTrue(heartbeatMessage, heartbeatMessage.startsWith("waiting for AutoJs6 (") && heartbeatMessage.endsWith("; last output: e1"))
+        assertTrue(heartbeat.getDouble("total") >= 5000.0)
+        assertEquals("finished", progress.json().getJSONObject("result").getJSONObject("structuredContent").getString("status"))
+
         val failed = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN, """{"source":"fail please"}"""), sessionId).json().getJSONObject("result")
         assertTrue(failed.getBoolean("isError"))
         val failedText = failed.getJSONArray("content").getJSONObject(0).getString("text")
@@ -158,8 +179,58 @@ class McpServerHostSessionTest {
         assertTrue(invalid.getBoolean("isError"))
         assertTrue(invalid.getJSONArray("content").getJSONObject(0).getString("text").startsWith("INVALID_ARGUMENTS: script_run: timeoutMs must be at least 1000"))
 
+        val thrown = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN, """{"source":"throw new Error('boom')","timeoutMs":5000}"""), sessionId).json().getJSONObject("result")
+        assertFalse(thrown.toString(), thrown.optBoolean("isError"))
+        val thrownResult = thrown.getJSONObject("structuredContent")
+        assertEquals("error", thrownResult.getString("status"))
+        assertEquals(4, thrownResult.getInt("executionId"))
+        assertEquals(2, thrownResult.getJSONObject("exception").getInt("line"))
+        assertTrue(thrownResult.getJSONObject("exception").getString("message").startsWith("Error: boom"))
+
+        val runFile = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN_FILE, """{"path":"demo/run.js","timeoutMs":5000,"waitForCompletion":false}"""), sessionId).json().getJSONObject("result")
+        assertFalse(runFile.toString(), runFile.optBoolean("isError"))
+        val runFileResult = runFile.getJSONObject("structuredContent")
+        assertEquals("running", runFileResult.getString("status"))
+        assertEquals(7, runFileResult.getInt("executionId"))
+        assertFalse(runFileResult.getBoolean("waited"))
+        assertTrue(runFileResult.getString("hint").contains("script_stop with executionId 7"))
+        val fileRequest = broker.requests.last()
+        assertEquals("execScriptFile", fileRequest.getString("method"))
+        assertEquals("demo/run.js", fileRequest.getJSONArray("args").getString(0))
+        assertEquals(0L, fileRequest.getJSONArray("args").getJSONObject(1).getLong("waitMs"))
+
+        val scripts = post(toolsCallRequest(ToolCatalog.SCRIPT_LIST), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        assertEquals(1, scripts.getInt("count"))
+        assertEquals(7, scripts.getJSONArray("executions").getJSONObject(0).getInt("executionId"))
+        assertEquals("run.js", scripts.getJSONArray("executions").getJSONObject(0).getString("name"))
+        assertEquals("list", broker.requests.last().getString("method"))
+        assertEquals(0, broker.requests.last().getJSONArray("args").length())
+
+        val tail = post(toolsCallRequest(ToolCatalog.CONSOLE_TAIL, """{"lines":2,"level":"warn"}"""), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        assertEquals(2, tail.getInt("count"))
+        assertEquals(2, tail.getJSONArray("entries").length())
+        assertEquals(9, tail.getInt("nextSinceId"))
+        assertFalse(tail.has("schema"))
+        val tailRequest = broker.requests.last()
+        assertEquals("console", tailRequest.getString("module"))
+        assertEquals("tail", tailRequest.getString("method"))
+        assertEquals(2, tailRequest.getJSONArray("args").getJSONObject(0).getInt("lines"))
+        assertEquals("warn", tailRequest.getJSONArray("args").getJSONObject(0).getString("level"))
+        assertEquals(listOf("console"), tailRequest.getJSONArray("permissions").toStringList())
+
+        val stopped7 = post(toolsCallRequest(ToolCatalog.SCRIPT_STOP, """{"executionId":7}"""), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        assertEquals(7, stopped7.getInt("executionId"))
+        assertTrue(stopped7.getBoolean("stopped"))
+        assertEquals("finished", stopped7.getString("state"))
+        assertEquals(7, broker.requests.last().getJSONArray("args").getInt(0))
+
+        val stoppedAll = post(toolsCallRequest(ToolCatalog.SCRIPT_STOP_ALL), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        assertEquals(2, stoppedAll.getInt("stopped"))
+        assertEquals("host", broker.requests.last().getJSONArray("args").getJSONObject(0).getString("scope"))
+        Log.i(TAG, "script tools through the broker: run (finished / error), run_file, list, tail, stop, stop_all answered")
+
         awaitCondition("tool_call events") {
-            callback.events.count { it.getString(McpServerContract.KEY_EVENT_TYPE) == McpServerContract.EVENT_TOOL_CALL && it.getString(McpServerContract.KEY_EVENT_CLIENT_NAME) == CLIENT_NAME } >= 3
+            callback.events.count { it.getString(McpServerContract.KEY_EVENT_TYPE) == McpServerContract.EVENT_TOOL_CALL && it.getString(McpServerContract.KEY_EVENT_CLIENT_NAME) == CLIENT_NAME } >= 9
         }
         assertTrue(callback.events.any { it.getString(McpServerContract.KEY_EVENT_TOOL_NAME) == ToolCatalog.SCRIPT_RUN })
 
@@ -253,9 +324,12 @@ class McpServerHostSessionTest {
             putInt(McpServerContract.KEY_CONTRACT_VERSION, McpServerContract.CONTRACT_VERSION)
             putInt(McpServerContract.KEY_HOST_CAPABILITY_BROKER_VERSION, McpServerContract.HOST_CAPABILITY_BROKER_CONTRACT_VERSION)
             putString(McpServerContract.KEY_HOST_CAPABILITY_BROKER_ID, "fake-broker")
-            putStringArray(McpServerContract.KEY_HOST_CAPABILITY_MODULES, arrayOf("device", "engines"))
-            putStringArray(McpServerContract.KEY_GRANT_METHODS, arrayOf("device.info", "engines.execScript"))
-            putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec"))
+            putStringArray(McpServerContract.KEY_HOST_CAPABILITY_MODULES, arrayOf("device", "engines", "console"))
+            putStringArray(
+                McpServerContract.KEY_GRANT_METHODS,
+                arrayOf("device.info", "engines.execScript", "engines.execScriptFile", "engines.list", "engines.stop", "engines.stopAll", "console.tail"),
+            )
+            putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console"))
             putInt(McpServerContract.KEY_GRANT_MAX_REQUEST_BYTES, McpServerContract.MAX_BRIDGE_INLINE_JSON_BYTES)
             putInt(McpServerContract.KEY_GRANT_MAX_CONCURRENT_CALLS, McpServerContract.MAX_CONCURRENT_TOOL_CALLS)
             putLong(McpServerContract.KEY_GRANT_DEFAULT_TIMEOUT_MS, McpServerContract.DEFAULT_TOOL_TIMEOUT_MS)
@@ -274,30 +348,76 @@ class McpServerHostSessionTest {
                     .put("result", JSONObject().put("schema", "autojs6-bridge-device-info-v1").put("host", JSONObject().put("versionName", "6.8.0").put("pid", 4242)))
                 "engines.execScript" -> {
                     val source = json.getJSONArray("args").getString(1)
-                    if (source.startsWith("fail")) {
-                        JSONObject().put("id", id).put("ok", false).put(
+                    when {
+                        source.startsWith("fail") -> JSONObject().put("id", id).put("ok", false).put(
                             "error",
                             JSONObject().put("name", "ScriptError").put("message", source).put("code", "script-failed").put("category", "provider-failed").put("module", "engines").put("method", "execScript"),
                         )
-                    } else {
-                        val entries = JSONArray().put(JSONObject().put("id", 1).put("level", 4).put("levelName", "info").put("time", 1L).put("text", "first"))
-                            .put(JSONObject().put("id", 2).put("level", 4).put("levelName", "info").put("time", 2L).put("text", "second"))
-                        JSONObject().put("id", id).put("ok", true).put(
-                            "result",
-                            JSONObject().put("outcome", "success").put("finished", true).put("console", JSONObject().put("count", 2).put("truncated", false).put("entries", entries)),
+                        source.startsWith("throw") -> ok(
+                            id,
+                            JSONObject().put("id", 4).put("sourceName", "demo").put("outcome", "exception").put("finished", true).put("waitedMs", 8)
+                                .put("error", "Error: boom (\$engine/demo.js#2)"),
                         )
+                        else -> {
+                            val entries = JSONArray().put(JSONObject().put("id", 1).put("level", 4).put("levelName", "info").put("time", 1L).put("text", "first"))
+                                .put(JSONObject().put("id", 2).put("level", 4).put("levelName", "info").put("time", 2L).put("text", "second"))
+                            ok(
+                                id,
+                                JSONObject().put("id", 3).put("sourceName", "demo").put("engineName", "rhino").put("outcome", "success").put("finished", true).put("waitedMs", 12)
+                                    .put("console", JSONObject().put("count", 2).put("truncated", false).put("entries", entries)),
+                            )
+                        }
                     }
+                }
+                "engines.execScriptFile" -> ok(
+                    id,
+                    JSONObject().put("id", 7).put("sourceName", "run.js").put("outcome", "running").put("finished", false).put("waitedMs", 0)
+                        .put("console", JSONObject().put("count", 0).put("truncated", false).put("entries", JSONArray())),
+                )
+                "engines.list" -> ok(
+                    id,
+                    JSONObject().put("schema", "autojs6-bridge-engines-list-v1").put("scope", "host").put("count", 1).put(
+                        "executions",
+                        JSONArray().put(
+                            JSONObject().put("id", 7).put("engineName", "rhino").put("sourceName", "run.js").put("sourcePath", "demo/run.js")
+                                .put("workingDirectory", "/sdcard/Scripts").put("state", "running").put("startedAt", 1L).put("uptimeMs", 5L),
+                        ),
+                    ),
+                )
+                "engines.stop" -> ok(
+                    id,
+                    JSONObject().put("schema", "autojs6-bridge-engines-stop-v1").put("scope", "host").put("id", json.getJSONArray("args").getInt(0))
+                        .put("sourceName", "run.js").put("state", "finished").put("stopped", true),
+                )
+                "engines.stopAll" -> ok(
+                    id,
+                    JSONObject().put("schema", "autojs6-bridge-engines-stop-all-v1").put("scope", json.getJSONArray("args").getJSONObject(0).getString("scope")).put("stopped", 2),
+                )
+                "console.tail" -> {
+                    val options = json.getJSONArray("args").getJSONObject(0)
+                    val entries = JSONArray().put(JSONObject().put("id", 8).put("level", 5).put("levelName", "warn").put("time", 8L).put("text", "w1"))
+                        .put(JSONObject().put("id", 9).put("level", 6).put("levelName", "error").put("time", 9L).put("text", "e1"))
+                    ok(
+                        id,
+                        JSONObject().put("schema", "autojs6-bridge-console-tail-v1").put("lines", options.optInt("lines")).put("count", 2)
+                            .put("nextSinceId", 9).put("latestId", 9).put("total", 40).put("truncated", false).put("entries", entries),
+                    )
                 }
                 else -> JSONObject().put("id", id).put("ok", false).put("error", JSONObject().put("name", "Error").put("message", "not granted").put("code", "x").put("category", "capability-denied"))
             }
-            callback?.onResponse(Bundle().apply {
+            val reply = Bundle().apply {
                 putString(McpServerContract.KEY_BRIDGE_RESPONSE_JSON, response.toString())
                 putBoolean(McpServerContract.KEY_BRIDGE_RESPONSE_OK, response.getBoolean("ok"))
                 if (!response.getBoolean("ok")) putString(McpServerContract.KEY_BRIDGE_ERROR_MESSAGE, response.getJSONObject("error").getString("message"))
-            })
+            }
+            // A script source starting with "slow" answers after SLOW_SCRIPT_MS so the 2 s script heartbeat fires.
+            val slow = json.getString("method") == "execScript" && json.getJSONArray("args").getString(1).startsWith("slow")
+            if (slow) Thread { Thread.sleep(SLOW_SCRIPT_MS); callback?.onResponse(reply) }.start() else callback?.onResponse(reply)
         }
 
         override fun destroy(reason: Bundle?) = Unit
+
+        private fun ok(id: String, result: JSONObject): JSONObject = JSONObject().put("id", id).put("ok", true).put("result", result)
     }
 
     private class RecordingCallback : IMcpServerCallback.Stub() {
@@ -387,21 +507,23 @@ class McpServerHostSessionTest {
         val headers = connection.headerFields.filterKeys { it != null }.map { (name, values) -> name.lowercase() to values.joinToString(",") }.toMap()
         val stream = if (status >= 400) connection.errorStream else connection.inputStream
         val contentType = connection.contentType.orEmpty()
-        val text = stream?.bufferedReader()?.use { reader ->
-            if (contentType.startsWith("text/event-stream")) reader.readFirstSseData() else reader.readText()
+        val events = stream?.bufferedReader()?.use { reader ->
+            if (contentType.startsWith("text/event-stream")) reader.readSseData() else listOf(reader.readText())
         }.orEmpty()
         connection.disconnect()
-        return Response(status, headers, text)
+        return Response(status, headers, events.lastOrNull().orEmpty(), events)
     }
 
-    private fun BufferedReader.readFirstSseData(): String {
+    /** Every `data:` payload of the response stream; the last one is the JSON-RPC response. */
+    private fun BufferedReader.readSseData(): List<String> {
+        val data = mutableListOf<String>()
         while (true) {
-            val line = readLine() ?: return ""
-            if (line.startsWith("data:")) return line.removePrefix("data:").trim()
+            val line = readLine() ?: return data
+            if (line.startsWith("data:")) line.removePrefix("data:").trim().takeIf { it.isNotEmpty() }?.let { data += it }
         }
     }
 
-    private class Response(val status: Int, val headers: Map<String, String>, val body: String) {
+    private class Response(val status: Int, val headers: Map<String, String>, val body: String, val events: List<String> = emptyList()) {
         fun header(name: String): String? = headers[name.lowercase()]
         fun json(): JSONObject = JSONObject(body)
     }
@@ -423,5 +545,6 @@ class McpServerHostSessionTest {
         const val CLIENT_NAME = "McpServerHostSessionTest"
         const val PROTOCOL_VERSION = "2025-06-18"
         const val PORT = 9639
+        const val SLOW_SCRIPT_MS = 2_600L
     }
 }

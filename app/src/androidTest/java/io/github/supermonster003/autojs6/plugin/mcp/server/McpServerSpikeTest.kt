@@ -270,12 +270,13 @@ class McpServerSpikeTest {
         return Response(status, headers, text)
     }
 
-    /** Reads until the first `data:` line, which carries the JSON-RPC response of a POST. */
+    /** Reads until the first non-empty `data:` payload, which carries the JSON-RPC response of a POST. */
     private fun BufferedReader.readFirstSseData(): String {
         while (true) {
             val line = readLine() ?: return ""
             if (line.startsWith("data:")) {
-                return line.removePrefix("data:").trim()
+                val payload = line.removePrefix("data:").trim()
+                if (payload.isNotEmpty()) return payload
             }
         }
     }
