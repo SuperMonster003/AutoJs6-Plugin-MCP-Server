@@ -23,7 +23,7 @@ class ToolCatalogTest {
         names.forEach { name ->
             assertTrue(name, Regex("^[a-z]+(_[a-z]+)+$").matches(name))
         }
-        assertEquals(listOf("device_ping", "device_info", "script_run"), names)
+        assertEquals(listOf("device_ping", "device_info", "script_run", "script_run_file", "script_stop", "script_stop_all", "script_list", "console_tail"), names)
         assertEquals(ToolCatalog.all, ToolCatalog.byName.values.toList())
     }
 
@@ -66,9 +66,12 @@ class ToolCatalogTest {
 
     @Test
     fun `enabled rows follow the group switches and keep the catalog order`() {
-        assertEquals(listOf("device_ping", "device_info", "script_run"), ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name })
+        assertEquals(ToolCatalog.all.map { it.name }, ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name })
         assertEquals(listOf("device_ping", "device_info"), ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.SCRIPT, false)).map { it.name })
-        assertEquals(listOf("script_run"), ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.DEVICE, false)).map { it.name })
+        assertEquals(
+            listOf("script_run", "script_run_file", "script_stop", "script_stop_all", "script_list", "console_tail"),
+            ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.DEVICE, false)).map { it.name },
+        )
         assertEquals(listOf(ToolGroup.SCRIPT, ToolGroup.DEVICE), ToolCatalog.groups)
         assertEquals(
             """{"script":true,"ui":true,"ui_gesture":false,"screen":true,"files":true,"files_delete":false,"device":true,"shell":false}""",
@@ -106,6 +109,41 @@ class ToolCatalogTest {
         assertEquals(listOf("device"), ToolCatalog.deviceInfo.permissions)
         assertTrue(ToolCatalog.deviceInfo.hints.readOnly)
         assertTrue(ToolCatalog.deviceInfo.properties.isEmpty())
+    }
+
+    @Test
+    fun `the script group rows of P3_1 map onto the host engines and console methods`() {
+        val runFile = ToolCatalog.scriptRunFile
+        assertEquals(BridgeMethod("engines", "execScriptFile"), runFile.bridge)
+        assertEquals(listOf("path"), runFile.required)
+        assertEquals(ToolCatalog.scriptRun.properties.keys - setOf("source", "name"), runFile.properties.keys - setOf("path"))
+        assertEquals(listOf("engines", "engines.exec"), runFile.permissions)
+        assertEquals(McpServerContract.MAX_TOOL_TIMEOUT_MS, runFile.maxTimeoutMs)
+        assertTrue(runFile.hints.openWorld)
+
+        assertEquals(BridgeMethod("engines", "stop"), ToolCatalog.scriptStop.bridge)
+        assertEquals(listOf("executionId"), ToolCatalog.scriptStop.required)
+        assertEquals("integer", ToolCatalog.scriptStop.propertyType("executionId"))
+        assertEquals(BridgeMethod("engines", "stopAll"), ToolCatalog.scriptStopAll.bridge)
+        assertTrue(ToolCatalog.scriptStopAll.hints.destructive)
+        assertTrue(ToolCatalog.scriptStopAll.properties.isEmpty())
+        assertEquals(BridgeMethod("engines", "list"), ToolCatalog.scriptList.bridge)
+        assertTrue(ToolCatalog.scriptList.hints.readOnly && ToolCatalog.scriptList.hints.idempotent)
+        assertEquals(BridgeMethod("console", "tail"), ToolCatalog.consoleTail.bridge)
+        assertEquals(listOf("console"), ToolCatalog.consoleTail.permissions)
+        assertTrue(ToolCatalog.consoleTail.hints.readOnly)
+        val lines = ToolCatalog.consoleTail.properties["lines"] as JsonObject
+        assertEquals(1L, lines["minimum"]?.jsonPrimitive?.content?.toLong())
+        assertEquals(McpServerContract.MAX_CONSOLE_TAIL_LINES.toLong(), lines["maximum"]?.jsonPrimitive?.content?.toLong())
+        assertEquals(100L, lines["default"]?.jsonPrimitive?.content?.toLong())
+        val levels = (ToolCatalog.consoleTail.properties["level"] as JsonObject)["enum"] as JsonArray
+        assertEquals(listOf("verbose", "debug", "info", "warn", "error", "assert"), levels.map { it.jsonPrimitive.content })
+        assertEquals("integer", ToolCatalog.consoleTail.propertyType("sinceId"))
+        listOf(ToolCatalog.scriptStop, ToolCatalog.scriptStopAll, ToolCatalog.scriptList, ToolCatalog.consoleTail).forEach { spec ->
+            assertEquals(spec.name, ToolGroup.SCRIPT, spec.group)
+            assertEquals(spec.name, 10_000L, spec.timeoutMs)
+            assertEquals(spec.name, listOf("engines"), spec.permissions.takeIf { spec.bridge?.module == "engines" } ?: listOf("engines"))
+        }
     }
 
     @Test
