@@ -33,18 +33,22 @@ import kotlinx.io.readByteArray
  * `initialize` negotiation (`2025-06-18` / `2025-11-25`), the `Mcp-Session-Id` header, and the
  * `DELETE` session close are the SDK's behaviour; the SDK's own DNS rebinding validator is off
  * because [policy] changes at runtime (LAN addresses) and the gate covers every route. A null
- * [tokenProvider] or [pairingGate] leaves that layer out, which only the JVM tests use.
+ * [tokenProvider], [pairingGate], or [toolGate] leaves that layer out, which only the JVM tests
+ * and the default `device_ping`-only listener use. The tool gate (roadmap P2.3) runs last, after
+ * the client is admitted, so unpaired clients learn nothing about the catalog.
  */
 fun Application.mcpServerModule(
     server: Server,
     policy: () -> GatePolicy,
     tokenProvider: (() -> String?)? = null,
     pairingGate: PairingGate? = null,
+    toolGate: ToolGate? = null,
     path: String = McpServerPlugin.ENDPOINT_PATH,
 ) {
     installRequestGate(policy)
     if (tokenProvider != null) installBearerAuth(tokenProvider)
     if (pairingGate != null) installPairingGate(server, pairingGate)
+    if (toolGate != null) installToolGate(toolGate)
     mcpStreamableHttp(path, false) { server }
 }
 

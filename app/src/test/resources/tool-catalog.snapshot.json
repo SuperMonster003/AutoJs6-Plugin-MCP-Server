@@ -1,0 +1,130 @@
+[
+  {
+    "name": "device_ping",
+    "title": "Device ping",
+    "description": "Confirms that the AutoJs6 MCP Server plugin is reachable and returns its version, the device model, the Android API level, and the device time.",
+    "group": "device",
+    "defaultEnabled": true,
+    "bridge": "local",
+    "permissions": [],
+    "timeoutMs": 5000,
+    "maxTimeoutMs": 5000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "device_info",
+    "title": "Device info",
+    "description": "Returns the device build, screen, battery, memory, AutoJs6 host version and process, accessibility service state, screen state, locale, and time zone as AutoJs6 reports them (schema autojs6-bridge-device-info-v1). No hardware identifiers.",
+    "group": "device",
+    "defaultEnabled": true,
+    "bridge": "device.info",
+    "permissions": [
+      "device"
+    ],
+    "timeoutMs": 10000,
+    "maxTimeoutMs": 10000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "script_run",
+    "title": "Run script",
+    "description": "Runs JavaScript source in AutoJs6 (its Rhino engine with the full AutoJs6 API), by default waits for the script to finish, and returns the outcome plus the console lines it printed. Use it for automation steps: toasts, UI actions, file work, app launches. Long-running scripts keep running after the wait; the result then says outcome = running.",
+    "group": "script",
+    "defaultEnabled": true,
+    "bridge": "engines.execScript",
+    "permissions": [
+      "engines",
+      "engines.exec"
+    ],
+    "timeoutMs": 60000,
+    "maxTimeoutMs": 300000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "JavaScript source to execute",
+          "maxLength": 524288
+        },
+        "name": {
+          "type": "string",
+          "description": "Script name shown in the AutoJs6 task list; AutoJs6 appends .js itself, a given .js suffix is dropped",
+          "maxLength": 128,
+          "default": "mcp_script"
+        },
+        "workingDirectory": {
+          "type": "string",
+          "description": "POSIX-style path relative to the AutoJs6 working directory; the script cannot escape it",
+          "maxLength": 512,
+          "default": "."
+        },
+        "arguments": {
+          "type": "object",
+          "description": "Values exposed to the script through engines.myEngine().execArgv",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "null"
+            ]
+          }
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "How long to wait for the script to finish, in milliseconds",
+          "minimum": 1000,
+          "maximum": 300000,
+          "default": 60000
+        },
+        "waitForCompletion": {
+          "type": "boolean",
+          "description": "Wait for the script to finish before answering",
+          "default": true
+        },
+        "captureConsole": {
+          "type": "boolean",
+          "description": "Include the console lines printed while the script ran",
+          "default": true
+        },
+        "maxConsoleLines": {
+          "type": "integer",
+          "description": "Keep at most this many of the newest console lines",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 200
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "additionalProperties": false
+    }
+  }
+]

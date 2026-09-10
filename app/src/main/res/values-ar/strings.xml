@@ -10,4 +10,13 @@
     <string name="pairing_notification_text">%1$s من %2$s (ينتهي الرمز بـ %3$s) في انتظار تأكيدك</string>
     <string name="pairing_notification_title">عميل MCP يطلب الاقتران</string>
     <string name="plugin_description">يتيح أتمتة الجهاز لوكلاء الذكاء الاصطناعي عبر Model Context Protocol</string>
+    <string name="server_action_stop">إيقاف</string>
+    <string name="server_host_connected">AutoJs6 متصل</string>
+    <string name="server_host_disconnected">في انتظار AutoJs6</string>
+    <string name="server_listening">يستمع على %1$s</string>
+    <string name="server_notifications_disabled">الإشعارات متوقفة; خادم MCP يستمع على %1$s</string>
+    <string name="server_paired_clients">العملاء المقترنون: %1$d</string>
+    <string name="server_state_failed">لم يبدأ: %1$s</string>
+    <string name="server_state_starting">جارٍ بدء خادم MCP</string>
+    <string name="server_state_stopped">توقف خادم MCP</string>
 </resources>
