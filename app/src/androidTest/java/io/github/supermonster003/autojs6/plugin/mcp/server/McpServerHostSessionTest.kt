@@ -49,6 +49,9 @@ import java.util.concurrent.CopyOnWriteArrayList
  * broker with the documented envelope -> host failures map onto plugin codes -> a switched-off
  * group hides its tools and answers `TOOL_DISABLED` -> `stop` / `close` end the listener; plus
  * `already_open`, `invalid_config`, and tools without a host session answering `HOST_UNAVAILABLE`.
+ * Roadmap P3.2 adds the `ui` group: `ui_dump` -> compact text and `#n` references, `ui_click` by
+ * reference (relocation, exact selector), a stale reference, `ui_set_text`, `ui_scroll`,
+ * `ui_press_key` on the `keys` module, `ui_current_window`, and the `ui_gesture` switch (D22).
  */
 @RunWith(AndroidJUnit4::class)
 class McpServerHostSessionTest {
@@ -100,7 +103,7 @@ class McpServerHostSessionTest {
         val sessionId = init.header("mcp-session-id")
         post(initializedNotification(), sessionId)
         val names = toolNames(post(toolsListRequest(), sessionId))
-        assertEquals(ToolCatalog.all.map { it.name }, names)
+        assertEquals(ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name }, names)
         val listed = post(toolsListRequest(), sessionId).json().getJSONObject("result").getJSONArray("tools")
         val scriptRun = (0 until listed.length()).map { listed.getJSONObject(it) }.first { it.getString("name") == ToolCatalog.SCRIPT_RUN }
         assertEquals("object", scriptRun.getJSONObject("inputSchema").getString("type"))
@@ -235,12 +238,12 @@ class McpServerHostSessionTest {
         assertTrue(callback.events.any { it.getString(McpServerContract.KEY_EVENT_TOOL_NAME) == ToolCatalog.SCRIPT_RUN })
 
         ToolPermissionStore(context).save(ToolPermissions.DEFAULT.with(ToolGroup.SCRIPT, false))
-        assertEquals(listOf(ToolCatalog.DEVICE_PING, ToolCatalog.DEVICE_INFO), toolNames(post(toolsListRequest(), sessionId)))
+        assertEquals(ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.SCRIPT, false)).map { it.name }, toolNames(post(toolsListRequest(), sessionId)))
         val disabled = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN, """{"source":"x"}"""), sessionId).json().getJSONObject("result")
         assertTrue(disabled.getBoolean("isError"))
         assertTrue(disabled.getJSONArray("content").getJSONObject(0).getString("text").startsWith("TOOL_DISABLED: tool script_run is switched off by the script group"))
         ToolPermissionStore(context).save(ToolPermissions.DEFAULT)
-        assertEquals(ToolCatalog.all.map { it.name }, toolNames(post(toolsListRequest(), sessionId)))
+        assertEquals(ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name }, toolNames(post(toolsListRequest(), sessionId)))
 
         session.stop(reasonBundle(McpServerContract.REASON_USER_REQUEST))
         val stopped = session.status
@@ -252,6 +255,120 @@ class McpServerHostSessionTest {
         assertNull(runtime.bridge)
         assertFalse(runtime.hostAvailable)
         Log.i(TAG, "session stopped and closed; ${broker.requests.size} broker requests, ${callback.events.size} events")
+    }
+
+    @Test
+    fun uiToolsReachTheBrokerWithNodeReferencesAndTheGestureSwitch() {
+        val broker = FakeBroker()
+        val session = runtime.openSession(configBundle(PORT), broker, RecordingCallback(), Process.myUid())
+        awaitStatus(session) { it.getString(McpServerContract.KEY_STATUS_STATE) == McpServerContract.STATE_RUNNING }
+        val init = post(initializeRequest(), sessionId = null)
+        val sessionId = init.header("mcp-session-id")
+        post(initializedNotification(), sessionId)
+        val held = post(toolsCallRequest(ToolCatalog.UI_DUMP), sessionId)
+        assertTrue(runtime.server.pairingGate!!.approve(held.json().getJSONObject("error").getJSONObject("data").getString("fingerprint")))
+
+        // ui_dump: the host JSON nodes become the compact text and the #n references of snapshot s1.
+        val dump = post(toolsCallRequest(ToolCatalog.UI_DUMP, """{"maxNodes":50}"""), sessionId).json().getJSONObject("result")
+        assertFalse(dump.toString(), dump.optBoolean("isError"))
+        val dumpText = dump.getJSONArray("content").getJSONObject(0).getString("text")
+        assertEquals("window: com.android.settings/.Settings  bounds=[0,0][1080,2400]  nodes=3", dumpText.lines()[0])
+        assertEquals("#n2  RecyclerView scrollable id=list [0,200][1080,2400]", dumpText.lines()[2])
+        assertEquals("#n3   TextView clickable \"Wi-Fi\" c=(540,250)", dumpText.lines()[3])
+        val dumpResult = dump.getJSONObject("structuredContent")
+        assertEquals("s1", dumpResult.getString("snapshotId"))
+        assertEquals(3, dumpResult.getInt("nodeCount"))
+        assertEquals("com.android.settings", dumpResult.getJSONObject("window").getString("packageName"))
+        val dumpRequest = broker.requests.last()
+        assertEquals("accessibility", dumpRequest.getString("module"))
+        assertEquals("dump", dumpRequest.getString("method"))
+        assertEquals("json", dumpRequest.getJSONArray("args").getJSONObject(0).getString("format"))
+        assertEquals(50, dumpRequest.getJSONArray("args").getJSONObject(0).getInt("maxNodes"))
+        assertEquals(listOf("accessibility"), dumpRequest.getJSONArray("permissions").toStringList())
+        assertEquals(20_000L, dumpRequest.getLong("timeoutMs"))
+        Log.i(TAG, "ui_dump through the broker:\n$dumpText")
+
+        // ui_click by nodeRef: relocation by fingerprint (the node drifted 10 px), then the exact selector.
+        val click = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"nodeRef":"#n3"}"""), sessionId).json().getJSONObject("result")
+        assertFalse(click.toString(), click.optBoolean("isError"))
+        val clickResult = click.getJSONObject("structuredContent")
+        assertEquals("click", clickResult.getString("action"))
+        assertEquals("nodeRef", clickResult.getString("via"))
+        assertEquals("#n3", clickResult.getJSONObject("target").getString("ref"))
+        assertEquals(210, clickResult.getJSONObject("target").getJSONObject("bounds").getInt("top"))
+        val relocation = broker.requests[broker.requests.size - 2]
+        assertEquals("findAll", relocation.getString("method"))
+        val relocationSelector = relocation.getJSONArray("args").getJSONObject(0)
+        assertEquals("Wi-Fi", relocationSelector.getString("text"))
+        assertEquals("android.widget.TextView", relocationSelector.getString("className"))
+        assertEquals(152, relocationSelector.getJSONObject("boundsInside").getInt("top"))
+        val clickRequest = broker.requests.last()
+        assertEquals("click", clickRequest.getString("method"))
+        val exact = clickRequest.getJSONArray("args").getJSONObject(0)
+        assertEquals(210, exact.getJSONObject("boundsInside").getInt("top"))
+        assertEquals(210, exact.getJSONObject("boundsContains").getInt("top"))
+        Log.i(TAG, "ui_click #n3: relocation $relocationSelector -> exact $exact")
+
+        val stale = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"nodeRef":"#n9"}"""), sessionId).json().getJSONObject("result")
+        assertTrue(stale.getBoolean("isError"))
+        val staleText = stale.getJSONArray("content").getJSONObject(0).getString("text")
+        assertTrue(staleText, staleText.startsWith("NODE_REF_STALE: #n9 is not in the current snapshot s1"))
+        assertEquals("NODE_REF_STALE", stale.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
+
+        val setText = post(toolsCallRequest(ToolCatalog.UI_SET_TEXT, """{"selector":{"id":"search"},"text":" more","append":true}"""), sessionId).json().getJSONObject("result")
+        assertFalse(setText.toString(), setText.optBoolean("isError"))
+        assertEquals("old more", setText.getJSONObject("structuredContent").getString("text"))
+        assertEquals("selector", setText.getJSONObject("structuredContent").getString("via"))
+        val setTextRequest = broker.requests.last()
+        assertEquals("setText", setTextRequest.getString("method"))
+        assertEquals("old more", setTextRequest.getJSONArray("args").getString(1))
+        assertTrue(setTextRequest.getJSONArray("args").getJSONObject(0).getString("idMatches").contains("search"))
+
+        val scroll = post(toolsCallRequest(ToolCatalog.UI_SCROLL, """{"direction":"down","times":3}"""), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        assertEquals(1, scroll.getInt("performed"))
+        assertEquals(3, scroll.getInt("requested"))
+        assertTrue(scroll.getBoolean("atEnd"))
+        assertEquals("scrollable", scroll.getString("via"))
+        assertEquals(2, broker.requests.count { it.getString("method") == "scrollForward" })
+
+        val key = post(toolsCallRequest(ToolCatalog.UI_PRESS_KEY, """{"key":"notifications"}"""), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        assertTrue(key.getBoolean("performed"))
+        assertEquals("keys", broker.requests.last().getString("module"))
+        assertEquals("notifications", broker.requests.last().getString("method"))
+        assertEquals(listOf("keys"), broker.requests.last().getJSONArray("permissions").toStringList())
+
+        val window = post(toolsCallRequest(ToolCatalog.UI_CURRENT_WINDOW), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        assertEquals("com.android.settings", window.getString("packageName"))
+        assertFalse(window.has("schema"))
+        assertEquals(listOf("app.query", "accessibility"), broker.requests.last().getJSONArray("permissions").toStringList())
+
+        // Decision D22: the coordinate form and the ui_gesture tools follow the ui_gesture switch.
+        val coordinates = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"x":10,"y":20}"""), sessionId).json().getJSONObject("result")
+        assertTrue(coordinates.getBoolean("isError"))
+        assertTrue(coordinates.getJSONArray("content").getJSONObject(0).getString("text").startsWith("TOOL_DISABLED: ui_click with x and y is a coordinate gesture"))
+        val swipeOff = post(toolsCallRequest(ToolCatalog.UI_SWIPE, """{"x1":1,"y1":2,"x2":3,"y2":4}"""), sessionId).json().getJSONObject("result")
+        assertTrue(swipeOff.getJSONArray("content").getJSONObject(0).getString("text").startsWith("TOOL_DISABLED: tool ui_swipe is switched off by the ui_gesture group"))
+        assertFalse(toolNames(post(toolsListRequest(), sessionId)).contains(ToolCatalog.UI_SWIPE))
+        val requestsBeforeGate = broker.requests.size
+
+        ToolPermissionStore(context).save(ToolPermissions.DEFAULT.with(ToolGroup.UI_GESTURE, true))
+        assertEquals(ToolCatalog.all.map { it.name }, toolNames(post(toolsListRequest(), sessionId)))
+        val tap = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"x":10,"y":20}"""), sessionId).json().getJSONObject("result")
+        assertFalse(tap.toString(), tap.optBoolean("isError"))
+        assertEquals("coordinates", tap.getJSONObject("structuredContent").getString("via"))
+        val tapRequest = broker.requests.last()
+        assertEquals("swipe", tapRequest.getString("method"))
+        assertEquals(listOf(10, 20, 10, 20, 100), (0 until 5).map { tapRequest.getJSONArray("args").getInt(it) })
+        assertEquals(listOf("accessibility", "accessibility.gesture"), tapRequest.getJSONArray("permissions").toStringList())
+        val swipe = post(toolsCallRequest(ToolCatalog.UI_SWIPE, """{"x1":100,"y1":1500,"x2":100,"y2":500}"""), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        assertTrue(swipe.getBoolean("performed"))
+        assertEquals(300, swipe.getInt("durationMs"))
+        assertEquals(100, broker.requests.last().getJSONArray("args").getInt(0))
+        Log.i(TAG, "ui group through the broker: dump, click (nodeRef), stale ref, set_text, scroll, press_key, current_window, gate ($requestsBeforeGate requests before it), tap, swipe; ${broker.requests.size} broker requests")
+
+        session.stop(reasonBundle(McpServerContract.REASON_USER_REQUEST))
+        awaitPort(open = false)
+        session.close()
     }
 
     @Test
@@ -319,17 +436,22 @@ class McpServerHostSessionTest {
 
         val requests = CopyOnWriteArrayList<JSONObject>()
         val clientNames = CopyOnWriteArrayList<String?>()
+        private var scrolls = 0
 
         override fun getBrokerInfo(): Bundle = Bundle().apply {
             putInt(McpServerContract.KEY_CONTRACT_VERSION, McpServerContract.CONTRACT_VERSION)
             putInt(McpServerContract.KEY_HOST_CAPABILITY_BROKER_VERSION, McpServerContract.HOST_CAPABILITY_BROKER_CONTRACT_VERSION)
             putString(McpServerContract.KEY_HOST_CAPABILITY_BROKER_ID, "fake-broker")
-            putStringArray(McpServerContract.KEY_HOST_CAPABILITY_MODULES, arrayOf("device", "engines", "console"))
+            putStringArray(McpServerContract.KEY_HOST_CAPABILITY_MODULES, arrayOf("device", "engines", "console", "accessibility", "keys", "app"))
             putStringArray(
                 McpServerContract.KEY_GRANT_METHODS,
-                arrayOf("device.info", "engines.execScript", "engines.execScriptFile", "engines.list", "engines.stop", "engines.stopAll", "console.tail"),
+                arrayOf(
+                    "device.info", "engines.execScript", "engines.execScriptFile", "engines.list", "engines.stop", "engines.stopAll", "console.tail",
+                    "accessibility.dump", "accessibility.findAll", "accessibility.findOne", "accessibility.click", "accessibility.setText",
+                    "accessibility.scrollForward", "accessibility.swipe", "accessibility.back", "keys.notifications", "app.currentWindow",
+                ),
             )
-            putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console"))
+            putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query"))
             putInt(McpServerContract.KEY_GRANT_MAX_REQUEST_BYTES, McpServerContract.MAX_BRIDGE_INLINE_JSON_BYTES)
             putInt(McpServerContract.KEY_GRANT_MAX_CONCURRENT_CALLS, McpServerContract.MAX_CONCURRENT_TOOL_CALLS)
             putLong(McpServerContract.KEY_GRANT_DEFAULT_TIMEOUT_MS, McpServerContract.DEFAULT_TOOL_TIMEOUT_MS)
@@ -403,6 +525,38 @@ class McpServerHostSessionTest {
                             .put("nextSinceId", 9).put("latestId", 9).put("total", 40).put("truncated", false).put("entries", entries),
                     )
                 }
+                "accessibility.dump" -> ok(
+                    id,
+                    JSONObject().put("schema", "autojs6-bridge-accessibility-dump-v1").put("format", "json").put("window", "active").put("roots", 1)
+                        .put("packageName", "com.android.settings").put("activityName", "com.android.settings.Settings").put("nodeCount", 3).put("truncated", false)
+                        .put(
+                            "nodes",
+                            JSONArray()
+                                .put(uiNode("android.widget.FrameLayout", "", "", 0, 0, 1080, 2400, depth = 0, childCount = 1))
+                                .put(uiNode("androidx.recyclerview.widget.RecyclerView", "", "com.android.settings:id/list", 0, 200, 1080, 2400, depth = 1, childCount = 1, scrollable = true))
+                                .put(uiNode("android.widget.TextView", "Wi-Fi", "", 0, 200, 1080, 300, depth = 2, clickable = true)),
+                        ),
+                )
+                "accessibility.findAll" -> {
+                    val selector = json.getJSONArray("args").getJSONObject(0)
+                    ok(id, JSONArray().apply { if (selector.optString("text") == "Wi-Fi") put(uiNode("android.widget.TextView", "Wi-Fi", "", 0, 210, 1080, 310, depth = 2, clickable = true)) })
+                }
+                "accessibility.findOne" -> {
+                    val selector = json.getJSONArray("args").getJSONObject(0)
+                    val node = when {
+                        selector.optBoolean("scrollable") -> uiNode("androidx.recyclerview.widget.RecyclerView", "", "com.android.settings:id/list", 0, 200, 1080, 2400, depth = 1, childCount = 1, scrollable = true)
+                        selector.has("idMatches") -> uiNode("android.widget.EditText", "old", "com.android.settings:id/search", 0, 100, 1080, 180, depth = 2)
+                        else -> null
+                    }
+                    ok(id, node ?: JSONObject.NULL)
+                }
+                "accessibility.click", "accessibility.setText", "accessibility.swipe", "accessibility.back", "keys.notifications" -> ok(id, true)
+                "accessibility.scrollForward" -> ok(id, scrolls++ == 0)
+                "app.currentWindow" -> ok(
+                    id,
+                    JSONObject().put("schema", "autojs6-bridge-app-current-window-v1").put("packageName", "com.android.settings")
+                        .put("activityName", "com.android.settings.Settings").put("accessibilityAvailable", true).put("windows", JSONArray()),
+                )
                 else -> JSONObject().put("id", id).put("ok", false).put("error", JSONObject().put("name", "Error").put("message", "not granted").put("code", "x").put("category", "capability-denied"))
             }
             val reply = Bundle().apply {
@@ -417,7 +571,17 @@ class McpServerHostSessionTest {
 
         override fun destroy(reason: Bundle?) = Unit
 
-        private fun ok(id: String, result: JSONObject): JSONObject = JSONObject().put("id", id).put("ok", true).put("result", result)
+        private fun ok(id: String, result: Any): JSONObject = JSONObject().put("id", id).put("ok", true).put("result", result)
+
+        /** One node of the host dump JSON (`BridgeNodeDump` entries with the P3.2 state flags). */
+        private fun uiNode(
+            className: String, text: String, id: String, left: Int, top: Int, right: Int, bottom: Int,
+            depth: Int = 0, childCount: Int = 0, clickable: Boolean = false, scrollable: Boolean = false,
+        ): JSONObject = JSONObject().put("className", className).put("text", text).put("desc", "").put("id", id)
+            .put("bounds", JSONObject().put("left", left).put("top", top).put("right", right).put("bottom", bottom))
+            .put("clickable", clickable).put("enabled", true).put("root", 0).put("depth", depth).put("index", if (depth == 0) -1 else 0)
+            .put("childCount", childCount).put("visible", true).put("scrollable", scrollable).put("checkable", false).put("checked", false)
+            .put("editable", className.endsWith("EditText")).put("focused", false).put("selected", false).put("longClickable", false)
     }
 
     private class RecordingCallback : IMcpServerCallback.Stub() {

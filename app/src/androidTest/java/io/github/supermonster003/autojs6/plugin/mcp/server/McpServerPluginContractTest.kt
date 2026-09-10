@@ -144,7 +144,7 @@ class McpServerPluginContractTest {
     private fun assertCapabilities(capabilities: Bundle) {
         assertEquals(McpServerPlugin.REQUIRED_HOST_VERSION, capabilities.getLong(PluginCapabilityKeys.REQUIRES_HOST_VERSION))
         assertEquals(McpServerContract.CONTRACT_VERSION, capabilities.getInt(McpServerCapabilityKeys.CONTRACT_VERSION))
-        assertArrayEquals(arrayOf("script", "device"), capabilities.getStringArray(McpServerCapabilityKeys.TOOL_GROUPS))
+        assertArrayEquals(arrayOf("script", "ui", "ui_gesture", "device"), capabilities.getStringArray(McpServerCapabilityKeys.TOOL_GROUPS))
         val protocolVersions = requireNotNull(capabilities.getStringArray(McpServerCapabilityKeys.PROTOCOL_VERSIONS))
         assertTrue(protocolVersions.contains("2025-06-18"))
         assertEquals(McpServerPlugin.SDK_VERSION, capabilities.getString(McpServerCapabilityKeys.SDK_VERSION))

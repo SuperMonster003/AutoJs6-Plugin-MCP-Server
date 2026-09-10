@@ -11,8 +11,8 @@ import org.autojs.plugin.mcp.server.api.McpServerContract
 /**
  * The tool table of the plugin (appendix A.2). P2.3 shipped the minimal set that proves the whole
  * path (`device_ping` locally, `device_info` and `script_run` through the host); P3.1 completes the
- * `script` group. Later phases append rows. `ToolCatalogTest` guards names, schemas, defaults, and
- * a snapshot.
+ * `script` group; P3.2 adds the `ui` and `ui_gesture` groups, whose rows run as `UiTools` flows.
+ * Later phases append rows. `ToolCatalogTest` guards names, schemas, defaults, and a snapshot.
  */
 object ToolCatalog {
 
@@ -24,6 +24,18 @@ object ToolCatalog {
     const val SCRIPT_STOP_ALL = "script_stop_all"
     const val SCRIPT_LIST = "script_list"
     const val CONSOLE_TAIL = "console_tail"
+    const val UI_DUMP = "ui_dump"
+    const val UI_FIND = "ui_find"
+    const val UI_CURRENT_WINDOW = "ui_current_window"
+    const val UI_EXPLAIN_SELECTOR = "ui_explain_selector"
+    const val UI_WAIT_FOR = "ui_wait_for"
+    const val UI_CLICK = "ui_click"
+    const val UI_LONG_CLICK = "ui_long_click"
+    const val UI_SET_TEXT = "ui_set_text"
+    const val UI_SCROLL = "ui_scroll"
+    const val UI_PRESS_KEY = "ui_press_key"
+    const val UI_SWIPE = "ui_swipe"
+    const val UI_GESTURE = "ui_gesture"
 
     /** `script_run` / `script_run_file` argument names and bounds, shared with the executor and the tests. */
     object ScriptRun {
@@ -62,6 +74,72 @@ object ToolCatalog {
         const val LEVEL = "level"
         const val DEFAULT_LINES = 100L
         val LEVELS: List<String> = listOf("verbose", "debug", "info", "warn", "error", "assert")
+    }
+
+    /** `ui_*` argument names, enumerations, and bounds (roadmap P3.2), shared with `UiTools` and the tests. */
+    object Ui {
+        const val FORMAT = "format"
+        const val MAX_DEPTH = "maxDepth"
+        const val MAX_NODES = "maxNodes"
+        const val VISIBLE_ONLY = "visibleOnly"
+        const val WINDOW = "window"
+        const val SELECTOR = "selector"
+        const val NODE_REF = "nodeRef"
+        const val LIMIT = "limit"
+        const val TIMEOUT_MS = "timeoutMs"
+        const val STATE = "state"
+        const val X = "x"
+        const val Y = "y"
+        const val TEXT = "text"
+        const val APPEND = "append"
+        const val DIRECTION = "direction"
+        const val TIMES = "times"
+        const val KEY = "key"
+        const val X1 = "x1"
+        const val Y1 = "y1"
+        const val X2 = "x2"
+        const val Y2 = "y2"
+        const val DURATION_MS = "durationMs"
+        const val POINTS = "points"
+
+        const val FORMAT_TEXT = "text"
+        const val FORMAT_JSON = "json"
+        const val FORMAT_XML = "xml"
+        val FORMATS: List<String> = listOf(FORMAT_TEXT, FORMAT_JSON, FORMAT_XML)
+        const val WINDOW_ACTIVE = "active"
+        const val WINDOW_ALL = "all"
+        val WINDOWS: List<String> = listOf(WINDOW_ACTIVE, WINDOW_ALL)
+        const val STATE_APPEAR = "appear"
+        const val STATE_DISAPPEAR = "disappear"
+        val STATES: List<String> = listOf(STATE_APPEAR, STATE_DISAPPEAR)
+        const val DIRECTION_FORWARD = "forward"
+        val FORWARD_DIRECTIONS: Set<String> = setOf(DIRECTION_FORWARD, "down", "right")
+        val DIRECTIONS: List<String> = listOf(DIRECTION_FORWARD, "backward", "down", "up", "right", "left")
+        const val KEY_BACK = "back"
+        const val KEY_HOME = "home"
+        const val KEY_RECENTS = "recents"
+        const val KEY_NOTIFICATIONS = "notifications"
+        const val KEY_QUICK_SETTINGS = "quick_settings"
+        const val KEY_POWER_DIALOG = "power_dialog"
+        const val KEY_LOCK_SCREEN = "lock_screen"
+        val KEYS: List<String> = listOf(KEY_BACK, KEY_HOME, KEY_RECENTS, KEY_NOTIFICATIONS, KEY_QUICK_SETTINGS, KEY_POWER_DIALOG, KEY_LOCK_SCREEN)
+
+        const val DEFAULT_MAX_NODES = 200L
+        val MAX_NODES_LIMIT: Long = McpServerContract.MAX_DUMP_NODES.toLong()
+        const val DEFAULT_FIND_LIMIT = 10L
+        const val MAX_FIND_LIMIT = 100L
+        const val MAX_FIND_TIMEOUT_MS = 60_000L
+        const val DEFAULT_WAIT_TIMEOUT_MS = 10_000L
+        const val MIN_WAIT_TIMEOUT_MS = 100L
+        const val MAX_WAIT_TIMEOUT_MS = 120_000L
+        const val MAX_TIMES = 20L
+        const val MAX_TEXT_BYTES = 16 * 1024
+        const val MAX_COORDINATE = 65_535L
+        const val DEFAULT_SWIPE_DURATION_MS = 300L
+
+        /** The host limit `MAX_ACCESSIBILITY_GESTURE_DURATION_MS`; longer gestures are refused here. */
+        const val MAX_GESTURE_DURATION_MS = 10_000L
+        const val MAX_POINTS = 64
     }
 
     private const val RUN_RESULT = " The result carries executionId, status (finished, error, running), durationMs, " +
@@ -203,8 +281,241 @@ object ToolCatalog {
         hints = ToolHints(readOnly = true, idempotent = true),
     )
 
+
+    private const val NODE_REF_DESCRIPTION = "A #n reference from the last ui_dump (or ui_find / ui_wait_for); the node is found again by its class, text, " +
+            "description, id, and bounds, and NODE_REF_STALE asks for a new ui_dump when it is gone"
+    private const val TARGET_NOTE = " Give nodeRef or selector, not both."
+
+    val uiDump: ToolSpec = ToolSpec(
+        name = UI_DUMP,
+        title = "Dump UI tree",
+        description = "Dumps the accessibility node tree of the active window as compact text: one node per line with a #n reference, " +
+                "an indent per depth, the short class name, the state markers that apply (clickable, long_clickable, checkable, checked, " +
+                "scrollable, editable, focused, selected, !enabled, hidden), the text in quotes, desc=, id= (name part only), and the " +
+                "position (bounds [l,t][r,b] for a node with children, c=(x,y) for a leaf). Pass a #n reference as nodeRef to ui_click, " +
+                "ui_long_click, ui_set_text, or ui_scroll; references stay valid until the next ui_dump or for 60 s. Call it before acting " +
+                "and again after the screen changed. format json returns the nodes as objects with every flag; format xml returns the " +
+                "uiautomator-style export.",
+        inputSchema = JsonSchemas.objectSchema(
+            properties = linkedMapOf(
+                Ui.FORMAT to JsonSchemas.string("Output form", enum = Ui.FORMATS, default = Ui.FORMAT_TEXT),
+                Ui.MAX_DEPTH to JsonSchemas.integer("Deepest level below the window root to include", minimum = 0, maximum = McpServerContract.MAX_DUMP_DEPTH.toLong(), default = McpServerContract.MAX_DUMP_DEPTH.toLong()),
+                Ui.MAX_NODES to JsonSchemas.integer("Most nodes to include, in pre-order", minimum = 1, maximum = Ui.MAX_NODES_LIMIT, default = Ui.DEFAULT_MAX_NODES),
+                Ui.VISIBLE_ONLY to JsonSchemas.boolean("Skip nodes that are not visible to the user, with their subtrees", default = true),
+                Ui.WINDOW to JsonSchemas.string("The active window only, or every accessibility window (all)", enum = Ui.WINDOWS, default = Ui.WINDOW_ACTIVE),
+            ),
+        ),
+        group = ToolGroup.UI,
+        bridge = BridgeMethod("accessibility", "dump"),
+        permissions = listOf("accessibility"),
+        timeoutMs = 20_000L,
+        hints = ToolHints(readOnly = true, idempotent = true),
+    )
+
+    val uiFind: ToolSpec = ToolSpec(
+        name = UI_FIND,
+        title = "Find UI nodes",
+        description = "Finds the nodes of the active window that match every condition of the selector, optionally waiting up to " +
+                "timeoutMs for the first match, and returns up to limit of them with #n references, bounds, and center. An empty count " +
+                "is not an error; ui_explain_selector tells which condition fails.",
+        inputSchema = JsonSchemas.objectSchema(
+            properties = linkedMapOf(
+                Ui.SELECTOR to JsonSchemas.selector("The conditions a node must meet (all of them)"),
+                Ui.LIMIT to JsonSchemas.integer("Most nodes to return, in pre-order", minimum = 1, maximum = Ui.MAX_FIND_LIMIT, default = Ui.DEFAULT_FIND_LIMIT),
+                Ui.TIMEOUT_MS to JsonSchemas.integer("How long to keep looking for a first match, in milliseconds; 0 looks once", minimum = 0, maximum = Ui.MAX_FIND_TIMEOUT_MS, default = 0L),
+            ),
+            required = listOf(Ui.SELECTOR),
+        ),
+        group = ToolGroup.UI,
+        bridge = BridgeMethod("accessibility", "findAll"),
+        permissions = listOf("accessibility"),
+        timeoutMs = 15_000L,
+        maxTimeoutMs = Ui.MAX_FIND_TIMEOUT_MS + 15_000L,
+        hints = ToolHints(readOnly = true, idempotent = true),
+    )
+
+    val uiCurrentWindow: ToolSpec = ToolSpec(
+        name = UI_CURRENT_WINDOW,
+        title = "Current window",
+        description = "Returns the package and activity in the foreground, whether the AutoJs6 accessibility service is available, and " +
+                "the accessibility windows with their type, title, bounds, and focus.",
+        inputSchema = JsonSchemas.objectSchema(),
+        group = ToolGroup.UI,
+        bridge = BridgeMethod("app", "currentWindow"),
+        permissions = listOf("app.query", "accessibility"),
+        timeoutMs = 10_000L,
+        hints = ToolHints(readOnly = true, idempotent = true),
+    )
+
+    val uiExplainSelector: ToolSpec = ToolSpec(
+        name = UI_EXPLAIN_SELECTOR,
+        title = "Explain selector",
+        description = "Explains why a selector matches or not: evaluates its conditions one by one over the active window and reports " +
+                "how many nodes pass each step cumulatively, the first failing condition, the matches, and the near misses. Use it when " +
+                "ui_find returns nothing.",
+        inputSchema = JsonSchemas.objectSchema(
+            properties = linkedMapOf(Ui.SELECTOR to JsonSchemas.selector("The selector to explain")),
+            required = listOf(Ui.SELECTOR),
+        ),
+        group = ToolGroup.UI,
+        bridge = BridgeMethod("accessibility", "explain"),
+        permissions = listOf("accessibility"),
+        timeoutMs = 20_000L,
+        hints = ToolHints(readOnly = true, idempotent = true),
+    )
+
+    val uiWaitFor: ToolSpec = ToolSpec(
+        name = UI_WAIT_FOR,
+        title = "Wait for UI node",
+        description = "Waits until a node matching the selector appears (default) or disappears, polling the active window every 0.5 s " +
+                "for up to timeoutMs, and answers TIMEOUT when the state is not reached. Use it after an action that opens a screen or " +
+                "dismisses a dialog.",
+        inputSchema = JsonSchemas.objectSchema(
+            properties = linkedMapOf(
+                Ui.SELECTOR to JsonSchemas.selector("The conditions of the node to wait for"),
+                Ui.STATE to JsonSchemas.string("Wait for a match to appear or for every match to disappear", enum = Ui.STATES, default = Ui.STATE_APPEAR),
+                Ui.TIMEOUT_MS to JsonSchemas.integer("How long to wait, in milliseconds", minimum = Ui.MIN_WAIT_TIMEOUT_MS, maximum = Ui.MAX_WAIT_TIMEOUT_MS, default = Ui.DEFAULT_WAIT_TIMEOUT_MS),
+            ),
+            required = listOf(Ui.SELECTOR),
+        ),
+        group = ToolGroup.UI,
+        bridge = BridgeMethod("accessibility", "findOne"),
+        permissions = listOf("accessibility"),
+        timeoutMs = 20_000L,
+        maxTimeoutMs = Ui.MAX_WAIT_TIMEOUT_MS + 15_000L,
+        hints = ToolHints(readOnly = true, idempotent = true),
+    )
+
+    val uiClick: ToolSpec = ToolSpec(
+        name = UI_CLICK,
+        title = "Click",
+        description = "Clicks a node given by nodeRef (a #n reference from the last ui_dump), by selector (the first match in pre-order), " +
+                "or by x and y (a coordinate tap, allowed only while the ui_gesture group is enabled). The accessibility click climbs to " +
+                "the nearest clickable ancestor when the node itself is not clickable. Returns the node it acted on." + TARGET_NOTE,
+        inputSchema = JsonSchemas.objectSchema(properties = targetProperties(coordinates = true)),
+        group = ToolGroup.UI,
+        bridge = BridgeMethod("accessibility", "click"),
+        permissions = listOf("accessibility"),
+        timeoutMs = 20_000L,
+    )
+
+    val uiLongClick: ToolSpec = ToolSpec(
+        name = UI_LONG_CLICK,
+        title = "Long click",
+        description = "Long-presses a node given by nodeRef or selector (the accessibility long click climbs to the nearest node that " +
+                "accepts it), or by x and y as a 700 ms press at that point (allowed only while the ui_gesture group is enabled)." + TARGET_NOTE,
+        inputSchema = JsonSchemas.objectSchema(properties = targetProperties(coordinates = true)),
+        group = ToolGroup.UI,
+        bridge = BridgeMethod("accessibility", "longClick"),
+        permissions = listOf("accessibility"),
+        timeoutMs = 20_000L,
+    )
+
+    val uiSetText: ToolSpec = ToolSpec(
+        name = UI_SET_TEXT,
+        title = "Set text",
+        description = "Sets the text of an editable node (an EditText, marked editable by ui_dump) given by nodeRef or selector; append " +
+                "adds to the current text instead of replacing it. Works without focus or the keyboard; ACTION_FAILED means the node is " +
+                "not editable or not enabled." + TARGET_NOTE,
+        inputSchema = JsonSchemas.objectSchema(
+            properties = targetProperties(coordinates = false).apply {
+                put(Ui.TEXT, JsonSchemas.string("The text to set (or to append)", maxLength = Ui.MAX_TEXT_BYTES))
+                put(Ui.APPEND, JsonSchemas.boolean("Append to the current text instead of replacing it", default = false))
+            },
+            required = listOf(Ui.TEXT),
+        ),
+        group = ToolGroup.UI,
+        bridge = BridgeMethod("accessibility", "setText"),
+        permissions = listOf("accessibility"),
+        timeoutMs = 20_000L,
+    )
+
+    val uiScroll: ToolSpec = ToolSpec(
+        name = UI_SCROLL,
+        title = "Scroll",
+        description = "Scrolls a node given by nodeRef or selector, or the first scrollable node of the window when neither is given: " +
+                "forward, down, and right move towards the end, backward, up, and left towards the start; times repeats the step. " +
+                "performed counts the steps the node accepted, fewer than requested means it reached the end." + TARGET_NOTE,
+        inputSchema = JsonSchemas.objectSchema(
+            properties = targetProperties(coordinates = false).apply {
+                put(Ui.DIRECTION, JsonSchemas.string("Scroll direction", enum = Ui.DIRECTIONS, default = Ui.DIRECTION_FORWARD))
+                put(Ui.TIMES, JsonSchemas.integer("How many scroll steps to perform", minimum = 1, maximum = Ui.MAX_TIMES, default = 1L))
+            },
+        ),
+        group = ToolGroup.UI,
+        bridge = BridgeMethod("accessibility", "scrollForward"),
+        permissions = listOf("accessibility"),
+        timeoutMs = 30_000L,
+    )
+
+    val uiPressKey: ToolSpec = ToolSpec(
+        name = UI_PRESS_KEY,
+        title = "Press key",
+        description = "Presses a global key through the accessibility service: back, home, recents, notifications (opens the notification " +
+                "shade), quick_settings, power_dialog, or lock_screen (Android 9 or later).",
+        inputSchema = JsonSchemas.objectSchema(
+            properties = linkedMapOf(Ui.KEY to JsonSchemas.string("The key to press", enum = Ui.KEYS)),
+            required = listOf(Ui.KEY),
+        ),
+        group = ToolGroup.UI,
+        bridge = BridgeMethod("accessibility", "back"),
+        permissions = listOf("accessibility"),
+        timeoutMs = 10_000L,
+    )
+
+    val uiSwipe: ToolSpec = ToolSpec(
+        name = UI_SWIPE,
+        title = "Swipe",
+        description = "Swipes one finger from (x1, y1) to (x2, y2) in device pixels over durationMs; take the coordinates from ui_dump " +
+                "bounds or a screenshot. Part of the ui_gesture group, which is off by default.",
+        inputSchema = JsonSchemas.objectSchema(
+            properties = linkedMapOf(
+                Ui.X1 to JsonSchemas.integer("Start x in device pixels", minimum = 0, maximum = Ui.MAX_COORDINATE),
+                Ui.Y1 to JsonSchemas.integer("Start y in device pixels", minimum = 0, maximum = Ui.MAX_COORDINATE),
+                Ui.X2 to JsonSchemas.integer("End x in device pixels", minimum = 0, maximum = Ui.MAX_COORDINATE),
+                Ui.Y2 to JsonSchemas.integer("End y in device pixels", minimum = 0, maximum = Ui.MAX_COORDINATE),
+                Ui.DURATION_MS to JsonSchemas.integer("Duration of the swipe in milliseconds", minimum = 1, maximum = Ui.MAX_GESTURE_DURATION_MS, default = Ui.DEFAULT_SWIPE_DURATION_MS),
+            ),
+            required = listOf(Ui.X1, Ui.Y1, Ui.X2, Ui.Y2),
+        ),
+        group = ToolGroup.UI_GESTURE,
+        bridge = BridgeMethod("accessibility", "swipe"),
+        permissions = listOf("accessibility", "accessibility.gesture"),
+        timeoutMs = 15_000L,
+        maxTimeoutMs = Ui.MAX_GESTURE_DURATION_MS + 10_000L,
+    )
+
+    val uiGesture: ToolSpec = ToolSpec(
+        name = UI_GESTURE,
+        title = "Gesture",
+        description = "Performs a free-path one-finger gesture through the given points over durationMs (at most 10 s): the first point " +
+                "is the touch down, the last the lift. Part of the ui_gesture group, which is off by default.",
+        inputSchema = JsonSchemas.objectSchema(
+            properties = linkedMapOf(
+                Ui.DURATION_MS to JsonSchemas.integer("Duration of the whole gesture in milliseconds", minimum = 1, maximum = Ui.MAX_GESTURE_DURATION_MS),
+                Ui.POINTS to JsonSchemas.array(
+                    "The path as [x, y] pairs in device pixels, at least two",
+                    items = JsonSchemas.array("One [x, y] point", items = JsonSchemas.integer("Coordinate in device pixels", minimum = 0, maximum = Ui.MAX_COORDINATE), minItems = 2, maxItems = 2),
+                    minItems = 2,
+                    maxItems = Ui.MAX_POINTS,
+                ),
+            ),
+            required = listOf(Ui.DURATION_MS, Ui.POINTS),
+        ),
+        group = ToolGroup.UI_GESTURE,
+        bridge = BridgeMethod("accessibility", "gesture"),
+        permissions = listOf("accessibility", "accessibility.gesture"),
+        timeoutMs = 15_000L,
+        maxTimeoutMs = Ui.MAX_GESTURE_DURATION_MS + 10_000L,
+    )
+
     /** Every tool in list order; `tools/list` keeps this order. */
-    val all: List<ToolSpec> = listOf(devicePing, deviceInfo, scriptRun, scriptRunFile, scriptStop, scriptStopAll, scriptList, consoleTail)
+    val all: List<ToolSpec> = listOf(
+        devicePing, deviceInfo,
+        scriptRun, scriptRunFile, scriptStop, scriptStopAll, scriptList, consoleTail,
+        uiDump, uiFind, uiCurrentWindow, uiExplainSelector, uiWaitFor, uiClick, uiLongClick, uiSetText, uiScroll, uiPressKey,
+        uiSwipe, uiGesture,
+    )
 
     val byName: Map<String, ToolSpec> = all.associateBy { it.name }
 
@@ -257,6 +568,16 @@ object ToolCatalog {
                 ),
             )
         }
+
+    /** `nodeRef` and `selector` (and the coordinate pair for the click tools) every action tool accepts. */
+    private fun targetProperties(coordinates: Boolean): LinkedHashMap<String, JsonObject> = linkedMapOf<String, JsonObject>().apply {
+        put(Ui.NODE_REF, JsonSchemas.string(NODE_REF_DESCRIPTION, maxLength = 32))
+        put(Ui.SELECTOR, JsonSchemas.selector("Conditions that identify the node; the first match in pre-order is used"))
+        if (coordinates) {
+            put(Ui.X, JsonSchemas.integer("x of a coordinate tap in device pixels (ui_gesture group)", minimum = 0, maximum = Ui.MAX_COORDINATE))
+            put(Ui.Y, JsonSchemas.integer("y of a coordinate tap in device pixels (ui_gesture group)", minimum = 0, maximum = Ui.MAX_COORDINATE))
+        }
+    }
 
     private val PRETTY = Json { prettyPrint = true; prettyPrintIndent = "  " }
 }

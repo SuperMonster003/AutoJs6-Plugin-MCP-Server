@@ -6,7 +6,7 @@
   "changelog_label_dependency": "تبعية",
   "$data": {
     "v1.0.0": {
-      "released_date": "2026/09/10",
+      "released_date": "2026/09/11",
       "hint": [
         "معاينة تطويرية: يسجل المكون الإضافي نفسه في مركز المكونات الإضافية في AutoJs6, لكن نقطة نهاية MCP وأدواتها غير متاحة بعد"
       ],
@@ -24,7 +24,8 @@
         "جسر المضيف: تنفذ خدمة `org.autojs.plugin.MCP_SERVER` واجهة Binder الحقيقية `IMcpServerPlugin` (يبلغ `getInfo` / `getCapabilities` عن إصدار العقد 1 ومجموعات الأدوات وإصدارات بروتوكول MCP وإصدار SDK; ولا يقبل `openServer` إلا AutoJs6 المثبت بالتوقيع نفسه ويعيد `IMcpServerSession` مع `getStatus` / `updateConfig` / `stop` / `close`); تمر استدعاءات الأدوات عبر وسيط قدرات المضيف بمعرفات طلب متزايدة ومهلة لكل استدعاء وحد أقصى 4 استدعاءات متزامنة, وتربط فئات أخطاء المضيف بـ `HOST_UNAVAILABLE` / `A11Y_SERVICE_NOT_RUNNING` / `CAPABILITY_DENIED` / `LIMIT_EXCEEDED` / `RATE_LIMITED` / `TIMEOUT` / `HOST_ERROR`; عند توقف AutoJs6 يستمر المستمع في العمل وترد الأدوات المعتمدة على المضيف بـ `HOST_UNAVAILABLE` حتى يعود المضيف للاتصال; تصل الحالة والأحداث (`pairing_requested` و `client_paired` و `tool_call` و `warning`) إلى المضيف عبر رد النداء الخاص به",
         "يعرض إشعار خدمة المقدمة نقطة النهاية وحالة اتصال AutoJs6 وعدد العملاء المقترنين مع إجراء إيقاف; وعند حظر الإشعارات تظهر رسالة toast بنقطة النهاية; ويطبع `dumpsys activity service` إضافة إلى ذلك جلسة المضيف ومفاتيح المجموعات والأدوات المسجلة",
         "اكتمال مجموعة السكربتات: `script_run_file` يشغل ملف سكربت على الجهاز, و `script_stop` / `script_stop_all` يوقفان تنفيذا واحدا أو كل تنفيذات AutoJs6, و `script_list` يسرد التنفيذات الجارية, و `console_tail` يعيد أحدث سطور وحدة التحكم مع مؤشر `nextSinceId` ومرشح مستوى; يعيد `script_run` و `script_run_file` الآن `executionId` و `status` (`finished` / `error` / `running`) و `durationMs` والاستثناء مع رقم سطره وأحدث سطور وحدة التحكم, وأثناء الانتظار يرسلان كل 2 ث إشعار تقدم يحمل أحدث سطر في وحدة التحكم",
-        "ردود نقطة نهاية MCP تبث الآن كأحداث مرسلة من الخادم (لا يستخدم وضع استجابة JSON في SDK), وبذلك يصل الإشعار المرتبط بطلب, مثل نبض التقدم لسكربت قيد التشغيل, إلى العميل ضمن استجابة ذلك الطلب"
+        "ردود نقطة نهاية MCP تبث الآن كأحداث مرسلة من الخادم (لا يستخدم وضع استجابة JSON في SDK), وبذلك يصل الإشعار المرتبط بطلب, مثل نبض التقدم لسكربت قيد التشغيل, إلى العميل ضمن استجابة ذلك الطلب",
+        "إضافة مجموعة واجهة المستخدم (roadmap P3.2): يعيد `ui_dump` النافذة النشطة كشجرة عقد مضغوطة مع مراجع `#n` (`format` هو text / json / xml, و `maxNodes` حتى 400, و `maxDepth`, و `visibleOnly`, و `window`), ويستطلع `ui_find` / `ui_wait_for` محددا, ويبلغ `ui_current_window` و `ui_explain_selector` عن النافذة وسبب فشل المحدد, ويعمل `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` على `nodeRef` (يعاد تحديد موقعه ببصمته, و `NODE_REF_STALE` إذا اختفى) أو `selector`, ويضغط `ui_press_key` على back / home / recents / notifications / quick_settings / power_dialog / lock_screen, وتضيف مجموعة `ui_gesture` (معطلة افتراضيا) `ui_swipe` و `ui_gesture` والشكل الإحداثي لأدوات النقر (`TOOL_DISABLED` ما دامت المجموعة معطلة); تزداد لقطة كتالوج الأدوات إلى 20 أداة; تحتاج إيماءات الإحداثيات إلى مضيف AutoJs6 مبني بتاريخ 2026-09-11 أو بعده (يجيب المضيف الأقدم عشوائيا بـ \"the system cancelled ...\")"
       ],
       "dependency": [
         "MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) على محرك Ktor 3.5.1 CIO",

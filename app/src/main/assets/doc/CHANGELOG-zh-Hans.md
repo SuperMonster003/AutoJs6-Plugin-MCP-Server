@@ -6,7 +6,7 @@
 
 # v1.0.0
 
-###### 2026/09/10
+###### 2026/09/11
 
 * `提示` 开发预览版: 插件已可在 AutoJs6 插件中心注册, 但 MCP 端点及其工具尚不可用
 * `新增` 插件标识 `mcp-server`, 含 INFO 服务, Wake Activity 以及供宿主发现的 `org.autojs.plugin.MCP_SERVER` 服务骨架
@@ -23,6 +23,7 @@
 * `新增` 前台服务通知显示端点, AutoJs6 连接状态与已配对客户端数, 并提供停止动作; 通知被禁用时以 toast 提示端点; `dumpsys activity service` 额外打印宿主会话, 工具分组开关与已注册工具
 * `新增` 补全脚本分组: `script_run_file` 运行设备上的脚本文件, `script_stop` / `script_stop_all` 停止一个或全部 AutoJs6 执行, `script_list` 列出运行中的执行, `console_tail` 返回最新的控制台行并带 `nextSinceId` 游标与级别过滤; `script_run` 与 `script_run_file` 现在返回 `executionId`, `status` (`finished` / `error` / `running`), `durationMs`, 含行号的异常与最新的控制台行, 等待期间每 2 s 发送一条携带最新控制台行的进度通知
 * `新增` MCP 端点的响应改为以服务器发送事件 (SSE) 流式返回 (不再使用 SDK 的 JSON 响应模式), 属于某个请求的通知 (如运行中脚本的进度心跳) 会随该请求自身的响应送达客户端
+* `新增` 新增 UI 分组 (roadmap P3.2): `ui_dump` 以带 `#n` 引用的紧凑节点树返回当前窗口 (`format` 为 text / json / xml, `maxNodes` 最多 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` 轮询选择器, `ui_current_window` 与 `ui_explain_selector` 报告窗口与选择器失败的原因, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` 作用于 `nodeRef` (按指纹重定位, 节点消失时返回 `NODE_REF_STALE`) 或 `selector`, `ui_press_key` 按下 back / home / recents / notifications / quick_settings / power_dialog / lock_screen, 默认关闭的 `ui_gesture` 分组增加 `ui_swipe`, `ui_gesture` 与点击工具的坐标形式 (分组关闭时返回 `TOOL_DISABLED`); 工具目录快照增至 20 个工具; 坐标手势需要 2026-09-11 或之后构建的 AutoJs6 宿主 (更早的宿主会随机以 "the system cancelled ..." 应答)
 * `依赖` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 与 Ktor 3.5.1 CIO 引擎
 * `依赖` 附加 Ktor 3.5.1 `ktor-server-test-host` 用于 JVM 传输测试 (仅测试范围)
 * `依赖` 附加 `mcp-server-api.aar` (AutoJs6 模块 `plugin-api/mcp-server-api`, 宿主构建 6.8.0 / 5279, MPL 2.0) 作为 AutoJs6 与插件之间的 Binder 契约, 并在 `locks/host-api-aars.lock` 中锁定哈希
