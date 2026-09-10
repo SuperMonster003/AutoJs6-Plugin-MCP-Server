@@ -11,6 +11,13 @@ own licenses. Runtime dependencies are added to this list in the same commit tha
 - SHA-256: `c526f4fd0adbf38b36a7bf54f9931385e6cc20050d6ea8fb741c60496af635d5` (pinned in `locks/host-api-aars.lock`)
 - License: Mozilla Public License 2.0
 
+## AutoJs6 MCP Server plugin API
+
+- Component: `mcp-server-api.aar` (Binder contract between AutoJs6 and this plugin: `IMcpServerPlugin`, `IMcpServerSession`, `IMcpServerCallback`, `IMcpHostCapabilityBroker`, `IMcpHostCapabilityCallback`, and `McpServerContract`)
+- Source: <https://github.com/SuperMonster003/AutoJs6> (`plugin-api/mcp-server-api`), host build 5279 (6.8.0)
+- SHA-256: `cbbdf53992dbded760026224c91cf883b03f3c2c9e67581cf1bde42676cc19f1` (pinned in `locks/host-api-aars.lock`)
+- License: Mozilla Public License 2.0
+
 ## Kotlin standard library
 
 - Component: `org.jetbrains.kotlin:kotlin-stdlib` (provided through the Android Gradle Plugin built-in Kotlin support)

@@ -10,4 +10,13 @@
     <string name="pairing_notification_text">%1$s desde %2$s (token que termina en %3$s) espera tu confirmación</string>
     <string name="pairing_notification_title">Un cliente MCP quiere emparejarse</string>
     <string name="plugin_description">Expone la automatización del dispositivo a agentes de IA mediante el Model Context Protocol</string>
+    <string name="server_action_stop">Detener</string>
+    <string name="server_host_connected">AutoJs6 conectado</string>
+    <string name="server_host_disconnected">Esperando a AutoJs6</string>
+    <string name="server_listening">Escuchando en %1$s</string>
+    <string name="server_notifications_disabled">Las notificaciones están desactivadas; el servidor MCP escucha en %1$s</string>
+    <string name="server_paired_clients">Clientes emparejados: %1$d</string>
+    <string name="server_state_failed">No se ha iniciado: %1$s</string>
+    <string name="server_state_starting">Iniciando el servidor MCP</string>
+    <string name="server_state_stopped">Servidor MCP detenido</string>
 </resources>

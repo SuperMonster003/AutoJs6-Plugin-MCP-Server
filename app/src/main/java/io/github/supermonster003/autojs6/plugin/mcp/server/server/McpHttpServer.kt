@@ -5,6 +5,7 @@ import android.os.SystemClock
 import android.util.Log
 import io.github.supermonster003.autojs6.plugin.mcp.server.DevicePingTool
 import io.github.supermonster003.autojs6.plugin.mcp.server.McpServerPlugin
+import io.github.supermonster003.autojs6.plugin.mcp.server.McpServerPluginRuntimeInfo
 import io.github.supermonster003.autojs6.plugin.mcp.server.mcpServerPluginRuntimeInfo
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.BindScope
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.PairedClientStore
@@ -16,6 +17,8 @@ import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.applicationEnvironment
 import io.ktor.server.engine.connector
 import io.ktor.server.engine.embeddedServer
+import io.modelcontextprotocol.kotlin.sdk.server.Server
+import io.modelcontextprotocol.kotlin.sdk.server.StreamableHttpServerTransport
 import kotlinx.coroutines.CoroutineExceptionHandler
 
 /**
@@ -29,9 +32,17 @@ import kotlinx.coroutines.CoroutineExceptionHandler
  * [statusListener], which the foreground service and the session Binder (P2.3) observe.
  *
  * Every request must carry the bearer token of [tokenStore], and gated calls of clients the user
- * has not confirmed are held back by the [PairingGate] (roadmap P2.2).
+ * has not confirmed are held back by the [PairingGate] (roadmap P2.2). The tools come from
+ * [toolInstaller] (the catalog registry in production, `device_ping` alone by default) and calls
+ * to switched-off tools are answered by [toolGate] before they reach the SDK (roadmap P2.3).
  */
-class McpHttpServer(context: Context, private val statusListener: (ServerStatus) -> Unit = {}) {
+class McpHttpServer(
+    context: Context,
+    private val statusListener: (ServerStatus) -> Unit = {},
+    private val toolInstaller: ((Server, McpServerPluginRuntimeInfo) -> Unit)? = null,
+    private val toolGate: ToolGate? = null,
+    private val eventListener: PairingCoordinator.EventListener? = null,
+) {
 
     private val context: Context = context.applicationContext
 
@@ -44,6 +55,7 @@ class McpHttpServer(context: Context, private val statusListener: (ServerStatus)
     val pairedClients: PairedClientStore = PairedClientStore(this.context)
 
     private var engine: EmbeddedServer<*, *>? = null
+    private var mcpServer: Server? = null
     private var activeConfig: ServerConfig? = null
     private var lanWatcher: LanAddressWatcher? = null
     private var pairingCoordinator: PairingCoordinator? = null
@@ -60,6 +72,16 @@ class McpHttpServer(context: Context, private val statusListener: (ServerStatus)
     var status: ServerStatus = ServerStatus.stopped()
         private set
 
+    /** Epoch milliseconds of the last successful start, 0 while stopped. */
+    @Volatile
+    var startedAt: Long = 0L
+        private set
+
+    /** Every URL the running listener accepts (loopback first, then the LAN addresses); empty while stopped. */
+    @Volatile
+    var endpoints: List<String> = emptyList()
+        private set
+
     val isRunning: Boolean
         get() = status.isRunning
 
@@ -71,6 +93,27 @@ class McpHttpServer(context: Context, private val statusListener: (ServerStatus)
     val currentPolicy: GatePolicy
         get() = policy
 
+    /** MCP sessions the SDK currently holds on the listener. */
+    val activeSessionCount: Int
+        get() = mcpServer?.sessions?.size ?: 0
+
+    /** The SDK server of the running listener; null while stopped. */
+    val sdkServer: Server?
+        get() = mcpServer
+
+    /**
+     * The client name declared in `initialize` for an SDK session id (the id tool handlers see)
+     * or an HTTP `Mcp-Session-Id`; null when the session is unknown or not initialized yet.
+     */
+    fun clientNameOf(sessionId: String?): String? {
+        val id = sessionId ?: return null
+        val sessions = mcpServer?.sessions ?: return null
+        return runCatching {
+            (sessions[id] ?: sessions.values.firstOrNull { (it.transport as? StreamableHttpServerTransport)?.sessionId == id })
+                ?.clientVersion?.name
+        }.getOrNull()
+    }
+
     /** Starts the listener for [config]; a call while running is a no-op that returns the current status. */
     fun start(config: ServerConfig): ServerStatus = synchronized(lock) {
         if (engine != null) return status
@@ -80,17 +123,18 @@ class McpHttpServer(context: Context, private val statusListener: (ServerStatus)
         }
         publish(ServerStatus.starting())
         val info = context.mcpServerPluginRuntimeInfo()
-        val mcpServer = McpServerFactory.create(info.versionName)
-        DevicePingTool.register(mcpServer, context, info)
+        val server = McpServerFactory.create(info.versionName)
+        (toolInstaller ?: { target, runtimeInfo -> DevicePingTool.register(target, context, runtimeInfo) })(server, info)
         val watcher = if (config.bindScope == BindScope.LAN) LanAddressWatcher(context, ::refreshPolicy) else null
         watcher?.start()
         policy = GatePolicy.forConfig(config, watcher?.addresses.orEmpty())
         val coordinator = PairingCoordinator(context) { tokenStore.tail() }
+        coordinator.eventListener = eventListener
         val gate = PairingGate(pairedClients, listener = coordinator)
         coordinator.attach(gate)
         val token = tokenStore.current()
         Log.i(TAG, "Bearer token fingerprint ${BearerTokens.fingerprint(token)}, ${pairedClients.all().size} paired client(s)")
-        val startedAt = SystemClock.elapsedRealtime()
+        val bindStartedAt = SystemClock.elapsedRealtime()
         // The CIO accept loop runs in a root coroutine under the application's parent context; a
         // failed bind() completes start() exceptionally AND fails that coroutine, and on Android an
         // unhandled coroutine exception kills the process. The handler keeps it in the log.
@@ -100,14 +144,15 @@ class McpHttpServer(context: Context, private val statusListener: (ServerStatus)
             }
             module {
                 mcpServerModule(
-                    mcpServer,
+                    server,
                     policy = { this@McpHttpServer.policy },
                     tokenProvider = { tokenStore.current() },
                     pairingGate = gate,
+                    toolGate = toolGate,
                 )
             }
         }
-        val server = embeddedServer(CIO, rootConfig) {
+        val listener = embeddedServer(CIO, rootConfig) {
             connector {
                 host = config.bindAddress
                 port = config.port
@@ -117,22 +162,25 @@ class McpHttpServer(context: Context, private val statusListener: (ServerStatus)
             shutdownTimeout = STOP_TIMEOUT_MILLIS
         }
         try {
-            server.start(wait = false)
+            listener.start(wait = false)
         } catch (error: Throwable) {
             watcher?.stop()
-            runCatching { server.stop(0, 0) }
+            runCatching { listener.stop(0, 0) }
             val failure = BindFailures.classify(error, config.bindAddress, config.port)
             Log.w(TAG, "MCP endpoint could not bind ${config.bindAddress}:${config.port}: ${failure.code}", error)
             return publish(ServerStatus.failed(failure.code, failure.message))
         }
-        engine = server
+        engine = listener
+        mcpServer = server
         activeConfig = config
         lanWatcher = watcher
         pairingCoordinator = coordinator
         pairingGate = gate
         PairingCoordinator.instance = coordinator
-        val endpoint = endpointUrl(config, watcher?.addresses.orEmpty())
-        Log.i(TAG, "MCP endpoint listening on $endpoint [${config.bindScope.id}] (${SystemClock.elapsedRealtime() - startedAt} ms to bind)")
+        startedAt = System.currentTimeMillis()
+        endpoints = endpointUrls(config, watcher?.addresses.orEmpty())
+        val endpoint = endpoints.first()
+        Log.i(TAG, "MCP endpoint listening on $endpoint [${config.bindScope.id}] (${SystemClock.elapsedRealtime() - bindStartedAt} ms to bind)")
         return publish(ServerStatus.running(endpoint))
     }
 
@@ -140,7 +188,10 @@ class McpHttpServer(context: Context, private val statusListener: (ServerStatus)
         val running = engine ?: return status
         publish(ServerStatus.stopping())
         engine = null
+        mcpServer = null
         activeConfig = null
+        startedAt = 0L
+        endpoints = emptyList()
         lanWatcher?.stop()
         lanWatcher = null
         if (PairingCoordinator.instance === pairingCoordinator) PairingCoordinator.instance = null
@@ -156,7 +207,9 @@ class McpHttpServer(context: Context, private val statusListener: (ServerStatus)
     private fun refreshPolicy() {
         synchronized(lock) {
             val config = activeConfig ?: return
-            policy = GatePolicy.forConfig(config, lanWatcher?.addresses.orEmpty())
+            val addresses = lanWatcher?.addresses.orEmpty()
+            policy = GatePolicy.forConfig(config, addresses)
+            endpoints = endpointUrls(config, addresses)
         }
         Log.i(TAG, "LAN allow list refreshed")
     }
@@ -190,6 +243,14 @@ class McpHttpServer(context: Context, private val statusListener: (ServerStatus)
                 BindScope.LAN -> lanAddresses.sorted().firstOrNull() ?: LOOPBACK_HOST
             }
             return "http://$host:${config.port}${McpServerPlugin.ENDPOINT_PATH}"
+        }
+
+        /** Every URL the listener accepts for [config]: the loopback one, then the LAN addresses in LAN scope. */
+        fun endpointUrls(config: ServerConfig, lanAddresses: Collection<String> = emptyList()): List<String> = buildList {
+            add(endpointUrl(config.port))
+            if (config.bindScope == BindScope.LAN) {
+                lanAddresses.sorted().forEach { add("http://$it:${config.port}${McpServerPlugin.ENDPOINT_PATH}") }
+            }
         }
     }
 }

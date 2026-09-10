@@ -3,28 +3,35 @@ package io.github.supermonster003.autojs6.plugin.mcp.server
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
-import io.github.supermonster003.autojs6.plugin.mcp.server.server.McpHttpServer
+import android.widget.Toast
+import io.github.supermonster003.autojs6.plugin.mcp.server.host.McpServerRuntime
+import io.github.supermonster003.autojs6.plugin.mcp.server.host.SessionStatus
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.ServerStatus
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfig
-import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfigStore
+import org.autojs.plugin.mcp.server.api.McpServerContract
 import java.io.FileDescriptor
 import java.io.PrintWriter
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Foreground service that keeps the `:mcp_server` process alive while [McpHttpServer] listens.
+ * Foreground service that keeps the `:mcp_server` process alive while the listener of
+ * [McpServerRuntime] runs.
  *
- * The listener configuration comes from [ServerConfigStore]; a start intent may override the
- * port and the developer-mode switch for one run. Callers: the host broker (roadmap P1 / P2) and
- * the plugin's own settings page (P4.2), both under the plugin's UID, and `adb shell` during
- * development:
+ * The listener configuration comes from the runtime's config store; a start intent may override
+ * the port and the developer-mode switch for one run. Callers: the runtime itself when the host
+ * opens a session ([ACTION_KEEP_ALIVE]), the plugin's own settings page (P4.2), and `adb shell`
+ * during development:
  *
  * ```
  * adb shell am start-foreground-service -n <pkg>/.McpServerService -a <pkg>.action.START_SERVER
@@ -39,55 +46,77 @@ import java.util.concurrent.Executors
  * service down before `startForeground()` ran and the system kills the process with
  * `ForegroundServiceDidNotStartInTimeException`.
  *
- * A listener that cannot bind leaves a `failed` status (`port_in_use`, `bind_failed`, or
- * `invalid_config`) in the log and stops the service; the host session (P2.3) reports it.
- *
- * `adb shell dumpsys activity service <pkg>/.McpServerService` prints the status and the paired
- * clients, and in developer mode also the bearer token: until the settings page (P4.2) exists, the
- * adb control plane is the only way to read it. Nothing printed there reaches logcat.
+ * The notification shows the endpoint, whether AutoJs6 is attached, and the paired client count,
+ * with a Stop action; when notifications are blocked a toast names the endpoint once instead.
+ * `adb shell dumpsys activity service <pkg>/.McpServerService` prints the status, the paired
+ * clients, and the host session, and in developer mode also the bearer token: until the settings
+ * page (P4.2) exists, the adb control plane is the only way to read it. Nothing printed there
+ * reaches logcat.
  */
 class McpServerService : Service() {
 
-    private val lifecycle = Executors.newSingleThreadExecutor { runnable -> Thread(runnable, "mcp-server-lifecycle") }
+    private val lifecycle = Executors.newSingleThreadExecutor { runnable -> Thread(runnable, "mcp-server-command") }
+    private val mainHandler = Handler(Looper.getMainLooper())
 
-    private lateinit var configStore: ServerConfigStore
-    private lateinit var server: McpHttpServer
+    private lateinit var runtime: McpServerRuntime
 
     @Volatile
     private var foreground = false
 
+    /** True once the runtime asked this instance to go away; a later start command revives it. */
     @Volatile
-    private var activeConfig: ServerConfig? = null
+    var finishing = false
+        private set
+
+    @Volatile
+    private var lastStartId = 0
+
+    /** Start commands whose task has not finished yet; a finish request waits for them. */
+    private val pendingStarts = AtomicInteger()
+
+    @Volatile
+    private var toastShown = false
 
     override fun onCreate() {
         super.onCreate()
-        configStore = ServerConfigStore(this)
-        server = McpHttpServer(this, ::onStatusChanged)
+        runtime = McpServerRuntime.get(this)
+        runtime.attachService(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val config = resolveConfig(intent)
+        val action = intent?.action
+        lastStartId = startId
+        finishing = false
+        runtime.attachService(this)
         // Always enter the foreground first: a service launched through startForegroundService()
         // must call startForeground() promptly, even when the command only asks it to stop.
-        enterForeground(McpHttpServer.endpointUrl(config))
-        when (intent?.action) {
+        enterForeground(starting = action != ACTION_STOP && !runtime.isListening)
+        when (action) {
             ACTION_STOP -> {
                 Log.i(TAG, "Stop requested")
-                foreground = false
-                stopForeground(STOP_FOREGROUND_REMOVE)
-                stopSelf()
+                lifecycle.execute { runtime.stop(McpServerContract.REASON_USER_REQUEST) }
+                if (!runtime.isListening) finishForeground()
             }
-            else -> lifecycle.execute {
-                activeConfig = config
-                val status = try {
-                    server.start(config)
-                } catch (e: Throwable) {
-                    Log.e(TAG, "Unexpected failure while starting the MCP endpoint", e)
-                    ServerStatus.failed("internal", e.message ?: e.javaClass.name)
-                }
-                if (status.isFailed) {
-                    Log.w(TAG, "MCP endpoint not started: ${status.errorCode}: ${status.message}")
-                    stopSelf()
+            ACTION_KEEP_ALIVE -> if (!runtime.isListening) {
+                // The listener the runtime started for a host session is gone already.
+                finishForeground()
+            }
+            else -> {
+                val config = resolveConfig(intent)
+                pendingStarts.incrementAndGet()
+                lifecycle.execute {
+                    val status = try {
+                        runtime.start(config)
+                    } catch (e: Throwable) {
+                        Log.e(TAG, "Unexpected failure while starting the MCP endpoint", e)
+                        ServerStatus.failed(McpServerContract.ERROR_INTERNAL, e.message ?: e.javaClass.name)
+                    } finally {
+                        pendingStarts.decrementAndGet()
+                    }
+                    if (status.isFailed) {
+                        Log.w(TAG, "MCP endpoint not started: ${status.errorCode}: ${status.message}")
+                        mainHandler.post { finishForeground() }
+                    }
                 }
             }
         }
@@ -95,10 +124,11 @@ class McpServerService : Service() {
     }
 
     override fun onDestroy() {
-        // Stop synchronously so the port is free by the time the next start command (a new service
-        // instance on this same main thread) tries to bind it.
         lifecycle.shutdown()
-        server.stop()
+        foreground = false
+        // Synchronous, so the port is free by the time the next start command (a new service
+        // instance on this same main thread) tries to bind it.
+        runtime.detachService(this)
         super.onDestroy()
     }
 
@@ -106,40 +136,56 @@ class McpServerService : Service() {
 
     override fun dump(fd: FileDescriptor?, writer: PrintWriter?, args: Array<out String>?) {
         val out = writer ?: return
-        val status = server.status
-        out.println("state: ${status.state}")
-        status.endpointUrl?.let { out.println("endpoint: $it") }
-        status.errorCode?.let { out.println("error: $it: ${status.message}") }
-        val developerMode = activeConfig?.developerMode == true
-        out.println("developerMode: $developerMode")
-        out.println("tokenFingerprint: ${server.tokenStore.fingerprint()}")
-        if (developerMode) out.println("token: ${server.tokenStore.current()}")
-        val clients = server.pairedClients.all()
-        out.println("pairedClients: ${clients.size}")
-        clients.forEach { client ->
-            out.println("  ${client.fingerprint} \"${client.name}\" ${client.addressClass.id} firstPairedAt=${client.firstPairedAt} lastSeenAt=${client.lastSeenAt}")
+        runtime.dump(out, developerMode = runtime.activeConfig?.developerMode == true)
+    }
+
+    /**
+     * Leaves the foreground and stops; called by the runtime once the listener is down. A start
+     * command that arrived after the decision keeps the instance alive: one whose task is still
+     * queued or running is awaited (it finishes on its own when it fails), one the system has
+     * accepted but not delivered yet makes `stopSelfResult` refuse the stop. Either way a listener
+     * started by that command is never torn down by a stale stop.
+     */
+    fun finishForeground() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post { finishForeground() }
+            return
+        }
+        if (!foreground) return
+        if (pendingStarts.get() > 0) return
+        finishing = true
+        foreground = false
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        if (!stopSelfResult(lastStartId)) {
+            // A newer start command is being handled; stay in the foreground for it.
+            finishing = false
+            runtime.attachService(this)
+            enterForeground(starting = !runtime.isListening)
+        }
+    }
+
+    /** Re-renders the notification from the runtime status; safe from any thread. */
+    fun refreshNotification() {
+        mainHandler.post {
+            if (!foreground) return@post
+            val snapshot = runtime.statusSnapshot()
+            notifications().notify(NOTIFICATION_ID, buildNotification(snapshot, starting = false))
+            if (snapshot.state == ServerStatus.STATE_RUNNING && !toastShown && !notifications().areNotificationsEnabled()) {
+                toastShown = true
+                Toast.makeText(this, getString(R.string.server_notifications_disabled, snapshot.endpoints.firstOrNull().orEmpty()), Toast.LENGTH_LONG).show()
+            }
         }
     }
 
     private fun resolveConfig(intent: Intent?): ServerConfig {
-        val stored = configStore.load()
+        val stored = runtime.configStore.load()
         val port = intent?.takeIf { it.hasExtra(EXTRA_PORT) }?.getIntExtra(EXTRA_PORT, stored.port)
         val developerMode = intent?.takeIf { it.hasExtra(EXTRA_DEVELOPER_MODE) }?.getBooleanExtra(EXTRA_DEVELOPER_MODE, stored.developerMode)
         return stored.withOverrides(port = port, developerMode = developerMode)
     }
 
-    private fun onStatusChanged(status: ServerStatus) {
-        if (!foreground) return
-        val text = when {
-            status.isRunning -> status.endpointUrl.orEmpty()
-            status.isFailed -> "${status.errorCode}: ${status.message}"
-            else -> status.state
-        }
-        getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, buildNotification(text))
-    }
-
-    private fun enterForeground(text: String) {
-        val notification = buildNotification(text)
+    private fun enterForeground(starting: Boolean) {
+        val notification = buildNotification(runtime.statusSnapshot(), starting)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         } else {
@@ -148,9 +194,10 @@ class McpServerService : Service() {
         foreground = true
     }
 
-    private fun buildNotification(text: String): Notification {
+    private fun buildNotification(snapshot: SessionStatus, starting: Boolean): Notification {
+        val manager = notifications()
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            getSystemService(NotificationManager::class.java).createNotificationChannel(
+            manager.createNotificationChannel(
                 NotificationChannel(CHANNEL_ID, getString(R.string.app_name), NotificationManager.IMPORTANCE_LOW),
             )
             Notification.Builder(this, CHANNEL_ID)
@@ -158,19 +205,41 @@ class McpServerService : Service() {
             @Suppress("DEPRECATION")
             Notification.Builder(this)
         }
+        val text = when {
+            snapshot.state == ServerStatus.STATE_RUNNING -> getString(R.string.server_listening, snapshot.endpoints.firstOrNull().orEmpty())
+            snapshot.state == ServerStatus.STATE_FAILED -> getString(R.string.server_state_failed, "${snapshot.lastErrorCode}: ${snapshot.lastError}")
+            starting || snapshot.state == ServerStatus.STATE_STARTING -> getString(R.string.server_state_starting)
+            else -> getString(R.string.server_state_stopped)
+        }
+        val details = getString(if (snapshot.hostAvailable) R.string.server_host_connected else R.string.server_host_disconnected) +
+                ", " + getString(R.string.server_paired_clients, snapshot.pairedClientCount)
+        val stopPending = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            PendingIntent.getForegroundService(this, 0, stopIntent(this), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        } else {
+            PendingIntent.getService(this, 0, stopIntent(this), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        }
+        @Suppress("DEPRECATION")
+        val stopAction = Notification.Action.Builder(R.drawable.ic_stat_mcp_server, getString(R.string.server_action_stop), stopPending).build()
         return builder
             .setSmallIcon(R.drawable.ic_stat_mcp_server)
             .setContentTitle(getString(R.string.app_name))
             .setContentText(text)
+            .setStyle(Notification.BigTextStyle().bigText("$text\n$details"))
             .setCategory(Notification.CATEGORY_SERVICE)
             .setOngoing(true)
+            .addAction(stopAction)
             .build()
     }
+
+    private fun notifications(): NotificationManager = getSystemService(NotificationManager::class.java)
 
     companion object {
 
         const val ACTION_START = "${McpServerPlugin.PACKAGE_NAME}.action.START_SERVER"
         const val ACTION_STOP = "${McpServerPlugin.PACKAGE_NAME}.action.STOP_SERVER"
+
+        /** Sent by the runtime: enter the foreground for a listener that is already running. */
+        const val ACTION_KEEP_ALIVE = "${McpServerPlugin.PACKAGE_NAME}.action.KEEP_ALIVE"
 
         /** Optional int extra of [ACTION_START]: overrides the stored port for this run. */
         const val EXTRA_PORT = "port"
@@ -193,5 +262,8 @@ class McpServerService : Service() {
 
         fun stopIntent(context: Context): Intent =
             Intent(context, McpServerService::class.java).setAction(ACTION_STOP)
+
+        fun keepAliveIntent(context: Context): Intent =
+            Intent(context, McpServerService::class.java).setAction(ACTION_KEEP_ALIVE)
     }
 }

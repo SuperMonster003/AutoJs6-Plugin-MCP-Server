@@ -1,7 +1,12 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server
 
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolCatalog
+import io.modelcontextprotocol.kotlin.sdk.types.SUPPORTED_PROTOCOL_VERSIONS
+import org.autojs.plugin.mcp.server.api.McpServerContract
+
 /**
- * Pure-data view of the metadata reported through `IPluginInfoProvider.getInfo()`.
+ * Pure-data view of the metadata reported through `IPluginInfoProvider.getInfo()` and
+ * `IMcpServerPlugin.getInfo()` / `getCapabilities()` (roadmap P2.3).
  *
  * Android-specific lookups (package version, localized strings, raw resources) happen in
  * [mcpServerPluginRuntimeInfo]; this class keeps the mapping itself testable on the JVM.
@@ -23,4 +28,15 @@ data class McpServerPluginRuntimeInfo(
     val supportedAbis: Array<String> get() = emptyArray()
 
     val requiresHostVersion: Long get() = McpServerPlugin.REQUIRED_HOST_VERSION
+
+    /** The control-plane contract version this build implements (`mcpServerContractVersion`). */
+    val contractVersion: Int get() = McpServerContract.CONTRACT_VERSION
+
+    /** The tool groups the catalog uses, in the D6 order (`mcpServerToolGroups`). */
+    val toolGroups: List<String> get() = ToolCatalog.groups.map { it.id }
+
+    /** MCP protocol versions the SDK negotiates, newest first (`mcpServerProtocolVersions`). */
+    val protocolVersions: List<String> get() = SUPPORTED_PROTOCOL_VERSIONS.sortedDescending()
+
+    val sdkVersion: String get() = McpServerPlugin.SDK_VERSION
 }

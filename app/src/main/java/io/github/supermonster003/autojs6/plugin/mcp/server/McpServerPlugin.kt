@@ -40,4 +40,10 @@ object McpServerPlugin {
     /** Default TCP port of the MCP endpoint (decision D16); loopback only unless the user opts in. */
     const val DEFAULT_PORT = 9637
     const val ENDPOINT_PATH = "/mcp"
+
+    /**
+     * The MCP Kotlin SDK the listener is built with, reported to the host as
+     * `mcpServerSdkVersion`; `McpServerPluginRuntimeInfoTest` keeps it equal to the Gradle catalog.
+     */
+    const val SDK_VERSION = "0.15.0"
 }
