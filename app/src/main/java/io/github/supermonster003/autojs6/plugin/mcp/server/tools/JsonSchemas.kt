@@ -53,6 +53,53 @@ object JsonSchemas {
         })
     }
 
+    /** An array schema; [items] is the schema of every element. */
+    fun array(description: String, items: JsonObject, minItems: Int? = null, maxItems: Int? = null): JsonObject = buildJsonObject {
+        put("type", "array")
+        put("description", description)
+        put("items", items)
+        minItems?.let { put("minItems", it) }
+        maxItems?.let { put("maxItems", it) }
+    }
+
+    /** A screen rectangle in device pixels: `{left, top, right, bottom}`. */
+    fun bounds(description: String): JsonObject = objectSchema(
+        properties = linkedMapOf(
+            "left" to integer("Left edge in device pixels"),
+            "top" to integer("Top edge in device pixels"),
+            "right" to integer("Right edge in device pixels"),
+            "bottom" to integer("Bottom edge in device pixels"),
+        ),
+        required = listOf("left", "top", "right", "bottom"),
+        description = description,
+    )
+
+    /**
+     * The node selector of the `ui` tools (decision D13): the keys of the host's `BridgeSelector`
+     * dialect, every present condition must hold. `UiSelectors` validates the values.
+     */
+    fun selector(description: String): JsonObject = objectSchema(
+        properties = linkedMapOf(
+            "text" to string("The node text equals this"),
+            "textContains" to string("The node text contains this"),
+            "textMatches" to string("The whole node text matches this Java regular expression; (?i) makes it case-insensitive"),
+            "desc" to string("The content description equals this"),
+            "descContains" to string("The content description contains this"),
+            "descMatches" to string("The whole content description matches this Java regular expression"),
+            "id" to string("The view id: either the full resource name (package:id/name) or just the name part shown by ui_dump"),
+            "idMatches" to string("The whole view id resource name matches this Java regular expression"),
+            "className" to string("The class name: either fully qualified (android.widget.Button) or the short name shown by ui_dump (Button)"),
+            "classNameMatches" to string("The whole class name matches this Java regular expression"),
+            "clickable" to boolean("Whether the node is clickable"),
+            "enabled" to boolean("Whether the node is enabled"),
+            "scrollable" to boolean("Whether the node is scrollable"),
+            "depth" to integer("Depth below the window root; the root is 0", minimum = 0),
+            "boundsInside" to bounds("Only nodes whose bounds lie inside this rectangle"),
+            "boundsContains" to bounds("Only nodes whose bounds contain this rectangle"),
+        ),
+        description = description,
+    )
+
     /** The `type` of a property schema, for validation; a list of types yields null. */
     fun typeOf(schema: JsonElement?): String? = ((schema as? JsonObject)?.get("type") as? JsonPrimitive)?.takeIf { it.isString }?.content
 }

@@ -332,5 +332,1396 @@
       },
       "additionalProperties": false
     }
+  },
+  {
+    "name": "ui_dump",
+    "title": "Dump UI tree",
+    "description": "Dumps the accessibility node tree of the active window as compact text: one node per line with a #n reference, an indent per depth, the short class name, the state markers that apply (clickable, long_clickable, checkable, checked, scrollable, editable, focused, selected, !enabled, hidden), the text in quotes, desc=, id= (name part only), and the position (bounds [l,t][r,b] for a node with children, c=(x,y) for a leaf). Pass a #n reference as nodeRef to ui_click, ui_long_click, ui_set_text, or ui_scroll; references stay valid until the next ui_dump or for 60 s. Call it before acting and again after the screen changed. format json returns the nodes as objects with every flag; format xml returns the uiautomator-style export.",
+    "group": "ui",
+    "defaultEnabled": true,
+    "bridge": "accessibility.dump",
+    "permissions": [
+      "accessibility"
+    ],
+    "timeoutMs": 20000,
+    "maxTimeoutMs": 20000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "type": "string",
+          "description": "Output form",
+          "default": "text",
+          "enum": [
+            "text",
+            "json",
+            "xml"
+          ]
+        },
+        "maxDepth": {
+          "type": "integer",
+          "description": "Deepest level below the window root to include",
+          "minimum": 0,
+          "maximum": 32,
+          "default": 32
+        },
+        "maxNodes": {
+          "type": "integer",
+          "description": "Most nodes to include, in pre-order",
+          "minimum": 1,
+          "maximum": 400,
+          "default": 200
+        },
+        "visibleOnly": {
+          "type": "boolean",
+          "description": "Skip nodes that are not visible to the user, with their subtrees",
+          "default": true
+        },
+        "window": {
+          "type": "string",
+          "description": "The active window only, or every accessibility window (all)",
+          "default": "active",
+          "enum": [
+            "active",
+            "all"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "ui_find",
+    "title": "Find UI nodes",
+    "description": "Finds the nodes of the active window that match every condition of the selector, optionally waiting up to timeoutMs for the first match, and returns up to limit of them with #n references, bounds, and center. An empty count is not an error; ui_explain_selector tells which condition fails.",
+    "group": "ui",
+    "defaultEnabled": true,
+    "bridge": "accessibility.findAll",
+    "permissions": [
+      "accessibility"
+    ],
+    "timeoutMs": 15000,
+    "maxTimeoutMs": 75000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "selector": {
+          "type": "object",
+          "description": "The conditions a node must meet (all of them)",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The node text equals this"
+            },
+            "textContains": {
+              "type": "string",
+              "description": "The node text contains this"
+            },
+            "textMatches": {
+              "type": "string",
+              "description": "The whole node text matches this Java regular expression; (?i) makes it case-insensitive"
+            },
+            "desc": {
+              "type": "string",
+              "description": "The content description equals this"
+            },
+            "descContains": {
+              "type": "string",
+              "description": "The content description contains this"
+            },
+            "descMatches": {
+              "type": "string",
+              "description": "The whole content description matches this Java regular expression"
+            },
+            "id": {
+              "type": "string",
+              "description": "The view id: either the full resource name (package:id/name) or just the name part shown by ui_dump"
+            },
+            "idMatches": {
+              "type": "string",
+              "description": "The whole view id resource name matches this Java regular expression"
+            },
+            "className": {
+              "type": "string",
+              "description": "The class name: either fully qualified (android.widget.Button) or the short name shown by ui_dump (Button)"
+            },
+            "classNameMatches": {
+              "type": "string",
+              "description": "The whole class name matches this Java regular expression"
+            },
+            "clickable": {
+              "type": "boolean",
+              "description": "Whether the node is clickable"
+            },
+            "enabled": {
+              "type": "boolean",
+              "description": "Whether the node is enabled"
+            },
+            "scrollable": {
+              "type": "boolean",
+              "description": "Whether the node is scrollable"
+            },
+            "depth": {
+              "type": "integer",
+              "description": "Depth below the window root; the root is 0",
+              "minimum": 0
+            },
+            "boundsInside": {
+              "type": "object",
+              "description": "Only nodes whose bounds lie inside this rectangle",
+              "properties": {
+                "left": {
+                  "type": "integer",
+                  "description": "Left edge in device pixels"
+                },
+                "top": {
+                  "type": "integer",
+                  "description": "Top edge in device pixels"
+                },
+                "right": {
+                  "type": "integer",
+                  "description": "Right edge in device pixels"
+                },
+                "bottom": {
+                  "type": "integer",
+                  "description": "Bottom edge in device pixels"
+                }
+              },
+              "required": [
+                "left",
+                "top",
+                "right",
+                "bottom"
+              ],
+              "additionalProperties": false
+            },
+            "boundsContains": {
+              "type": "object",
+              "description": "Only nodes whose bounds contain this rectangle",
+              "properties": {
+                "left": {
+                  "type": "integer",
+                  "description": "Left edge in device pixels"
+                },
+                "top": {
+                  "type": "integer",
+                  "description": "Top edge in device pixels"
+                },
+                "right": {
+                  "type": "integer",
+                  "description": "Right edge in device pixels"
+                },
+                "bottom": {
+                  "type": "integer",
+                  "description": "Bottom edge in device pixels"
+                }
+              },
+              "required": [
+                "left",
+                "top",
+                "right",
+                "bottom"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Most nodes to return, in pre-order",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 10
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "How long to keep looking for a first match, in milliseconds; 0 looks once",
+          "minimum": 0,
+          "maximum": 60000,
+          "default": 0
+        }
+      },
+      "required": [
+        "selector"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "ui_current_window",
+    "title": "Current window",
+    "description": "Returns the package and activity in the foreground, whether the AutoJs6 accessibility service is available, and the accessibility windows with their type, title, bounds, and focus.",
+    "group": "ui",
+    "defaultEnabled": true,
+    "bridge": "app.currentWindow",
+    "permissions": [
+      "app.query",
+      "accessibility"
+    ],
+    "timeoutMs": 10000,
+    "maxTimeoutMs": 10000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "ui_explain_selector",
+    "title": "Explain selector",
+    "description": "Explains why a selector matches or not: evaluates its conditions one by one over the active window and reports how many nodes pass each step cumulatively, the first failing condition, the matches, and the near misses. Use it when ui_find returns nothing.",
+    "group": "ui",
+    "defaultEnabled": true,
+    "bridge": "accessibility.explain",
+    "permissions": [
+      "accessibility"
+    ],
+    "timeoutMs": 20000,
+    "maxTimeoutMs": 20000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "selector": {
+          "type": "object",
+          "description": "The selector to explain",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The node text equals this"
+            },
+            "textContains": {
+              "type": "string",
+              "description": "The node text contains this"
+            },
+            "textMatches": {
+              "type": "string",
+              "description": "The whole node text matches this Java regular expression; (?i) makes it case-insensitive"
+            },
+            "desc": {
+              "type": "string",
+              "description": "The content description equals this"
+            },
+            "descContains": {
+              "type": "string",
+              "description": "The content description contains this"
+            },
+            "descMatches": {
+              "type": "string",
+              "description": "The whole content description matches this Java regular expression"
+            },
+            "id": {
+              "type": "string",
+              "description": "The view id: either the full resource name (package:id/name) or just the name part shown by ui_dump"
+            },
+            "idMatches": {
+              "type": "string",
+              "description": "The whole view id resource name matches this Java regular expression"
+            },
+            "className": {
+              "type": "string",
+              "description": "The class name: either fully qualified (android.widget.Button) or the short name shown by ui_dump (Button)"
+            },
+            "classNameMatches": {
+              "type": "string",
+              "description": "The whole class name matches this Java regular expression"
+            },
+            "clickable": {
+              "type": "boolean",
+              "description": "Whether the node is clickable"
+            },
+            "enabled": {
+              "type": "boolean",
+              "description": "Whether the node is enabled"
+            },
+            "scrollable": {
+              "type": "boolean",
+              "description": "Whether the node is scrollable"
+            },
+            "depth": {
+              "type": "integer",
+              "description": "Depth below the window root; the root is 0",
+              "minimum": 0
+            },
+            "boundsInside": {
+              "type": "object",
+              "description": "Only nodes whose bounds lie inside this rectangle",
+              "properties": {
+                "left": {
+                  "type": "integer",
+                  "description": "Left edge in device pixels"
+                },
+                "top": {
+                  "type": "integer",
+                  "description": "Top edge in device pixels"
+                },
+                "right": {
+                  "type": "integer",
+                  "description": "Right edge in device pixels"
+                },
+                "bottom": {
+                  "type": "integer",
+                  "description": "Bottom edge in device pixels"
+                }
+              },
+              "required": [
+                "left",
+                "top",
+                "right",
+                "bottom"
+              ],
+              "additionalProperties": false
+            },
+            "boundsContains": {
+              "type": "object",
+              "description": "Only nodes whose bounds contain this rectangle",
+              "properties": {
+                "left": {
+                  "type": "integer",
+                  "description": "Left edge in device pixels"
+                },
+                "top": {
+                  "type": "integer",
+                  "description": "Top edge in device pixels"
+                },
+                "right": {
+                  "type": "integer",
+                  "description": "Right edge in device pixels"
+                },
+                "bottom": {
+                  "type": "integer",
+                  "description": "Bottom edge in device pixels"
+                }
+              },
+              "required": [
+                "left",
+                "top",
+                "right",
+                "bottom"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "selector"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "ui_wait_for",
+    "title": "Wait for UI node",
+    "description": "Waits until a node matching the selector appears (default) or disappears, polling the active window every 0.5 s for up to timeoutMs, and answers TIMEOUT when the state is not reached. Use it after an action that opens a screen or dismisses a dialog.",
+    "group": "ui",
+    "defaultEnabled": true,
+    "bridge": "accessibility.findOne",
+    "permissions": [
+      "accessibility"
+    ],
+    "timeoutMs": 20000,
+    "maxTimeoutMs": 135000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "selector": {
+          "type": "object",
+          "description": "The conditions of the node to wait for",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The node text equals this"
+            },
+            "textContains": {
+              "type": "string",
+              "description": "The node text contains this"
+            },
+            "textMatches": {
+              "type": "string",
+              "description": "The whole node text matches this Java regular expression; (?i) makes it case-insensitive"
+            },
+            "desc": {
+              "type": "string",
+              "description": "The content description equals this"
+            },
+            "descContains": {
+              "type": "string",
+              "description": "The content description contains this"
+            },
+            "descMatches": {
+              "type": "string",
+              "description": "The whole content description matches this Java regular expression"
+            },
+            "id": {
+              "type": "string",
+              "description": "The view id: either the full resource name (package:id/name) or just the name part shown by ui_dump"
+            },
+            "idMatches": {
+              "type": "string",
+              "description": "The whole view id resource name matches this Java regular expression"
+            },
+            "className": {
+              "type": "string",
+              "description": "The class name: either fully qualified (android.widget.Button) or the short name shown by ui_dump (Button)"
+            },
+            "classNameMatches": {
+              "type": "string",
+              "description": "The whole class name matches this Java regular expression"
+            },
+            "clickable": {
+              "type": "boolean",
+              "description": "Whether the node is clickable"
+            },
+            "enabled": {
+              "type": "boolean",
+              "description": "Whether the node is enabled"
+            },
+            "scrollable": {
+              "type": "boolean",
+              "description": "Whether the node is scrollable"
+            },
+            "depth": {
+              "type": "integer",
+              "description": "Depth below the window root; the root is 0",
+              "minimum": 0
+            },
+            "boundsInside": {
+              "type": "object",
+              "description": "Only nodes whose bounds lie inside this rectangle",
+              "properties": {
+                "left": {
+                  "type": "integer",
+                  "description": "Left edge in device pixels"
+                },
+                "top": {
+                  "type": "integer",
+                  "description": "Top edge in device pixels"
+                },
+                "right": {
+                  "type": "integer",
+                  "description": "Right edge in device pixels"
+                },
+                "bottom": {
+                  "type": "integer",
+                  "description": "Bottom edge in device pixels"
+                }
+              },
+              "required": [
+                "left",
+                "top",
+                "right",
+                "bottom"
+              ],
+              "additionalProperties": false
+            },
+            "boundsContains": {
+              "type": "object",
+              "description": "Only nodes whose bounds contain this rectangle",
+              "properties": {
+                "left": {
+                  "type": "integer",
+                  "description": "Left edge in device pixels"
+                },
+                "top": {
+                  "type": "integer",
+                  "description": "Top edge in device pixels"
+                },
+                "right": {
+                  "type": "integer",
+                  "description": "Right edge in device pixels"
+                },
+                "bottom": {
+                  "type": "integer",
+                  "description": "Bottom edge in device pixels"
+                }
+              },
+              "required": [
+                "left",
+                "top",
+                "right",
+                "bottom"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "state": {
+          "type": "string",
+          "description": "Wait for a match to appear or for every match to disappear",
+          "default": "appear",
+          "enum": [
+            "appear",
+            "disappear"
+          ]
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "How long to wait, in milliseconds",
+          "minimum": 100,
+          "maximum": 120000,
+          "default": 10000
+        }
+      },
+      "required": [
+        "selector"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "ui_click",
+    "title": "Click",
+    "description": "Clicks a node given by nodeRef (a #n reference from the last ui_dump), by selector (the first match in pre-order), or by x and y (a coordinate tap, allowed only while the ui_gesture group is enabled). The accessibility click climbs to the nearest clickable ancestor when the node itself is not clickable. Returns the node it acted on. Give nodeRef or selector, not both.",
+    "group": "ui",
+    "defaultEnabled": true,
+    "bridge": "accessibility.click",
+    "permissions": [
+      "accessibility"
+    ],
+    "timeoutMs": 20000,
+    "maxTimeoutMs": 20000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "nodeRef": {
+          "type": "string",
+          "description": "A #n reference from the last ui_dump (or ui_find / ui_wait_for); the node is found again by its class, text, description, id, and bounds, and NODE_REF_STALE asks for a new ui_dump when it is gone",
+          "maxLength": 32
+        },
+        "selector": {
+          "type": "object",
+          "description": "Conditions that identify the node; the first match in pre-order is used",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The node text equals this"
+            },
+            "textContains": {
+              "type": "string",
+              "description": "The node text contains this"
+            },
+            "textMatches": {
+              "type": "string",
+              "description": "The whole node text matches this Java regular expression; (?i) makes it case-insensitive"
+            },
+            "desc": {
+              "type": "string",
+              "description": "The content description equals this"
+            },
+            "descContains": {
+              "type": "string",
+              "description": "The content description contains this"
+            },
+            "descMatches": {
+              "type": "string",
+              "description": "The whole content description matches this Java regular expression"
+            },
+            "id": {
+              "type": "string",
+              "description": "The view id: either the full resource name (package:id/name) or just the name part shown by ui_dump"
+            },
+            "idMatches": {
+              "type": "string",
+              "description": "The whole view id resource name matches this Java regular expression"
+            },
+            "className": {
+              "type": "string",
+              "description": "The class name: either fully qualified (android.widget.Button) or the short name shown by ui_dump (Button)"
+            },
+            "classNameMatches": {
+              "type": "string",
+              "description": "The whole class name matches this Java regular expression"
+            },
+            "clickable": {
+              "type": "boolean",
+              "description": "Whether the node is clickable"
+            },
+            "enabled": {
+              "type": "boolean",
+              "description": "Whether the node is enabled"
+            },
+            "scrollable": {
+              "type": "boolean",
+              "description": "Whether the node is scrollable"
+            },
+            "depth": {
+              "type": "integer",
+              "description": "Depth below the window root; the root is 0",
+              "minimum": 0
+            },
+            "boundsInside": {
+              "type": "object",
+              "description": "Only nodes whose bounds lie inside this rectangle",
+              "properties": {
+                "left": {
+                  "type": "integer",
+                  "description": "Left edge in device pixels"
+                },
+                "top": {
+                  "type": "integer",
+                  "description": "Top edge in device pixels"
+                },
+                "right": {
+                  "type": "integer",
+                  "description": "Right edge in device pixels"
+                },
+                "bottom": {
+                  "type": "integer",
+                  "description": "Bottom edge in device pixels"
+                }
+              },
+              "required": [
+                "left",
+                "top",
+                "right",
+                "bottom"
+              ],
+              "additionalProperties": false
+            },
+            "boundsContains": {
+              "type": "object",
+              "description": "Only nodes whose bounds contain this rectangle",
+              "properties": {
+                "left": {
+                  "type": "integer",
+                  "description": "Left edge in device pixels"
+                },
+                "top": {
+                  "type": "integer",
+                  "description": "Top edge in device pixels"
+                },
+                "right": {
+                  "type": "integer",
+                  "description": "Right edge in device pixels"
+                },
+                "bottom": {
+                  "type": "integer",
+                  "description": "Bottom edge in device pixels"
+                }
+              },
+              "required": [
+                "left",
+                "top",
+                "right",
+                "bottom"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "x": {
+          "type": "integer",
+          "description": "x of a coordinate tap in device pixels (ui_gesture group)",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "y": {
+          "type": "integer",
+          "description": "y of a coordinate tap in device pixels (ui_gesture group)",
+          "minimum": 0,
+          "maximum": 65535
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "ui_long_click",
+    "title": "Long click",
+    "description": "Long-presses a node given by nodeRef or selector (the accessibility long click climbs to the nearest node that accepts it), or by x and y as a 700 ms press at that point (allowed only while the ui_gesture group is enabled). Give nodeRef or selector, not both.",
+    "group": "ui",
+    "defaultEnabled": true,
+    "bridge": "accessibility.longClick",
+    "permissions": [
+      "accessibility"
+    ],
+    "timeoutMs": 20000,
+    "maxTimeoutMs": 20000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "nodeRef": {
+          "type": "string",
+          "description": "A #n reference from the last ui_dump (or ui_find / ui_wait_for); the node is found again by its class, text, description, id, and bounds, and NODE_REF_STALE asks for a new ui_dump when it is gone",
+          "maxLength": 32
+        },
+        "selector": {
+          "type": "object",
+          "description": "Conditions that identify the node; the first match in pre-order is used",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The node text equals this"
+            },
+            "textContains": {
+              "type": "string",
+              "description": "The node text contains this"
+            },
+            "textMatches": {
+              "type": "string",
+              "description": "The whole node text matches this Java regular expression; (?i) makes it case-insensitive"
+            },
+            "desc": {
+              "type": "string",
+              "description": "The content description equals this"
+            },
+            "descContains": {
+              "type": "string",
+              "description": "The content description contains this"
+            },
+            "descMatches": {
+              "type": "string",
+              "description": "The whole content description matches this Java regular expression"
+            },
+            "id": {
+              "type": "string",
+              "description": "The view id: either the full resource name (package:id/name) or just the name part shown by ui_dump"
+            },
+            "idMatches": {
+              "type": "string",
+              "description": "The whole view id resource name matches this Java regular expression"
+            },
+            "className": {
+              "type": "string",
+              "description": "The class name: either fully qualified (android.widget.Button) or the short name shown by ui_dump (Button)"
+            },
+            "classNameMatches": {
+              "type": "string",
+              "description": "The whole class name matches this Java regular expression"
+            },
+            "clickable": {
+              "type": "boolean",
+              "description": "Whether the node is clickable"
+            },
+            "enabled": {
+              "type": "boolean",
+              "description": "Whether the node is enabled"
+            },
+            "scrollable": {
+              "type": "boolean",
+              "description": "Whether the node is scrollable"
+            },
+            "depth": {
+              "type": "integer",
+              "description": "Depth below the window root; the root is 0",
+              "minimum": 0
+            },
+            "boundsInside": {
+              "type": "object",
+              "description": "Only nodes whose bounds lie inside this rectangle",
+              "properties": {
+                "left": {
+                  "type": "integer",
+                  "description": "Left edge in device pixels"
+                },
+                "top": {
+                  "type": "integer",
+                  "description": "Top edge in device pixels"
+                },
+                "right": {
+                  "type": "integer",
+                  "description": "Right edge in device pixels"
+                },
+                "bottom": {
+                  "type": "integer",
+                  "description": "Bottom edge in device pixels"
+                }
+              },
+              "required": [
+                "left",
+                "top",
+                "right",
+                "bottom"
+              ],
+              "additionalProperties": false
+            },
+            "boundsContains": {
+              "type": "object",
+              "description": "Only nodes whose bounds contain this rectangle",
+              "properties": {
+                "left": {
+                  "type": "integer",
+                  "description": "Left edge in device pixels"
+                },
+                "top": {
+                  "type": "integer",
+                  "description": "Top edge in device pixels"
+                },
+                "right": {
+                  "type": "integer",
+                  "description": "Right edge in device pixels"
+                },
+                "bottom": {
+                  "type": "integer",
+                  "description": "Bottom edge in device pixels"
+                }
+              },
+              "required": [
+                "left",
+                "top",
+                "right",
+                "bottom"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "x": {
+          "type": "integer",
+          "description": "x of a coordinate tap in device pixels (ui_gesture group)",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "y": {
+          "type": "integer",
+          "description": "y of a coordinate tap in device pixels (ui_gesture group)",
+          "minimum": 0,
+          "maximum": 65535
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "ui_set_text",
+    "title": "Set text",
+    "description": "Sets the text of an editable node (an EditText, marked editable by ui_dump) given by nodeRef or selector; append adds to the current text instead of replacing it. Works without focus or the keyboard; ACTION_FAILED means the node is not editable or not enabled. Give nodeRef or selector, not both.",
+    "group": "ui",
+    "defaultEnabled": true,
+    "bridge": "accessibility.setText",
+    "permissions": [
+      "accessibility"
+    ],
+    "timeoutMs": 20000,
+    "maxTimeoutMs": 20000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "nodeRef": {
+          "type": "string",
+          "description": "A #n reference from the last ui_dump (or ui_find / ui_wait_for); the node is found again by its class, text, description, id, and bounds, and NODE_REF_STALE asks for a new ui_dump when it is gone",
+          "maxLength": 32
+        },
+        "selector": {
+          "type": "object",
+          "description": "Conditions that identify the node; the first match in pre-order is used",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The node text equals this"
+            },
+            "textContains": {
+              "type": "string",
+              "description": "The node text contains this"
+            },
+            "textMatches": {
+              "type": "string",
+              "description": "The whole node text matches this Java regular expression; (?i) makes it case-insensitive"
+            },
+            "desc": {
+              "type": "string",
+              "description": "The content description equals this"
+            },
+            "descContains": {
+              "type": "string",
+              "description": "The content description contains this"
+            },
+            "descMatches": {
+              "type": "string",
+              "description": "The whole content description matches this Java regular expression"
+            },
+            "id": {
+              "type": "string",
+              "description": "The view id: either the full resource name (package:id/name) or just the name part shown by ui_dump"
+            },
+            "idMatches": {
+              "type": "string",
+              "description": "The whole view id resource name matches this Java regular expression"
+            },
+            "className": {
+              "type": "string",
+              "description": "The class name: either fully qualified (android.widget.Button) or the short name shown by ui_dump (Button)"
+            },
+            "classNameMatches": {
+              "type": "string",
+              "description": "The whole class name matches this Java regular expression"
+            },
+            "clickable": {
+              "type": "boolean",
+              "description": "Whether the node is clickable"
+            },
+            "enabled": {
+              "type": "boolean",
+              "description": "Whether the node is enabled"
+            },
+            "scrollable": {
+              "type": "boolean",
+              "description": "Whether the node is scrollable"
+            },
+            "depth": {
+              "type": "integer",
+              "description": "Depth below the window root; the root is 0",
+              "minimum": 0
+            },
+            "boundsInside": {
+              "type": "object",
+              "description": "Only nodes whose bounds lie inside this rectangle",
+              "properties": {
+                "left": {
+                  "type": "integer",
+                  "description": "Left edge in device pixels"
+                },
+                "top": {
+                  "type": "integer",
+                  "description": "Top edge in device pixels"
+                },
+                "right": {
+                  "type": "integer",
+                  "description": "Right edge in device pixels"
+                },
+                "bottom": {
+                  "type": "integer",
+                  "description": "Bottom edge in device pixels"
+                }
+              },
+              "required": [
+                "left",
+                "top",
+                "right",
+                "bottom"
+              ],
+              "additionalProperties": false
+            },
+            "boundsContains": {
+              "type": "object",
+              "description": "Only nodes whose bounds contain this rectangle",
+              "properties": {
+                "left": {
+                  "type": "integer",
+                  "description": "Left edge in device pixels"
+                },
+                "top": {
+                  "type": "integer",
+                  "description": "Top edge in device pixels"
+                },
+                "right": {
+                  "type": "integer",
+                  "description": "Right edge in device pixels"
+                },
+                "bottom": {
+                  "type": "integer",
+                  "description": "Bottom edge in device pixels"
+                }
+              },
+              "required": [
+                "left",
+                "top",
+                "right",
+                "bottom"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "text": {
+          "type": "string",
+          "description": "The text to set (or to append)",
+          "maxLength": 16384
+        },
+        "append": {
+          "type": "boolean",
+          "description": "Append to the current text instead of replacing it",
+          "default": false
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "ui_scroll",
+    "title": "Scroll",
+    "description": "Scrolls a node given by nodeRef or selector, or the first scrollable node of the window when neither is given: forward, down, and right move towards the end, backward, up, and left towards the start; times repeats the step. performed counts the steps the node accepted, fewer than requested means it reached the end. Give nodeRef or selector, not both.",
+    "group": "ui",
+    "defaultEnabled": true,
+    "bridge": "accessibility.scrollForward",
+    "permissions": [
+      "accessibility"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "nodeRef": {
+          "type": "string",
+          "description": "A #n reference from the last ui_dump (or ui_find / ui_wait_for); the node is found again by its class, text, description, id, and bounds, and NODE_REF_STALE asks for a new ui_dump when it is gone",
+          "maxLength": 32
+        },
+        "selector": {
+          "type": "object",
+          "description": "Conditions that identify the node; the first match in pre-order is used",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The node text equals this"
+            },
+            "textContains": {
+              "type": "string",
+              "description": "The node text contains this"
+            },
+            "textMatches": {
+              "type": "string",
+              "description": "The whole node text matches this Java regular expression; (?i) makes it case-insensitive"
+            },
+            "desc": {
+              "type": "string",
+              "description": "The content description equals this"
+            },
+            "descContains": {
+              "type": "string",
+              "description": "The content description contains this"
+            },
+            "descMatches": {
+              "type": "string",
+              "description": "The whole content description matches this Java regular expression"
+            },
+            "id": {
+              "type": "string",
+              "description": "The view id: either the full resource name (package:id/name) or just the name part shown by ui_dump"
+            },
+            "idMatches": {
+              "type": "string",
+              "description": "The whole view id resource name matches this Java regular expression"
+            },
+            "className": {
+              "type": "string",
+              "description": "The class name: either fully qualified (android.widget.Button) or the short name shown by ui_dump (Button)"
+            },
+            "classNameMatches": {
+              "type": "string",
+              "description": "The whole class name matches this Java regular expression"
+            },
+            "clickable": {
+              "type": "boolean",
+              "description": "Whether the node is clickable"
+            },
+            "enabled": {
+              "type": "boolean",
+              "description": "Whether the node is enabled"
+            },
+            "scrollable": {
+              "type": "boolean",
+              "description": "Whether the node is scrollable"
+            },
+            "depth": {
+              "type": "integer",
+              "description": "Depth below the window root; the root is 0",
+              "minimum": 0
+            },
+            "boundsInside": {
+              "type": "object",
+              "description": "Only nodes whose bounds lie inside this rectangle",
+              "properties": {
+                "left": {
+                  "type": "integer",
+                  "description": "Left edge in device pixels"
+                },
+                "top": {
+                  "type": "integer",
+                  "description": "Top edge in device pixels"
+                },
+                "right": {
+                  "type": "integer",
+                  "description": "Right edge in device pixels"
+                },
+                "bottom": {
+                  "type": "integer",
+                  "description": "Bottom edge in device pixels"
+                }
+              },
+              "required": [
+                "left",
+                "top",
+                "right",
+                "bottom"
+              ],
+              "additionalProperties": false
+            },
+            "boundsContains": {
+              "type": "object",
+              "description": "Only nodes whose bounds contain this rectangle",
+              "properties": {
+                "left": {
+                  "type": "integer",
+                  "description": "Left edge in device pixels"
+                },
+                "top": {
+                  "type": "integer",
+                  "description": "Top edge in device pixels"
+                },
+                "right": {
+                  "type": "integer",
+                  "description": "Right edge in device pixels"
+                },
+                "bottom": {
+                  "type": "integer",
+                  "description": "Bottom edge in device pixels"
+                }
+              },
+              "required": [
+                "left",
+                "top",
+                "right",
+                "bottom"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "direction": {
+          "type": "string",
+          "description": "Scroll direction",
+          "default": "forward",
+          "enum": [
+            "forward",
+            "backward",
+            "down",
+            "up",
+            "right",
+            "left"
+          ]
+        },
+        "times": {
+          "type": "integer",
+          "description": "How many scroll steps to perform",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "ui_press_key",
+    "title": "Press key",
+    "description": "Presses a global key through the accessibility service: back, home, recents, notifications (opens the notification shade), quick_settings, power_dialog, or lock_screen (Android 9 or later).",
+    "group": "ui",
+    "defaultEnabled": true,
+    "bridge": "accessibility.back",
+    "permissions": [
+      "accessibility"
+    ],
+    "timeoutMs": 10000,
+    "maxTimeoutMs": 10000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "The key to press",
+          "enum": [
+            "back",
+            "home",
+            "recents",
+            "notifications",
+            "quick_settings",
+            "power_dialog",
+            "lock_screen"
+          ]
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "ui_swipe",
+    "title": "Swipe",
+    "description": "Swipes one finger from (x1, y1) to (x2, y2) in device pixels over durationMs; take the coordinates from ui_dump bounds or a screenshot. Part of the ui_gesture group, which is off by default.",
+    "group": "ui_gesture",
+    "defaultEnabled": false,
+    "bridge": "accessibility.swipe",
+    "permissions": [
+      "accessibility",
+      "accessibility.gesture"
+    ],
+    "timeoutMs": 15000,
+    "maxTimeoutMs": 20000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "x1": {
+          "type": "integer",
+          "description": "Start x in device pixels",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "y1": {
+          "type": "integer",
+          "description": "Start y in device pixels",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "x2": {
+          "type": "integer",
+          "description": "End x in device pixels",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "y2": {
+          "type": "integer",
+          "description": "End y in device pixels",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "durationMs": {
+          "type": "integer",
+          "description": "Duration of the swipe in milliseconds",
+          "minimum": 1,
+          "maximum": 10000,
+          "default": 300
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "ui_gesture",
+    "title": "Gesture",
+    "description": "Performs a free-path one-finger gesture through the given points over durationMs (at most 10 s): the first point is the touch down, the last the lift. Part of the ui_gesture group, which is off by default.",
+    "group": "ui_gesture",
+    "defaultEnabled": false,
+    "bridge": "accessibility.gesture",
+    "permissions": [
+      "accessibility",
+      "accessibility.gesture"
+    ],
+    "timeoutMs": 15000,
+    "maxTimeoutMs": 20000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "durationMs": {
+          "type": "integer",
+          "description": "Duration of the whole gesture in milliseconds",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "points": {
+          "type": "array",
+          "description": "The path as [x, y] pairs in device pixels, at least two",
+          "items": {
+            "type": "array",
+            "description": "One [x, y] point",
+            "items": {
+              "type": "integer",
+              "description": "Coordinate in device pixels",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "minItems": 2,
+          "maxItems": 64
+        }
+      },
+      "required": [
+        "durationMs",
+        "points"
+      ],
+      "additionalProperties": false
+    }
   }
 ]

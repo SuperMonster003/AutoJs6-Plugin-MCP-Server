@@ -62,18 +62,16 @@ class ToolRegistry(
         val next = permissions()
         if (next.effective == current.effective) return false
         current = next
-        var changed = false
-        synchronized(registered) {
-            catalog.forEach { spec ->
-                val enabled = next.isEnabled(spec.group)
-                if (enabled && spec.name !in registered) {
-                    register(target, spec)
-                    changed = true
-                } else if (!enabled && spec.name in registered) {
-                    target.removeTool(spec.name)
-                    registered -= spec.name
-                    changed = true
-                }
+        val wanted = catalog.filter { next.isEnabled(it.group) }
+        val changed = synchronized(registered) {
+            if (wanted.map { it.name } == registered.toList()) {
+                false
+            } else {
+                // Re-register from scratch so tools/list keeps the catalog order after a group comes back.
+                registered.toList().forEach { name -> target.removeTool(name) }
+                registered.clear()
+                wanted.forEach { spec -> register(target, spec) }
+                true
             }
         }
         if (changed) {

@@ -15,6 +15,7 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.store.PairedClientSto
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfig
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.TokenStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolCatalog
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolPermissions
 import io.github.supermonster003.autojs6.plugin.mcp.server.ui.PairingDecisionReceiver
 import org.json.JSONObject
 import org.junit.After
@@ -90,7 +91,7 @@ class McpServerSpikeTest {
         assertEquals("tools/list status", 200, list.status)
         val tools = list.json().getJSONObject("result").getJSONArray("tools")
         val names = (0 until tools.length()).map { tools.getJSONObject(it).getString("name") }
-        assertEquals(ToolCatalog.all.map { it.name }, names)
+        assertEquals(ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name }, names)
 
         val held = post(toolsCallRequest(DevicePingTool.NAME), sessionId)
         assertEquals("gated call status", 200, held.status)

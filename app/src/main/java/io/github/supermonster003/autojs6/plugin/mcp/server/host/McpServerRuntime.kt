@@ -23,9 +23,11 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.store.BindScope
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfig
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfigStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.CatalogToolExecutor
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.NodeRefRegistry
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolCatalog
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolPermissionStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolRegistry
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.UiTools
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -59,6 +61,9 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
 
     val toolPermissions: ToolPermissionStore = ToolPermissionStore(this.context)
 
+    /** The `#n` references of the last `ui_dump` (roadmap D12); one snapshot per process. */
+    val nodeRefs: NodeRefRegistry = NodeRefRegistry()
+
     private val lifecycle = Executors.newSingleThreadExecutor { runnable -> Thread(runnable, "mcp-server-lifecycle") }
     private val mainHandler = Handler(Looper.getMainLooper())
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -74,6 +79,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
             local = mapOf(ToolCatalog.DEVICE_PING to { DevicePingTool.payload(this.context, info) }),
             clientNameOf = { sessionId -> server.clientNameOf(sessionId) },
             onToolCall = ::onToolCall,
+            flows = UiTools(nodeRefs, permissions = { toolPermissions.load() }),
         ),
     )
 
@@ -150,6 +156,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
         }
         activeConfig = null
         server.stop()
+        nodeRefs.clear()
         leaveForeground()
     }
 
@@ -390,6 +397,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
         }
         out.println("toolGroups: ${ToolCatalog.summary(toolPermissions.load())}")
         out.println("tools: ${registry.enabledNames.joinToString(",")}")
+        out.println("nodeRefs: ${nodeRefs.describe()}")
     }
 
     companion object {
