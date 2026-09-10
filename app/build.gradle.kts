@@ -63,7 +63,7 @@ require(hostApiLockFile.isFile) {
     "Missing host API lock: ${hostApiLockFile.relativeTo(rootProject.projectDir)}"
 }
 val hostApiLock = hostApiLockFile.loadUniqueLock()
-val hostApiIds = listOf("common-plugin-api")
+val hostApiIds = listOf("common-plugin-api", "mcp-server-api")
 val expectedHostApiLockKeys = setOf("format") + hostApiIds.flatMap { id -> listOf("$id.file", "$id.sha256") }
 require(hostApiLock.stringPropertyNames() == expectedHostApiLockKeys) {
     "Host API AAR lock must contain exactly these keys: ${expectedHostApiLockKeys.sorted()}"
@@ -96,6 +96,7 @@ fun lockedHostApiAar(id: String): File {
 }
 
 val commonPluginApiAar = lockedHostApiAar("common-plugin-api")
+val mcpServerApiAar = lockedHostApiAar("mcp-server-api")
 
 android {
     namespace = globalApplicationId
@@ -205,6 +206,8 @@ androidComponents {
 
 dependencies {
     implementation(files(commonPluginApiAar))
+    // Binder contract between AutoJs6 and this plugin (host module plugin-api/mcp-server-api, roadmap P1.1 / P2.3).
+    implementation(files(mcpServerApiAar))
 
     // MCP endpoint (roadmap P0.2 / D4): official Kotlin SDK server module on the Ktor CIO engine.
     // The SDK pins Ktor 3.5.1; the BOM keeps the engine on the same line.

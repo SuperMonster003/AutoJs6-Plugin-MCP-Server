@@ -10,4 +10,13 @@
     <string name="pairing_notification_text">來自 %2$s 的 %1$s (令牌結尾 %3$s) 正在等待你的確認</string>
     <string name="pairing_notification_title">MCP 客戶端要求配對</string>
     <string name="plugin_description">透過 Model Context Protocol 向 AI 代理開放裝置自動化能力</string>
+    <string name="server_action_stop">停止</string>
+    <string name="server_host_connected">AutoJs6 已連接</string>
+    <string name="server_host_disconnected">等待 AutoJs6 連接</string>
+    <string name="server_listening">正在監聽 %1$s</string>
+    <string name="server_notifications_disabled">通知已關閉; MCP 伺服器正在監聽 %1$s</string>
+    <string name="server_paired_clients">已配對客戶端: %1$d 個</string>
+    <string name="server_state_failed">無法啟動: %1$s</string>
+    <string name="server_state_starting">正在啟動 MCP 伺服器</string>
+    <string name="server_state_stopped">MCP 伺服器已停止</string>
 </resources>

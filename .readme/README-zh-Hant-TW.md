@@ -165,8 +165,12 @@ _2026/09/10_
 - `新增` 每個 `/mcp` 請求的 Bearer 權杖鑑權: 首次啟動時產生 32 位元組權杖, 以 Android Keystore 的 AES-GCM 金鑰包裹後存放在外掛程式私有且不參與備份的儲存空間; `Authorization` 標頭缺失或錯誤時經常數時間比較後以 `401` + `WWW-Authenticate: Bearer` 與 JSON-RPC `-32001` 錯誤拒絕; 權杖不寫入日誌
 - `新增` 傳輸前置的首次配對: 未配對用戶端可以 `initialize` 並列出 tools, resources 與 prompts, 但首次 `tools/call`, `resources/read`, `resources/subscribe` 或 `prompts/get` 回傳 `PAIRING_REQUIRED` (`-32002`), 直到 60 秒內在手機上確認; 拒絕或逾時後 30 秒內回傳 `PAIRING_DENIED` (`-32003`); 用戶端按 `clientInfo` 名稱 (缺失時用 `User-Agent`) 加位址類別 (迴環 / 區域網路) 識別, 因此權杖輪換不影響既有配對, 最多可配對 32 個用戶端
 - `新增` 手機上的配對確認走雙通道: 帶允許 / 拒絕動作的高優先級通知, 以及螢幕解鎖時彈出的對話框; 伺服器設定, 權杖與已配對用戶端保存在原子替換的檔案中, 伺服器程序與設定頁共享且不會讀到過期快取
+- `新增` 帶分組開關的工具目錄 (決策 D6): `device_ping` (外掛本機), `device_info` (AutoJs6 `device.info`) 與 `script_run` (AutoJs6 `engines.execScript`: 執行 JavaScript, 最多等待 `timeoutMs` 直到指令碼結束, 回傳結果與最新的主控台行, 執行期間送出進度通知); 每個工具宣告封閉的 JSON Schema (`additionalProperties: false`), 參數在送達 AutoJs6 之前完成驗證; 分組開關 `script` / `ui` / `ui_gesture` / `screen` / `files` / `files_delete` / `device` / `shell` 存放於 `tool_groups.json`, 關閉的分組自下一次請求起從 `tools/list` 消失, 其工具回應 `TOOL_DISABLED`
+- `新增` 宿主橋接: `org.autojs.plugin.MCP_SERVER` 服務實作真實的 `IMcpServerPlugin` Binder (`getInfo` / `getCapabilities` 回報契約版本 1, 工具分組, MCP 協定版本與 SDK 版本; `openServer` 只接受已安裝且同簽章的 AutoJs6, 回傳帶 `getStatus` / `updateConfig` / `stop` / `close` 的 `IMcpServerSession`); 工具呼叫經宿主能力代理傳遞, 帶單調遞增的請求 id, 每次呼叫的逾時, 4 路並行上限, 宿主錯誤類別映射為 `HOST_UNAVAILABLE` / `A11Y_SERVICE_NOT_RUNNING` / `CAPABILITY_DENIED` / `LIMIT_EXCEEDED` / `RATE_LIMITED` / `TIMEOUT` / `HOST_ERROR`; AutoJs6 結束時監聽器繼續執行, 依賴宿主的工具回應 `HOST_UNAVAILABLE` 直到宿主重新連線; 狀態與事件 (`pairing_requested`, `client_paired`, `tool_call`, `warning`) 經回呼送達宿主
+- `新增` 前景服務通知顯示端點, AutoJs6 連線狀態與已配對用戶端數, 並提供停止動作; 通知被停用時以 toast 提示端點; `dumpsys activity service` 額外列印宿主工作階段, 工具分組開關與已註冊工具
 - `相依性` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 與 Ktor 3.5.1 CIO 引擎
 - `相依性` 附加 Ktor 3.5.1 `ktor-server-test-host` 用於 JVM 傳輸測試 (僅測試範圍)
+- `相依性` 附加 `mcp-server-api.aar` (AutoJs6 模組 `plugin-api/mcp-server-api`, 宿主建置 6.8.0 / 5279, MPL 2.0) 作為 AutoJs6 與外掛之間的 Binder 契約, 並在 `locks/host-api-aars.lock` 中鎖定雜湊
 
 ##### 更多發行歷史
 

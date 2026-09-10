@@ -2,23 +2,49 @@ package io.github.supermonster003.autojs6.plugin.mcp.server
 
 import android.app.Service
 import android.content.Intent
-import android.os.Binder
+import android.os.Bundle
 import android.os.IBinder
+import io.github.supermonster003.autojs6.plugin.mcp.server.host.HostCallerVerifier
+import io.github.supermonster003.autojs6.plugin.mcp.server.host.McpServerRuntime
+import org.autojs.plugin.common.api.PluginInfo
+import org.autojs.plugin.mcp.server.api.IMcpHostCapabilityBroker
+import org.autojs.plugin.mcp.server.api.IMcpServerCallback
+import org.autojs.plugin.mcp.server.api.IMcpServerPlugin
+import org.autojs.plugin.mcp.server.api.IMcpServerSession
+import org.autojs.plugin.mcp.server.api.McpServerContract
 
 /**
  * Entry point the AutoJs6 host binds to (action `org.autojs.plugin.MCP_SERVER`, category
- * `mcp-server`) in the dedicated `:mcp_server` process that will also host the HTTP listener.
+ * `mcp-server`) in the `:mcp_server` process that also hosts the HTTP listener (roadmap P2.3).
  *
- * Until roadmap P1.1 stages the `IMcpServerPlugin` AIDL from the host's `mcp-server-api`
- * module, the service returns a placeholder Binder that only carries the contract descriptor,
- * so discovery, permission enforcement, and cross-process binding are already verifiable.
+ * `getInfo` and `getCapabilities` are metadata and answer any caller the manifest permission
+ * admits, like the INFO service; `openServer` additionally requires the installed same-signer
+ * host (decision D18) and hands the session to [McpServerRuntime].
  */
 class McpServerPluginService : Service() {
 
-    private val binder = object : Binder() {
-        init {
-            attachInterface(null, McpServerPlugin.SERVICE_DESCRIPTOR)
+    private lateinit var verifier: HostCallerVerifier
+    private lateinit var runtime: McpServerRuntime
+
+    private val binder = object : IMcpServerPlugin.Stub() {
+
+        override fun getInfo(): PluginInfo = applicationContext.mcpServerPluginRuntimeInfo().toPluginInfo()
+
+        override fun getCapabilities(): Bundle = applicationContext.mcpServerPluginRuntimeInfo().capabilitiesBundle()
+
+        override fun openServer(config: Bundle?, broker: IMcpHostCapabilityBroker?, callback: IMcpServerCallback?): IMcpServerSession {
+            val callerUid = verifier.enforceHost()
+            if (broker == null) {
+                throw IllegalArgumentException("${McpServerContract.ERROR_INVALID_CONFIG}: a capability broker is required")
+            }
+            return runtime.openSession(config, broker, callback, callerUid, verifier)
         }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        verifier = HostCallerVerifier(this)
+        runtime = McpServerRuntime.get(this)
     }
 
     override fun onBind(intent: Intent?): IBinder = binder

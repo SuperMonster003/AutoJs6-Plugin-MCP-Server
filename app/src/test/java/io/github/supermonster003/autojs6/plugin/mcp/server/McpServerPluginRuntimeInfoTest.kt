@@ -1,9 +1,13 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server
 
 import org.autojs.plugin.common.api.PluginActions
+import org.autojs.plugin.mcp.server.api.McpServerCapabilityKeys
+import org.autojs.plugin.mcp.server.api.McpServerContract
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class McpServerPluginRuntimeInfoTest {
 
@@ -47,5 +51,30 @@ class McpServerPluginRuntimeInfoTest {
         assertEquals("org.autojs.plugin.mcp.server.api.IMcpServerPlugin", McpServerPlugin.SERVICE_DESCRIPTOR)
         assertEquals(9637, McpServerPlugin.DEFAULT_PORT)
         assertEquals("/mcp", McpServerPlugin.ENDPOINT_PATH)
+    }
+
+    @Test
+    fun `capabilities describe the contract the host validates`() {
+        val info = McpServerPluginRuntimeInfo("MCP Server", "d", null, "1.0.0", 1L, "Sep 10, 2026")
+
+        assertEquals(McpServerContract.CONTRACT_VERSION, info.contractVersion)
+        assertTrue(McpServerContract.supportsContractVersion(info.contractVersion))
+        assertEquals(listOf("script", "device"), info.toolGroups)
+        assertEquals(info.protocolVersions, info.protocolVersions.sortedDescending())
+        assertTrue(info.protocolVersions.containsAll(listOf("2025-06-18", "2025-03-26")))
+        assertEquals("0.15.0", info.sdkVersion)
+        assertEquals("mcpServerContractVersion", McpServerCapabilityKeys.CONTRACT_VERSION)
+        assertEquals("mcpServerToolGroups", McpServerCapabilityKeys.TOOL_GROUPS)
+        assertEquals("mcpServerProtocolVersions", McpServerCapabilityKeys.PROTOCOL_VERSIONS)
+        assertEquals("mcpServerSdkVersion", McpServerCapabilityKeys.SDK_VERSION)
+    }
+
+    @Test
+    fun `the reported SDK version is the one the build resolves`() {
+        val catalog = listOf(File("../gradle/libs.versions.toml"), File("gradle/libs.versions.toml")).first { it.isFile }
+        val declared = catalog.readLines()
+            .firstOrNull { it.trim().startsWith("mcp-kotlin-sdk") && it.contains("=") }
+            ?.substringAfter("=")?.trim()?.trim('"')
+        assertEquals(declared, McpServerPlugin.SDK_VERSION)
     }
 }

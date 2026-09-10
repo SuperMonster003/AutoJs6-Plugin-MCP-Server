@@ -10,4 +10,13 @@
     <string name="pairing_notification_text">来自 %2$s 的 %1$s (令牌尾号 %3$s) 正在等待你的确认</string>
     <string name="pairing_notification_title">MCP 客户端请求配对</string>
     <string name="plugin_description">通过 Model Context Protocol 向 AI 代理开放设备自动化能力</string>
+    <string name="server_action_stop">停止</string>
+    <string name="server_host_connected">AutoJs6 已连接</string>
+    <string name="server_host_disconnected">等待 AutoJs6 连接</string>
+    <string name="server_listening">正在监听 %1$s</string>
+    <string name="server_notifications_disabled">通知已关闭; MCP 服务器正在监听 %1$s</string>
+    <string name="server_paired_clients">已配对客户端: %1$d 个</string>
+    <string name="server_state_failed">未能启动: %1$s</string>
+    <string name="server_state_starting">正在启动 MCP 服务器</string>
+    <string name="server_state_stopped">MCP 服务器已停止</string>
 </resources>

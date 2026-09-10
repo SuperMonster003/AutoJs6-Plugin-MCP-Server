@@ -10,4 +10,13 @@
     <string name="pairing_notification_text">%1$s (источник: %2$s, токен заканчивается на %3$s) ожидает вашего подтверждения</string>
     <string name="pairing_notification_title">Клиент MCP запрашивает сопряжение</string>
     <string name="plugin_description">Открывает автоматизацию устройства для ИИ-агентов по протоколу Model Context Protocol</string>
+    <string name="server_action_stop">Остановить</string>
+    <string name="server_host_connected">AutoJs6 подключен</string>
+    <string name="server_host_disconnected">Ожидание AutoJs6</string>
+    <string name="server_listening">Прослушивание %1$s</string>
+    <string name="server_notifications_disabled">Уведомления отключены; сервер MCP прослушивает %1$s</string>
+    <string name="server_paired_clients">Сопряженных клиентов: %1$d</string>
+    <string name="server_state_failed">Не запущен: %1$s</string>
+    <string name="server_state_starting">Запуск сервера MCP</string>
+    <string name="server_state_stopped">Сервер MCP остановлен</string>
 </resources>

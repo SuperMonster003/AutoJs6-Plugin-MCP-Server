@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Bundle
 import org.autojs.plugin.common.api.PluginCapabilityKeys
 import org.autojs.plugin.common.api.PluginInfo
+import org.autojs.plugin.mcp.server.api.McpServerCapabilityKeys
 
 /** Collects the installed package version and the localized metadata of this plugin. */
 internal fun Context.mcpServerPluginRuntimeInfo(): McpServerPluginRuntimeInfo {
@@ -43,8 +44,18 @@ internal fun McpServerPluginRuntimeInfo.toPluginInfo(): PluginInfo {
         engine = runtimeInfo.engine
         variant = runtimeInfo.variant
         supportedAbis = runtimeInfo.supportedAbis
-        capabilities = Bundle().apply {
-            putLong(PluginCapabilityKeys.REQUIRES_HOST_VERSION, runtimeInfo.requiresHostVersion)
-        }
+        capabilities = runtimeInfo.capabilitiesBundle()
     }
+}
+
+/**
+ * The capabilities the host reads before it opens a server (roadmap P2.3): the required host
+ * version, the contract version, the tool groups, the protocol versions, and the SDK version.
+ */
+internal fun McpServerPluginRuntimeInfo.capabilitiesBundle(): Bundle = Bundle().apply {
+    putLong(PluginCapabilityKeys.REQUIRES_HOST_VERSION, requiresHostVersion)
+    putInt(McpServerCapabilityKeys.CONTRACT_VERSION, contractVersion)
+    putStringArray(McpServerCapabilityKeys.TOOL_GROUPS, toolGroups.toTypedArray())
+    putStringArray(McpServerCapabilityKeys.PROTOCOL_VERSIONS, protocolVersions.toTypedArray())
+    putString(McpServerCapabilityKeys.SDK_VERSION, sdkVersion)
 }
