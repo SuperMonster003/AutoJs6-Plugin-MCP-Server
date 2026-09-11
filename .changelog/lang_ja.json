@@ -31,6 +31,9 @@
         "MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) と Ktor 3.5.1 CIO エンジン",
         "JVM トランスポートテスト用に Ktor 3.5.1 `ktor-server-test-host` を追加 (テストスコープのみ)",
         "`mcp-server-api.aar` (AutoJs6 のモジュール `plugin-api/mcp-server-api`, ホストビルド 6.8.0 / 5279, MPL 2.0) を AutoJs6 とプラグイン間の Binder コントラクトとして追加し, `locks/host-api-aars.lock` でハッシュを固定"
+      ],
+      "improvement": [
+        "意図しないネイティブ依存関係をビルド時に拒否し, JSON レポートを生成"
       ]
     }
   }

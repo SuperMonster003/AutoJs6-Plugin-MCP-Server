@@ -171,6 +171,7 @@ _2026/09/11_
 - `Функция` Завершена группа скриптов: `script_run_file` запускает файл скрипта на устройстве, `script_stop` / `script_stop_all` останавливают одно или все выполнения AutoJs6, `script_list` перечисляет запущенные, а `console_tail` возвращает новейшие строки консоли с курсором `nextSinceId` и фильтром по уровню; `script_run` и `script_run_file` теперь сообщают `executionId`, `status` (`finished` / `error` / `running`), `durationMs`, исключение с номером строки и новейшие строки консоли, а во время ожидания каждые 2 с отправляется уведомление о ходе выполнения с новейшей строкой консоли
 - `Функция` Ответы конечной точки MCP передаются потоком server-sent events (режим JSON-ответов SDK не используется), поэтому уведомление, относящееся к запросу, например индикатор выполнения работающего скрипта, доходит до клиента в ответе на этот запрос
 - `Функция` Добавлена группа UI (roadmap P3.2): `ui_dump` возвращает активное окно как компактное дерево узлов со ссылками `#n` (`format` text / json / xml, `maxNodes` до 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` опрашивают селектор, `ui_current_window` и `ui_explain_selector` сообщают окно и причину неудачи селектора, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` действуют на `nodeRef` (узел находится заново по отпечатку, `NODE_REF_STALE`, если он исчез) или на `selector`, `ui_press_key` нажимает back / home / recents / notifications / quick_settings / power_dialog / lock_screen, а выключенная по умолчанию группа `ui_gesture` добавляет `ui_swipe`, `ui_gesture` и координатную форму инструментов клика (`TOOL_DISABLED`, пока группа выключена); снимок каталога инструментов вырос до 20 инструментов; координатным жестам нужен хост AutoJs6, собранный 2026-09-11 или позже (более старый хост случайным образом отвечает "the system cancelled ...")
+- `Улучшение` Проверка сборки отклоняет непреднамеренные нативные зависимости и создает отчет JSON
 - `Зависимость` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) на движке Ktor 3.5.1 CIO
 - `Зависимость` Добавлен Ktor 3.5.1 `ktor-server-test-host` для JVM-тестов транспорта (только тестовая область)
 - `Зависимость` Добавлен `mcp-server-api.aar` (модуль AutoJs6 `plugin-api/mcp-server-api`, сборка хоста 6.8.0 / 5279, MPL 2.0) как контракт Binder между AutoJs6 и плагином, хеш закреплён в `locks/host-api-aars.lock`
@@ -257,3 +258,6 @@ app/src/main/res/raw-*/plugin_instruction.md
 - Документация AutoJs6: https://docs.autojs6.com
 - Спецификация Model Context Protocol: https://modelcontextprotocol.io
 - Уведомления о сторонних компонентах: https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/THIRD_PARTY_NOTICES.md
+
+
+[16 KB page alignment and build verification](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/docs/16kb.md)
