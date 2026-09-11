@@ -31,6 +31,9 @@
         "MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`)과 Ktor 3.5.1 CIO 엔진",
         "JVM 전송 테스트를 위해 Ktor 3.5.1 `ktor-server-test-host` 추가 (테스트 범위만)",
         "`mcp-server-api.aar` (AutoJs6 모듈 `plugin-api/mcp-server-api`, 호스트 빌드 6.8.0 / 5279, MPL 2.0)을 AutoJs6와 플러그인 사이의 Binder 계약으로 추가하고 `locks/host-api-aars.lock`에 해시를 고정"
+      ],
+      "improvement": [
+        "빌드 시 의도하지 않은 네이티브 의존성을 거부하고 JSON 보고서 생성"
       ]
     }
   }

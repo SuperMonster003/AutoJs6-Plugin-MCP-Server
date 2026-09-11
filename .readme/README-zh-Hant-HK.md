@@ -171,6 +171,7 @@ _2026/09/11_
 - `新增` 補全腳本分組: `script_run_file` 運行裝置上的腳本檔案, `script_stop` / `script_stop_all` 停止一個或全部 AutoJs6 執行, `script_list` 列出運行中的執行, `console_tail` 回傳最新的控制台行並帶 `nextSinceId` 游標與級別過濾; `script_run` 與 `script_run_file` 現在回傳 `executionId`, `status` (`finished` / `error` / `running`), `durationMs`, 含行號的異常與最新的控制台行, 等待期間每 2 s 發送一條攜帶最新控制台行的進度通知
 - `新增` MCP 端點的回應改為以伺服器發送事件 (SSE) 串流返回 (不再使用 SDK 的 JSON 回應模式), 屬於某個請求的通知 (如運行中腳本的進度心跳) 會隨該請求自身的回應送達客戶端
 - `新增` 新增 UI 分組 (roadmap P3.2): `ui_dump` 以帶 `#n` 引用的緊湊節點樹回傳當前視窗 (`format` 為 text / json / xml, `maxNodes` 最多 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` 輪詢選擇器, `ui_current_window` 與 `ui_explain_selector` 報告視窗與選擇器失敗的原因, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` 作用於 `nodeRef` (按指紋重新定位, 節點消失時回傳 `NODE_REF_STALE`) 或 `selector`, `ui_press_key` 按下 back / home / recents / notifications / quick_settings / power_dialog / lock_screen, 預設關閉的 `ui_gesture` 分組新增 `ui_swipe`, `ui_gesture` 與點擊工具的座標形式 (分組關閉時回傳 `TOOL_DISABLED`); 工具目錄快照增至 20 個工具; 座標手勢需要 2026-09-11 或之後構建的 AutoJs6 宿主 (更早的宿主會隨機以 "the system cancelled ..." 回應)
+- `優化` 建置階段阻止意外引入原生相依套件, 並輸出 JSON 校驗報告
 - `依賴` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 與 Ktor 3.5.1 CIO 引擎
 - `依賴` 附加 Ktor 3.5.1 `ktor-server-test-host` 用於 JVM 傳輸測試 (僅測試範圍)
 - `依賴` 附加 `mcp-server-api.aar` (AutoJs6 模組 `plugin-api/mcp-server-api`, 宿主構建 6.8.0 / 5279, MPL 2.0) 作為 AutoJs6 與插件之間的 Binder 契約, 並在 `locks/host-api-aars.lock` 中鎖定雜湊
@@ -257,3 +258,6 @@ app/src/main/res/raw-*/plugin_instruction.md
 - AutoJs6 文件: https://docs.autojs6.com
 - Model Context Protocol 規範: https://modelcontextprotocol.io
 - 第三方聲明: https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/THIRD_PARTY_NOTICES.md
+
+
+[16 KB page alignment and build verification](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/docs/16kb.md)

@@ -171,6 +171,7 @@ _2026/09/11_
 - `기능` 스크립트 그룹 완성: `script_run_file`은 기기의 스크립트 파일을 실행하고, `script_stop` / `script_stop_all`은 AutoJs6 실행을 하나 또는 전부 중지하며, `script_list`는 실행 중인 항목을 나열하고, `console_tail`은 `nextSinceId` 커서와 레벨 필터와 함께 최신 콘솔 줄을 반환합니다; `script_run`과 `script_run_file`은 이제 `executionId`, `status` (`finished` / `error` / `running`), `durationMs`, 줄 번호가 포함된 예외, 최신 콘솔 줄을 반환하며, 대기 중에는 2초마다 최신 콘솔 줄을 담은 진행 알림을 보냅니다
 - `기능` MCP 엔드포인트의 응답이 서버 전송 이벤트 (SSE) 로 스트리밍됩니다 (SDK 의 JSON 응답 모드는 사용하지 않음). 실행 중인 스크립트의 진행 하트비트처럼 요청에 속한 알림은 해당 요청 자신의 응답으로 클라이언트에 전달됩니다
 - `기능` UI 그룹 추가 (roadmap P3.2): `ui_dump`는 현재 창을 `#n` 참조가 달린 간결한 노드 트리로 반환하고 (`format`은 text / json / xml, `maxNodes`는 최대 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for`는 선택자를 폴링하며, `ui_current_window`와 `ui_explain_selector`는 창과 선택자가 실패하는 이유를 보고하고, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll`은 `nodeRef` (지문으로 다시 찾으며 사라지면 `NODE_REF_STALE`) 또는 `selector`에 작용하며, `ui_press_key`는 back / home / recents / notifications / quick_settings / power_dialog / lock_screen을 누르고, 기본적으로 꺼져 있는 `ui_gesture` 그룹은 `ui_swipe`, `ui_gesture`와 클릭 도구의 좌표 형식을 추가합니다 (그룹이 꺼져 있으면 `TOOL_DISABLED`); 도구 카탈로그 스냅샷은 20개 도구로 늘어났습니다; 좌표 제스처에는 2026-09-11 이후에 빌드된 AutoJs6 호스트가 필요합니다 (더 오래된 호스트는 무작위로 "the system cancelled ..."로 응답합니다)
+- `개선` 빌드 시 의도하지 않은 네이티브 의존성을 거부하고 JSON 보고서 생성
 - `의존성` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`)과 Ktor 3.5.1 CIO 엔진
 - `의존성` JVM 전송 테스트를 위해 Ktor 3.5.1 `ktor-server-test-host` 추가 (테스트 범위만)
 - `의존성` `mcp-server-api.aar` (AutoJs6 모듈 `plugin-api/mcp-server-api`, 호스트 빌드 6.8.0 / 5279, MPL 2.0)을 AutoJs6와 플러그인 사이의 Binder 계약으로 추가하고 `locks/host-api-aars.lock`에 해시를 고정
@@ -257,3 +258,6 @@ app/src/main/res/raw-*/plugin_instruction.md
 - AutoJs6 문서: https://docs.autojs6.com
 - Model Context Protocol 사양: https://modelcontextprotocol.io
 - 서드파티 고지: https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/THIRD_PARTY_NOTICES.md
+
+
+[16 KB page alignment and build verification](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/docs/16kb.md)
