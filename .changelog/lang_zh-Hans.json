@@ -31,6 +31,9 @@
         "MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 与 Ktor 3.5.1 CIO 引擎",
         "附加 Ktor 3.5.1 `ktor-server-test-host` 用于 JVM 传输测试 (仅测试范围)",
         "附加 `mcp-server-api.aar` (AutoJs6 模块 `plugin-api/mcp-server-api`, 宿主构建 6.8.0 / 5279, MPL 2.0) 作为 AutoJs6 与插件之间的 Binder 契约, 并在 `locks/host-api-aars.lock` 中锁定哈希"
+      ],
+      "improvement": [
+        "构建阶段阻止意外引入原生依赖, 并输出 JSON 校验报告"
       ]
     }
   }
