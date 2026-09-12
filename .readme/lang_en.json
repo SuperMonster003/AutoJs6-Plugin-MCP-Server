@@ -8,13 +8,13 @@
   "p_introduction_what": "MCP Server turns an Android device running AutoJs6 into a [Model Context Protocol]({{ mcp_spec_url }}) server. AI agents on a PC, such as Claude Code, Cursor, or the MCP Inspector, connect to the phone over USB or Wi-Fi and use tools to run scripts, read logs, inspect the accessibility node tree, tap and type, take screenshots, and work with files and apps.",
   "p_introduction_how": "The server runs inside the plugin's own process and is reached through a single Streamable HTTP endpoint. AutoJs6 hands the plugin a capability broker over Binder, so every tool call is executed by the host with its existing permissions, engines, and accessibility service; the plugin never duplicates host functionality.",
   "h3_status": "Status",
-  "p_status": "The project is in the skeleton stage: this release registers the plugin with the AutoJs6 plugin center and prepares the build, documentation, and test infrastructure. The MCP endpoint and its tools are not available yet. Progress is tracked item by item in [ROADMAP.md]({{ roadmap_url }}).",
+  "p_status": "Development preview through P3.3: the authenticated MCP endpoint, pairing, script and UI tools, and screenshots are implemented. screen_capture returns JPEG, PNG or WebP images; screen_state reports screen dimensions and orientation. The drawer switch and settings page are still planned in P4. Progress and device evidence are in [ROADMAP.md]({{ roadmap_url }}).",
   "h3_features": "Planned Features",
   "p_features_intro": "The roadmap delivers the following capabilities in stages",
   "features": [
     "Script execution: run JavaScript from text or from a file inside AutoJs6, list and stop engines, and read recent console output.",
     "Accessibility UI: dump the node tree in a compact text format, find nodes with the AutoJs6 selector syntax, click, long-press, scroll, set text, and press global keys such as Back and Home.",
-    "Screenshots: capture the screen as PNG or JPEG with a size cap suitable for multimodal models.",
+    "Screenshot group (P3.3): screen_capture returns MCP images with crop, scale or maxWidth, JPEG / PNG / WebP, and quality controls. Defaults are JPEG quality 70 and longest edge 1280 px. Images above 4 MiB of base64 are retried at lower quality or smaller dimensions, with metadata reporting adjustments. screen_state reports power, dimensions, orientation and density. The catalog now has 22 tools. MediaProjection fallback requires an AutoJs6 host built on 2026-09-13 or later and consent on the phone; the host session reuses that consent.",
     "Files, apps, and device: read and write files under the AutoJs6 working directory, launch apps, query the foreground window, and report device information.",
     "Connection paths: USB through `adb forward`, local network with an explicit opt-in, a PC-side stdio bridge, and an optional public tunnel with OAuth 2.1.",
     "Security: a rotating bearer token, first-use pairing confirmation on the phone, and per-group tool switches; the server listens only on the loopback interface by default."
@@ -23,13 +23,13 @@
   "usage_steps": [
     "Install the plugin APK from [Releases]({{ repo_url }}/releases) on a device with AutoJs6 build {{ required_host_version_code }} ({{ required_host_version_name }}) or later.",
     "Open the AutoJs6 plugin center, confirm that `MCP Server` is recognized, and enable it. Official release packages pass signature verification automatically.",
-    "Turn on the MCP server from the AutoJs6 drawer or the plugin settings page; the phone shows the endpoint address and the pairing token.",
+    "For this development preview, use the adb control plane and a host test session described in the developer notes; the drawer switch and plugin settings page are planned in P4.",
     "On the PC, run `adb forward tcp:{{ mcp_default_port }} tcp:{{ mcp_default_port }}` and point the MCP client at `http://127.0.0.1:{{ mcp_default_port }}{{ mcp_endpoint_path }}` with the token as a bearer credential."
   ],
-  "p_usage_note": "Steps 3 and 4 describe the planned workflow and become available once the corresponding roadmap phases are complete. The plugin supports Android {{ min_android_version }} (API {{ android_min_sdk }}) or later.",
+  "p_usage_note": "For this development preview, use the adb control plane and a host test session described in the developer notes; the drawer switch and plugin settings page are planned in P4.",
   "h3_quick_start": "Client Configuration",
   "p_quick_start_intro": "Claude Code registers the server with one command; other clients use the same URL and header in their MCP configuration",
-  "p_quick_start_note": "Replace the token with the value shown on the phone. The command works only after the server can be started (see `Status`).",
+  "p_quick_start_note": "In this preview, read the token through the developer-mode adb control plane described in the developer notes. The token display in the settings page is planned in P4.",
   "h3_security": "Permissions and Security",
   "p_security_intro": "The plugin follows explicit boundaries:",
   "security_points": [
@@ -41,7 +41,7 @@
   "p_security_permission": "Only obtain the plugin from the official [Releases]({{ repo_url }}/releases) page or the AutoJs6 plugin center. Packages from unknown sources may fail host verification or carry risks even when the version number looks identical.",
   "h3_plugin_interface": "Plugin Interface",
   "p_plugin_interface": "The following information targets AutoJs6 host and plugin developers; the host uses these identifiers to discover the plugin and negotiate compatibility",
-  "p_contract_service": "`McpServerPluginService` answers the `{{ plugin_service_action }}` action (category `{{ plugin_service_category }}`) and runs in the `:mcp_server` process. The AIDL contract `{{ plugin_aidl_interface }}` is defined by the host in its `mcp-server-api` module and lands with roadmap phase P1; until then the service exposes only the contract descriptor. `McpServerPluginInfoService` answers `{{ plugin_info_action }}` with the standard `PluginInfo`, and `WakeActivity` lets the host wake the plugin process on devices that keep newly installed apps stopped.",
+  "p_contract_service": "`McpServerPluginService` implements the host mcp-server-api contract `{{ plugin_aidl_interface }}` in the `:mcp_server` process and answers `{{ plugin_service_action }}` (category `{{ plugin_service_category }}`). `McpServerPluginInfoService` answers `{{ plugin_info_action }}` with PluginInfo. `WakeActivity` lets the host activate the plugin.",
   "h3_roadmap": "Roadmap",
   "p_roadmap": "The plugin's plans and progress are maintained as a checkable list in ROADMAP.md, organized by phase with acceptance criteria and evidence levels. Unchecked items express intent rather than current capabilities; discussion via Issues is welcome.",
   "text_link_roadmap": "View ROADMAP.md",

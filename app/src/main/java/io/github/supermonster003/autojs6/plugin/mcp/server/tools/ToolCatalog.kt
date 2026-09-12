@@ -11,7 +11,7 @@ import org.autojs.plugin.mcp.server.api.McpServerContract
 /**
  * The tool table of the plugin (appendix A.2). P2.3 shipped the minimal set that proves the whole
  * path (`device_ping` locally, `device_info` and `script_run` through the host); P3.1 completes the
- * `script` group; P3.2 adds the `ui` and `ui_gesture` groups, whose rows run as `UiTools` flows.
+ * `script` group; P3.2 adds `ui` / `ui_gesture` flows; P3.3 adds the `screen` flows and image content.
  * Later phases append rows. `ToolCatalogTest` guards names, schemas, defaults, and a snapshot.
  */
 object ToolCatalog {
@@ -36,6 +36,25 @@ object ToolCatalog {
     const val UI_PRESS_KEY = "ui_press_key"
     const val UI_SWIPE = "ui_swipe"
     const val UI_GESTURE = "ui_gesture"
+    const val SCREEN_CAPTURE = "screen_capture"
+    const val SCREEN_STATE = "screen_state"
+
+    /** Screenshot options shared by the catalog and ScreenTools (P3.3). */
+    object Screen {
+        const val SCALE = "scale"
+        const val MAX_WIDTH = "maxWidth"
+        const val FORMAT = "format"
+        const val QUALITY = "quality"
+        const val REGION = "region"
+        const val DEFAULT_LONG_EDGE = 1280
+        const val DEFAULT_QUALITY = 70
+        const val MAX_WIDTH_LIMIT = 8192L
+        const val CAPTURE_TIMEOUT_MS = 120_000L
+        const val CONSENT_TIMEOUT_MS = 60_000L
+        const val HOST_CAPTURE_TIMEOUT_MS = 15_000L
+        const val MAX_ATTEMPTS = 12
+        val FORMATS = listOf("jpeg", "png", "webp")
+    }
 
     /** `script_run` / `script_run_file` argument names and bounds, shared with the executor and the tests. */
     object ScriptRun {
@@ -510,11 +529,49 @@ object ToolCatalog {
     )
 
     /** Every tool in list order; `tools/list` keeps this order. */
+    val screenCapture = ToolSpec(
+        name = SCREEN_CAPTURE,
+        title = "Capture the screen",
+        description = "Capture the phone screen as an MCP image with dimensions, size, duration and capture source. " +
+                "Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. " +
+                "Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. " +
+                "Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments.",
+        group = ToolGroup.SCREEN,
+        inputSchema = JsonSchemas.objectSchema(linkedMapOf(
+            Screen.SCALE to buildJsonObject {
+                put("type", "number")
+                put("description", "Scale after cropping, from 0.0001 to 1; mutually exclusive with maxWidth")
+                put("minimum", 0.0001)
+                put("maximum", 1)
+            },
+            Screen.MAX_WIDTH to JsonSchemas.integer("Maximum output width, preserving aspect ratio; mutually exclusive with scale", 1, Screen.MAX_WIDTH_LIMIT),
+            Screen.FORMAT to JsonSchemas.string("Image encoding", default = "jpeg", enum = Screen.FORMATS),
+            Screen.QUALITY to JsonSchemas.integer("JPEG or WebP quality; PNG ignores quality", 1, 100, Screen.DEFAULT_QUALITY.toLong()),
+            Screen.REGION to JsonSchemas.bounds("Crop in current screen pixels before scaling; right and bottom are exclusive"),
+        )),
+        bridge = BridgeMethod("accessibility", "screenshot"),
+        permissions = listOf("accessibility", "screen_capture", "image", "device"),
+        timeoutMs = Screen.CAPTURE_TIMEOUT_MS,
+        hints = ToolHints(readOnly = true, idempotent = false, openWorld = true),
+    )
+
+    val screenState = ToolSpec(
+        name = SCREEN_STATE,
+        title = "Read screen state",
+        description = "Read whether the screen is on, its current width and height, orientation, rotation, and density. Does not request screen capture consent.",
+        group = ToolGroup.SCREEN,
+        inputSchema = JsonSchemas.objectSchema(),
+        bridge = BridgeMethod("device", "isScreenOn"),
+        permissions = listOf("device"),
+        hints = ToolHints(readOnly = true, idempotent = true),
+    )
+
     val all: List<ToolSpec> = listOf(
         devicePing, deviceInfo,
         scriptRun, scriptRunFile, scriptStop, scriptStopAll, scriptList, consoleTail,
         uiDump, uiFind, uiCurrentWindow, uiExplainSelector, uiWaitFor, uiClick, uiLongClick, uiSetText, uiScroll, uiPressKey,
         uiSwipe, uiGesture,
+        screenCapture, screenState,
     )
 
     val byName: Map<String, ToolSpec> = all.associateBy { it.name }

@@ -2,6 +2,7 @@ package io.github.supermonster003.autojs6.plugin.mcp.server.tools
 
 import io.github.supermonster003.autojs6.plugin.mcp.server.bridge.ToolFailure
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.ImageContent
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -11,14 +12,15 @@ import kotlinx.serialization.json.put
 /**
  * The two result shapes every tool answers with (appendix A.1): a success carries the JSON
  * result both as text and as `structuredContent` (a tool whose natural form is plain text, such
- * as the compact node tree of `ui_dump`, sends that text instead of the JSON); a failure is
+ * as the compact node tree of `ui_dump`, sends that text instead of the JSON), plus an image
+ * block for `screen_capture`; a failure is
  * `isError: true` with the text `code: message (hint)` and the same fields under
  * `structuredContent.error`.
  */
 object ToolResults {
 
-    fun success(structured: JsonObject, text: String = structured.toString()): CallToolResult = CallToolResult(
-        content = listOf(TextContent(text = text)),
+    fun success(structured: JsonObject, text: String = structured.toString(), image: ImageContent? = null): CallToolResult = CallToolResult(
+        content = listOfNotNull(TextContent(text = text), image),
         structuredContent = structured,
         isError = false,
     )
