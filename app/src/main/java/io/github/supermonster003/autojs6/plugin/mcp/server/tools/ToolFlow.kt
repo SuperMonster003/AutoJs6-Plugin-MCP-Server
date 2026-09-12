@@ -2,6 +2,7 @@ package io.github.supermonster003.autojs6.plugin.mcp.server.tools
 
 import io.github.supermonster003.autojs6.plugin.mcp.server.bridge.BridgeOutcome
 import io.github.supermonster003.autojs6.plugin.mcp.server.bridge.ToolFailure
+import io.modelcontextprotocol.kotlin.sdk.types.ImageContent
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -22,8 +23,8 @@ suspend fun BridgeCaller.callOrThrow(module: String, method: String, args: JsonA
         is BridgeOutcome.Failed -> throw ToolFailureException(outcome.failure)
     }
 
-/** What a flow answers: the structured result and, when the natural form is plain text, that text. */
-class ToolFlowResult(val structured: JsonObject, val text: String = structured.toString())
+/** A flow's structured metadata, display text, and optional MCP image content. */
+class ToolFlowResult(val structured: JsonObject, val text: String = structured.toString(), val image: ImageContent? = null)
 
 /**
  * A tool that needs more than one host call, or shapes its arguments and results beyond a

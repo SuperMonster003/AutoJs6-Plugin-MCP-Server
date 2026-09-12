@@ -432,11 +432,58 @@ class McpServerHostSessionTest {
 
     // ------------------------------------------------------------------ fakes
 
+    @Test
+    fun screenToolsReturnImagesThroughDescriptorsAndHonorTheGroupSwitch() {
+        val broker = FakeBroker()
+        val session = runtime.openSession(configBundle(PORT), broker, RecordingCallback(), Process.myUid())
+        awaitStatus(session) { it.getString(McpServerContract.KEY_STATUS_STATE) == McpServerContract.STATE_RUNNING }
+        val sessionId = post(initializeRequest(), sessionId = null).header("mcp-session-id")
+        post(initializedNotification(), sessionId)
+        val held = post(toolsCallRequest(ToolCatalog.SCREEN_CAPTURE), sessionId)
+        assertTrue(runtime.server.pairingGate!!.approve(held.json().getJSONObject("error").getJSONObject("data").getString("fingerprint")))
+        repeat(3) { index ->
+            broker.screenFallback = index > 0
+            val result = post(toolsCallRequest(ToolCatalog.SCREEN_CAPTURE), sessionId).json().getJSONObject("result")
+            assertFalse(result.toString(), result.optBoolean("isError"))
+            val meta = result.getJSONObject("structuredContent")
+            assertEquals(if (index == 0) "accessibility" else "media_projection", meta.getString("source"))
+            val image = result.getJSONArray("content").getJSONObject(1)
+            assertEquals("image", image.getString("type"))
+            assertEquals("image/jpeg", image.getString("mimeType"))
+            val bytes = android.util.Base64.decode(image.getString("data"), android.util.Base64.DEFAULT)
+            val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            assertEquals(20, bitmap.width)
+            assertEquals(30, bitmap.height)
+            bitmap.recycle()
+            assertEquals(bytes.size, meta.getInt("bytes"))
+            assertFalse(meta.has("payload"))
+            if (index == 0) assertEquals(listOf("accessibility", "screen_capture"), broker.requests.last().getJSONArray("permissions").toStringList())
+        }
+        assertEquals(2, broker.requests.count { it.getString("module") == "media_projection" })
+        val capture = broker.requests.last { it.getString("module") == "image" }
+        assertEquals(576, capture.getJSONArray("args").getJSONObject(0).getInt("maxWidth"))
+        assertEquals(listOf("image", "screen_capture"), capture.getJSONArray("permissions").toStringList())
+        assertEquals(15_000L, capture.getLong("timeoutMs"))
+        val state = post(toolsCallRequest(ToolCatalog.SCREEN_STATE), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        assertTrue(state.getBoolean("screenOn"))
+        assertEquals(1080, state.getInt("width"))
+        broker.denyCapture = true
+        val denied = post(toolsCallRequest(ToolCatalog.SCREEN_CAPTURE), sessionId).json().getJSONObject("result")
+        assertEquals("CAPABILITY_DENIED", denied.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
+        assertTrue(denied.toString().contains("approve AutoJs6"))
+        ToolPermissionStore(context).save(ToolPermissions.DEFAULT.with(ToolGroup.SCREEN, false))
+        val disabled = post(toolsCallRequest(ToolCatalog.SCREEN_CAPTURE), sessionId).json().getJSONObject("result")
+        assertEquals("TOOL_DISABLED", disabled.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
+        session.close()
+    }
+
     private class FakeBroker : IMcpHostCapabilityBroker.Stub() {
 
         val requests = CopyOnWriteArrayList<JSONObject>()
         val clientNames = CopyOnWriteArrayList<String?>()
         private var scrolls = 0
+        var screenFallback = false
+        var denyCapture = false
 
         override fun getBrokerInfo(): Bundle = Bundle().apply {
             putInt(McpServerContract.KEY_CONTRACT_VERSION, McpServerContract.CONTRACT_VERSION)
@@ -449,6 +496,7 @@ class McpServerHostSessionTest {
                     "device.info", "engines.execScript", "engines.execScriptFile", "engines.list", "engines.stop", "engines.stopAll", "console.tail",
                     "accessibility.dump", "accessibility.findAll", "accessibility.findOne", "accessibility.click", "accessibility.setText",
                     "accessibility.scrollForward", "accessibility.swipe", "accessibility.back", "keys.notifications", "app.currentWindow",
+                    "device.isScreenOn", "accessibility.screenshot", "media_projection.requestScreenCapture", "image.captureScreen",
                 ),
             )
             putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query"))
@@ -463,11 +511,27 @@ class McpServerHostSessionTest {
             requests += json
             clientNames += request?.getString(McpServerContract.KEY_BRIDGE_CLIENT_NAME)
             val id = json.getString("id")
+            var imageBytes: ByteArray? = null
             val response = when ("${json.getString("module")}.${json.getString("method")}") {
                 "device.info" -> JSONObject()
                     .put("id", id)
                     .put("ok", true)
-                    .put("result", JSONObject().put("schema", "autojs6-bridge-device-info-v1").put("host", JSONObject().put("versionName", "6.8.0").put("pid", 4242)))
+                    .put("result", JSONObject().put("schema", "autojs6-bridge-device-info-v1").put("host", JSONObject().put("versionName", "6.8.0").put("pid", 4242))
+                        .put("screen", JSONObject().put("width", 1080).put("height", 2400).put("densityDpi", 480).put("orientation", "portrait")))
+                "device.isScreenOn" -> ok(id, true)
+                "media_projection.requestScreenCapture" -> if (denyCapture) JSONObject().put("id", id).put("ok", false).put("error",
+                    JSONObject().put("category", "permission-denied").put("message", "denied on phone")) else ok(id, JSONObject().put("id", "projection"))
+                "accessibility.screenshot", "image.captureScreen" -> if (screenFallback && json.getString("module") == "accessibility") {
+                    JSONObject().put("id", id).put("ok", false).put("error", JSONObject().put("category", "unavailable").put("module", "accessibility").put("message", "fallback: media_projection"))
+                } else {
+                    val bitmap = android.graphics.Bitmap.createBitmap(20, 30, android.graphics.Bitmap.Config.ARGB_8888)
+                    imageBytes = java.io.ByteArrayOutputStream().use { output ->
+                        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 70, output)
+                        output.toByteArray()
+                    }
+                    bitmap.recycle()
+                    ok(id, JSONObject().put("width", 20).put("height", 30).put("bytes", imageBytes.size).put("mime", "image/jpeg"))
+                }
                 "engines.execScript" -> {
                     val source = json.getJSONArray("args").getString(1)
                     when {
@@ -560,6 +624,15 @@ class McpServerHostSessionTest {
                 else -> JSONObject().put("id", id).put("ok", false).put("error", JSONObject().put("name", "Error").put("message", "not granted").put("code", "x").put("category", "capability-denied"))
             }
             val reply = Bundle().apply {
+                imageBytes?.let { bytes ->
+                    val cache = InstrumentationRegistry.getInstrumentation().targetContext.cacheDir
+                    val file = java.io.File.createTempFile("mcp-screen-test", ".jpg", cache).apply { writeBytes(bytes) }
+                    val fd = android.os.ParcelFileDescriptor.open(file, android.os.ParcelFileDescriptor.MODE_READ_ONLY)
+                    file.delete()
+                    putParcelable(McpServerContract.KEY_BRIDGE_PAYLOAD_FD, fd)
+                    putLong(McpServerContract.KEY_BRIDGE_PAYLOAD_BYTES, bytes.size.toLong())
+                    putString(McpServerContract.KEY_BRIDGE_PAYLOAD_MIME, "image/jpeg")
+                }
                 putString(McpServerContract.KEY_BRIDGE_RESPONSE_JSON, response.toString())
                 putBoolean(McpServerContract.KEY_BRIDGE_RESPONSE_OK, response.getBoolean("ok"))
                 if (!response.getBoolean("ok")) putString(McpServerContract.KEY_BRIDGE_ERROR_MESSAGE, response.getJSONObject("error").getString("message"))

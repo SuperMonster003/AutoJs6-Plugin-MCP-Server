@@ -52,7 +52,7 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 
 ******
 
-项目处于骨架阶段: 本版本向 AutoJs6 插件中心注册插件, 并准备好构建, 文档与测试基础设施. MCP 端点及其工具尚不可用. 进度在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) 中逐项跟踪.
+开发预览已推进至 P3.3: 带鉴权与配对的 MCP 端点, 脚本工具, UI 工具和截图工具均已实现. screen_capture 返回 JPEG, PNG 或 WebP 图片, screen_state 返回屏幕尺寸与方向. 抽屉开关和设置页仍计划在 P4 实现. 进度与设备证据见 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -64,7 +64,7 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 
 - 脚本执行: 在 AutoJs6 内运行文本或文件形式的 JavaScript, 列出与停止引擎, 读取最近的控制台输出.
 - 无障碍界面: 以紧凑文本格式导出节点树, 用 AutoJs6 选择器语法查找节点, 点击, 长按, 滚动, 设置文本, 以及触发返回和主屏幕等全局按键.
-- 截图: 以 PNG 或 JPEG 截取屏幕, 并限制尺寸以适配多模态模型.
+- 截图分组 (P3.3): screen_capture 返回 MCP 图片, 支持裁剪, scale 或 maxWidth, JPEG / PNG / WebP 与质量参数. 默认 JPEG 质量 70, 最长边 1280 px. base64 超过 4 MiB 时降低质量或尺寸重试, 元数据说明调整情况. screen_state 返回亮屏状态, 尺寸, 方向和密度. 工具目录现有 22 项. MediaProjection 回退需要 2026-09-13 或之后构建的 AutoJs6 宿主及手机端授权, 宿主会话复用该授权.
 - 文件, 应用与设备: 读写 AutoJs6 工作目录下的文件, 启动应用, 查询前台窗口, 报告设备信息.
 - 连接方式: 通过 `adb forward` 的 USB 连接, 需显式开启的局域网连接, 电脑端 stdio 桥接程序, 以及可选的公网隧道与 OAuth 2.1.
 - 安全: 可轮换的 Bearer 令牌, 手机端首次配对确认, 按分组的工具开关; 服务器默认只监听回环接口.
@@ -77,10 +77,10 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 
 1. 在安装了 AutoJs6 构建 5279 (6.8.0) 或更高版本的设备上, 从 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) 下载并安装插件 APK.
 2. 打开 AutoJs6 插件中心, 确认 `MCP Server` 已被识别并启用. 官方发布包会自动通过签名校验.
-3. 在 AutoJs6 抽屉或插件设置页开启 MCP 服务器; 手机上会显示端点地址与配对令牌.
+3. 本开发预览通过开发文档中的 adb 控制面与宿主测试会话连接; 抽屉开关和插件设置页计划在 P4 实现.
 4. 在电脑上执行 `adb forward tcp:9637 tcp:9637`, 并让 MCP 客户端连接 `http://127.0.0.1:9637/mcp`, 以令牌作为 Bearer 凭据.
 
-> 第 3 步与第 4 步描述的是规划中的流程, 将在对应路线图阶段完成后可用. 插件支持 Android 7.0 (API 24) 及以上版本.
+> 本开发预览通过开发文档中的 adb 控制面与宿主测试会话连接; 抽屉开关和插件设置页计划在 P4 实现.
 
 ******
 
@@ -95,7 +95,7 @@ adb forward tcp:9637 tcp:9637
 claude mcp add --transport http autojs6 http://127.0.0.1:9637/mcp --header "Authorization: Bearer <token>"
 ```
 
-请将令牌替换为手机上显示的值. 该命令只有在服务器可以启动后才会生效 (见 `当前状态`).
+本预览通过开发文档中的开发者模式 adb 控制面读取令牌. 设置页的令牌展示计划在 P4 实现.
 
 ******
 
@@ -133,7 +133,7 @@ minimum host build: 5279 (6.8.0)
 default endpoint: http://127.0.0.1:9637/mcp
 ```
 
-`McpServerPluginService` 响应 `org.autojs.plugin.MCP_SERVER` action (category `mcp-server`), 运行在 `:mcp_server` 进程中. AIDL 契约 `org.autojs.plugin.mcp.server.api.IMcpServerPlugin` 由宿主在 `mcp-server-api` 模块中定义, 随路线图 P1 阶段落地; 在此之前服务只暴露契约描述符. `McpServerPluginInfoService` 以标准 `PluginInfo` 响应 `org.autojs.plugin.INFO`, `WakeActivity` 则让宿主能在会保持新装应用停止状态的设备上唤醒插件进程.
+`McpServerPluginService` 在 `:mcp_server` 进程中实现宿主 mcp-server-api 契约 `org.autojs.plugin.mcp.server.api.IMcpServerPlugin`, 响应 `org.autojs.plugin.MCP_SERVER` (category `mcp-server`). `McpServerPluginInfoService` 以 PluginInfo 响应 `org.autojs.plugin.INFO`. `WakeActivity` 供宿主激活插件.
 
 ******
 
@@ -153,9 +153,9 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 #### v1.0.0
 
-_2026/09/11_
+_2026/09/13_
 
-- `提示` 开发预览版: 插件已可在 AutoJs6 插件中心注册, 但 MCP 端点及其工具尚不可用
+- `提示` 开发预览已推进至 P3.3: 带鉴权与配对的 MCP 端点, 脚本工具, UI 工具和截图工具均已实现. screen_capture 返回 JPEG, PNG 或 WebP 图片, screen_state 返回屏幕尺寸与方向. 抽屉开关和设置页仍计划在 P4 实现. 进度与设备证据见 ROADMAP.md.
 - `新增` 插件标识 `mcp-server`, 含 INFO 服务, Wake Activity 以及供宿主发现的 `org.autojs.plugin.MCP_SERVER` 服务骨架
 - `新增` 10 种语言的 README, 插件中心说明与更新日志
 - `新增` 位于 `http://127.0.0.1:9637/mcp` 的 Streamable HTTP 端点及 `device_ping` 工具, 由可经 adb 或宿主启停的前台服务承载 (开发预览)
@@ -171,6 +171,7 @@ _2026/09/11_
 - `新增` 补全脚本分组: `script_run_file` 运行设备上的脚本文件, `script_stop` / `script_stop_all` 停止一个或全部 AutoJs6 执行, `script_list` 列出运行中的执行, `console_tail` 返回最新的控制台行并带 `nextSinceId` 游标与级别过滤; `script_run` 与 `script_run_file` 现在返回 `executionId`, `status` (`finished` / `error` / `running`), `durationMs`, 含行号的异常与最新的控制台行, 等待期间每 2 s 发送一条携带最新控制台行的进度通知
 - `新增` MCP 端点的响应改为以服务器发送事件 (SSE) 流式返回 (不再使用 SDK 的 JSON 响应模式), 属于某个请求的通知 (如运行中脚本的进度心跳) 会随该请求自身的响应送达客户端
 - `新增` 新增 UI 分组 (roadmap P3.2): `ui_dump` 以带 `#n` 引用的紧凑节点树返回当前窗口 (`format` 为 text / json / xml, `maxNodes` 最多 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` 轮询选择器, `ui_current_window` 与 `ui_explain_selector` 报告窗口与选择器失败的原因, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` 作用于 `nodeRef` (按指纹重定位, 节点消失时返回 `NODE_REF_STALE`) 或 `selector`, `ui_press_key` 按下 back / home / recents / notifications / quick_settings / power_dialog / lock_screen, 默认关闭的 `ui_gesture` 分组增加 `ui_swipe`, `ui_gesture` 与点击工具的坐标形式 (分组关闭时返回 `TOOL_DISABLED`); 工具目录快照增至 20 个工具; 坐标手势需要 2026-09-11 或之后构建的 AutoJs6 宿主 (更早的宿主会随机以 "the system cancelled ..." 应答)
+- `新增` 截图分组 (P3.3): screen_capture 返回 MCP 图片, 支持裁剪, scale 或 maxWidth, JPEG / PNG / WebP 与质量参数. 默认 JPEG 质量 70, 最长边 1280 px. base64 超过 4 MiB 时降低质量或尺寸重试, 元数据说明调整情况. screen_state 返回亮屏状态, 尺寸, 方向和密度. 工具目录现有 22 项. MediaProjection 回退需要 2026-09-13 或之后构建的 AutoJs6 宿主及手机端授权, 宿主会话复用该授权.
 - `优化` 构建阶段阻止意外引入原生依赖, 并输出 JSON 校验报告
 - `依赖` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 与 Ktor 3.5.1 CIO 引擎
 - `依赖` 附加 Ktor 3.5.1 `ktor-server-test-host` 用于 JVM 传输测试 (仅测试范围)

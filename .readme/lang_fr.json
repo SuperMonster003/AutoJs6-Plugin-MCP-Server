@@ -8,13 +8,13 @@
   "p_introduction_what": "MCP Server transforme un appareil Android exécutant AutoJs6 en serveur [Model Context Protocol]({{ mcp_spec_url }}). Les agents IA sur PC, tels que Claude Code, Cursor ou MCP Inspector, se connectent au téléphone par USB ou Wi-Fi et utilisent des outils pour exécuter des scripts, lire les journaux, inspecter l'arbre des noeuds d'accessibilité, toucher et saisir du texte, prendre des captures d'écran et manipuler des fichiers et des applications.",
   "p_introduction_how": "Le serveur s'exécute dans le processus propre du plugin et est joignable via un unique point de terminaison Streamable HTTP. AutoJs6 fournit au plugin un courtier de capacités via Binder, de sorte que chaque appel d'outil est exécuté par l'hôte avec ses permissions, ses moteurs et son service d'accessibilité existants ; le plugin ne duplique jamais les fonctionnalités de l'hôte.",
   "h3_status": "État",
-  "p_status": "Le projet est au stade du squelette : cette version enregistre le plugin auprès du centre de plugins d'AutoJs6 et prépare l'infrastructure de build, de documentation et de tests. Le point de terminaison MCP et ses outils ne sont pas encore disponibles. L'avancement est suivi point par point dans [ROADMAP.md]({{ roadmap_url }}).",
+  "p_status": "Aperçu de développement jusqu'à P3.3: le point MCP authentifié, l'appairage, les outils de script, d'interface et de capture sont implémentés. screen_capture renvoie des images JPEG, PNG ou WebP; screen_state indique les dimensions et l'orientation. Le commutateur du tiroir et les réglages sont prévus en P4. Voir [ROADMAP.md]({{ roadmap_url }}) pour les progrès et les essais sur appareils.",
   "h3_features": "Fonctionnalités prévues",
   "p_features_intro": "La feuille de route livre les capacités suivantes par étapes",
   "features": [
     "Exécution de scripts : exécuter du JavaScript depuis un texte ou un fichier dans AutoJs6, lister et arrêter les moteurs, et lire la sortie récente de la console.",
     "Interface d'accessibilité : exporter l'arbre des noeuds dans un format texte compact, trouver des noeuds avec la syntaxe de sélecteur d'AutoJs6, cliquer, appuyer longuement, faire défiler, saisir du texte et déclencher des touches globales comme Retour et Accueil.",
-    "Captures d'écran : capturer l'écran en PNG ou JPEG avec une taille plafonnée adaptée aux modèles multimodaux.",
+    "Groupe de capture (P3.3): screen_capture renvoie des images MCP avec recadrage, scale ou maxWidth, JPEG / PNG / WebP et qualité réglable. Valeurs par défaut: JPEG, qualité 70, côté le plus long de 1280 px. Au-delà de 4 MiB de base64, la qualité ou les dimensions diminuent et les métadonnées indiquent les ajustements. screen_state fournit l'état, les dimensions, l'orientation et la densité. Le catalogue compte 22 outils. Le repli MediaProjection nécessite AutoJs6 compilé le 2026-09-13 ou après et un accord sur le téléphone, réutilisé par la session hôte.",
     "Fichiers, applications et appareil : lire et écrire des fichiers dans le répertoire de travail d'AutoJs6, lancer des applications, interroger la fenêtre au premier plan et rapporter les informations de l'appareil.",
     "Chemins de connexion : USB via `adb forward`, réseau local avec activation explicite, pont stdio côté PC et tunnel public optionnel avec OAuth 2.1.",
     "Sécurité : jeton bearer renouvelable, confirmation d'appairage à la première utilisation sur le téléphone et interrupteurs d'outils par groupe ; le serveur n'écoute par défaut que sur l'interface de bouclage."
@@ -23,13 +23,13 @@
   "usage_steps": [
     "Installez l'APK du plugin depuis [Releases]({{ repo_url }}/releases) sur un appareil disposant d'AutoJs6 build {{ required_host_version_code }} ({{ required_host_version_name }}) ou ultérieur.",
     "Ouvrez le centre de plugins d'AutoJs6, vérifiez que `MCP Server` est reconnu et activez-le. Les paquets officiels passent automatiquement la vérification de signature.",
-    "Activez le serveur MCP depuis le tiroir d'AutoJs6 ou la page de réglages du plugin ; le téléphone affiche l'adresse du point de terminaison et le jeton d'appairage.",
+    "Pour cet aperçu, utilisez les commandes adb et une session de test hôte décrites dans les notes de développement; le commutateur du tiroir et les réglages du plugin sont prévus en P4.",
     "Sur le PC, exécutez `adb forward tcp:{{ mcp_default_port }} tcp:{{ mcp_default_port }}` et pointez le client MCP vers `http://127.0.0.1:{{ mcp_default_port }}{{ mcp_endpoint_path }}` avec le jeton comme identifiant bearer."
   ],
-  "p_usage_note": "Les étapes 3 et 4 décrivent le flux prévu et deviennent disponibles une fois les phases correspondantes de la feuille de route terminées. Le plugin prend en charge Android {{ min_android_version }} (API {{ android_min_sdk }}) ou ultérieur.",
+  "p_usage_note": "Pour cet aperçu, utilisez les commandes adb et une session de test hôte décrites dans les notes de développement; le commutateur du tiroir et les réglages du plugin sont prévus en P4.",
   "h3_quick_start": "Configuration du client",
   "p_quick_start_intro": "Claude Code enregistre le serveur en une seule commande ; les autres clients utilisent la même URL et le même en-tête dans leur configuration MCP",
-  "p_quick_start_note": "Remplacez le jeton par la valeur affichée sur le téléphone. La commande ne fonctionne qu'une fois le serveur démarrable (voir `État`).",
+  "p_quick_start_note": "Dans cette version de développement, lisez le jeton via le contrôle adb en mode développeur décrit dans les notes techniques. Son affichage dans les paramètres est prévu en P4.",
   "h3_security": "Permissions et sécurité",
   "p_security_intro": "Le plugin respecte des limites explicites :",
   "security_points": [
@@ -41,7 +41,7 @@
   "p_security_permission": "N'obtenez le plugin que depuis la page officielle [Releases]({{ repo_url }}/releases) ou le centre de plugins d'AutoJs6. Les paquets de sources inconnues peuvent échouer à la vérification de l'hôte ou présenter des risques même lorsque le numéro de version semble identique.",
   "h3_plugin_interface": "Interface du plugin",
   "p_plugin_interface": "Les informations suivantes s'adressent aux développeurs de l'hôte AutoJs6 et de plugins ; l'hôte utilise ces identifiants pour découvrir le plugin et négocier la compatibilité",
-  "p_contract_service": "`McpServerPluginService` répond à l'action `{{ plugin_service_action }}` (catégorie `{{ plugin_service_category }}`) et s'exécute dans le processus `:mcp_server`. Le contrat AIDL `{{ plugin_aidl_interface }}` est défini par l'hôte dans son module `mcp-server-api` et arrive avec la phase P1 de la feuille de route ; d'ici là, le service n'expose que le descripteur du contrat. `McpServerPluginInfoService` répond à `{{ plugin_info_action }}` avec le `PluginInfo` standard, et `WakeActivity` permet à l'hôte de réveiller le processus du plugin sur les appareils qui maintiennent les applications nouvellement installées à l'arrêt.",
+  "p_contract_service": "`McpServerPluginService` implémente le contrat mcp-server-api de l'hôte `{{ plugin_aidl_interface }}` dans le processus `:mcp_server` et répond à `{{ plugin_service_action }}` (category `{{ plugin_service_category }}`). `McpServerPluginInfoService` répond à `{{ plugin_info_action }}` avec PluginInfo. `WakeActivity` permet à l'hôte d'activer le plugin.",
   "h3_roadmap": "Feuille de route",
   "p_roadmap": "Les plans et l'avancement du plugin sont tenus sous forme de liste cochable dans ROADMAP.md, organisée par phase avec des critères d'acceptation et des niveaux de preuve. Les éléments non cochés expriment une intention et non une capacité actuelle ; les discussions via Issues sont les bienvenues.",
   "text_link_roadmap": "Voir ROADMAP.md",

@@ -1723,5 +1723,115 @@
       ],
       "additionalProperties": false
     }
+  },
+  {
+    "name": "screen_capture",
+    "title": "Capture the screen",
+    "description": "Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments.",
+    "group": "screen",
+    "defaultEnabled": true,
+    "bridge": "accessibility.screenshot",
+    "permissions": [
+      "accessibility",
+      "screen_capture",
+      "image",
+      "device"
+    ],
+    "timeoutMs": 120000,
+    "maxTimeoutMs": 120000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "scale": {
+          "type": "number",
+          "description": "Scale after cropping, from 0.0001 to 1; mutually exclusive with maxWidth",
+          "minimum": 1.0E-4,
+          "maximum": 1
+        },
+        "maxWidth": {
+          "type": "integer",
+          "description": "Maximum output width, preserving aspect ratio; mutually exclusive with scale",
+          "minimum": 1,
+          "maximum": 8192
+        },
+        "format": {
+          "type": "string",
+          "description": "Image encoding",
+          "default": "jpeg",
+          "enum": [
+            "jpeg",
+            "png",
+            "webp"
+          ]
+        },
+        "quality": {
+          "type": "integer",
+          "description": "JPEG or WebP quality; PNG ignores quality",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 70
+        },
+        "region": {
+          "type": "object",
+          "description": "Crop in current screen pixels before scaling; right and bottom are exclusive",
+          "properties": {
+            "left": {
+              "type": "integer",
+              "description": "Left edge in device pixels"
+            },
+            "top": {
+              "type": "integer",
+              "description": "Top edge in device pixels"
+            },
+            "right": {
+              "type": "integer",
+              "description": "Right edge in device pixels"
+            },
+            "bottom": {
+              "type": "integer",
+              "description": "Bottom edge in device pixels"
+            }
+          },
+          "required": [
+            "left",
+            "top",
+            "right",
+            "bottom"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "screen_state",
+    "title": "Read screen state",
+    "description": "Read whether the screen is on, its current width and height, orientation, rotation, and density. Does not request screen capture consent.",
+    "group": "screen",
+    "defaultEnabled": true,
+    "bridge": "device.isScreenOn",
+    "permissions": [
+      "device"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
   }
 ]

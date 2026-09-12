@@ -1,6 +1,8 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server.bridge
 
 import org.autojs.plugin.mcp.server.api.McpServerContract
+import java.io.InputStream
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * What the host's `getBrokerInfo()` Bundle says about one session (protocol document "Broker
@@ -29,10 +31,37 @@ data class BrokerInfo(
 }
 
 /** A payload descriptor the host attached to a response; the receiver owns and must close it. */
-class BridgePayload(val bytes: Long, val mime: String?, private val closer: () -> Unit) {
+class BridgePayload(
+    val bytes: Long,
+    val mime: String?,
+    private val opener: () -> InputStream,
+    private val closer: () -> Unit,
+) {
 
-    fun close() = runCatching { closer() }
+    private val closed = AtomicBoolean(false)
+
+    /** Reads an exact, bounded file payload off the Binder callback thread. The caller owns closing it. */
+    fun read(): BridgeBytes {
+        require(bytes in 1L..McpServerContract.MAX_BRIDGE_PAYLOAD_BYTES.toLong()) { "invalid host payload length: $bytes" }
+        check(!closed.get()) { "host payload is already closed" }
+        val data = ByteArray(bytes.toInt())
+        opener().use { input ->
+            var offset = 0
+            while (offset < data.size) {
+                val count = input.read(data, offset, data.size - offset)
+                check(count > 0) { "host payload ended before its declared length" }
+                offset += count
+            }
+            check(input.read() == -1) { "host payload exceeds its declared length" }
+        }
+        return BridgeBytes(data, mime)
+    }
+
+    fun close() { if (closed.compareAndSet(false, true)) runCatching { closer() } }
 }
+
+/** In-memory payload with no descriptor ownership left to the tool. Never included in ordinary logs. */
+class BridgeBytes(val data: ByteArray, val mime: String?)
 
 /** One `onResponse` as the transport saw it: the JSON plus the Bundle mirrors. */
 class BridgeReply(

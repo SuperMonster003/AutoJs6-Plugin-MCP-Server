@@ -8,13 +8,13 @@
   "p_introduction_what": "MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Protocol]({{ mcp_spec_url }}) 服务器. 电脑上的 AI 代理 (如 Claude Code, Cursor 或 MCP Inspector) 通过 USB 或 Wi-Fi 连接手机, 借助工具运行脚本, 读取日志, 查看无障碍节点树, 点击与输入, 截取屏幕, 以及操作文件与应用.",
   "p_introduction_how": "服务器运行在插件自己的进程中, 通过单一的 Streamable HTTP 端点对外提供服务. AutoJs6 通过 Binder 向插件下发能力代理, 每次工具调用都由宿主以其既有的权限, 引擎和无障碍服务执行; 插件不会复制宿主的任何功能.",
   "h3_status": "当前状态",
-  "p_status": "项目处于骨架阶段: 本版本向 AutoJs6 插件中心注册插件, 并准备好构建, 文档与测试基础设施. MCP 端点及其工具尚不可用. 进度在 [ROADMAP.md]({{ roadmap_url }}) 中逐项跟踪.",
+  "p_status": "开发预览已推进至 P3.3: 带鉴权与配对的 MCP 端点, 脚本工具, UI 工具和截图工具均已实现. screen_capture 返回 JPEG, PNG 或 WebP 图片, screen_state 返回屏幕尺寸与方向. 抽屉开关和设置页仍计划在 P4 实现. 进度与设备证据见 [ROADMAP.md]({{ roadmap_url }}).",
   "h3_features": "规划功能",
   "p_features_intro": "路线图分阶段交付以下能力",
   "features": [
     "脚本执行: 在 AutoJs6 内运行文本或文件形式的 JavaScript, 列出与停止引擎, 读取最近的控制台输出.",
     "无障碍界面: 以紧凑文本格式导出节点树, 用 AutoJs6 选择器语法查找节点, 点击, 长按, 滚动, 设置文本, 以及触发返回和主屏幕等全局按键.",
-    "截图: 以 PNG 或 JPEG 截取屏幕, 并限制尺寸以适配多模态模型.",
+    "截图分组 (P3.3): screen_capture 返回 MCP 图片, 支持裁剪, scale 或 maxWidth, JPEG / PNG / WebP 与质量参数. 默认 JPEG 质量 70, 最长边 1280 px. base64 超过 4 MiB 时降低质量或尺寸重试, 元数据说明调整情况. screen_state 返回亮屏状态, 尺寸, 方向和密度. 工具目录现有 22 项. MediaProjection 回退需要 2026-09-13 或之后构建的 AutoJs6 宿主及手机端授权, 宿主会话复用该授权.",
     "文件, 应用与设备: 读写 AutoJs6 工作目录下的文件, 启动应用, 查询前台窗口, 报告设备信息.",
     "连接方式: 通过 `adb forward` 的 USB 连接, 需显式开启的局域网连接, 电脑端 stdio 桥接程序, 以及可选的公网隧道与 OAuth 2.1.",
     "安全: 可轮换的 Bearer 令牌, 手机端首次配对确认, 按分组的工具开关; 服务器默认只监听回环接口."
@@ -23,13 +23,13 @@
   "usage_steps": [
     "在安装了 AutoJs6 构建 {{ required_host_version_code }} ({{ required_host_version_name }}) 或更高版本的设备上, 从 [Releases]({{ repo_url }}/releases) 下载并安装插件 APK.",
     "打开 AutoJs6 插件中心, 确认 `MCP Server` 已被识别并启用. 官方发布包会自动通过签名校验.",
-    "在 AutoJs6 抽屉或插件设置页开启 MCP 服务器; 手机上会显示端点地址与配对令牌.",
+    "本开发预览通过开发文档中的 adb 控制面与宿主测试会话连接; 抽屉开关和插件设置页计划在 P4 实现.",
     "在电脑上执行 `adb forward tcp:{{ mcp_default_port }} tcp:{{ mcp_default_port }}`, 并让 MCP 客户端连接 `http://127.0.0.1:{{ mcp_default_port }}{{ mcp_endpoint_path }}`, 以令牌作为 Bearer 凭据."
   ],
-  "p_usage_note": "第 3 步与第 4 步描述的是规划中的流程, 将在对应路线图阶段完成后可用. 插件支持 Android {{ min_android_version }} (API {{ android_min_sdk }}) 及以上版本.",
+  "p_usage_note": "本开发预览通过开发文档中的 adb 控制面与宿主测试会话连接; 抽屉开关和插件设置页计划在 P4 实现.",
   "h3_quick_start": "客户端配置",
   "p_quick_start_intro": "Claude Code 只需一条命令即可注册服务器; 其他客户端在各自的 MCP 配置中使用相同的 URL 与请求头",
-  "p_quick_start_note": "请将令牌替换为手机上显示的值. 该命令只有在服务器可以启动后才会生效 (见 `当前状态`).",
+  "p_quick_start_note": "本预览通过开发文档中的开发者模式 adb 控制面读取令牌. 设置页的令牌展示计划在 P4 实现.",
   "h3_security": "权限与安全",
   "p_security_intro": "插件遵循明确的边界:",
   "security_points": [
@@ -41,7 +41,7 @@
   "p_security_permission": "请只从官方 [Releases]({{ repo_url }}/releases) 页面或 AutoJs6 插件中心获取插件. 来源不明的安装包即使版本号相同, 也可能无法通过宿主校验或带来风险.",
   "h3_plugin_interface": "插件接口",
   "p_plugin_interface": "以下信息面向 AutoJs6 宿主与插件开发者; 宿主使用这些标识发现插件并协商兼容性",
-  "p_contract_service": "`McpServerPluginService` 响应 `{{ plugin_service_action }}` action (category `{{ plugin_service_category }}`), 运行在 `:mcp_server` 进程中. AIDL 契约 `{{ plugin_aidl_interface }}` 由宿主在 `mcp-server-api` 模块中定义, 随路线图 P1 阶段落地; 在此之前服务只暴露契约描述符. `McpServerPluginInfoService` 以标准 `PluginInfo` 响应 `{{ plugin_info_action }}`, `WakeActivity` 则让宿主能在会保持新装应用停止状态的设备上唤醒插件进程.",
+  "p_contract_service": "`McpServerPluginService` 在 `:mcp_server` 进程中实现宿主 mcp-server-api 契约 `{{ plugin_aidl_interface }}`, 响应 `{{ plugin_service_action }}` (category `{{ plugin_service_category }}`). `McpServerPluginInfoService` 以 PluginInfo 响应 `{{ plugin_info_action }}`. `WakeActivity` 供宿主激活插件.",
   "h3_roadmap": "路线图",
   "p_roadmap": "插件的规划与进度以可勾选清单的形式维护在 ROADMAP.md 中, 按阶段组织并附有验收条件与证据等级. 未勾选条目表达的是意图而非当前能力; 欢迎通过 Issues 讨论.",
   "text_link_roadmap": "查看 ROADMAP.md",

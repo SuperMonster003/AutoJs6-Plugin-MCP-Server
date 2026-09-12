@@ -77,6 +77,11 @@ class BinderBridgeTransport(private val broker: IMcpHostCapabilityBroker) : Brid
             BridgePayload(
                 bytes = bundle.getLong(McpServerContract.KEY_BRIDGE_PAYLOAD_BYTES, 0L),
                 mime = bundle.getString(McpServerContract.KEY_BRIDGE_PAYLOAD_MIME),
+                opener = {
+                    // The MCP contract sends unlinked regular files. Refuse pipes before any blocking read.
+                    check(fd.statSize == bundle.getLong(McpServerContract.KEY_BRIDGE_PAYLOAD_BYTES, 0L)) { "host payload must be a regular file of the declared length" }
+                    ParcelFileDescriptor.AutoCloseInputStream(fd)
+                },
                 closer = { fd.close() },
             )
         }

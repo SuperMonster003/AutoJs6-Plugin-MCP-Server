@@ -184,3 +184,80 @@ that are not shown (`visibleOnly`, `maxDepth`, or the `maxNodes` budget) and nam
   random.
 - `ui_press_key` with `lock_screen` needs Android 9 or later; `ui_current_window` reads the
   window through the accessibility service, so it needs the service like the other tools.
+
+## P3.3: Screenshots
+
+`ScreenTools` runs the two default-enabled `screen` tools through `HostBridgeClient`. The
+catalog now contains 22 tools (20 enabled by default). The standard group switch hides both
+tools from `tools/list` and returns `TOOL_DISABLED` from a cached call after the group is off.
+
+| Tool | Arguments | Host calls |
+| --- | --- | --- |
+| `screen_capture` | `scale` (0.0001..1) or `maxWidth` (1..8192), `format` (`jpeg`, `png`, `webp`), `quality` (1..100), `region` (`left`, `top`, `right`, `bottom`) | `device.info`, `accessibility.screenshot`; when unavailable, `media_projection.requestScreenCapture`, `image.captureScreen(options)` |
+| `screen_state` | None | `device.isScreenOn`, `device.info` |
+
+The default capture is JPEG quality 70 with a longest edge of 1280 pixels. An explicit
+`maxWidth` means the horizontal edge. Cropping happens before scaling; right and bottom are
+exclusive. Empty, negative, fractional, oversized or unknown rectangle fields are rejected
+before capture. A rectangle partly outside the screen is clamped by the host. `scale` and
+`maxWidth` are mutually exclusive. `annotate` remains a P6 option and is currently rejected.
+
+`screen_state` preserves the host's rotation-aware width and height and derives orientation
+from those dimensions. Some host processes retain a portrait `Configuration` after rotation,
+so its legacy orientation string must not be used to swap the already-correct dimensions.
+
+A capture returns text metadata, an MCP `image` content block, and the same metadata under
+`structuredContent`. The metadata contains `width`, `height`, `format`, `mime`, `quality`,
+`bytes` (compressed image), `encodedBytes` (base64), `durationMs`, `source` (`accessibility`
+or `media_projection`), `attempts`, `adjusted`, the requested options, and a hint after an
+adjustment. It never contains a descriptor, cache path or duplicate base64 string.
+
+The 4 MiB ceiling applies to the base64 image, so the largest compressed payload that fits is
+3 MiB. This is deliberately stricter than the host's 4 MiB compressed-image ceiling. On either
+ceiling, JPEG/WebP quality decreases by 15 to a floor of 25, then the dimensions shrink to 70%
+per attempt. PNG keeps its format and reduces dimensions immediately. There are at most 12
+capture attempts and a 120 s total budget including the local queue and consent. Individual
+captures use a 15 s host timeout, consent uses 60 s, and screen-state calls use 5 s. The normal
+5 s progress heartbeat continues during capture or consent when the client requests progress.
+
+The accessibility call declares both `accessibility` and `screen_capture`. An `unavailable`
+host category (including API below 30 and an unavailable accessibility service), or an explicit
+`fallback: media_projection`, selects the projection path. Other host errors retain their
+classification. `media_projection.requestScreenCapture` reuses a live authorization in the
+host's current broker session, and `image.captureScreen(options)` returns an encoded one-shot
+file with the same options as accessibility capture. A new session or revoked projection asks
+again. Authorization errors tell the client to unlock the phone and approve capture. No
+authorization flag or projection handle is persisted in the plugin.
+
+The host retries transient missing MediaProjection frames up to six times with 40 ms between
+attempts. The underlying capturer limits each attempt to 1.2 s and refreshes its pipeline on
+timeout, so this stays within the 15 s bridge budget. API 24 requires this retry for reliable
+consecutive captures. Exceptions propagate immediately and no previous bitmap is cached.
+
+`image.captureScreen(options)` needs an AutoJs6 build from 2026-09-13 or later. An old host
+returns a handle without bytes, which the tool reports as `HOST_ERROR` with an update hint.
+The host's no-argument `image.captureScreen()` keeps its handle return value for existing
+Node/Python consumers. No AIDL method or contract AAR changed for this addition.
+
+### Descriptor ownership
+
+The host opens and unlinks its one-shot cache file before sending a read-only
+`ParcelFileDescriptor` through Binder. `BinderBridgeTransport` exposes an opener and closer;
+`HostBridgeClient` transfers the reply from the callback to its cancellable coroutine, reads
+on `Dispatchers.IO`, then closes the descriptor before returning `BridgeBytes` to the tool.
+The advertised length must be 1..8 MiB and match the regular file size and actual byte count.
+Pipes, truncated files, trailing bytes and mismatched response ids are refused. Failure,
+duplicate, late, cancelled and detached replies close their descriptors, including cancellation
+between callback delivery and coroutine resumption. No bitmap decoding or device capture is
+duplicated in the plugin.
+
+### Verification
+
+`ScreenToolsTest` covers defaults, cropping, explicit size, decimal integer inputs, both
+fallback shapes, permission guidance, JPEG/PNG reduction, bounded retries, invalid metadata,
+and rotated screen state. `HostBridgeClientTest` covers bounded reads, malformed lengths,
+wrong ids and cancellation ownership. `McpServerHostSessionTest` decodes actual descriptor
+images on the HTTP response and checks the permission envelope, fallback, consent denial and
+group switch. The host's `NodeBridgeScreenshotEncodingTest` covers three formats, crop/scale,
+the byte ceiling, source bitmap recycling, revoked consent and bounded missing-frame retries. Device measurements and
+remaining checks are recorded in `p3-screen-evidence.md` and `ROADMAP.md`.
