@@ -167,6 +167,8 @@ AutoJs6-Plugin-MCP-Server/
 - 脚本分组 (P3.1 起): `script_run` / `script_run_file` 的结果形状 (`executionId`, `status` = `finished` / `error` / `running`, `durationMs`, `exception{message, line?}`, `console[]` + `consoleCount` / `consoleTruncated`, 运行中附 `hint`) 只在 `tools/ScriptRunTool.shape` 定义, 其余脚本工具的参数编码与结果整形在 `tools/ScriptTools`; 等待到期不杀脚本, 只报 `running`; `engines.stopAll` MUST 带 `{scope: "host"}`; 运行工具的进度心跳 2 s 且带最新控制台行 (经 `console.tail`), 其他工具 5 s; 心跳 MUST 以关联请求 id (`RequestHandlerExtra.requestId`) 发送; 有状态挂载 MUST 用 `server/SseStreamableMount.mcpStreamableSse` (带请求的 POST 以 `text/event-stream` 应答), 不用 SDK 的 `mcpStreamableHttp` (其 JSON 响应模式把与请求关联的通知改投独立 GET 流, 无 GET 流时直接丢弃).
 - 开发期 adb 控制面 (P0.2 起生效): `McpServerService` 以 `android.permission.DUMP` 守卫导出, 只有 adb shell 与系统能经 `am start-foreground-service` (API 24 / 25 用 `am startservice`) 携带 `action.START_SERVER` / `action.STOP_SERVER` 启停它; MUST NOT 为其它调用方放宽该权限或改为无守卫导出. 宿主与插件自身界面运行在同一 UID, 无需该权限.
 
+- 截图分组 (P3.3 起): `screen_capture` / `screen_state` 的参数与结果只在 `tools/ScreenTools` 整形; 捕获, 授权, 裁剪和图片编码由宿主执行, 默认 JPEG / quality 70 / 最长边 1280 px, base64 上限 4 MiB, 降质最多 12 次且完整调用预算 120 s. 无障碍截图声明 `accessibility` + `screen_capture`, MediaProjection 请求声明 `screen_capture`, 图片捕获声明 `image` + `screen_capture`. 宿主在会话内复用 MediaProjection 授权, 插件 MUST NOT 缓存授权布尔值. PFD 只经 `BridgePayload` 与 `HostBridgeClient` 读取和关闭, 校验声明长度 / 实际文件长度 / MIME, 取消 / 迟到 / 重复回调必须关闭; 普通日志不得含图片数据或临时路径. `device.info` 的屏幕宽高已随旋转变化, `screen_state` 从宽高计算方向, 不按可能滞后的 Configuration orientation 再次交换.
+
 ## 10. 主项目职责
 
 若改动同时需要修改 `D:/idea-projects/AutoJs6`, MUST 遵循:

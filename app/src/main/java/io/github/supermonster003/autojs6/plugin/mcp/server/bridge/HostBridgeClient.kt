@@ -1,9 +1,11 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server.bridge
 
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import org.autojs.plugin.mcp.server.api.McpServerContract
@@ -27,7 +29,7 @@ enum class HostAvailability(val id: String) {
 /** The outcome of one bridge call as the tools consume it. */
 sealed class BridgeOutcome {
 
-    data class Ok(val result: JsonElement, val elapsedMs: Long) : BridgeOutcome()
+    data class Ok(val result: JsonElement, val elapsedMs: Long, val payload: BridgeBytes? = null) : BridgeOutcome()
 
     data class Failed(val failure: ToolFailure) : BridgeOutcome()
 }
@@ -55,7 +57,7 @@ class HostBridgeClient(
 
     private val semaphore = Semaphore(maxConcurrentCalls)
     private val nextId = AtomicLong(1L)
-    private val pending = ConcurrentHashMap<String, CancellableContinuation<BridgeResponse>>()
+    private val pending = ConcurrentHashMap<String, CancellableContinuation<BridgeReply>>()
 
     @Volatile
     var availability: HostAvailability = HostAvailability.AVAILABLE
@@ -111,30 +113,47 @@ class HostBridgeClient(
             val id = "$ID_PREFIX${nextId.getAndIncrement()}"
             val request = BridgeRequest(id, module, method, args, effectiveTimeoutMs, permissions)
             val startedAt = clock()
-            val response = withTimeoutOrNull(effectiveTimeoutMs + GRACE_MS) {
-                suspendCancellableCoroutine { continuation ->
+            val outcome = withTimeoutOrNull(effectiveTimeoutMs + GRACE_MS) {
+                val reply = suspendCancellableCoroutine { continuation: CancellableContinuation<BridgeReply> ->
                     pending[id] = continuation
                     continuation.invokeOnCancellation { pending.remove(id) }
                     if (availability != HostAvailability.AVAILABLE) {
                         pending.remove(id)
-                        continuation.resume(BridgeResponse.Failure(id, BridgeError.processDead(unavailableMessage(), module, method)))
+                        continuation.resume(deadReply(unavailableMessage()))
                         return@suspendCancellableCoroutine
                     }
                     try {
                         transport.dispatch(request, clientName) { reply -> complete(id, reply) }
                     } catch (error: Exception) {
                         if (pending.remove(id) != null) {
-                            continuation.resume(BridgeResponse.Failure(id, BridgeError.processDead(error.message ?: error.javaClass.name, module, method)))
+                            continuation.resume(deadReply(error.message ?: error.javaClass.name))
                         }
                     }
                 }
+                try {
+                    when (val response = BridgeResponse.parse(reply.responseJson, reply.ok, reply.errorMessage)) {
+                        is BridgeResponse.Failure -> BridgeOutcome.Failed(ToolFailure.fromBridge(response.error))
+                        is BridgeResponse.Success -> {
+                            if (response.id != id) {
+                                BridgeOutcome.Failed(ToolFailure.internal("the host response id does not match the request"))
+                            } else if (reply.payload != null && reply.payload.bytes !in 1L..McpServerContract.MAX_BRIDGE_PAYLOAD_BYTES.toLong()) {
+                                BridgeOutcome.Failed(ToolFailure.limitExceeded("the host payload length is outside the bridge limit"))
+                            } else {
+                                val payload = reply.payload?.let { withContext(Dispatchers.IO) { it.read() } }
+                                BridgeOutcome.Ok(response.result, clock() - startedAt, payload)
+                            }
+                        }
+                    }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    BridgeOutcome.Failed(ToolFailure.internal("the host payload could not be read or its length did not match"))
+                } finally {
+                    reply.payload?.close()
+                }
             }
             pending.remove(id)
-            return when (response) {
-                null -> BridgeOutcome.Failed(ToolFailure.timeout(module, method, effectiveTimeoutMs))
-                is BridgeResponse.Success -> BridgeOutcome.Ok(response.result, clock() - startedAt)
-                is BridgeResponse.Failure -> BridgeOutcome.Failed(ToolFailure.fromBridge(response.error))
-            }
+            return outcome ?: BridgeOutcome.Failed(ToolFailure.timeout(module, method, effectiveTimeoutMs))
         } finally {
             semaphore.release()
         }
@@ -148,10 +167,12 @@ class HostBridgeClient(
     }
 
     private fun complete(id: String, reply: BridgeReply) {
-        // Payload descriptors are not consumed by any P2.3 tool; close them so the host's file is released.
-        reply.payload?.close()
-        val continuation = pending.remove(id) ?: return
-        continuation.resume(BridgeResponse.parse(reply.responseJson, reply.ok, reply.errorMessage))
+        val continuation = pending.remove(id)
+        if (continuation == null) {
+            reply.payload?.close()
+            return
+        }
+        continuation.resume(reply) { _, value, _ -> value.payload?.close() }
     }
 
     private fun onHostDied() {
@@ -165,14 +186,16 @@ class HostBridgeClient(
     }
 
     private fun failPending(message: String) {
-        val calls = pending.toMap()
-        pending.clear()
-        calls.forEach { (id, continuation) ->
-            if (continuation.isActive) {
-                continuation.resume(BridgeResponse.Failure(id, BridgeError.processDead(message)))
-            }
+        pending.keys.toList().forEach { id ->
+            pending.remove(id)?.resume(deadReply(message))
         }
     }
+
+    private fun deadReply(message: String): BridgeReply = BridgeReply(
+        """{"ok":false,"error":{"category":"process-dead","code":"${BridgeError.CODE_PLUGIN_PROCESS_DEAD}","message":${kotlinx.serialization.json.JsonPrimitive(message)}}}""",
+        false,
+        message,
+    )
 
     private fun unavailableMessage(): String = when (availability) {
         HostAvailability.AVAILABLE -> "AutoJs6 is not connected to the MCP server"

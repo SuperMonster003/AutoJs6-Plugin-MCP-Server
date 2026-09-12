@@ -52,7 +52,7 @@ El servidor se ejecuta dentro del propio proceso del plugin y se alcanza mediant
 
 ******
 
-El proyecto está en la etapa de esqueleto: esta versión registra el plugin en el centro de plugins de AutoJs6 y prepara la infraestructura de compilación, documentación y pruebas. El punto de conexión MCP y sus herramientas aún no están disponibles. El progreso se sigue punto por punto en [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Vista previa hasta P3.3: ya están implementados el punto MCP autenticado, el emparejamiento y las herramientas de scripts, interfaz y capturas. screen_capture devuelve imágenes JPEG, PNG o WebP; screen_state informa del tamaño y la orientación. El interruptor del panel y los ajustes están previstos para P4. El avance y las pruebas en dispositivos figuran en [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -64,7 +64,7 @@ La hoja de ruta entrega las siguientes capacidades por etapas:
 
 - Ejecución de scripts: ejecutar JavaScript desde texto o desde un archivo dentro de AutoJs6, listar y detener motores, y leer la salida reciente de la consola.
 - Interfaz de accesibilidad: volcar el árbol de nodos en un formato de texto compacto, buscar nodos con la sintaxis de selectores de AutoJs6, hacer clic, mantener pulsado, desplazar, establecer texto y pulsar teclas globales como Atrás e Inicio.
-- Capturas de pantalla: capturar la pantalla como PNG o JPEG con un límite de tamaño adecuado para modelos multimodales.
+- Grupo de capturas (P3.3): screen_capture devuelve imágenes MCP con recorte, scale o maxWidth, JPEG / PNG / WebP y control de calidad. Valores predeterminados: JPEG, calidad 70 y lado mayor de 1280 px. Si base64 supera 4 MiB, se reintenta con menor calidad o tamaño y los metadatos indican el ajuste. screen_state informa del estado, tamaño, orientación y densidad. El catálogo incluye 22 herramientas. La alternativa MediaProjection requiere AutoJs6 compilado el 2026-09-13 o después y autorización en el teléfono, reutilizada por la sesión del host.
 - Archivos, aplicaciones y dispositivo: leer y escribir archivos en el directorio de trabajo de AutoJs6, iniciar aplicaciones, consultar la ventana en primer plano e informar datos del dispositivo.
 - Rutas de conexión: USB mediante `adb forward`, red local con activación explícita, un puente stdio en el PC y un túnel público opcional con OAuth 2.1.
 - Seguridad: un token bearer rotatorio, confirmación de emparejamiento en el teléfono en el primer uso e interruptores de herramientas por grupo; el servidor solo escucha en la interfaz de bucle local de forma predeterminada.
@@ -77,10 +77,10 @@ La hoja de ruta entrega las siguientes capacidades por etapas:
 
 1. Instale el APK del plugin desde [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) en un dispositivo con AutoJs6 build 5279 (6.8.0) o posterior.
 2. Abra el centro de plugins de AutoJs6, confirme que `MCP Server` se reconoce y actívelo. Los paquetes oficiales superan la verificación de firma automáticamente.
-3. Encienda el servidor MCP desde el panel lateral de AutoJs6 o la página de ajustes del plugin; el teléfono muestra la dirección del punto de conexión y el token de emparejamiento.
+3. En esta vista previa, use el control adb y una sesión de prueba del host descritos en las notas de desarrollo; el interruptor del panel y los ajustes del plugin están previstos para P4.
 4. En el PC, ejecute `adb forward tcp:9637 tcp:9637` y apunte el cliente MCP a `http://127.0.0.1:9637/mcp` con el token como credencial bearer.
 
-> Los pasos 3 y 4 describen el flujo previsto y estarán disponibles cuando se completen las fases correspondientes de la hoja de ruta. El plugin admite Android 7.0 (API 24) o posterior.
+> En esta vista previa, use el control adb y una sesión de prueba del host descritos en las notas de desarrollo; el interruptor del panel y los ajustes del plugin están previstos para P4.
 
 ******
 
@@ -95,7 +95,7 @@ adb forward tcp:9637 tcp:9637
 claude mcp add --transport http autojs6 http://127.0.0.1:9637/mcp --header "Authorization: Bearer <token>"
 ```
 
-Sustituya el token por el valor mostrado en el teléfono. El comando solo funciona cuando el servidor puede iniciarse (vea `Estado`).
+En esta vista previa, lea el token mediante el control adb en modo de desarrollador descrito en las notas técnicas. La visualización del token en los ajustes está prevista para P4.
 
 ******
 
@@ -133,7 +133,7 @@ minimum host build: 5279 (6.8.0)
 default endpoint: http://127.0.0.1:9637/mcp
 ```
 
-`McpServerPluginService` responde a la acción `org.autojs.plugin.MCP_SERVER` (categoría `mcp-server`) y se ejecuta en el proceso `:mcp_server`. El contrato AIDL `org.autojs.plugin.mcp.server.api.IMcpServerPlugin` lo define el anfitrión en su módulo `mcp-server-api` y llega con la fase P1 de la hoja de ruta; hasta entonces el servicio solo expone el descriptor del contrato. `McpServerPluginInfoService` responde a `org.autojs.plugin.INFO` con el `PluginInfo` estándar, y `WakeActivity` permite al anfitrión despertar el proceso del plugin en dispositivos que mantienen detenidas las aplicaciones recién instaladas.
+`McpServerPluginService` implementa el contrato mcp-server-api del host `org.autojs.plugin.mcp.server.api.IMcpServerPlugin` en el proceso `:mcp_server` y responde a `org.autojs.plugin.MCP_SERVER` (category `mcp-server`). `McpServerPluginInfoService` responde a `org.autojs.plugin.INFO` con PluginInfo. `WakeActivity` permite al host activar el plugin.
 
 ******
 
@@ -153,9 +153,9 @@ Los planes y el progreso del plugin se mantienen como una lista verificable en R
 
 #### v1.0.0
 
-_2026/09/11_
+_2026/09/13_
 
-- `Aviso` Vista previa de desarrollo: el plugin se registra en el centro de plugins de AutoJs6, pero el punto de conexión MCP y sus herramientas aún no están disponibles
+- `Aviso` Vista previa hasta P3.3: ya están implementados el punto MCP autenticado, el emparejamiento y las herramientas de scripts, interfaz y capturas. screen_capture devuelve imágenes JPEG, PNG o WebP; screen_state informa del tamaño y la orientación. El interruptor del panel y los ajustes están previstos para P4. El avance y las pruebas en dispositivos figuran en ROADMAP.md.
 - `Función` Identidad de plugin `mcp-server` con el servicio INFO, la Wake Activity y el esqueleto del servicio `org.autojs.plugin.MCP_SERVER` para el descubrimiento por el anfitrión
 - `Función` README, instrucciones del centro de plugins y registro de cambios en 10 idiomas
 - `Función` Punto de conexión Streamable HTTP en `http://127.0.0.1:9637/mcp` con la herramienta `device_ping`, alojado por un servicio en primer plano que adb o el anfitrión pueden activar y desactivar (vista previa de desarrollo)
@@ -171,6 +171,7 @@ _2026/09/11_
 - `Función` Grupo de scripts completado: `script_run_file` ejecuta un archivo de script del dispositivo, `script_stop` / `script_stop_all` detienen una o todas las ejecuciones de AutoJs6, `script_list` enumera las que estan en marcha y `console_tail` devuelve las lineas mas recientes de la consola con un cursor `nextSinceId` y un filtro por nivel; `script_run` y `script_run_file` ahora informan `executionId`, `status` (`finished` / `error` / `running`), `durationMs`, la excepcion con su linea y las lineas mas recientes de la consola, y mientras esperan envian cada 2 s una notificacion de progreso con la linea mas reciente de la consola
 - `Función` Las respuestas del endpoint MCP se transmiten como eventos enviados por el servidor (no se usa el modo de respuesta JSON del SDK), de modo que una notificacion que pertenece a una solicitud, como el latido de progreso de un script en ejecucion, llega al cliente en la respuesta de esa solicitud
 - `Función` Grupo UI anadido (roadmap P3.2): `ui_dump` devuelve la ventana activa como un arbol compacto de nodos con referencias `#n` (`format` text / json / xml, `maxNodes` hasta 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` sondean un selector, `ui_current_window` y `ui_explain_selector` informan de la ventana y de por que falla un selector, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` actuan sobre un `nodeRef` (relocalizado por su huella, `NODE_REF_STALE` si desaparecio) o un `selector`, `ui_press_key` pulsa back / home / recents / notifications / quick_settings / power_dialog / lock_screen, y el grupo `ui_gesture` (desactivado por defecto) anade `ui_swipe`, `ui_gesture` y la forma por coordenadas de las herramientas de clic (`TOOL_DISABLED` mientras el grupo esta desactivado); la instantanea del catalogo de herramientas crece a 20 herramientas; los gestos por coordenadas necesitan un host AutoJs6 compilado el 2026-09-11 o despues (un host anterior responde al azar "the system cancelled ...")
+- `Función` Grupo de capturas (P3.3): screen_capture devuelve imágenes MCP con recorte, scale o maxWidth, JPEG / PNG / WebP y control de calidad. Valores predeterminados: JPEG, calidad 70 y lado mayor de 1280 px. Si base64 supera 4 MiB, se reintenta con menor calidad o tamaño y los metadatos indican el ajuste. screen_state informa del estado, tamaño, orientación y densidad. El catálogo incluye 22 herramientas. La alternativa MediaProjection requiere AutoJs6 compilado el 2026-09-13 o después y autorización en el teléfono, reutilizada por la sesión del host.
 - `Mejora` La verificación de compilación rechaza dependencias nativas accidentales y genera un informe JSON
 - `Dependencia` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) sobre el motor Ktor 3.5.1 CIO
 - `Dependencia` Se agrega Ktor 3.5.1 `ktor-server-test-host` para las pruebas de transporte en JVM (solo ambito de pruebas)

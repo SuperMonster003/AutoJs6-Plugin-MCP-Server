@@ -86,7 +86,7 @@ class CatalogToolExecutor(
                 val result = withHeartbeat(connection, token, relatedRequestId, heartbeatMs, flow.progressTotalMs, followConsole = false, client, clientName) {
                     flow.run(caller)
                 }
-                ToolResults.success(result.structured, result.text)
+                ToolResults.success(result.structured, result.text, result.image)
             } catch (e: ToolArgumentException) {
                 ToolResults.failure(e.failure)
             } catch (e: ToolFailureException) {

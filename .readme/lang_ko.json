@@ -8,13 +8,13 @@
   "p_introduction_what": "MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]({{ mcp_spec_url }}) 서버로 만듭니다. Claude Code, Cursor, MCP Inspector 같은 PC의 AI 에이전트가 USB 또는 Wi-Fi로 휴대폰에 연결하고, 도구를 사용해 스크립트 실행, 로그 읽기, 접근성 노드 트리 확인, 탭과 입력, 스크린샷 촬영, 파일과 앱 작업을 수행합니다.",
   "p_introduction_how": "서버는 플러그인 자체 프로세스 안에서 실행되며 단일 Streamable HTTP 엔드포인트로 접근합니다. AutoJs6는 Binder를 통해 플러그인에 기능 브로커를 전달하므로 모든 도구 호출은 호스트가 기존 권한, 엔진, 접근성 서비스로 실행합니다. 플러그인은 호스트 기능을 복제하지 않습니다.",
   "h3_status": "현재 상태",
-  "p_status": "프로젝트는 뼈대 단계입니다. 이 릴리스는 AutoJs6 플러그인 센터에 플러그인을 등록하고 빌드, 문서, 테스트 인프라를 준비합니다. MCP 엔드포인트와 그 도구는 아직 사용할 수 없습니다. 진행 상황은 [ROADMAP.md]({{ roadmap_url }})에서 항목별로 추적합니다.",
+  "p_status": "P3.3 개발 미리 보기: 인증과 페어링을 사용하는 MCP 엔드포인트, 스크립트, UI, 스크린샷 도구가 구현되었습니다. screen_capture는 JPEG, PNG, WebP 이미지를 반환하고 screen_state는 화면 크기와 방향을 반환합니다. 서랍 스위치와 설정 화면은 P4에서 구현할 예정입니다. 진행 상황과 기기 검증 결과는 [ROADMAP.md]({{ roadmap_url }})를 참조하세요.",
   "h3_features": "예정된 기능",
   "p_features_intro": "로드맵은 다음 기능을 단계별로 제공합니다",
   "features": [
     "스크립트 실행: AutoJs6 안에서 텍스트 또는 파일의 JavaScript를 실행하고, 엔진을 나열하거나 중지하며, 최근 콘솔 출력을 읽습니다.",
     "접근성 UI: 노드 트리를 간결한 텍스트 형식으로 덤프하고, AutoJs6 선택자 문법으로 노드를 찾고, 클릭, 길게 누르기, 스크롤, 텍스트 설정, 뒤로와 홈 같은 전역 키를 누릅니다.",
-    "스크린샷: 멀티모달 모델에 적합한 크기 제한으로 화면을 PNG 또는 JPEG로 캡처합니다.",
+    "스크린샷 그룹 (P3.3): screen_capture는 자르기, scale 또는 maxWidth, JPEG / PNG / WebP, 품질 설정을 지원하는 MCP 이미지를 반환합니다. 기본값은 JPEG 품질 70, 긴 변 1280 px입니다. base64가 4 MiB를 초과하면 품질이나 크기를 낮춰 재시도하고 메타데이터에 변경을 표시합니다. screen_state는 화면 켜짐 상태, 크기, 방향, 밀도를 반환합니다. 도구 목록은 22개입니다. MediaProjection 대체 경로에는 2026-09-13 이후 빌드한 AutoJs6와 휴대전화의 승인이 필요하며 호스트 세션에서 승인을 재사용합니다.",
     "파일, 앱, 기기: AutoJs6 작업 디렉터리의 파일을 읽고 쓰며, 앱을 실행하고, 전면 창을 조회하고, 기기 정보를 보고합니다.",
     "연결 경로: `adb forward`를 통한 USB, 명시적으로 켜야 하는 로컬 네트워크, PC 측 stdio 브리지, 그리고 OAuth 2.1을 갖춘 선택적 공개 터널.",
     "보안: 교체 가능한 Bearer 토큰, 휴대폰에서의 최초 페어링 확인, 그룹별 도구 스위치. 서버는 기본적으로 루프백 인터페이스에서만 수신합니다."
@@ -23,13 +23,13 @@
   "usage_steps": [
     "AutoJs6 빌드 {{ required_host_version_code }} ({{ required_host_version_name }}) 이상이 설치된 기기에 [Releases]({{ repo_url }}/releases)에서 플러그인 APK를 설치합니다.",
     "AutoJs6 플러그인 센터를 열어 `MCP Server`가 인식되었는지 확인하고 활성화합니다. 공식 릴리스 패키지는 서명 검증을 자동으로 통과합니다.",
-    "AutoJs6 드로어 또는 플러그인 설정 페이지에서 MCP 서버를 켭니다. 휴대폰에 엔드포인트 주소와 페어링 토큰이 표시됩니다.",
+    "이 개발 미리 보기에서는 개발 문서에 설명된 adb 제어와 호스트 테스트 세션으로 연결합니다. 서랍 스위치와 플러그인 설정 화면은 P4에서 구현할 예정입니다.",
     "PC에서 `adb forward tcp:{{ mcp_default_port }} tcp:{{ mcp_default_port }}`를 실행하고, MCP 클라이언트가 토큰을 Bearer 자격 증명으로 사용해 `http://127.0.0.1:{{ mcp_default_port }}{{ mcp_endpoint_path }}`에 연결하도록 설정합니다."
   ],
-  "p_usage_note": "3단계와 4단계는 계획된 워크플로를 설명하며 해당 로드맵 단계가 완료되면 사용할 수 있습니다. 플러그인은 Android {{ min_android_version }} (API {{ android_min_sdk }}) 이상을 지원합니다.",
+  "p_usage_note": "이 개발 미리 보기에서는 개발 문서에 설명된 adb 제어와 호스트 테스트 세션으로 연결합니다. 서랍 스위치와 플러그인 설정 화면은 P4에서 구현할 예정입니다.",
   "h3_quick_start": "클라이언트 설정",
   "p_quick_start_intro": "Claude Code는 명령 하나로 서버를 등록합니다. 다른 클라이언트는 MCP 설정에서 같은 URL과 헤더를 사용합니다",
-  "p_quick_start_note": "토큰은 휴대폰에 표시된 값으로 바꾸세요. 이 명령은 서버를 시작할 수 있게 된 뒤에만 동작합니다 (`현재 상태` 참고).",
+  "p_quick_start_note": "이 미리보기에서는 개발 문서에 설명된 개발자 모드 adb 제어 경로로 토큰을 읽습니다. 설정 페이지의 토큰 표시는 P4에서 구현할 예정입니다.",
   "h3_security": "권한과 보안",
   "p_security_intro": "플러그인은 명확한 경계를 따릅니다:",
   "security_points": [
@@ -41,7 +41,7 @@
   "p_security_permission": "플러그인은 공식 [Releases]({{ repo_url }}/releases) 페이지 또는 AutoJs6 플러그인 센터에서만 받으세요. 출처를 알 수 없는 패키지는 버전 번호가 같아 보여도 호스트 검증에 실패하거나 위험을 동반할 수 있습니다.",
   "h3_plugin_interface": "플러그인 인터페이스",
   "p_plugin_interface": "다음 정보는 AutoJs6 호스트와 플러그인 개발자를 위한 것입니다. 호스트는 이 식별자로 플러그인을 발견하고 호환성을 협상합니다",
-  "p_contract_service": "`McpServerPluginService`는 `{{ plugin_service_action }}` 액션 (카테고리 `{{ plugin_service_category }}`)에 응답하며 `:mcp_server` 프로세스에서 실행됩니다. AIDL 계약 `{{ plugin_aidl_interface }}`는 호스트의 `mcp-server-api` 모듈에서 정의되며 로드맵 P1 단계와 함께 도입됩니다. 그 전까지 서비스는 계약 설명자만 노출합니다. `McpServerPluginInfoService`는 표준 `PluginInfo`로 `{{ plugin_info_action }}`에 응답하고, `WakeActivity`는 새로 설치된 앱을 중지 상태로 유지하는 기기에서 호스트가 플러그인 프로세스를 깨울 수 있게 합니다.",
+  "p_contract_service": "`McpServerPluginService`는 `:mcp_server` 프로세스에서 호스트 mcp-server-api 계약 `{{ plugin_aidl_interface }}`를 구현하고 `{{ plugin_service_action }}` (category `{{ plugin_service_category }}`)에 응답합니다. `McpServerPluginInfoService`는 `{{ plugin_info_action }}`에 PluginInfo를 반환합니다. 호스트는 `WakeActivity`로 플러그인을 활성화합니다.",
   "h3_roadmap": "로드맵",
   "p_roadmap": "플러그인의 계획과 진행 상황은 ROADMAP.md에 체크 가능한 목록으로 관리되며, 단계별로 수락 기준과 증거 수준이 함께 기록됩니다. 체크되지 않은 항목은 현재 기능이 아니라 의도를 나타냅니다. Issues를 통한 논의를 환영합니다.",
   "text_link_roadmap": "ROADMAP.md 보기",

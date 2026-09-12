@@ -333,10 +333,10 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 ### P3.3 截图 (`screen` 组)
 
-- [ ] (插件) `screen_capture(scale|maxWidth, format: jpeg|png|webp, quality, region)`: 经 `accessibility.screenshot` 取 PFD -> 读入 -> base64 -> MCP `image` 内容 + 文本元数据 (尺寸, 字节数, 耗时, 捕获路径); 编码后上限 4 MiB, 超出自动降质并在元数据注明.
-- [ ] (插件) MediaProjection 回退: 宿主返回 `fallback: "media_projection"` 时调用 `media_projection.requestScreenCapture` -> `image.captureScreen` (首次需用户授权, 错误提示说明), 成功后缓存授权态.
-- [ ] (插件) `screen_state` (`device.isScreenOn` + 尺寸 / 方向 / 密度), 可选 `screen_capture` 的 `annotate: true` (在图上叠加 `#n` 节点编号, 与最近一次 `ui_dump` 对应; 放 P6 视工作量).
-- [ ] (测试) DEVICE: API 30+ 免授权路径 (三次连续截图含限频), API 24 / 28 回退路径; 横竖屏; 体积上限触发降质.
+- [x] (插件) `screen_capture(scale|maxWidth, format: jpeg|png|webp, quality, region)`: 经 `accessibility.screenshot` 取 PFD -> 读入 -> base64 -> MCP `image` 内容 + 文本元数据 (尺寸, 字节数, 耗时, 捕获路径); 编码后上限 4 MiB, 超出自动降质并在元数据注明. (SOURCE: `tools/ScreenTools`, 默认 JPEG / quality 70 / 最长边 1280 px, 区域裁剪与缩放在宿主执行; `BridgePayload` 校验声明长度与实际文件长度, `HostBridgeClient` 在 IO 协程读取并关闭 PFD, 取消 / 迟到 / 重复回调也关闭; `ToolFlowResult` / `ToolResults` 产生标准 `image` 内容, 文本不重复 base64; JPEG / WebP 先降 quality 再缩小, PNG 直接缩小, 最多 12 次且总预算 120 s; 目录快照更新为 22 个工具, 默认 20 个可见)
+- [x] (插件) MediaProjection 回退: 宿主返回 `fallback: "media_projection"` 时调用 `media_projection.requestScreenCapture` -> `image.captureScreen` (首次需用户授权, 错误提示说明), 成功后缓存授权态. (SOURCE: `ScreenTools` 同时识别宿主 `unavailable` 错误; 宿主 `NodeBridgeAccessibilityDiagnostics.captureScreen` 复用裁剪 / 编码与一次性 PFD, `NodeBridgeProtocol.dispatchImage` 仅在携带选项时进入编码路径, 无参数调用仍返回 image handle; 会话内授权由宿主 capturer 复用, 插件不保存可能失效的布尔标记; 无障碍请求声明 `accessibility` + `screen_capture`, MediaProjection 请求声明 `screen_capture`, 图片请求声明 `image` + `screen_capture`. DEVICE: G8441 API 28 首次手动允许后返回 720x1280 JPEG, 含人工确认 36636 ms, 随后 214 / 173 ms 且不再次弹窗)
+- [x] (插件) `screen_state` (`device.isScreenOn` + 尺寸 / 方向 / 密度), 可选 `screen_capture` 的 `annotate: true` (在图上叠加 `#n` 节点编号, 与最近一次 `ui_dump` 对应; 放 P6 视工作量). (SOURCE: `ScreenTools.screenInfo` 保留宿主已随旋转变化的 width / height, 从这两个值计算方向, 透传 rotation / rotationDegrees / density / densityDpi. DEVICE: XQ-AT72 API 31 横屏 2560x1096 / landscape / 90, 默认截图 1280x548; 修复依据旧 Configuration orientation 二次交换宽高的错误, JVM 回归覆盖该旧字段仍为 portrait 的情况. `annotate` 按可选项留 P6)
+- [x] (测试) DEVICE: API 30+ 免授权路径 (三次连续截图含限频), API 24 / 28 回退路径; 横竖屏; 体积上限触发降质. (SOURCE: `docs/dev/p3-screen-evidence.md`: API 31 三次 JPEG 236 / 117 / 247 ms, API 35 为 183 / 106 / 179 ms; API 28 回退与三种格式, API 28 / 31 / 35 横竖屏已验收. API 35 的 2880x1800 噪声 PNG 经 4 次捕获降至 988x617, 1817197 bytes / base64 2422932 bytes, 2621 ms, adjusted=true. JVM 157 项; 最终插件 instrumentation 16 项在 API 24 / 28 / 31 / 33 / 33 / 35 全过; 最终宿主编码测试 4 项在 API 24 / 28 / 31 / 33 / 35 全过, 真实 Binder 往返 1 项在 API 24 / 28 / 31 / 35 全过. API 24 首次截图后遇到空帧, 宿主补齐最多 6 次取帧重试后全部通过: 连续 JPEG 720x1280 为 22213 (含手动授权) / 1384 / 123 ms, WebP 裁剪 250x250 为 1363 ms, 横屏 PNG 1000x563 为 123 ms, 默认 JPEG 1280x720 为 121 ms)
 
 ### P3.4 文件, 应用与设备 (`files` / `files_delete` / `device` / `shell` 组)
 
@@ -472,7 +472,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 | ui | `ui_press_key` | `key=back|home|recents|notifications|quick_settings|power_dialog|lock_screen` | `accessibility.back/home/recentApps` 等 |
 | ui_gesture (关) | `ui_swipe` | `x1,y1,x2,y2`, `durationMs?=300` | `accessibility.swipe` |
 | ui_gesture | `ui_gesture` | `durationMs`, `points[[x,y],...]` | `accessibility.gesture` |
-| screen (开) | `screen_capture` | `maxWidth?=1280`, `format?=jpeg`, `quality?=70`, `region?` | `accessibility.screenshot` (回退 `media_projection` + `image.captureScreen`) |
+| screen (开) | `screen_capture` | `scale?` 或 `maxWidth?` (均未给时最长边 1280), `format?=jpeg`, `quality?=70`, `region?={left,top,right,bottom}` | `accessibility.screenshot` (回退 `media_projection` + `image.captureScreen`) |
 | screen | `screen_state` | - | `device.isScreenOn` + `device.info` |
 | files (开) | `files_list` / `files_stat` / `files_read` / `files_write` / `files_mkdir` / `files_rename` | `path`, `recursive?`, `maxEntries?=500`, `encoding?=utf-8`, `maxBytes?=1 MiB`, `content`, `createDirs?`, `overwrite?` | `files.*` |
 | files_delete (关) | `files_delete` | `path` | `files.delete` |
@@ -719,3 +719,13 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 偏差: 引用存活 60 s (草案 30 s); `ACTION_FAILED` 在附录 A.5 之外; `ui_wait_for` 到期为 `TIMEOUT`, 而 `ui_find` 无命中与 `ui_scroll` 到底是正常结果; 坐标点击 = 零长度 `accessibility.swipe` -> 宿主按压 (bridge 无 tap 方法); `ui_long_click` 在 UI 模式脚本按钮上于 API 31 / 33 / 35 报 `ACTION_FAILED` 但处理器已执行 (Android 仅在监听器消费事件时报告成功, hint 说明); 第三方应用以 AutoJs6 UI 模式脚本窗口代替 (确定性), Settings 为系统应用; `device_ensure_accessibility` 属 P3.4, `A11Y_SERVICE_NOT_RUNNING` 的提示未提及它; 插件 `REQUIRED_HOST_VERSION` 仍为 5279, 旧宿主表现为 `ui_press_key` 的 `CAPABILITY_DENIED`, 无状态标记与随机 `ACTION_FAILED` (docs/dev/p3-tools.md 与 changelog 记录).
 - 未做: P3.3 (`screen` 组) 及以后; `device_ensure_accessibility` (P3.4); 真正的第三方应用真机证据; 宿主 `UiObject.kt` 中另一处无 handler 的 `GlobalActionAutomator` (脚本线程, 未改).
 - 下次会话建议起点: P3.3 (`screen` 组: `screen_capture` 经 `accessibility.screenshot` 的 PFD 路径 -> base64 `image` 内容, MediaProjection 回退, `screen_state`; 体积上限与降质).
+
+### 2026-09-13
+
+- 完成: P3.3 截图组, `screen_capture` / `screen_state`, PFD 长度校验与完整生命周期管理, MediaProjection 回退, 4 MiB base64 上限与有界降质; 工具目录 22 项 / 5 组; 宿主支持携带编码选项的 `image.captureScreen`, 既有无参数调用形状保持兼容, AIDL / grant / AAR 未变; 10 语言 README / 插件说明 / changelog 更新当前预览能力与宿主构建要求, `docs/dev/p3-tools.md` 与 `docs/dev/p3-screen-evidence.md` 记录契约和真机证据.
+- 验证: JVM 157 项通过, debug / androidTest / release 构建通过, lint 0 错误 6 条既有警告, 文档生成检查通过; 插件 instrumentation 16 项在 API 24 / 28 / 31 / 33 / 33 / 35 全过; 宿主编码测试 4 项在 API 24 / 28 / 31 / 33 / 35 全过; 实际宿主会话与 HTTP 图片载荷在 API 24 / 28 / 31 / 35 验证, 包含首次授权, 三次连续截图, 横竖屏, JPEG / PNG / WebP, region / maxWidth / scale 与超限降质. 会话均 stop / close, 测试调整的无障碍与旋转设置已恢复.
+- 发现并修复: 无障碍截图必须同时声明 `accessibility` 与 `screen_capture`; 宿主旋转后的 width / height 已是实际方向, 旧 Configuration orientation 可能滞后, 插件不能据此再次交换. IDE logpoint 未产生运行事件, 因此以真实 HTTP 字段与先失败后通过的 JVM 回归作为定位证据, 不声称获得调试器运行值.
+- API 24 补验: 会话中途设备上线, 16 项插件测试先通过, 实际连续截图暴露宿主取帧暂时为空即报错; NodeScreenCaptureSession 参照既有 Images.captureScreen 增加最多 6 次重试, 每次底层最多 1.2 s, 间隔 40 ms, 不保存旧图. 新增回归与 API 24 / 28 全链路随后通过; 宿主全部 4 项编码测试在 API 24 / 28 / 31 / 33 / 35 通过. IDE 当前仅绑定插件工程, 宿主调试入口被拒绝, 此项以真实 HTTP 错误, 宿主实现对照和设备回归作为证据.
+- 环境恢复: 根据维护者要求重新下载 Gradle 9.5.0 官方发行 ZIP, 官方 SHA-256 与 ZIP CRC 检查通过, wrapper 可用, 缓存受损后的完整构建重新通过.
+- 未做: 图片在 Inspector / Claude Code 等客户端界面内的显示矩阵 (P5); 可选节点编号标注 (P6); P3.4 及以后. 宿主仓库同时存在另一组 SDK 37 未提交改动, 本次未纳入截图任务, 宿主自动提交按工作区约定暂缓.
+- 下次会话建议起点: P3.4 文件 / 应用 / 设备 / Shell 工具, 先处理路径规范化与上限, 再补 `device_ensure_accessibility` 并接入现有无障碍错误提示; 随后 P3.5 resources / prompts.

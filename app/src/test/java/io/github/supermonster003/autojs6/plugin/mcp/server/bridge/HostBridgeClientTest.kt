@@ -261,7 +261,7 @@ class HostBridgeClientTest {
         var closed = false
         val transport = FakeTransport().apply {
             handler = { request, reply ->
-                reply(BridgeReply("""{"id":"${request.id}","ok":true,"result":{"payload":{"kind":"descriptor"}}}""", true, null, BridgePayload(12L, "image/jpeg") { closed = true }))
+                reply(BridgeReply("""{"id":"${request.id}","ok":true,"result":{"payload":{"kind":"descriptor"}}}""", true, null, BridgePayload(12L, "image/jpeg", { ByteArray(12).inputStream() }) { closed = true }))
             }
         }
         val outcome = HostBridgeClient(transport).call("device", "info")
@@ -270,6 +270,50 @@ class HostBridgeClientTest {
         assertTrue(closed)
         assertNull((outcome as BridgeOutcome.Ok).result.jsonObject["missing"])
         assertFalse(transport.unlinked)
+        assertEquals(12, outcome.payload!!.data.size)
+    }
+
+    @Test
+    fun `truncated oversized and unreadable payloads fail and always close`() = runBlocking {
+        val cases = listOf(3L to byteArrayOf(1), 1L to byteArrayOf(1, 2), 9_000_000L to byteArrayOf(1), -1L to byteArrayOf(1))
+        cases.forEach { (declared, data) ->
+            var closed = 0
+            val transport = FakeTransport().apply {
+                handler = { request, reply -> reply(BridgeReply("""{"id":"${request.id}","ok":true,"result":{}}""", true, null,
+                    BridgePayload(declared, "image/png", { data.inputStream() }) { closed++ })) }
+            }
+            val failure = (HostBridgeClient(transport).call("device", "info") as BridgeOutcome.Failed).failure
+            assertEquals(if (declared > 8 * 1024 * 1024 || declared < 0) ToolErrorCodes.LIMIT_EXCEEDED else ToolErrorCodes.HOST_ERROR, failure.code)
+            assertEquals(1, closed)
+        }
+    }
+
+    @Test
+    fun `payloads arriving after cancellation are closed without reading`() = runBlocking {
+        val transport = FakeTransport().hold()
+        val client = HostBridgeClient(transport)
+        val job = async { client.call("device", "info") }
+        while (transport.pendingReplies.isEmpty()) delay(5)
+        job.cancel()
+        job.join()
+        var closed = 0
+        val (request, reply) = transport.pendingReplies.single()
+        reply(BridgeReply("""{"id":"${request.id}","ok":true,"result":{}}""", true, null,
+            BridgePayload(1, "image/png", { error("late payload must not be read") }) { closed++ }))
+        assertEquals(1, closed)
+    }
+
+    @Test
+    fun `failure and wrong response id close descriptors without opening them`() = runBlocking {
+        listOf("""{"ok":false,"error":{"category":"provider-failed"}}""", """{"id":"wrong","ok":true,"result":{}}""").forEach { json ->
+            var closed = 0
+            val transport = FakeTransport().apply {
+                handler = { _, reply -> reply(BridgeReply(json, null, null,
+                    BridgePayload(1, "image/png", { error("invalid response must not read") }) { closed++ })) }
+            }
+            assertTrue(HostBridgeClient(transport).call("device", "info") is BridgeOutcome.Failed)
+            assertEquals(1, closed)
+        }
     }
 
     @Test

@@ -6,9 +6,9 @@
 
 # v1.0.0
 
-###### 2026/09/11
+###### 2026/09/13
 
-* `Hint` Development preview: the plugin registers with the AutoJs6 plugin center, but the MCP endpoint and its tools are not available yet
+* `Hint` Development preview through P3.3: the authenticated MCP endpoint, pairing, script and UI tools, and screenshots are implemented. screen_capture returns JPEG, PNG or WebP images; screen_state reports screen dimensions and orientation. The drawer switch and settings page are still planned in P4. Progress and device evidence are in ROADMAP.md.
 * `Feature` Plugin identity `mcp-server` with the INFO service, the Wake Activity, and the `org.autojs.plugin.MCP_SERVER` service skeleton for host discovery
 * `Feature` README, plugin-center instructions, and changelog in 10 languages
 * `Feature` Streamable HTTP endpoint at `http://127.0.0.1:9637/mcp` with the `device_ping` tool, hosted by a foreground service that adb or the host can switch on and off (development preview)
@@ -24,6 +24,7 @@
 * `Feature` Script group completed: `script_run_file` runs a script file on the device, `script_stop` / `script_stop_all` stop one or every AutoJs6 execution, `script_list` lists the running ones, and `console_tail` returns the newest console lines with a `nextSinceId` cursor and a level filter; `script_run` and `script_run_file` now report `executionId`, `status` (`finished` / `error` / `running`), `durationMs`, the exception with its line, and the newest console lines, and while they wait a progress notification every 2 s carries the newest console line
 * `Feature` Responses of the MCP endpoint stream as server-sent events (the SDK's JSON response mode is not used), so a notification that belongs to a request, such as the progress heartbeat of a running script, reaches the client on the response of that request
 * `Feature` UI group added (roadmap P3.2): `ui_dump` returns the active window as a compact node tree with `#n` references (`format` text / json / xml, `maxNodes` up to 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` poll a selector, `ui_current_window` and `ui_explain_selector` report the window and why a selector fails, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` act on a `nodeRef` (relocated by its fingerprint, `NODE_REF_STALE` once it is gone) or a `selector`, `ui_press_key` presses back / home / recents / notifications / quick_settings / power_dialog / lock_screen, and the `ui_gesture` group (off by default) adds `ui_swipe`, `ui_gesture`, and the coordinate form of the click tools (`TOOL_DISABLED` while the group is off); the tool catalog snapshot grows to 20 tools; the coordinate gestures need an AutoJs6 host built on 2026-09-11 or later (an older host answers them at random with "the system cancelled ...")
+* `Feature` Screenshot group (P3.3): screen_capture returns MCP images with crop, scale or maxWidth, JPEG / PNG / WebP, and quality controls. Defaults are JPEG quality 70 and longest edge 1280 px. Images above 4 MiB of base64 are retried at lower quality or smaller dimensions, with metadata reporting adjustments. screen_state reports power, dimensions, orientation and density. The catalog now has 22 tools. MediaProjection fallback requires an AutoJs6 host built on 2026-09-13 or later and consent on the phone; the host session reuses that consent.
 * `Improvement` Build verification rejects accidental native dependencies and produces a JSON report
 * `Dependency` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) on the Ktor 3.5.1 CIO engine
 * `Dependency` Ktor 3.5.1 `ktor-server-test-host` added for the JVM transport tests (test scope only)

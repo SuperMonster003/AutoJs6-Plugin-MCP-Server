@@ -52,7 +52,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 
 ******
 
-プロジェクトは骨組みの段階です. このリリースは AutoJs6 のプラグインセンターにプラグインを登録し, ビルド, ドキュメント, テストの基盤を整えます. MCP エンドポイントとそのツールはまだ利用できません. 進捗は [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) で項目ごとに追跡しています.
+P3.3 までの開発プレビュー: 認証とペアリングを備えた MCP エンドポイント, スクリプト, UI, スクリーンショットの各ツールを実装済みです. screen_capture は JPEG, PNG, WebP 画像を返し, screen_state は画面サイズと向きを返します. ドロワーのスイッチと設定画面は P4 で実装予定です. 進捗と端末での検証結果は [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) を参照してください.
 
 ******
 
@@ -64,7 +64,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 
 - スクリプト実行: AutoJs6 内でテキストまたはファイルから JavaScript を実行し, エンジンの一覧表示と停止, 最近のコンソール出力の読み取りを行います.
 - アクセシビリティ UI: ノードツリーをコンパクトなテキスト形式で出力し, AutoJs6 のセレクター構文でノードを検索し, クリック, 長押し, スクロール, テキスト設定, 戻るやホームなどのグローバルキー操作を行います.
-- スクリーンショット: マルチモーダルモデルに適したサイズ上限で画面を PNG または JPEG として取得します.
+- スクリーンショットグループ (P3.3): screen_capture は切り抜き, scale または maxWidth, JPEG / PNG / WebP, 品質指定に対応した MCP 画像を返します. 既定値は JPEG 品質 70, 長辺 1280 px です. base64 が 4 MiB を超える場合は品質やサイズを下げて再試行し, 変更をメタデータに記録します. screen_state は画面の点灯状態, サイズ, 向き, 密度を返します. ツール数は 22 になりました. MediaProjection のフォールバックには 2026-09-13 以降にビルドされた AutoJs6 と端末での許可が必要で, 許可はホストセッションで再利用されます.
 - ファイル, アプリ, デバイス: AutoJs6 の作業ディレクトリ内のファイルの読み書き, アプリの起動, 前面ウィンドウの照会, デバイス情報の報告を行います.
 - 接続経路: `adb forward` による USB 接続, 明示的に有効化するローカルネットワーク接続, PC 側の stdio ブリッジ, および OAuth 2.1 を備えたオプションの公開トンネル.
 - セキュリティ: ローテーション可能な Bearer トークン, スマートフォン上での初回ペアリング確認, グループ単位のツールスイッチ. サーバーはデフォルトでループバックインターフェースのみを待ち受けます.
@@ -77,10 +77,10 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 
 1. AutoJs6 ビルド 5279 (6.8.0) 以降を搭載したデバイスに, [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) からプラグインの APK をインストールします.
 2. AutoJs6 のプラグインセンターを開き, `MCP Server` が認識されていることを確認して有効にします. 公式リリースパッケージは署名検証を自動的に通過します.
-3. AutoJs6 のドロワーまたはプラグインの設定ページから MCP サーバーをオンにします. スマートフォンにエンドポイントのアドレスとペアリングトークンが表示されます.
+3. この開発プレビューでは開発者向け文書の adb 制御とホストのテストセッションを使って接続します. ドロワーのスイッチとプラグインの設定画面は P4 で実装予定です.
 4. PC で `adb forward tcp:9637 tcp:9637` を実行し, MCP クライアントを `http://127.0.0.1:9637/mcp` に向け, トークンを Bearer 資格情報として指定します.
 
-> 手順 3 と 4 は計画中のワークフローで, 対応するロードマップの段階が完了すると利用可能になります. プラグインは Android 7.0 (API 24) 以降に対応します.
+> この開発プレビューでは開発者向け文書の adb 制御とホストのテストセッションを使って接続します. ドロワーのスイッチとプラグインの設定画面は P4 で実装予定です.
 
 ******
 
@@ -95,7 +95,7 @@ adb forward tcp:9637 tcp:9637
 claude mcp add --transport http autojs6 http://127.0.0.1:9637/mcp --header "Authorization: Bearer <token>"
 ```
 
-トークンはスマートフォンに表示された値に置き換えてください. このコマンドはサーバーを起動できるようになってから有効です (`現在の状態` を参照).
+このプレビューでは, 開発ドキュメントに記載された開発者モードの adb 制御経由でトークンを取得します. 設定画面でのトークン表示は P4 で実装予定です.
 
 ******
 
@@ -133,7 +133,7 @@ minimum host build: 5279 (6.8.0)
 default endpoint: http://127.0.0.1:9637/mcp
 ```
 
-`McpServerPluginService` は `org.autojs.plugin.MCP_SERVER` アクション (カテゴリ `mcp-server`) に応答し, `:mcp_server` プロセスで動作します. AIDL コントラクト `org.autojs.plugin.mcp.server.api.IMcpServerPlugin` はホストの `mcp-server-api` モジュールで定義され, ロードマップの P1 段階で導入されます. それまでサービスはコントラクトの記述子のみを公開します. `McpServerPluginInfoService` は標準の `PluginInfo` で `org.autojs.plugin.INFO` に応答し, `WakeActivity` は新規インストールしたアプリを停止状態に保つデバイスでホストがプラグインプロセスを起動できるようにします.
+`McpServerPluginService` は `:mcp_server` プロセスでホストの mcp-server-api 契約 `org.autojs.plugin.mcp.server.api.IMcpServerPlugin` を実装し, `org.autojs.plugin.MCP_SERVER` (category `mcp-server`) に応答します. `McpServerPluginInfoService` は `org.autojs.plugin.INFO` に PluginInfo を返します. ホストは `WakeActivity` でプラグインを有効化できます.
 
 ******
 
@@ -153,9 +153,9 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 #### v1.0.0
 
-_2026/09/11_
+_2026/09/13_
 
-- `ヒント` 開発プレビュー: プラグインは AutoJs6 のプラグインセンターに登録されますが, MCP エンドポイントとそのツールはまだ利用できません
+- `ヒント` P3.3 までの開発プレビュー: 認証とペアリングを備えた MCP エンドポイント, スクリプト, UI, スクリーンショットの各ツールを実装済みです. screen_capture は JPEG, PNG, WebP 画像を返し, screen_state は画面サイズと向きを返します. ドロワーのスイッチと設定画面は P4 で実装予定です. 進捗と端末での検証結果は ROADMAP.md を参照してください.
 - `機能` ホスト検出用の INFO サービス, Wake Activity, `org.autojs.plugin.MCP_SERVER` サービスの骨組みを備えたプラグイン ID `mcp-server`
 - `機能` 10 言語の README, プラグインセンターの説明, 変更履歴
 - `機能` `http://127.0.0.1:9637/mcp` の Streamable HTTP エンドポイントと `device_ping` ツール. adb またはホストから起動と停止ができるフォアグラウンドサービスが提供 (開発プレビュー)
@@ -171,6 +171,7 @@ _2026/09/11_
 - `機能` スクリプトグループを完成: `script_run_file` は端末上のスクリプトファイルを実行し, `script_stop` / `script_stop_all` は AutoJs6 の実行を 1 つまたはすべて停止し, `script_list` は実行中のものを列挙し, `console_tail` は `nextSinceId` カーソルとレベルフィルター付きで最新のコンソール行を返します; `script_run` と `script_run_file` は `executionId`, `status` (`finished` / `error` / `running`), `durationMs`, 行番号付きの例外, 最新のコンソール行を返すようになり, 待機中は 2 秒ごとに最新のコンソール行を含む進捗通知を送ります
 - `機能` MCP エンドポイントの応答は Server-Sent Events (SSE) でストリーム配信されるようになりました (SDK の JSON 応答モードは使いません). 実行中スクリプトの進捗ハートビートなど, リクエストに属する通知はそのリクエスト自身の応答でクライアントに届きます
 - `機能` UI グループを追加 (roadmap P3.2): `ui_dump` は現在のウィンドウを `#n` 参照付きのコンパクトなノードツリーで返し (`format` は text / json / xml, `maxNodes` は最大 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` はセレクターをポーリングし, `ui_current_window` と `ui_explain_selector` はウィンドウとセレクターが失敗する理由を報告し, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` は `nodeRef` (フィンガープリントで再特定し, 消えていれば `NODE_REF_STALE`) または `selector` に作用し, `ui_press_key` は back / home / recents / notifications / quick_settings / power_dialog / lock_screen を押し, 既定で無効の `ui_gesture` グループは `ui_swipe`, `ui_gesture` とクリックツールの座標形式を追加します (グループが無効の間は `TOOL_DISABLED`); ツールカタログのスナップショットは 20 ツールに増えました; 座標ジェスチャーには 2026-09-11 以降にビルドされた AutoJs6 ホストが必要です (それより古いホストはランダムに "the system cancelled ..." と応答します)
+- `機能` スクリーンショットグループ (P3.3): screen_capture は切り抜き, scale または maxWidth, JPEG / PNG / WebP, 品質指定に対応した MCP 画像を返します. 既定値は JPEG 品質 70, 長辺 1280 px です. base64 が 4 MiB を超える場合は品質やサイズを下げて再試行し, 変更をメタデータに記録します. screen_state は画面の点灯状態, サイズ, 向き, 密度を返します. ツール数は 22 になりました. MediaProjection のフォールバックには 2026-09-13 以降にビルドされた AutoJs6 と端末での許可が必要で, 許可はホストセッションで再利用されます.
 - `改善` 意図しないネイティブ依存関係をビルド時に拒否し, JSON レポートを生成
 - `依存関係` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) と Ktor 3.5.1 CIO エンジン
 - `依存関係` JVM トランスポートテスト用に Ktor 3.5.1 `ktor-server-test-host` を追加 (テストスコープのみ)
