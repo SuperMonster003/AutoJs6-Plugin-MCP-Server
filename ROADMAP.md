@@ -360,13 +360,13 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 目标: 用户可在宿主抽屉一键开关 MCP 服务器, 在插件设置页完成全部配置, 并能一键复制客户端配置片段.
 
-- [ ] (宿主) `app/tool/McpServerTool.kt` (仿 `JsonSocketServerTool`): `connect` -> 插件状态四分 (未安装: 引导到插件中心 / 官方索引; 已安装未激活或禁用: Wake 与启用引导; 版本不兼容: 显示所需版本; 可用: `openServer`), `disconnect`, `isNormallyClosed` (偏好 `key_$_mcp_server_normally_closed`, 放 `strings_donottranslate.xml` 并排序), 启动时 `connectIfNotNormallyClosed`.
-- [ ] (宿主) 抽屉条目 "MCP 服务器": 开关 + 副标题显示端点或状态 (来自 `onStatus`), 长按或齿轮跳转插件设置页 (显式组件, 校验 Activity 受 PLUGIN 权限保护, 仿 `AiPluginSettingsLauncher`); 首次打开时 D18 的信任确认; 字符串 11 语言.
-- [ ] (宿主) 插件中心条目的 "设置" 入口指向同一设置页; `PluginCenterItem` 显示运行状态 (可选).
-- [ ] (插件) `McpServerSettingsActivity` (Three-Stone-AI 的 `AppSettingsActivity` 样式, 跟随宿主主题 / 夜间 / 语言快照): 状态卡 (运行 / 已停止 / 宿主不可用, 端点列表含 `adb forward` 命令), 端口, 监听范围 (仅本机 / 局域网, 局域网开启时二次确认), 令牌 (显示 / 复制 / 轮换), 已配对客户端 (列表 / 撤销 / 全部撤销), 工具组开关 (含 root 子开关), 开发者模式 (CORS for Inspector, 详细日志), 客户端配置片段 (Claude Code 命令, Cursor `mcp.json`, Codex `config.toml`, 通用 JSON; 一键复制; 二维码可选), 发行历史 (`ReleaseHistoryActivity` 读 `assets/doc/CHANGELOG-{tag}.md`), 关于.
-- [ ] (插件) 配置变更热应用: 端口 / 监听范围变更时重启监听并回调状态; 令牌轮换即时生效; 工具组开关触发 `notifications/tools/list_changed` (有状态) 与下次 `tools/list` 的 `ttlMs` 归零.
-- [ ] (插件) 无障碍标签, 键盘导航, RTL, 大字体, 夜间模式, 进程恢复 (设置页在进程被杀后重建不丢状态).
-- [ ] (测试) JVM: 配置片段生成器快照测试 (三种客户端 + 通用), 状态文案映射; DEVICE: 抽屉开关四态各一次截图证据; 设置页在 API 24 与 API 35 上的显示.
+- [x] (宿主) `app/tool/McpServerTool.kt` (仿 `JsonSocketServerTool`): `connect` -> 插件状态四分 (未安装: 引导到插件中心 / 官方索引; 已安装未激活或禁用: Wake 与启用引导; 版本不兼容: 显示所需版本; 可用: `openServer`), `disconnect`, `isNormallyClosed` (偏好 `key_$_mcp_server_normally_closed`, 放 `strings_donottranslate.xml` 并排序), 启动时 `connectIfNotNormallyClosed`. (JVM: McpServerUiPolicyTest; DEVICE: API 24 激活 / 抽屉启动 / 长按设置 / 插件中心设置 / 通知停止, API 24 + 35 真实 Binder 往返; 配套宿主 feat/mcp-p4, 见 docs/dev/p4-settings-and-drawer.md.)
+- [x] (宿主) 抽屉条目 "MCP 服务器": 开关 + 副标题显示端点或状态 (来自 `onStatus`), 长按或齿轮跳转插件设置页 (显式组件, 校验 Activity 受 PLUGIN 权限保护, 仿 `AiPluginSettingsLauncher`); 首次打开时 D18 的信任确认; 字符串 11 语言. (JVM: McpServerUiPolicyTest; DEVICE: API 24 激活 / 抽屉启动 / 长按设置 / 插件中心设置 / 通知停止, API 24 + 35 真实 Binder 往返; 配套宿主 feat/mcp-p4, 见 docs/dev/p4-settings-and-drawer.md.)
+- [x] (宿主) 插件中心条目的 "设置" 入口指向同一设置页; `PluginCenterItem` 显示运行状态 (可选). (JVM: McpServerUiPolicyTest; DEVICE: API 24 激活 / 抽屉启动 / 长按设置 / 插件中心设置 / 通知停止, API 24 + 35 真实 Binder 往返; 配套宿主 feat/mcp-p4, 见 docs/dev/p4-settings-and-drawer.md.)
+- [x] (插件) `McpServerSettingsActivity` (Three-Stone-AI 的 `AppSettingsActivity` 样式, 跟随宿主主题 / 夜间 / 语言快照): 状态卡 (运行 / 已停止 / 宿主不可用, 端点列表含 `adb forward` 命令), 端口, 监听范围 (仅本机 / 局域网, 局域网开启时二次确认), 令牌 (显示 / 复制 / 轮换), 已配对客户端 (列表 / 撤销 / 全部撤销), 工具组开关 (含 root 子开关), 开发者模式 (CORS for Inspector, 详细日志), 客户端配置片段 (Claude Code 命令, Cursor `mcp.json`, Codex `config.toml`, 通用 JSON; 一键复制; 二维码可选), 发行历史 (`ReleaseHistoryActivity` 读 `assets/doc/CHANGELOG-{tag}.md`), 关于. (JVM: ClientConfigSnippetTest / ReleaseHistoryTest; DEVICE: McpServerSettingsTest, API 24 / 28 / 31 / 33 / 35, 见 P4 证据文档; 客户端粘贴验收另列待完成.)
+- [x] (插件) 配置变更热应用: 端口 / 监听范围变更时重启监听并回调状态; 令牌轮换即时生效; 工具组开关触发 `notifications/tools/list_changed` (有状态) 与下次 `tools/list` 的 `ttlMs` 归零. (DEVICE: McpServerSettingsTest 验证跨进程端口切换, 旧令牌 401 / 新令牌 200, 配对保留与撤销, list_changed / ttlMs = 0, 停止后编辑不启动.)
+- [ ] (插件) 无障碍标签, 键盘导航, RTL, 大字体, 夜间模式, 进程恢复 (设置页在进程被杀后重建不丢状态). (已验证: API 24 / 35 页面显示与 Activity 重建; API 35 阿拉伯语 RTL + 夜间 + fontScale 1.5, 2/2. 键盘 / TalkBack 与完整进程死亡恢复仍待验收.)
+- [ ] (测试) JVM: 配置片段生成器快照测试 (三种客户端 + 通用), 状态文案映射; DEVICE: 抽屉开关四态各一次截图证据; 设置页在 API 24 与 API 35 上的显示. (JVM 快照与状态策略已通过; API 24 / 35 页面截图已留存. 真机四态截图矩阵尚未补齐, 保留未勾选.)
 
 验收条件: 从未安装到可用的四态引导在真机上逐一验证; 抽屉开关与通知 "停止" 双向同步; 配置片段粘贴到 Claude Code / Cursor 后无需修改即可连接.
 
@@ -756,3 +756,14 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 收尾: 宿主 McpServerPluginRoundTripTest 在 150 s 会话观察后正常 stop / close, 1/1 通过 (151.601 s); 配置, 配对与分组已恢复, 服务器已停止, 临时 adb forward 已移除. 文档生成检查 10 语言 / 36 产物通过, ApplicationTextPunctuationTest 1/1 通过.
 - 范围: 本轮补充客户端证据, 未修改运行时实现或依赖; APK 沿用已通过六设备矩阵的 build 23. JetBrains ACP 对话界面未单独测试, 验证入口为加载同一网关配置的 Claude Code CLI. 可选 Offline-Docs provider 与 OEM 新安装激活矩阵仍待后续阶段处理.
 - 下次会话建议起点: P4 设置页与宿主入口, 从 P4.1 宿主状态与抽屉开关开始.
+
+
+### 2026-09-13: P4 宿主抽屉与插件设置
+
+- 完成实现: 宿主抽屉 MCP Server 开关, 状态 / 激活 / 禁用 / 版本 / 信任引导, 长按与插件中心共用设置入口; 插件独立设置页包含端口 / LAN, 令牌, 配对, 8 个工具组与 root 子开关, 开发者模式, 四种客户端片段, 发行历史与通知设置. 通知停止会同步关闭宿主开关. 宿主主题 / 语言 / 夜间配置通过现有公共 provider 读取, 11 个资源目录与 10 语言生成文档同步更新.
+- 契约: 可选设置扩展版本 1, AIDL 顺序和核心契约版本不变. 宿主协商后使用插件保存的配置; legacy 调用保留显式端口 / 范围. 用户停止意图与非敏感状态快照经跨进程原子文件保存, 关闭时编辑不启动服务. 两个 release API AAR 来自同一宿主构建, SHA-256 与来源见 THIRD_PARTY_NOTICES.md. 配套宿主 e1aa3f813 改动隔离在 feat/mcp-p4 worktree, 原宿主工作区既有 SDK 37 改动未修改.
+- 验证: 插件 JVM 202/202, 宿主 MCP JVM 19/19, 宿主 API release 构建与 MCP API 单测通过; 插件 debug / androidTest / release / R8 / lint 通过, lint 0 errors / 6 既有 warnings; 宿主 debug / androidTest 构建通过, IDE 项目构建通过, 10 语言 / 36 产物文档检查通过. 六设备插件 instrumentation 各 20/20 (API 24 / 28 / 31 / 33 / 33 / 35), 最后显示对比度调整在 API 24 / 35 复验; 最终插件 build 25 已覆盖安装六设备并保留应用数据. 两设备真实宿主 Binder 往返各 1/1. API 35 阿拉伯语 RTL + 夜间 + fontScale 1.5 的设置测试 2/2, 普通主题复验 2/2. 测试后恢复令牌 / 配对 / 分组与主题设置.
+- 交互与客户端: API 24 完成激活引导 -> 开关启动 -> 端点显示 -> 长按设置 -> 插件中心设置 -> 通知停止 / 抽屉归位. Claude Code 2.1.257 用临时隔离配置加载相同 AIGoCode 环境, 接受生成器快照填入实际端点 / 令牌后的 mcp add 命令, mcp list 显示 Connected, 未发起模型请求, 用户全局配置哈希未变. 这是命令格式连接检查, 手机复制后原样粘贴流程仍待验收. 详情与非敏感截图见 docs/dev/p4-settings-and-drawer.md.
+- 修复与环境: stop / close 恢复同步 Binder 语义并与启动队列排序; Activity 重建测试改为定位新的 resumed 实例; 工具栏 / 系统栏按亮度选文字颜色. API 24 AVD 在截图中发生 SurfaceFlinger / RenderThread 原生图形错误, adb 重启仍复现; 保留用户数据以 SwiftShader 冷启动后 20/20 通过 (5m 27s), 已补最终截图, 未修改 AVD 配置文件. 宿主全量 lint 运行约 45 分钟仍在分析, 本次主动取消, 不计为通过.
+- 未完成: 真机四态截图与 OEM 新装激活矩阵, 键盘 / TalkBack, 完整进程死亡恢复, 手机复制粘贴与 Cursor 客户端连接. P4 对应验收条目保持未勾选. 无宿主运行时依赖变化, 本次未重复宿主 release 构建; 插件签名发行 APK `autojs6-plugin-mcp-server-v1.0.0-e9042e6d.apk` 已生成, 1356610 字节, CRC32 `e9042e6d` 校验一致; 最后 Temurin 模拟构建 5m 20s, 平台信息仅 1 段. 未 push 或发布.
+- 下次会话建议起点: 将宿主 feat/mcp-p4 与同期新增的 SDK 37 主线提交集成并复验 (本轮未合并宿主 master); 补齐 P4 的真机四态 / 无障碍 / 进程恢复与客户端粘贴验收, 再进入 P5 连接路径和客户端兼容矩阵.

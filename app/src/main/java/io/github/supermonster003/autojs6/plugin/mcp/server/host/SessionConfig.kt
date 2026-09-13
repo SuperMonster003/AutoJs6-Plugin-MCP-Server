@@ -1,6 +1,7 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server.host
 
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.BindScope
+import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfig
 import org.autojs.plugin.mcp.server.api.McpServerContract
 
 /**
@@ -13,7 +14,11 @@ data class SessionConfig(
     val port: Int = McpServerContract.DEFAULT_PORT,
     val bindScope: BindScope = BindScope.LOOPBACK,
     val hostLabel: String? = null,
+    val useSavedSettings: Boolean = false,
 ) {
+
+    fun listenerConfiguration(saved: ServerConfig, active: ServerConfig? = null): ServerConfig =
+        if (useSavedSettings) saved else (active ?: saved).withOverrides(port = port, bindScope = bindScope)
 
     companion object {
 
@@ -25,6 +30,7 @@ data class SessionConfig(
             bindScope: String?,
             protocolMode: String?,
             hostLabel: String?,
+            useSavedSettings: Boolean = false,
         ): SessionConfig {
             if (contractVersion != null && !McpServerContract.supportsContractVersion(contractVersion)) {
                 throw IllegalArgumentException("${McpServerContract.ERROR_UNSUPPORTED_CONTRACT}: contract version $contractVersion is not supported by this plugin build")
@@ -42,7 +48,7 @@ data class SessionConfig(
             if (label != null && label.length > MAX_HOST_LABEL_LENGTH) {
                 invalid("host label exceeds $MAX_HOST_LABEL_LENGTH characters")
             }
-            return SessionConfig(effectivePort, scope, label)
+            return SessionConfig(effectivePort, scope, label, useSavedSettings)
         }
 
         private fun invalid(detail: String): Nothing =

@@ -1,0 +1,15 @@
+{
+  "CLAUDE_CODE": {
+    "text": "claude mcp add --transport http autojs6 'http://127.0.0.1:9637/mcp' --header 'Authorization: Bearer test_0000000000000000000000000000000000000000000'"
+  },
+  "CURSOR": {
+    "text": "{\n    \"mcpServers\": {\n        \"autojs6\": {\n            \"url\": \"http://127.0.0.1:9637/mcp\",\n            \"headers\": {\n                \"Authorization\": \"Bearer test_0000000000000000000000000000000000000000000\"\n            }\n        }\n    }\n}"
+  },
+  "CODEX": {
+    "text": "[mcp_servers.autojs6]\nurl = \"http://127.0.0.1:9637/mcp\"\nbearer_token_env_var = \"AUTOJS6_MCP_TOKEN\"\n",
+    "environmentCommand": "$env:AUTOJS6_MCP_TOKEN = 'test_0000000000000000000000000000000000000000000'"
+  },
+  "GENERIC": {
+    "text": "{\n    \"mcpServers\": {\n        \"autojs6\": {\n            \"type\": \"http\",\n            \"url\": \"http://127.0.0.1:9637/mcp\",\n            \"headers\": {\n                \"Authorization\": \"Bearer test_0000000000000000000000000000000000000000000\"\n            }\n        }\n    }\n}"
+  }
+}

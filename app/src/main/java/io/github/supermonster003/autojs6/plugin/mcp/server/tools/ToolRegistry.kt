@@ -6,6 +6,13 @@ import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.ListToolsRequest
+import io.modelcontextprotocol.kotlin.sdk.types.ListToolsResult
+import io.modelcontextprotocol.kotlin.sdk.types.Method
+import io.modelcontextprotocol.kotlin.sdk.types.McpException
+import io.modelcontextprotocol.kotlin.sdk.types.RPCError
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -48,6 +55,18 @@ class ToolRegistry(
         synchronized(registered) {
             registered.clear()
             catalog.filter { current.isEnabled(it.group) }.forEach { spec -> register(server, spec) }
+        }
+        server.onConnect {
+            server.sessions.values.forEach { session ->
+                session.setRequestHandler<ListToolsRequest>(Method.Defined.ToolsList) { request, _ ->
+                    if (request.params?.cursor != null) throw McpException(RPCError.ErrorCode.INVALID_PARAMS, "Invalid tool cursor")
+                    refresh()
+                    ListToolsResult(
+                        tools = catalog.filter { current.isEnabled(it.group) }.map { it.toSdkTool() },
+                        meta = buildJsonObject { put("ttlMs", 0); put("cacheScope", "private") },
+                    )
+                }
+            }
         }
     }
 

@@ -22,6 +22,8 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.server.ServerStatus
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.BindScope
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfig
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfigStore
+import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerLifecycleStore
+import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerStatusStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.CatalogToolExecutor
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.NodeRefRegistry
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolCatalog
@@ -50,6 +52,8 @@ import org.autojs.plugin.mcp.server.api.McpServerContract
 import java.io.PrintWriter
 import java.util.UUID
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * The one MCP server of the `:mcp_server` process (roadmap P2.3): the listener, the tool
@@ -73,7 +77,10 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
     /** The `#n` references of the last `ui_dump` (roadmap D12); one snapshot per process. */
     val nodeRefs: NodeRefRegistry = NodeRefRegistry()
 
-    private val lifecycle = Executors.newSingleThreadExecutor { runnable -> Thread(runnable, "mcp-server-lifecycle") }
+    private val lifecycleThread = AtomicReference<Thread>()
+    private val lifecycle = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "mcp-server-lifecycle").also(lifecycleThread::set)
+    }
     private val mainHandler = Handler(Looper.getMainLooper())
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val lock = Any()
@@ -159,8 +166,9 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
     fun start(config: ServerConfig): ServerStatus {
         val running = server.activeConfiguration
         if (running != null) {
-            if (running.port == config.port && running.bindScope == config.bindScope) {
+            if (running == config) {
                 activeConfig = config
+                ServerLifecycleStore(context).userStopped = false
                 return server.status
             }
             Log.i(TAG, "Listener configuration changed (${running.port}/${running.bindScope.id} -> ${config.port}/${config.bindScope.id}); restarting")
@@ -171,6 +179,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
         lastStopReason = null
         val status = server.start(config)
         if (status.isRunning) {
+            ServerLifecycleStore(context).userStopped = false
             ensureForeground()
         } else {
             activeConfig = null
@@ -180,6 +189,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
 
     /** Stops the listener and releases the foreground service; the host session stays attached. */
     fun stop(reasonCode: String, message: String? = null) {
+        if (reasonCode == McpServerContract.REASON_USER_REQUEST) ServerLifecycleStore(context).userStopped = true
         lastStopReason = reasonCode
         if (server.isRunning || server.status.state == ServerStatus.STATE_STARTING) {
             Log.i(TAG, "Stopping the listener ($reasonCode${message?.let { ": $it" }.orEmpty()})")
@@ -223,7 +233,9 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
         val grant = transport.brokerInfo
         Log.i(TAG, "Session ${session.id} opened by uid $callerUid: broker ${grant.brokerId ?: "?"} v${grant.brokerVersion}, ${grant.methods.size} granted methods, ${grant.maxConcurrentCalls} concurrent calls, host label ${config.hostLabel ?: "-"}")
         lifecycle.execute {
+            if (this.session !== session || !session.isOpen) return@execute
             val status = start(listenerConfig(config))
+            ServerStatusStore(context).save(statusSnapshot())
             session.publishStatus()
             refreshNotification()
             if (status.isRunning) probeHost(session)
@@ -239,6 +251,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
             session.config = config
         }
         lifecycle.execute {
+            if (this.session !== session || !session.isOpen) return@execute
             val running = server.activeConfiguration
             if (running != null) {
                 start(listenerConfig(config))
@@ -250,9 +263,11 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
     }
 
     internal fun stopFromHost(session: HostSession, reasonCode: String, message: String?) {
-        if (this.session !== session) return
-        stop(reasonCode, message)
-        session.publishStatus()
+        onLifecycle {
+            if (this.session !== session && this.session != null) return@onLifecycle
+            stop(reasonCode, message)
+            session.publishStatus()
+        }
     }
 
     /** `IMcpServerSession.close`: stops the listener as well; the host is going away on purpose. */
@@ -267,10 +282,24 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
         }
         if (current) {
             Log.i(TAG, "Session ${session.id} closed by the host")
-            if (server.isRunning) stop(McpServerContract.REASON_HOST_SHUTDOWN)
+            onLifecycle {
+                // Closing can race queued startup. Complete the close after that startup, while
+                // never stopping a replacement session which a new host already owns.
+                if (this.session == null && server.isRunning) stop(McpServerContract.REASON_HOST_SHUTDOWN)
+            }
         }
         session.detach()
         refreshNotification()
+    }
+
+    /** stop/close keep their synchronous Binder contract, ordered after any queued startup. */
+    private fun onLifecycle(action: () -> Unit) {
+        if (Thread.currentThread() === lifecycleThread.get()) { action(); return }
+        try { lifecycle.submit(action).get(30, TimeUnit.SECONDS) }
+        catch (error: Exception) {
+            if (error is InterruptedException) Thread.currentThread().interrupt()
+            throw IllegalStateException("${McpServerContract.ERROR_INTERNAL}: listener control did not complete", error)
+        }
     }
 
     /**
@@ -278,14 +307,30 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
      * adb-started developer mode survives the host attaching), else the stored one, with the host's
      * port and scope applied.
      */
-    private fun listenerConfig(config: SessionConfig): ServerConfig =
-        (activeConfig ?: configStore.load()).withOverrides(port = config.port, bindScope = config.bindScope)
+    private fun listenerConfig(config: SessionConfig): ServerConfig = config.listenerConfiguration(configStore.load(), activeConfig)
+
+    /** Cross-process settings updates are serialized with host open/update operations. */
+    fun applySettingsFromUi(stopRequested: Boolean, applyConfiguration: Boolean, complete: () -> Unit) {
+        lifecycle.execute {
+            try {
+                if (stopRequested) stop(McpServerContract.REASON_USER_REQUEST)
+                else if (applyConfiguration && isListening) start(configStore.load())
+                scope.launch { registry.refresh() }
+                session?.publishStatus()
+                refreshNotification()
+                ServerStatusStore(context).save(statusSnapshot())
+            } catch (error: Exception) {
+                Log.w(TAG, "Settings update failed (${error.javaClass.simpleName})")
+            } finally { complete() }
+        }
+    }
 
     private fun onHostDied(client: HostBridgeClient) {
         val current = session
         if (current == null || current.bridge !== client) return
         Log.w(TAG, "AutoJs6 died; session ${current.id} is degraded until the host opens a new one")
         refreshNotification()
+        ServerStatusStore(context).save(statusSnapshot())
     }
 
     /** One `device.info` round trip after attach, which also proves the P1 Binder path in the log. */
@@ -330,6 +375,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
     }
 
     private fun onServerStatus(status: ServerStatus) {
+        ServerStatusStore(context).save(statusSnapshot())
         session?.publishStatus()
         refreshNotification()
         if (status.isFailed) {

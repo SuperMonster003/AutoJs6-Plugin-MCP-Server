@@ -8,10 +8,11 @@
   "p_introduction_what": "MCP Server convierte un dispositivo Android con AutoJs6 en un servidor [Model Context Protocol]({{ mcp_spec_url }}). Los agentes de IA del PC, como Claude Code, Cursor o MCP Inspector, se conectan al teléfono por USB o Wi-Fi y usan herramientas para ejecutar scripts, leer registros, inspeccionar el árbol de nodos de accesibilidad, tocar y escribir, tomar capturas de pantalla y trabajar con archivos y aplicaciones.",
   "p_introduction_how": "El servidor se ejecuta dentro del propio proceso del plugin y se alcanza mediante un único punto de conexión Streamable HTTP. AutoJs6 entrega al plugin un intermediario de capacidades a través de Binder, de modo que cada llamada a una herramienta la ejecuta el anfitrión con sus permisos, motores y servicio de accesibilidad existentes; el plugin nunca duplica la funcionalidad del anfitrión.",
   "h3_status": "Estado",
-  "p_status": "Vista previa P3.5: 37 herramientas disponibles, 33 activadas de forma predeterminada. Incluye archivos, posiciones del editor, consultas de aplicaciones, portapapeles, activación de accesibilidad y Shell con salida limitada. El interruptor del menú lateral y los ajustes siguen previstos para P4. [ROADMAP.md]({{ roadmap_url }}).",
+  "p_status": "Vista previa P4: 37 herramientas, 33 activadas por defecto, con un interruptor en AutoJs6 y una página de ajustes del complemento. Requiere la compilación AutoJs6 de P4 correspondiente. [ROADMAP.md]({{ roadmap_url }}).",
   "h3_features": "Funciones previstas",
   "p_features_intro": "La hoja de ruta entrega las siguientes capacidades por etapas",
   "features": [
+    "Ajustes del teléfono para estado del servidor, USB, puerto y red local, token, revocación de vínculos, grupos y root, modo de desarrollador, configuraciones copiables de Claude Code / Cursor / Codex / HTTP e historial de versiones, siguiendo el aspecto de AutoJs6. Los cambios de red reinician el servidor activo; tokens y permisos se aplican inmediatamente. Los diálogos secretos bloquean capturas.",
     "Ejecución de scripts: ejecutar JavaScript desde texto o desde un archivo dentro de AutoJs6, listar y detener motores, y leer la salida reciente de la consola.",
     "Interfaz de accesibilidad: volcar el árbol de nodos en un formato de texto compacto, buscar nodos con la sintaxis de selectores de AutoJs6, hacer clic, mantener pulsado, desplazar, establecer texto y pulsar teclas globales como Atrás e Inicio.",
     "Grupo de capturas (P3.3): screen_capture devuelve imágenes MCP con recorte, scale o maxWidth, JPEG / PNG / WebP y control de calidad. Valores predeterminados: JPEG, calidad 70 y lado mayor de 1280 px. Si base64 supera 4 MiB, se reintenta con menor calidad o tamaño y los metadatos indican el ajuste. screen_state informa del estado, tamaño, orientación y densidad. El catálogo incluye 37 herramientas. La alternativa MediaProjection requiere AutoJs6 compilado el 2026-09-13 o después y autorización en el teléfono, reutilizada por la sesión del host.",
@@ -24,13 +25,14 @@
   "usage_steps": [
     "Instale el APK del plugin desde [Releases]({{ repo_url }}/releases) en un dispositivo con AutoJs6 build {{ required_host_version_code }} ({{ required_host_version_name }}) o posterior.",
     "Abra el centro de plugins de AutoJs6, confirme que `MCP Server` se reconoce y actívelo. Los paquetes oficiales superan la verificación de firma automáticamente.",
-    "En esta vista previa, use el control adb y una sesión de prueba del host descritos en las notas de desarrollo; el interruptor del panel y los ajustes del plugin están previstos para P4.",
-    "En el PC, ejecute `adb forward tcp:{{ mcp_default_port }} tcp:{{ mcp_default_port }}` y apunte el cliente MCP a `http://127.0.0.1:{{ mcp_default_port }}{{ mcp_endpoint_path }}` con el token como credencial bearer."
+    "Activa MCP Server en el panel de AutoJs6. Mantén pulsado su título o abre Ajustes desde el Centro de complementos. Copia la configuración del cliente de PC.",
+    "En el PC, ejecute `adb forward tcp:{{ mcp_default_port }} tcp:{{ mcp_default_port }}` y apunte el cliente MCP a `http://127.0.0.1:{{ mcp_default_port }}{{ mcp_endpoint_path }}` con el token como credencial bearer.",
+    "Confirma la primera solicitud de vinculación en el teléfono. Al terminar, detén el servidor desde el panel, los ajustes o la notificación."
   ],
-  "p_usage_note": "En esta vista previa, use el control adb y una sesión de prueba del host descritos en las notas de desarrollo; el interruptor del panel y los ajustes del plugin están previstos para P4.",
+  "p_usage_note": "Interruptor MCP Server con guías de instalación, activación, autorización y compatibilidad; sincronización con Detener en la notificación; ajustes conservados al reconectar; acceso verificado a la misma página desde el panel y el Centro de complementos. Restaura el servidor al abrir AutoJs6 salvo que el usuario lo detuviera sin el anfitrión; no arranca con el dispositivo.",
   "h3_quick_start": "Configuración del cliente",
   "p_quick_start_intro": "Claude Code registra el servidor con un solo comando; los demás clientes usan la misma URL y cabecera en su configuración MCP",
-  "p_quick_start_note": "En esta vista previa, lea el token mediante el control adb en modo de desarrollador descrito en las notas técnicas. La visualización del token en los ajustes está prevista para P4.",
+  "p_quick_start_note": "Activa MCP Server en el panel de AutoJs6. Mantén pulsado su título o abre Ajustes desde el Centro de complementos. Copia la configuración del cliente de PC. Confirma la primera solicitud de vinculación en el teléfono. Al terminar, detén el servidor desde el panel, los ajustes o la notificación.",
   "h3_security": "Permisos y seguridad",
   "p_security_intro": "El plugin sigue límites explícitos:",
   "security_points": [
