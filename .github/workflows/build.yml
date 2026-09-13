@@ -29,10 +29,14 @@ jobs:
           java-version: "21"
           cache: gradle
 
-      - name: Run unit tests and assemble debug, androidTest, and release APKs
+      - name: Compile JVM tests, assemble and verify APKs, and run tests and lint
         run: |
           chmod +x gradlew
-          ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :app:assembleRelease :app:lintDebug --console=plain --stacktrace
+          # JVM test compilation must work before any APK exists.
+          # The aggregate verifier must assemble its own debug and release inputs.
+          ./gradlew :app:assembleDebugUnitTest \
+            :app:verifyNativePageAlignment :app:testDebugUnitTest \
+            :app:assembleDebugAndroidTest :app:lintDebug --console=plain --stacktrace
 
       - name: Upload debug, release, and test APKs
         uses: actions/upload-artifact@v7

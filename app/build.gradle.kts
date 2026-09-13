@@ -1,3 +1,4 @@
+import org.autojs.build.alignment.VerifyNativePageAlignment
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.file.RelativePath
 import org.gradle.api.provider.Property
@@ -278,3 +279,14 @@ extra {
 
 // Reject accidental native dependencies on every ABI.
 nativeAlignment { expectNoNativeLibraries.set(true) }
+
+tasks.withType<VerifyNativePageAlignment>().configureEach {
+    // The 1.8.0 plugin also finalizes assemble*UnitTest, which never produces an APK.
+    // Keep verification on APK variants and let standalone checks build their inputs.
+    val variantSuffix = name.removePrefix("verify").removeSuffix("NativePageAlignment")
+    if (variantSuffix.endsWith("UnitTest")) {
+        enabled = false
+    } else {
+        dependsOn("assemble$variantSuffix")
+    }
+}

@@ -28,6 +28,7 @@
 * `機能` MCP エンドポイントの応答は Server-Sent Events (SSE) でストリーム配信されるようになりました (SDK の JSON 応答モードは使いません). 実行中スクリプトの進捗ハートビートなど, リクエストに属する通知はそのリクエスト自身の応答でクライアントに届きます
 * `機能` UI グループを追加 (roadmap P3.2): `ui_dump` は現在のウィンドウを `#n` 参照付きのコンパクトなノードツリーで返し (`format` は text / json / xml, `maxNodes` は最大 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` はセレクターをポーリングし, `ui_current_window` と `ui_explain_selector` はウィンドウとセレクターが失敗する理由を報告し, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` は `nodeRef` (フィンガープリントで再特定し, 消えていれば `NODE_REF_STALE`) または `selector` に作用し, `ui_press_key` は back / home / recents / notifications / quick_settings / power_dialog / lock_screen を押し, 既定で無効の `ui_gesture` グループは `ui_swipe`, `ui_gesture` とクリックツールの座標形式を追加します (グループが無効の間は `TOOL_DISABLED`); ツールカタログのスナップショットは 20 ツールに増えました; 座標ジェスチャーには 2026-09-11 以降にビルドされた AutoJs6 ホストが必要です (それより古いホストはランダムに "the system cancelled ..." と応答します)
 * `機能` スクリーンショットグループ (P3.3): screen_capture は切り抜き, scale または maxWidth, JPEG / PNG / WebP, 品質指定に対応した MCP 画像を返します. 既定値は JPEG 品質 70, 長辺 1280 px です. base64 が 4 MiB を超える場合は品質やサイズを下げて再試行し, 変更をメタデータに記録します. screen_state は画面の点灯状態, サイズ, 向き, 密度を返します. ツール数は 22 になりました. MediaProjection のフォールバックには 2026-09-13 以降にビルドされた AutoJs6 と端末での許可が必要で, 許可はホストセッションで再利用されます.
+* `修正` IDE の rebuild で JVM 単体テスト用の APK を探す問題を解消. APK 検証タスクが必要な成果物を自動生成し, clean 後も直接実行可能.
 * `改善` 意図しないネイティブ依存関係をビルド時に拒否し, JSON レポートを生成
 * `依存関係` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) と Ktor 3.5.1 CIO エンジン
 * `依存関係` JVM トランスポートテスト用に Ktor 3.5.1 `ktor-server-test-host` を追加 (テストスコープのみ)
