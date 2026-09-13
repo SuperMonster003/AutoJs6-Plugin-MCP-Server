@@ -41,7 +41,8 @@
         "La verificación de compilación rechaza dependencias nativas accidentales y genera un informe JSON"
       ],
       "fix": [
-        "El rebuild del IDE ya no busca un APK para las pruebas unitarias JVM. Las tareas de verificación de APK generan automáticamente sus entradas y funcionan después de un clean."
+        "El rebuild del IDE ya no busca un APK para las pruebas unitarias JVM. Las tareas de verificación de APK generan automáticamente sus entradas y funcionan después de un clean.",
+        "Las proporciones del icono del centro de complementos variaban entre los modos claro y oscuro; el modo nocturno también usa el icono adaptable, con las capas ajustadas para conservar el dibujo completo y los márgenes de ic_launcher_round.png, cambiando solo el color de fondo"
       ]
     }
   }

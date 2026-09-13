@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AdaptiveIconDrawable expands a layer by 1.5. A 12% inset brings the existing
+         54% glyph to 61.56%, matching the round PNG's 62% glyph and rasterized margins. -->
+    <fraction name="ic_launcher_adaptive_layer_inset">12%</fraction>
+</resources>

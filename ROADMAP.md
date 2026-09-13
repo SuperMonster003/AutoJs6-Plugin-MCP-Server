@@ -776,3 +776,12 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 设备与文档: API 35 / 23046RP50C 的 connectedDebugAndroidTest 限定 McpServerPluginContractTest, 3/3 通过 (38 s), 覆盖发现 / INFO / Binder / 非宿主调用拒绝, 使用 leaveApksInstalledAfterRun 保留安装包和应用数据. 10 语言 / 36 产物生成检查通过. 本轮未重复完整多设备运行时矩阵, 未执行发行打包或远程 CI, 验证范围限定为构建回归与插件契约.
 - 范围: 本轮为构建任务配置修复, 未改动服务器运行时, 宿主契约或依赖版本. VERSION_BUILD 按本次提交后的 Git 可达提交数校正.
 - 下次会话建议起点: 继续上一条记录中的 P4 集成与验收, 随后 P5 连接路径和客户端兼容矩阵.
+
+### 2026-09-13: 插件中心图标的亮暗模式与完整构图
+
+- 根因: API 33 设备 QV770340J7 上, 调试器确认日间选择 mipmap-anydpi-v26 的 AdaptiveIconDrawable, 夜间因 night 限定符优先选择普通 BitmapDrawable. 同机 3-Terra, 3-Ember 和 3-Stone AI 也使用这两种资源路径, 但原有构图接近, 视觉差异较小.
+- 完成: 补齐 mipmap-night-anydpi-v26 的普通与圆形自适应入口. 前景与单色图层共用 12% inset, 补偿 AdaptiveIconDrawable 的 1.5 倍图层扩展, 将可见图形宽度从约 81% 调整为约 62%, 对齐 ic_launcher_round.png 的完整图形和留白. 两种模式只切换既有背景色, 原 PNG 素材保持不变; 保留会话开始时用户移除 android:roundIcon 的相关改动.
+- 回归证据: LauncherIconThemeTest 的两个资源类型用例在原设备插件上失败. 补充完整构图对照后, 两个用例再次检出原自适应图形边界 Rect(19, 19 - 174, 174), 而 APK 内圆形 PNG 的边界为 Rect(37, 37 - 155, 155). 最终在 192x192 下, 两种模式及两个图标入口的边界均与 PNG 完全一致, 白色图形像素交并比为日间 0.97524 / 夜间 0.97503; 允许独立栅格化的边缘采样差异.
+- 设备验收: QV770340J7 (XQ-DQ72, Android 13 / API 33) 上图标与插件契约共 7/7 通过. 宿主插件中心实屏核对亮暗模式的图形, 留白与背景色, 调试器确认两种模式均为 AdaptiveIconDrawable. 安装修复版 1.0.0 (28), 保留应用数据, 恢复宿主原来的手动亮色模式; 调试会话与临时断点已清理. 本地证据位于 app/build/reports/icon-night-mode/.
+- 构建与文档: Debug APK / androidTest APK 构建通过, 最终 JVM 202/202, lintDebug 为 0 errors / 8 warnings, 10 语言 / 36 生成产物检查通过. 无运行时依赖或公共契约变化, 本轮未重复 Release / R8 构建与完整 MCP 客户端矩阵. VERSION_BUILD 按本次提交后的 Git 可达提交数校正.
+- 下次会话建议起点: 继续 P4 集成与验收, 随后 P5 连接路径和客户端兼容矩阵.
