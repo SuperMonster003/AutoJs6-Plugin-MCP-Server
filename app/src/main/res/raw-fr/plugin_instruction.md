@@ -1,6 +1,6 @@
 MCP Server transforme un appareil Android exécutant AutoJs6 en serveur [Model Context Protocol](https://modelcontextprotocol.io). Les agents IA sur PC, tels que Claude Code, Cursor ou MCP Inspector, se connectent au téléphone par USB ou Wi-Fi et utilisent des outils pour exécuter des scripts, lire les journaux, inspecter l'arbre des noeuds d'accessibilité, toucher et saisir du texte, prendre des captures d'écran et manipuler des fichiers et des applications.
 
-Version de développement P3.4: 37 outils disponibles, dont 33 activés par défaut. Fichiers, positions dans un éditeur, recherche des applications, presse-papiers, activation automatique de l'accessibilité et Shell à sortie limitée sont disponibles. Le commutateur du menu et les réglages restent prévus pour P4. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Version de développement P3.5: 37 outils disponibles, dont 33 activés par défaut. Fichiers, positions dans un éditeur, recherche des applications, presse-papiers, activation automatique de l'accessibilité et Shell à sortie limitée sont disponibles. Le commutateur du menu et les réglages restent prévus pour P4. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ### Utilisation
 

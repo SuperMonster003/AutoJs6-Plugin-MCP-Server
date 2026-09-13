@@ -347,9 +347,10 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 ### P3.5 资源与提示
 
-- [ ] (插件) MCP resources: `autojs6://workspace/<相对路径>` (资源模板, 只读, 走 `files_read`), `autojs6://samples/<路径>` (宿主 `sample/` 目录, 经 P1.3 的 `app.listSamples` / `app.readSample`, D20), `autojs6://device/info`, `autojs6://console/tail`; `resources/list` 带 `ttlMs`; 可选 `autojs6://docs/<路径>`: 安装了 `AutoJs6-Plugin-Offline-Docs` 时经宿主转读其 `OfflineDocsPluginContract` 资产, 未安装时不列出 (D20).
-- [ ] (插件) MCP prompts: `write_autojs6_script` (AutoJs6 脚本约定速查: 选择器 / 无障碍 / `toast` / `console.log`, 以及 "先 `ui_dump` 再操作" 的推荐流程), `automate_task` (给定目标 -> 观察 / 操作 / 校验循环模板), `debug_selector` (用 `ui_explain_selector` 排查); 提示文本以资源文件维护, 10 语言中至少中英两版.
-- [ ] (测试) JVM: 资源 URI 解析与模板匹配; CLIENT_E2E: Claude Code 读取一个样例资源并按 `write_autojs6_script` 提示写出可运行脚本.
+- [x] (插件) MCP resources: `autojs6://workspace/<相对路径>` (资源模板, 只读, 走 `files_read`), `autojs6://samples/<路径>` (宿主 `sample/` 目录, 经 P1.3 的 `app.listSamples` / `app.readSample`, D20), `autojs6://device/info`, `autojs6://console/tail`; `resources/list` 带 `ttlMs`. (SOURCE: ResourceCatalog / ResourceUri, 分组过滤与读前读后检查, `{+path}` 嵌套模板, 严格 UTF-8 / 单次百分号解码, 文本 / blob 与截断元数据. 依 D9 保留 2025 有状态协议, ttlMs=0 / cacheScope=private 放在 `_meta`, 不宣称 2026 协议支持. DEVICE: API 24 / 33 / 35 各列出 203 资源 / 3 页, 宿主样例图片 18949 字节 SHA-256 一致, 中文工作路径与控制台资源通过; 详见 docs/dev/p35-resources-prompts.md)
+- [x] (插件) MCP prompts: `write_autojs6_script` (AutoJs6 脚本约定速查: 选择器 / 无障碍 / `toast` / `console.log`, 以及 "先 `ui_dump` 再操作" 的推荐流程), `automate_task` (给定目标 -> 观察 / 操作 / 校验循环模板), `debug_selector` (用 `ui_explain_selector` 排查); 提示文本以资源文件维护, 10 语言中至少中英两版. (SOURCE: PromptCatalog + assets/prompts/en / zh 共 6 份文本, 手机中文使用中文, 其他 locale 回退英语, 可显式选择 language, 参数 8192 UTF-8 字节上限. JVM: PromptCatalogTest / ResourcePromptTransportTest, 未配对获取被拒绝; DEVICE: 三设备分别验证全部 6 个提示版本)
+- [ ] (测试) JVM: 资源 URI 解析与模板匹配; CLIENT_E2E: Claude Code 读取一个样例资源并按 `write_autojs6_script` 提示写出可运行脚本. (JVM 已完成: ResourceCatalogTest / PromptCatalogTest / ResourcePromptTransportTest, 插件共 193/193; DEVICE 已完成: 6 台设备 instrumentation 各 18/18, API 24 / 33 / 35 真实 HTTP + Binder 读取与脚本运行通过. CLIENT_E2E 待执行: 已找到 Claude Code 2.1.257, 默认配置与另一现有配置的 auth status 均为 loggedIn=false / authMethod=none, 已向维护者请求登录或已登录配置目录. Python HTTP 客户端验证不替代 Claude Code 生成脚本验收)
+- [ ] (插件, 可选) `autojs6://docs/<路径>`: 安装了 `AutoJs6-Plugin-Offline-Docs` 时经宿主转读其资产, 未安装时不列出 (D20). 本阶段未实现, 当前目录不宣称提供 docs 资源.
 
 验收条件: 附录 A 清单全部工具在 `tools/list` 中出现 (禁用组除外) 且各有一条真机证据; 工具目录快照测试通过; 宿主与插件 changelog 同步.
 
@@ -738,3 +739,12 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 验证: 插件 JVM 175/175, 宿主相关 JVM 19/19; debug / androidTest / release / lintDebug 通过, lint 0 errors / 6 既有 warnings, Temurin 模拟构建只有一段版本平台信息. 六设备插件 instrumentation 各 17/17 (API 24 / 28 / 31 / 33 / 33 / 35). API 24 / 33 / 35 真实 MCP 流程均通过, 文件夹刷新可见, 编辑器状态 3:4, 二进制读取返回 1048576 / 1049600 字节且标记截断; 宿主文件作用域真机测试三设备各 1/1. 证据和耗时见 docs/dev/p34-workspace-tools.md.
 - 边界: 写入内容上限 1 MiB, 当前宿主请求预算 96 KiB 仍先行约束完整 JSON, 超限不写入; 未执行真机 root Shell 与 Shizuku 自动启用. P4 前手机端设置界面尚未提供. 未执行新的运行时依赖升级, 宿主 release 构建未重复, 插件 release 已验证. IDE 无法启动项目外宿主调试测试, 日志断点已清理, 行列定位以真实 UI 查询为证.
 - 下次会话建议起点: P3.5 resources / prompts, 接入控制台, 设备状态, 宿主示例目录与提示模板; 随后 P4 设置页与宿主入口.
+
+### 2026-09-13: P3.5 资源与提示
+
+- 完成实现: ResourceUri, ResourceCatalog, PromptCatalog 与 6 份中英文提示文本, 接入 McpServerRuntime. 工作目录资源复用 FileTools, 样例目录与文件复用 app.listSamples / readSample, 设备与控制台复用既有代理; 分组关闭时隐藏目录并拒绝读取. 工具目录仍为 37 项 / 默认 33 项, AIDL / grant / AAR / 依赖版本不变. 10 语言 README / 插件说明 / changelog 已生成并通过 --check.
+- 验证: 插件 JVM 193/193; Temurin 模拟下 debug / androidTest / release / lintDebug 全部通过 (2m 8s), 平台信息仅 1 段, lint 0 errors / 6 既有 warnings. IDE 按文件构建成功, 有 1 条 SDK XML 版本提示. 插件 instrumentation 6 台各 18/18 (API 24 / 28 / 31 / 33 / 33 / 35); API 31 使用 connectedDebugAndroidTest 并保留已安装包, 其余经 adb instrument. 完成后恢复配对与分组配置, 插件包保留为 build 23.
+- 真实 MCP: Python 标准库 HTTP, protocol 2025-11-25, client p35-device-evidence 1.0, API 24 / 33 / 35 均通过. 每台 203 资源 / 3 页, 总列表耗时 605 / 283 / 623 ms; OCR/test.png 读取 18949 字节, 耗时 43 / 22 / 129 ms, SHA-256 一致. 样例目录含可直接读取的 URI, 中英提示共 6 项, 中文工作路径, 文件资源读取, script_run_file finished, console/tail 对应输出与分组即时关闭均通过. 宿主 McpServerPluginRoundTripTest 三台各 1/1 (含 90 s 观察窗口, 最终 stop / close).
+- 宿主补丁: NodeBridgeSampleCatalog 的 base64 编码改用既有 Okio, 避免 API 24 / 25 不存在的 Java 方法; NodeBridgeSampleCatalogTest 6/6, debug / androidTest 构建通过 (49 s); 新增 NodeBridgeSampleCatalogDeviceTest 在 API 24 / 33 / 35 各 1/1, 覆盖真实样例文本, 二进制截断和路径边界. docs/dev/mcp-server-protocol-v1.md 与 10 语言 changelog 已同步. 宿主补丁已提交 cc1383376. 同期 SDK 37 Looper / Timer 工作已单独提交, 未混入 MCP 提交.
+- 未完成: Claude Code CLIENT_E2E (2.1.257 CLI 尚未登录, 已请求维护者提供可用登录配置, 不以 Python 客户端代替); 可选 Offline-Docs provider; P4 及以后. 无运行时依赖变化, 本轮未重复宿主 release 构建. 未执行真实设备激活验证 (OEM 新安装停止状态).
+- 下次会话建议起点: 先补 Claude Code 样例读取 + write_autojs6_script 生成并运行脚本的验收; 随后 P4 设置页与宿主入口.

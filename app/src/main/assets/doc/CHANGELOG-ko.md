@@ -8,7 +8,8 @@
 
 ###### 2026/09/13
 
-* `힌트` P3.4 개발 미리보기: 도구 37개 중 33개가 기본 활성화됩니다. 파일 작업, 편집기 위치 지정, 앱 조회, 클립보드, 접근성 자동 활성화, 출력이 제한된 Shell을 사용할 수 있습니다. 서랍 스위치와 설정 화면은 P4에서 구현할 예정입니다. ROADMAP.md.
+* `힌트` P3.5 개발 미리보기: 도구 37개 중 33개가 기본 활성화됩니다. 파일 작업, 편집기 위치 지정, 앱 조회, 클립보드, 접근성 자동 활성화, 출력이 제한된 Shell을 사용할 수 있습니다. 서랍 스위치와 설정 화면은 P4에서 구현할 예정입니다. ROADMAP.md.
+* `기능` MCP 리소스 (P3.5)는 페어링 및 그룹 설정에 따라 읽기 전용 작업 파일, 호스트 예제 탐색, 기기 정보, 최근 콘솔 출력을 제공합니다. 텍스트 및 바이너리 읽기는 잘림 상태를 보고합니다. write_autojs6_script, automate_task, debug_selector는 영어와 중국어를 지원하며, 다른 기기 언어에서는 영어를 사용합니다.
 * `기능` 작업 디렉터리 도구 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1부터 시작하는 행과 열을 받는 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. 바이너리 읽기는 base64이며 원본 데이터 최대 1 MiB입니다. 쓰기는 호스트 요청 한도도 따릅니다 (보통 JSON 이스케이프 포함 96 KiB). 삭제와 Shell은 기본 비활성화이며 root에는 allowShellRoot와 호스트 shell.root 권한이 추가로 필요합니다. 일치하는 P3.4 호스트 빌드가 필요합니다.
 * `기능` 호스트 발견을 위한 INFO 서비스, Wake Activity, `org.autojs.plugin.MCP_SERVER` 서비스 뼈대를 갖춘 플러그인 ID `mcp-server`
 * `기능` 10개 언어의 README, 플러그인 센터 안내, 변경 기록

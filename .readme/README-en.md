@@ -52,7 +52,7 @@ The server runs inside the plugin's own process and is reached through a single 
 
 ******
 
-P3.4 development preview: 37 tools are available, with 33 enabled by default. File operations, editor positioning, application queries, clipboard, accessibility activation, and bounded Shell execution join the script, UI, and screenshot tools. The drawer switch and settings page remain planned in P4. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+P3.5 development preview: 37 tools are available, with 33 enabled by default. File operations, editor positioning, application queries, clipboard, accessibility activation, and bounded Shell execution join the script, UI, and screenshot tools. The drawer switch and settings page remain planned in P4. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -66,6 +66,7 @@ The roadmap delivers the following capabilities in stages:
 - Accessibility UI: dump the node tree in a compact text format, find nodes with the AutoJs6 selector syntax, click, long-press, scroll, set text, and press global keys such as Back and Home.
 - Screenshot group (P3.3): screen_capture returns MCP images with crop, scale or maxWidth, JPEG / PNG / WebP, and quality controls. Defaults are JPEG quality 70 and longest edge 1280 px. Images above 4 MiB of base64 are retried at lower quality or smaller dimensions, with metadata reporting adjustments. screen_state reports power, dimensions, orientation and density. The catalog now has 37 tools. MediaProjection fallback requires an AutoJs6 host built on 2026-09-13 or later and consent on the phone; the host session reuses that consent.
 - Workspace tools (P3.4): files_list / stat / read / write / mkdir / rename / delete, editor_open with one-based line and column, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, and shell_exec. Binary reads use base64, up to 1 MiB of raw data. Writes also obey the host request budget (normally 96 KiB including JSON escaping). File deletion and Shell are off by default; root additionally requires allowShellRoot and a shell.root host grant. These additions require the matching P3.4 host build.
+- MCP resources (P3.5) expose read-only workspace files, browsable host samples, device information, and recent console output, respecting pairing and group switches. Text and binary reads report truncation. The write_autojs6_script, automate_task, and debug_selector prompts provide English and Chinese guidance, with English fallback for other phone languages.
 - Connection paths: USB through `adb forward`, local network with an explicit opt-in, a PC-side stdio bridge, and an optional public tunnel with OAuth 2.1.
 - Security: a rotating bearer token, first-use pairing confirmation on the phone, and per-group tool switches; the server listens only on the loopback interface by default.
 
@@ -155,7 +156,8 @@ The plugin's plans and progress are maintained as a checkable list in ROADMAP.md
 
 _2026/09/13_
 
-- `Hint` P3.4 development preview: 37 tools are available, with 33 enabled by default. File operations, editor positioning, application queries, clipboard, accessibility activation, and bounded Shell execution join the script, UI, and screenshot tools. The drawer switch and settings page remain planned in P4. ROADMAP.md.
+- `Hint` P3.5 development preview: 37 tools are available, with 33 enabled by default. File operations, editor positioning, application queries, clipboard, accessibility activation, and bounded Shell execution join the script, UI, and screenshot tools. The drawer switch and settings page remain planned in P4. ROADMAP.md.
+- `Feature` MCP resources (P3.5) expose read-only workspace files, browsable host samples, device information, and recent console output, respecting pairing and group switches. Text and binary reads report truncation. The write_autojs6_script, automate_task, and debug_selector prompts provide English and Chinese guidance, with English fallback for other phone languages.
 - `Feature` Workspace tools (P3.4): files_list / stat / read / write / mkdir / rename / delete, editor_open with one-based line and column, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, and shell_exec. Binary reads use base64, up to 1 MiB of raw data. Writes also obey the host request budget (normally 96 KiB including JSON escaping). File deletion and Shell are off by default; root additionally requires allowShellRoot and a shell.root host grant. These additions require the matching P3.4 host build.
 - `Feature` Plugin identity `mcp-server` with the INFO service, the Wake Activity, and the `org.autojs.plugin.MCP_SERVER` service skeleton for host discovery
 - `Feature` README, plugin-center instructions, and changelog in 10 languages

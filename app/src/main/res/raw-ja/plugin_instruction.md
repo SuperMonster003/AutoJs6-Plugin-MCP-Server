@@ -1,6 +1,6 @@
 MCP Server は, AutoJs6 を実行している Android デバイスを [Model Context Protocol](https://modelcontextprotocol.io) サーバーにします. Claude Code, Cursor, MCP Inspector などの PC 上の AI エージェントは USB または Wi-Fi でスマートフォンに接続し, ツールを使ってスクリプトの実行, ログの読み取り, アクセシビリティノードツリーの確認, タップと入力, スクリーンショットの取得, ファイルとアプリの操作を行います.
 
-P3.4 開発プレビュー: 37 個のツールを提供し, 初期状態で 33 個が有効です. ファイル操作, エディターの位置指定, アプリ検索, クリップボード, アクセシビリティの自動有効化, 出力制限付き Shell が利用できます. ドロワーのスイッチと設定画面は P4 で実装予定です. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+P3.5 開発プレビュー: 37 個のツールを提供し, 初期状態で 33 個が有効です. ファイル操作, エディターの位置指定, アプリ検索, クリップボード, アクセシビリティの自動有効化, 出力制限付き Shell が利用できます. ドロワーのスイッチと設定画面は P4 で実装予定です. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ### 使い方
 
