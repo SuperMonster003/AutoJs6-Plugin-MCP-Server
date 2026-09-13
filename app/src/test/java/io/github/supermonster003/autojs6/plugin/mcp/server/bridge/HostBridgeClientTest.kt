@@ -326,4 +326,42 @@ class HostBridgeClientTest {
         assertTrue(client.info.supportsBrokerContract)
         assertTrue(JsonObject(emptyMap()).isEmpty())
     }
+
+    @Test
+    fun `JSON payload replaces the wrapper and closes after valid and malformed data`() = runBlocking {
+        for (valid in listOf(true, false)) {
+            val data = if (valid) ("{\"content\":\"" + "x".repeat(1024 * 1024) + "\"}").toByteArray() else byteArrayOf(-1)
+            var closed = 0
+            val transport = FakeTransport().apply {
+                handler = { request, reply -> reply(BridgeReply("""{"id":"${request.id}","ok":true,"result":{"payload":{"kind":"descriptor"}}}""", true, null,
+                    BridgePayload(data.size.toLong(), "application/json", { data.inputStream() }) { closed++ })) }
+            }
+            val outcome = HostBridgeClient(transport).call("device", "info")
+            if (valid) {
+                assertEquals(1024 * 1024, (outcome as BridgeOutcome.Ok).result.jsonObject["content"]!!.jsonPrimitive.content.length)
+                assertNull(outcome.payload)
+            } else assertEquals(ToolErrorCodes.HOST_ERROR, (outcome as BridgeOutcome.Failed).failure.code)
+            assertEquals(1, closed)
+        }
+    }
+
+    @Test
+    fun `request budget includes JSON escaping and refuses dispatch without consuming a slot`() = runBlocking {
+        val transport = FakeTransport(BrokerInfo(methods = setOf("files.write"), maxRequestBytes = 1024))
+        val client = HostBridgeClient(transport)
+        val oversized = JsonArray(listOf(JsonPrimitive("a"), JsonPrimitive("\u0001".repeat(200))))
+        assertEquals(ToolErrorCodes.LIMIT_EXCEEDED, (client.call("files", "write", oversized) as BridgeOutcome.Failed).failure.code)
+        assertTrue(transport.requests.isEmpty())
+        assertTrue(client.call("files", "write", JsonArray(listOf(JsonPrimitive("a"), JsonPrimitive("ok")))) is BridgeOutcome.Ok)
+        assertEquals(1, transport.requests.size)
+    }
+
+    @Test
+    fun `regular shell permission never grants a root request`() = runBlocking {
+        val transport = FakeTransport(BrokerInfo(methods = setOf("shell.exec"), permissions = setOf("shell")))
+        val client = HostBridgeClient(transport)
+        assertEquals(ToolErrorCodes.CAPABILITY_DENIED, (client.call("shell", "exec", permissions = listOf("shell", "shell.root")) as BridgeOutcome.Failed).failure.code)
+        assertTrue(transport.requests.isEmpty())
+        assertTrue(client.call("shell", "exec", permissions = listOf("shell")) is BridgeOutcome.Ok)
+    }
 }

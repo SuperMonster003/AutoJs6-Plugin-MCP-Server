@@ -8,14 +8,14 @@
   "p_introduction_what": "MCP Server 讓執行 AutoJs6 的 Android 裝置成為一台 [Model Context Protocol]({{ mcp_spec_url }}) 伺服器. 電腦上的 AI 代理 (例如 Claude Code, Cursor 或 MCP Inspector) 透過 USB 或 Wi-Fi 連線手機, 藉由工具執行指令碼, 讀取日誌, 檢視無障礙節點樹, 點擊與輸入, 擷取螢幕, 以及操作檔案與應用程式.",
   "p_introduction_how": "伺服器在外掛自己的處理程序中執行, 透過單一的 Streamable HTTP 端點對外提供服務. AutoJs6 透過 Binder 向外掛下發能力代理, 每次工具呼叫都由主程式以其既有的權限, 引擎和無障礙服務執行; 外掛不會複製主程式的任何功能.",
   "h3_status": "目前狀態",
-  "p_status": "開發預覽已推進至 P3.3: 帶驗證與配對的 MCP 端點, 腳本工具, UI 工具和螢幕擷取工具均已實作. screen_capture 傳回 JPEG, PNG 或 WebP 圖片, screen_state 傳回螢幕尺寸與方向. 抽屜開關和設定頁仍計劃在 P4 實作. 進度與裝置證據見 [ROADMAP.md]({{ roadmap_url }}).",
+  "p_status": "P3.4 開發預覽: 工具目錄共 37 項, 預設啟用 33 項. 檔案操作, 編輯器定位, 應用程式查詢, 剪貼簿, 無障礙自動啟用和限制輸出的 Shell 已接入, 與指令碼, UI 和截圖工具配合使用. 抽屜開關和設定頁仍規劃在 P4 實作. [ROADMAP.md]({{ roadmap_url }}).",
   "h3_features": "規劃功能",
   "p_features_intro": "路線圖分階段交付以下能力",
   "features": [
     "指令碼執行: 在 AutoJs6 內執行文字或檔案形式的 JavaScript, 列出與停止引擎, 讀取最近的主控台輸出.",
     "無障礙介面: 以精簡文字格式匯出節點樹, 用 AutoJs6 選擇器語法尋找節點, 點擊, 長按, 捲動, 設定文字, 以及觸發返回和主畫面等全域按鍵.",
-    "螢幕擷取群組 (P3.3): screen_capture 傳回 MCP 圖片, 支援裁切, scale 或 maxWidth, JPEG / PNG / WebP 與品質參數. 預設 JPEG 品質 70, 最長邊 1280 px. base64 超過 4 MiB 時降低品質或尺寸重試, 中繼資料說明調整情況. screen_state 傳回亮屏狀態, 尺寸, 方向和密度. 工具目錄現有 22 項. MediaProjection 備援需要 2026-09-13 或之後建置的 AutoJs6 主程式及手機端授權, 主程式工作階段重用該授權.",
-    "檔案, 應用程式與裝置: 讀寫 AutoJs6 工作目錄下的檔案, 啟動應用程式, 查詢前景視窗, 回報裝置資訊.",
+    "螢幕擷取群組 (P3.3): screen_capture 傳回 MCP 圖片, 支援裁切, scale 或 maxWidth, JPEG / PNG / WebP 與品質參數. 預設 JPEG 品質 70, 最長邊 1280 px. base64 超過 4 MiB 時降低品質或尺寸重試, 中繼資料說明調整情況. screen_state 傳回亮屏狀態, 尺寸, 方向和密度. 工具目錄現有 37 項. MediaProjection 備援需要 2026-09-13 或之後建置的 AutoJs6 主程式及手機端授權, 主程式工作階段重用該授權.",
+    "工作目錄工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用從 1 開始的行列號的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二進位讀取使用 base64, 原始資料最多 1 MiB. 寫入亦受宿主請求預算約束 (通常為包含 JSON 跳脫的 96 KiB). 檔案刪除和 Shell 預設關閉; root 另需 allowShellRoot 開關與宿主 shell.root 授權. 這些能力需要相符的 P3.4 宿主建置.",
     "連線方式: 透過 `adb forward` 的 USB 連線, 須明確開啟的區域網路連線, 電腦端 stdio 橋接程式, 以及可選的公網通道與 OAuth 2.1.",
     "安全: 可輪換的 Bearer 權杖, 手機端首次配對確認, 依分組的工具開關; 伺服器預設只監聽回送介面."
   ],

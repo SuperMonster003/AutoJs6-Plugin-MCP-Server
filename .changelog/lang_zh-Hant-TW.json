@@ -8,9 +8,10 @@
     "v1.0.0": {
       "released_date": "2026/09/13",
       "hint": [
-        "開發預覽已推進至 P3.3: 帶驗證與配對的 MCP 端點, 腳本工具, UI 工具和螢幕擷取工具均已實作. screen_capture 傳回 JPEG, PNG 或 WebP 圖片, screen_state 傳回螢幕尺寸與方向. 抽屜開關和設定頁仍計劃在 P4 實作. 進度與裝置證據見 ROADMAP.md."
+        "P3.4 開發預覽: 工具目錄共 37 項, 預設啟用 33 項. 檔案操作, 編輯器定位, 應用程式查詢, 剪貼簿, 無障礙自動啟用和限制輸出的 Shell 已接入, 與指令碼, UI 和截圖工具配合使用. 抽屜開關和設定頁仍規劃在 P4 實作. ROADMAP.md."
       ],
       "feature": [
+        "工作目錄工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用從 1 開始的行列號的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二進位讀取使用 base64, 原始資料最多 1 MiB. 寫入亦受宿主請求預算約束 (通常為包含 JSON 跳脫的 96 KiB). 檔案刪除和 Shell 預設關閉; root 另需 allowShellRoot 開關與宿主 shell.root 授權. 這些能力需要相符的 P3.4 宿主建置.",
         "外掛識別碼 `mcp-server`, 含 INFO 服務, Wake Activity 以及供主程式探索的 `org.autojs.plugin.MCP_SERVER` 服務骨架",
         "10 種語言的 README, 外掛中心說明與更新日誌",
         "位於 `http://127.0.0.1:9637/mcp` 的 Streamable HTTP 端點及 `device_ping` 工具, 由可經 adb 或宿主啟停的前台服務承載 (開發預覽)",

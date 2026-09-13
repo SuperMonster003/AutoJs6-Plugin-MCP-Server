@@ -1,6 +1,6 @@
 MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Protocol](https://modelcontextprotocol.io) 服务器. 电脑上的 AI 代理 (如 Claude Code, Cursor 或 MCP Inspector) 通过 USB 或 Wi-Fi 连接手机, 借助工具运行脚本, 读取日志, 查看无障碍节点树, 点击与输入, 截取屏幕, 以及操作文件与应用.
 
-开发预览已推进至 P3.3: 带鉴权与配对的 MCP 端点, 脚本工具, UI 工具和截图工具均已实现. screen_capture 返回 JPEG, PNG 或 WebP 图片, screen_state 返回屏幕尺寸与方向. 抽屉开关和设置页仍计划在 P4 实现. 进度与设备证据见 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+P3.4 开发预览: 工具目录共 37 项, 默认启用 33 项. 文件操作, 编辑器定位, 应用查询, 剪贴板, 无障碍自动启用和限制输出的 Shell 已接入, 与脚本, UI 和截图工具配合使用. 抽屉开关和设置页仍计划在 P4 实现. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ### 使用方法
 

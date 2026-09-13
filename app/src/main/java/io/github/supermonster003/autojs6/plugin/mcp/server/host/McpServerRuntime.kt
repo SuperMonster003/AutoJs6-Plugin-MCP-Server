@@ -30,6 +30,9 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolRegistry
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.UiTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ScreenTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolFlows
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.FileTools
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.DeviceTools
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ShellTools
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -74,6 +77,9 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
     private val info by lazy { this.context.mcpServerPluginRuntimeInfo() }
     private val uiTools = UiTools(nodeRefs, permissions = { toolPermissions.load() })
     private val screenTools = ScreenTools()
+    private val fileTools = FileTools()
+    private val deviceTools = DeviceTools()
+    private val shellTools = ShellTools { toolPermissions.load() }
 
     val registry: ToolRegistry = ToolRegistry(
         catalog = ToolCatalog.all,
@@ -83,7 +89,10 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
             local = mapOf(ToolCatalog.DEVICE_PING to { DevicePingTool.payload(this.context, info) }),
             clientNameOf = { sessionId -> server.clientNameOf(sessionId) },
             onToolCall = ::onToolCall,
-            flows = ToolFlows { spec, arguments -> uiTools.planFor(spec, arguments) ?: screenTools.planFor(spec, arguments) },
+            flows = ToolFlows { spec, arguments ->
+                uiTools.planFor(spec, arguments) ?: screenTools.planFor(spec, arguments) ?:
+                fileTools.planFor(spec, arguments) ?: deviceTools.planFor(spec, arguments) ?: shellTools.planFor(spec, arguments)
+            },
         ),
     )
 

@@ -1833,5 +1833,576 @@
       "properties": {},
       "additionalProperties": false
     }
+  },
+  {
+    "name": "files_list",
+    "title": "List files",
+    "description": "Lists workspace files with metadata. Results are bounded and report truncation.",
+    "group": "files",
+    "defaultEnabled": true,
+    "bridge": "files.list",
+    "permissions": [
+      "files"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        },
+        "recursive": {
+          "type": "boolean",
+          "description": "Include subdirectories",
+          "default": false
+        },
+        "maxEntries": {
+          "type": "integer",
+          "description": "Maximum entries",
+          "minimum": 1,
+          "maximum": 2000,
+          "default": 500
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "files_stat",
+    "title": "File metadata",
+    "description": "Returns existence, type, size, and modification time of a workspace path.",
+    "group": "files",
+    "defaultEnabled": true,
+    "bridge": "files.stat",
+    "permissions": [
+      "files"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "files_read",
+    "title": "Read file",
+    "description": "Reads up to 1 MiB. Use encoding base64 for binary data; encoding, bytes, totalBytes, and truncated identify the representation and limit.",
+    "group": "files",
+    "defaultEnabled": true,
+    "bridge": "files.read",
+    "permissions": [
+      "files"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        },
+        "encoding": {
+          "type": "string",
+          "description": "Content encoding",
+          "default": "utf-8",
+          "enum": [
+            "utf-8",
+            "base64"
+          ]
+        },
+        "maxBytes": {
+          "type": "integer",
+          "description": "Maximum raw file bytes",
+          "minimum": 1,
+          "maximum": 1048576,
+          "default": 1048576
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "files_write",
+    "title": "Write file",
+    "description": "Writes UTF-8 text and refreshes the host explorer. Content is limited to 1 MiB and the negotiated Binder request budget (normally 96 KiB including JSON escaping); oversized calls fail before writing.",
+    "group": "files",
+    "defaultEnabled": true,
+    "bridge": "files.write",
+    "permissions": [
+      "files",
+      "files.write"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        },
+        "content": {
+          "type": "string",
+          "description": "UTF-8 text",
+          "maxLength": 1048576
+        },
+        "createDirs": {
+          "type": "boolean",
+          "description": "Create missing parents",
+          "default": true
+        },
+        "overwrite": {
+          "type": "boolean",
+          "description": "Replace an existing file",
+          "default": true
+        }
+      },
+      "required": [
+        "path",
+        "content"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "files_mkdir",
+    "title": "Create directory",
+    "description": "Creates a workspace directory and missing parents, then refreshes the host explorer.",
+    "group": "files",
+    "defaultEnabled": true,
+    "bridge": "files.mkdir",
+    "permissions": [
+      "files",
+      "files.write"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "files_rename",
+    "title": "Rename file",
+    "description": "Moves a workspace file or directory to another workspace path and refreshes the host explorer.",
+    "group": "files",
+    "defaultEnabled": true,
+    "bridge": "files.rename",
+    "permissions": [
+      "files",
+      "files.write"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        },
+        "to": {
+          "type": "string",
+          "description": "POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        },
+        "overwrite": {
+          "type": "boolean",
+          "description": "Replace an existing destination",
+          "default": false
+        }
+      },
+      "required": [
+        "path",
+        "to"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "files_delete",
+    "title": "Delete file",
+    "description": "Deletes a workspace entry. The separate files_delete group is off by default. The workspace root cannot be deleted.",
+    "group": "files_delete",
+    "defaultEnabled": false,
+    "bridge": "files.delete",
+    "permissions": [
+      "files",
+      "files.delete"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        },
+        "recursive": {
+          "type": "boolean",
+          "description": "Delete a directory and its contents",
+          "default": false
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "editor_open",
+    "title": "Open editor",
+    "description": "Opens a workspace file in the AutoJs6 editor at a one-based line and column. Lines outside the file are ignored by the editor.",
+    "group": "files",
+    "defaultEnabled": true,
+    "bridge": "app.editFile",
+    "permissions": [
+      "app.activity"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        },
+        "line": {
+          "type": "integer",
+          "description": "One-based line",
+          "minimum": 1,
+          "maximum": 1000000,
+          "default": 1
+        },
+        "column": {
+          "type": "integer",
+          "description": "One-based column",
+          "minimum": 1,
+          "maximum": 1000000,
+          "default": 1
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "app_launch",
+    "title": "Launch application",
+    "description": "Opens an installed Android application. Provide exactly one of packageName or appName.",
+    "group": "device",
+    "defaultEnabled": true,
+    "bridge": "app.launchPackage",
+    "permissions": [
+      "app.launch"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "packageName": {
+          "type": "string",
+          "description": "Android package name",
+          "maxLength": 512
+        },
+        "appName": {
+          "type": "string",
+          "description": "Application label",
+          "maxLength": 512
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "app_list",
+    "title": "List applications",
+    "description": "Lists up to 1000 Android applications visible to AutoJs6, optionally matching a package name or label. Android package visibility restrictions apply.",
+    "group": "device",
+    "defaultEnabled": true,
+    "bridge": "package_manager.listApps",
+    "permissions": [
+      "package_manager"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Case-insensitive package or label substring",
+          "maxLength": 512,
+          "default": ""
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "clipboard_get",
+    "title": "Read clipboard",
+    "description": "Reads clipboard text (up to 64 KiB). Android may restrict clipboard access while AutoJs6 is in the background.",
+    "group": "device",
+    "defaultEnabled": true,
+    "bridge": "clipboard.getText",
+    "permissions": [
+      "clipboard"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "clipboard_set",
+    "title": "Write clipboard",
+    "description": "Replaces clipboard text, including an empty string to clear it.",
+    "group": "device",
+    "defaultEnabled": true,
+    "bridge": "clipboard.setText",
+    "permissions": [
+      "clipboard"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Clipboard text",
+          "maxLength": 65536
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "device_ensure_accessibility",
+    "title": "Enable accessibility",
+    "description": "Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance.",
+    "group": "device",
+    "defaultEnabled": true,
+    "bridge": "accessibility.ensureEnabled",
+    "permissions": [
+      "accessibility"
+    ],
+    "timeoutMs": 15000,
+    "maxTimeoutMs": 15000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "toast",
+    "title": "Show toast",
+    "description": "Shows a short Android toast on the phone.",
+    "group": "device",
+    "defaultEnabled": true,
+    "bridge": "toast.toast",
+    "permissions": [
+      "toast"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Toast text",
+          "maxLength": 4096
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "shell_exec",
+    "title": "Execute shell command",
+    "description": "Runs an Android shell command in the host workspace. The shell group is off by default; root also requires the separate allow root switch and a shell.root host grant. Reports exit code, timeout, stdout, stderr, and truncation. maxOutputBytes bounds stdout and stderr together.",
+    "group": "shell",
+    "defaultEnabled": false,
+    "bridge": "shell.exec",
+    "permissions": [
+      "shell"
+    ],
+    "timeoutMs": 17000,
+    "maxTimeoutMs": 122000,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "cmd": {
+          "type": "string",
+          "description": "Shell command",
+          "maxLength": 16384
+        },
+        "root": {
+          "type": "boolean",
+          "description": "Request root privileges",
+          "default": false
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "Process timeout in milliseconds",
+          "minimum": 1,
+          "maximum": 120000,
+          "default": 15000
+        },
+        "maxOutputBytes": {
+          "type": "integer",
+          "description": "Combined UTF-8 output byte limit",
+          "minimum": 1,
+          "maximum": 262144,
+          "default": 65536
+        }
+      },
+      "required": [
+        "cmd"
+      ],
+      "additionalProperties": false
+    }
   }
 ]

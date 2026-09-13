@@ -21,9 +21,9 @@ class ToolCatalogTest {
         val names = ToolCatalog.all.map { it.name }
         assertEquals(names, names.distinct())
         names.forEach { name ->
-            assertTrue(name, Regex("^[a-z]+(_[a-z]+)+$").matches(name))
+            assertTrue(name, (name == "toast" || Regex("^[a-z]+(_[a-z]+)+$").matches(name)))
         }
-        assertEquals(DEVICE_NAMES + SCRIPT_NAMES + UI_NAMES + GESTURE_NAMES + SCREEN_NAMES, names)
+        assertEquals(DEVICE_NAMES + SCRIPT_NAMES + UI_NAMES + GESTURE_NAMES + SCREEN_NAMES + FILE_NAMES + NEW_DEVICE_NAMES + listOf("shell_exec"), names)
         assertEquals(ToolCatalog.all, ToolCatalog.byName.values.toList())
     }
 
@@ -66,12 +66,12 @@ class ToolCatalogTest {
 
     @Test
     fun `enabled rows follow the group switches and keep the catalog order`() {
-        assertEquals(DEVICE_NAMES + SCRIPT_NAMES + UI_NAMES + SCREEN_NAMES, ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name })
-        assertEquals(DEVICE_NAMES + UI_NAMES + SCREEN_NAMES, ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.SCRIPT, false)).map { it.name })
-        assertEquals(SCRIPT_NAMES + UI_NAMES + SCREEN_NAMES, ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.DEVICE, false)).map { it.name })
-        assertEquals(DEVICE_NAMES + SCRIPT_NAMES + SCREEN_NAMES, ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.UI, false)).map { it.name })
-        assertEquals(ToolCatalog.all.map { it.name }, ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.UI_GESTURE, true)).map { it.name })
-        assertEquals(listOf(ToolGroup.SCRIPT, ToolGroup.UI, ToolGroup.UI_GESTURE, ToolGroup.SCREEN, ToolGroup.DEVICE), ToolCatalog.groups)
+        assertEquals(DEVICE_NAMES + SCRIPT_NAMES + UI_NAMES + SCREEN_NAMES + DEFAULT_FILE_NAMES + NEW_DEVICE_NAMES, ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name })
+        assertEquals(DEVICE_NAMES + UI_NAMES + SCREEN_NAMES + DEFAULT_FILE_NAMES + NEW_DEVICE_NAMES, ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.SCRIPT, false)).map { it.name })
+        assertEquals(SCRIPT_NAMES + UI_NAMES + SCREEN_NAMES + DEFAULT_FILE_NAMES, ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.DEVICE, false)).map { it.name })
+        assertEquals(DEVICE_NAMES + SCRIPT_NAMES + SCREEN_NAMES + DEFAULT_FILE_NAMES + NEW_DEVICE_NAMES, ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.UI, false)).map { it.name })
+        assertEquals(ToolCatalog.all.map { it.name }, ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.UI_GESTURE, true).with(ToolGroup.FILES_DELETE, true).with(ToolGroup.SHELL, true)).map { it.name })
+        assertEquals(ToolGroup.entries, ToolCatalog.groups)
         assertEquals(
             """{"script":true,"ui":true,"ui_gesture":false,"screen":true,"files":true,"files_delete":false,"device":true,"shell":false}""",
             ToolCatalog.summary(ToolPermissions.DEFAULT),
@@ -265,6 +265,9 @@ class ToolCatalogTest {
         val SCRIPT_NAMES = listOf("script_run", "script_run_file", "script_stop", "script_stop_all", "script_list", "console_tail")
         val UI_NAMES = listOf("ui_dump", "ui_find", "ui_current_window", "ui_explain_selector", "ui_wait_for", "ui_click", "ui_long_click", "ui_set_text", "ui_scroll", "ui_press_key")
         val GESTURE_NAMES = listOf("ui_swipe", "ui_gesture")
+        val FILE_NAMES = listOf("files_list", "files_stat", "files_read", "files_write", "files_mkdir", "files_rename", "files_delete", "editor_open")
+        val DEFAULT_FILE_NAMES = FILE_NAMES.filter { it != "files_delete" }
+        val NEW_DEVICE_NAMES = listOf("app_launch", "app_list", "clipboard_get", "clipboard_set", "device_ensure_accessibility", "toast")
         val SCREEN_NAMES = listOf("screen_capture", "screen_state")
     }
 }

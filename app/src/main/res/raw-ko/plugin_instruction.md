@@ -1,6 +1,6 @@
 MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol](https://modelcontextprotocol.io) 서버로 만듭니다. Claude Code, Cursor, MCP Inspector 같은 PC의 AI 에이전트가 USB 또는 Wi-Fi로 휴대폰에 연결하고, 도구를 사용해 스크립트 실행, 로그 읽기, 접근성 노드 트리 확인, 탭과 입력, 스크린샷 촬영, 파일과 앱 작업을 수행합니다.
 
-P3.3 개발 미리 보기: 인증과 페어링을 사용하는 MCP 엔드포인트, 스크립트, UI, 스크린샷 도구가 구현되었습니다. screen_capture는 JPEG, PNG, WebP 이미지를 반환하고 screen_state는 화면 크기와 방향을 반환합니다. 서랍 스위치와 설정 화면은 P4에서 구현할 예정입니다. 진행 상황과 기기 검증 결과는 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md)를 참조하세요.
+P3.4 개발 미리보기: 도구 37개 중 33개가 기본 활성화됩니다. 파일 작업, 편집기 위치 지정, 앱 조회, 클립보드, 접근성 자동 활성화, 출력이 제한된 Shell을 사용할 수 있습니다. 서랍 스위치와 설정 화면은 P4에서 구현할 예정입니다. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ### 사용 방법
 

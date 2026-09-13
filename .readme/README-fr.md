@@ -52,7 +52,7 @@ Le serveur s'exécute dans le processus propre du plugin et est joignable via un
 
 ******
 
-Aperçu de développement jusqu'à P3.3: le point MCP authentifié, l'appairage, les outils de script, d'interface et de capture sont implémentés. screen_capture renvoie des images JPEG, PNG ou WebP; screen_state indique les dimensions et l'orientation. Le commutateur du tiroir et les réglages sont prévus en P4. Voir [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) pour les progrès et les essais sur appareils.
+Version de développement P3.4: 37 outils disponibles, dont 33 activés par défaut. Fichiers, positions dans un éditeur, recherche des applications, presse-papiers, activation automatique de l'accessibilité et Shell à sortie limitée sont disponibles. Le commutateur du menu et les réglages restent prévus pour P4. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -64,8 +64,8 @@ La feuille de route livre les capacités suivantes par étapes:
 
 - Exécution de scripts : exécuter du JavaScript depuis un texte ou un fichier dans AutoJs6, lister et arrêter les moteurs, et lire la sortie récente de la console.
 - Interface d'accessibilité : exporter l'arbre des noeuds dans un format texte compact, trouver des noeuds avec la syntaxe de sélecteur d'AutoJs6, cliquer, appuyer longuement, faire défiler, saisir du texte et déclencher des touches globales comme Retour et Accueil.
-- Groupe de capture (P3.3): screen_capture renvoie des images MCP avec recadrage, scale ou maxWidth, JPEG / PNG / WebP et qualité réglable. Valeurs par défaut: JPEG, qualité 70, côté le plus long de 1280 px. Au-delà de 4 MiB de base64, la qualité ou les dimensions diminuent et les métadonnées indiquent les ajustements. screen_state fournit l'état, les dimensions, l'orientation et la densité. Le catalogue compte 22 outils. Le repli MediaProjection nécessite AutoJs6 compilé le 2026-09-13 ou après et un accord sur le téléphone, réutilisé par la session hôte.
-- Fichiers, applications et appareil : lire et écrire des fichiers dans le répertoire de travail d'AutoJs6, lancer des applications, interroger la fenêtre au premier plan et rapporter les informations de l'appareil.
+- Groupe de capture (P3.3): screen_capture renvoie des images MCP avec recadrage, scale ou maxWidth, JPEG / PNG / WebP et qualité réglable. Valeurs par défaut: JPEG, qualité 70, côté le plus long de 1280 px. Au-delà de 4 MiB de base64, la qualité ou les dimensions diminuent et les métadonnées indiquent les ajustements. screen_state fournit l'état, les dimensions, l'orientation et la densité. Le catalogue compte 37 outils. Le repli MediaProjection nécessite AutoJs6 compilé le 2026-09-13 ou après et un accord sur le téléphone, réutilisé par la session hôte.
+- Outils du répertoire de travail (P3.4): files_list / stat / read / write / mkdir / rename / delete, editor_open avec ligne et colonne à partir de 1, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast et shell_exec. Lecture binaire en base64, au plus 1 MiB de données brutes. Les écritures respectent aussi le budget du host (normalement 96 KiB avec les échappements JSON). Suppression et Shell sont désactivés par défaut; root exige allowShellRoot et une autorisation shell.root du host. La version P3.4 correspondante du host est nécessaire.
 - Chemins de connexion : USB via `adb forward`, réseau local avec activation explicite, pont stdio côté PC et tunnel public optionnel avec OAuth 2.1.
 - Sécurité : jeton bearer renouvelable, confirmation d'appairage à la première utilisation sur le téléphone et interrupteurs d'outils par groupe ; le serveur n'écoute par défaut que sur l'interface de bouclage.
 
@@ -155,7 +155,8 @@ Les plans et l'avancement du plugin sont tenus sous forme de liste cochable dans
 
 _2026/09/13_
 
-- `Note` Aperçu de développement jusqu'à P3.3: le point MCP authentifié, l'appairage, les outils de script, d'interface et de capture sont implémentés. screen_capture renvoie des images JPEG, PNG ou WebP; screen_state indique les dimensions et l'orientation. Le commutateur du tiroir et les réglages sont prévus en P4. Voir ROADMAP.md pour les progrès et les essais sur appareils.
+- `Note` Version de développement P3.4: 37 outils disponibles, dont 33 activés par défaut. Fichiers, positions dans un éditeur, recherche des applications, presse-papiers, activation automatique de l'accessibilité et Shell à sortie limitée sont disponibles. Le commutateur du menu et les réglages restent prévus pour P4. ROADMAP.md.
+- `Fonctionnalité` Outils du répertoire de travail (P3.4): files_list / stat / read / write / mkdir / rename / delete, editor_open avec ligne et colonne à partir de 1, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast et shell_exec. Lecture binaire en base64, au plus 1 MiB de données brutes. Les écritures respectent aussi le budget du host (normalement 96 KiB avec les échappements JSON). Suppression et Shell sont désactivés par défaut; root exige allowShellRoot et une autorisation shell.root du host. La version P3.4 correspondante du host est nécessaire.
 - `Fonctionnalité` Identité de plugin `mcp-server` avec le service INFO, la Wake Activity et le squelette du service `org.autojs.plugin.MCP_SERVER` pour la découverte par l'hôte
 - `Fonctionnalité` README, instructions du centre de plugins et journal des modifications en 10 langues
 - `Fonctionnalité` Point de terminaison Streamable HTTP sur `http://127.0.0.1:9637/mcp` avec l'outil `device_ping`, hébergé par un service de premier plan que adb ou l'hôte peut activer et désactiver (aperçu de développement)

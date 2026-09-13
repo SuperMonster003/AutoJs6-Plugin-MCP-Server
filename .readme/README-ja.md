@@ -52,7 +52,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 
 ******
 
-P3.3 までの開発プレビュー: 認証とペアリングを備えた MCP エンドポイント, スクリプト, UI, スクリーンショットの各ツールを実装済みです. screen_capture は JPEG, PNG, WebP 画像を返し, screen_state は画面サイズと向きを返します. ドロワーのスイッチと設定画面は P4 で実装予定です. 進捗と端末での検証結果は [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) を参照してください.
+P3.4 開発プレビュー: 37 個のツールを提供し, 初期状態で 33 個が有効です. ファイル操作, エディターの位置指定, アプリ検索, クリップボード, アクセシビリティの自動有効化, 出力制限付き Shell が利用できます. ドロワーのスイッチと設定画面は P4 で実装予定です. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -64,8 +64,8 @@ P3.3 までの開発プレビュー: 認証とペアリングを備えた MCP �
 
 - スクリプト実行: AutoJs6 内でテキストまたはファイルから JavaScript を実行し, エンジンの一覧表示と停止, 最近のコンソール出力の読み取りを行います.
 - アクセシビリティ UI: ノードツリーをコンパクトなテキスト形式で出力し, AutoJs6 のセレクター構文でノードを検索し, クリック, 長押し, スクロール, テキスト設定, 戻るやホームなどのグローバルキー操作を行います.
-- スクリーンショットグループ (P3.3): screen_capture は切り抜き, scale または maxWidth, JPEG / PNG / WebP, 品質指定に対応した MCP 画像を返します. 既定値は JPEG 品質 70, 長辺 1280 px です. base64 が 4 MiB を超える場合は品質やサイズを下げて再試行し, 変更をメタデータに記録します. screen_state は画面の点灯状態, サイズ, 向き, 密度を返します. ツール数は 22 になりました. MediaProjection のフォールバックには 2026-09-13 以降にビルドされた AutoJs6 と端末での許可が必要で, 許可はホストセッションで再利用されます.
-- ファイル, アプリ, デバイス: AutoJs6 の作業ディレクトリ内のファイルの読み書き, アプリの起動, 前面ウィンドウの照会, デバイス情報の報告を行います.
+- スクリーンショットグループ (P3.3): screen_capture は切り抜き, scale または maxWidth, JPEG / PNG / WebP, 品質指定に対応した MCP 画像を返します. 既定値は JPEG 品質 70, 長辺 1280 px です. base64 が 4 MiB を超える場合は品質やサイズを下げて再試行し, 変更をメタデータに記録します. screen_state は画面の点灯状態, サイズ, 向き, 密度を返します. ツール数は 37 になりました. MediaProjection のフォールバックには 2026-09-13 以降にビルドされた AutoJs6 と端末での許可が必要で, 許可はホストセッションで再利用されます.
+- 作業ディレクトリのツール (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1 から始まる行と列を指定する editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. バイナリ読み取りは base64 で元データ最大 1 MiB. 書き込みはホストの要求上限にも従います (通常は JSON エスケープ込みで 96 KiB). 削除と Shell は初期状態で無効. root には allowShellRoot とホストの shell.root 許可が必要です. 対応する P3.4 ホストビルドが必要です.
 - 接続経路: `adb forward` による USB 接続, 明示的に有効化するローカルネットワーク接続, PC 側の stdio ブリッジ, および OAuth 2.1 を備えたオプションの公開トンネル.
 - セキュリティ: ローテーション可能な Bearer トークン, スマートフォン上での初回ペアリング確認, グループ単位のツールスイッチ. サーバーはデフォルトでループバックインターフェースのみを待ち受けます.
 
@@ -155,7 +155,8 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 _2026/09/13_
 
-- `ヒント` P3.3 までの開発プレビュー: 認証とペアリングを備えた MCP エンドポイント, スクリプト, UI, スクリーンショットの各ツールを実装済みです. screen_capture は JPEG, PNG, WebP 画像を返し, screen_state は画面サイズと向きを返します. ドロワーのスイッチと設定画面は P4 で実装予定です. 進捗と端末での検証結果は ROADMAP.md を参照してください.
+- `ヒント` P3.4 開発プレビュー: 37 個のツールを提供し, 初期状態で 33 個が有効です. ファイル操作, エディターの位置指定, アプリ検索, クリップボード, アクセシビリティの自動有効化, 出力制限付き Shell が利用できます. ドロワーのスイッチと設定画面は P4 で実装予定です. ROADMAP.md.
+- `機能` 作業ディレクトリのツール (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1 から始まる行と列を指定する editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. バイナリ読み取りは base64 で元データ最大 1 MiB. 書き込みはホストの要求上限にも従います (通常は JSON エスケープ込みで 96 KiB). 削除と Shell は初期状態で無効. root には allowShellRoot とホストの shell.root 許可が必要です. 対応する P3.4 ホストビルドが必要です.
 - `機能` ホスト検出用の INFO サービス, Wake Activity, `org.autojs.plugin.MCP_SERVER` サービスの骨組みを備えたプラグイン ID `mcp-server`
 - `機能` 10 言語の README, プラグインセンターの説明, 変更履歴
 - `機能` `http://127.0.0.1:9637/mcp` の Streamable HTTP エンドポイントと `device_ping` ツール. adb またはホストから起動と停止ができるフォアグラウンドサービスが提供 (開発プレビュー)

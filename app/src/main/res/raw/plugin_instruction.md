@@ -1,6 +1,6 @@
 MCP Server turns an Android device running AutoJs6 into a [Model Context Protocol](https://modelcontextprotocol.io) server. AI agents on a PC, such as Claude Code, Cursor, or the MCP Inspector, connect to the phone over USB or Wi-Fi and use tools to run scripts, read logs, inspect the accessibility node tree, tap and type, take screenshots, and work with files and apps.
 
-Development preview through P3.3: the authenticated MCP endpoint, pairing, script and UI tools, and screenshots are implemented. screen_capture returns JPEG, PNG or WebP images; screen_state reports screen dimensions and orientation. The drawer switch and settings page are still planned in P4. Progress and device evidence are in [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+P3.4 development preview: 37 tools are available, with 33 enabled by default. File operations, editor positioning, application queries, clipboard, accessibility activation, and bounded Shell execution join the script, UI, and screenshot tools. The drawer switch and settings page remain planned in P4. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ### Usage
 

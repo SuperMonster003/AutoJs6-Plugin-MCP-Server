@@ -52,7 +52,7 @@ MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]
 
 ******
 
-P3.3 개발 미리 보기: 인증과 페어링을 사용하는 MCP 엔드포인트, 스크립트, UI, 스크린샷 도구가 구현되었습니다. screen_capture는 JPEG, PNG, WebP 이미지를 반환하고 screen_state는 화면 크기와 방향을 반환합니다. 서랍 스위치와 설정 화면은 P4에서 구현할 예정입니다. 진행 상황과 기기 검증 결과는 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md)를 참조하세요.
+P3.4 개발 미리보기: 도구 37개 중 33개가 기본 활성화됩니다. 파일 작업, 편집기 위치 지정, 앱 조회, 클립보드, 접근성 자동 활성화, 출력이 제한된 Shell을 사용할 수 있습니다. 서랍 스위치와 설정 화면은 P4에서 구현할 예정입니다. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -64,8 +64,8 @@ P3.3 개발 미리 보기: 인증과 페어링을 사용하는 MCP 엔드포인�
 
 - 스크립트 실행: AutoJs6 안에서 텍스트 또는 파일의 JavaScript를 실행하고, 엔진을 나열하거나 중지하며, 최근 콘솔 출력을 읽습니다.
 - 접근성 UI: 노드 트리를 간결한 텍스트 형식으로 덤프하고, AutoJs6 선택자 문법으로 노드를 찾고, 클릭, 길게 누르기, 스크롤, 텍스트 설정, 뒤로와 홈 같은 전역 키를 누릅니다.
-- 스크린샷 그룹 (P3.3): screen_capture는 자르기, scale 또는 maxWidth, JPEG / PNG / WebP, 품질 설정을 지원하는 MCP 이미지를 반환합니다. 기본값은 JPEG 품질 70, 긴 변 1280 px입니다. base64가 4 MiB를 초과하면 품질이나 크기를 낮춰 재시도하고 메타데이터에 변경을 표시합니다. screen_state는 화면 켜짐 상태, 크기, 방향, 밀도를 반환합니다. 도구 목록은 22개입니다. MediaProjection 대체 경로에는 2026-09-13 이후 빌드한 AutoJs6와 휴대전화의 승인이 필요하며 호스트 세션에서 승인을 재사용합니다.
-- 파일, 앱, 기기: AutoJs6 작업 디렉터리의 파일을 읽고 쓰며, 앱을 실행하고, 전면 창을 조회하고, 기기 정보를 보고합니다.
+- 스크린샷 그룹 (P3.3): screen_capture는 자르기, scale 또는 maxWidth, JPEG / PNG / WebP, 품질 설정을 지원하는 MCP 이미지를 반환합니다. 기본값은 JPEG 품질 70, 긴 변 1280 px입니다. base64가 4 MiB를 초과하면 품질이나 크기를 낮춰 재시도하고 메타데이터에 변경을 표시합니다. screen_state는 화면 켜짐 상태, 크기, 방향, 밀도를 반환합니다. 도구 목록은 37개입니다. MediaProjection 대체 경로에는 2026-09-13 이후 빌드한 AutoJs6와 휴대전화의 승인이 필요하며 호스트 세션에서 승인을 재사용합니다.
+- 작업 디렉터리 도구 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1부터 시작하는 행과 열을 받는 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. 바이너리 읽기는 base64이며 원본 데이터 최대 1 MiB입니다. 쓰기는 호스트 요청 한도도 따릅니다 (보통 JSON 이스케이프 포함 96 KiB). 삭제와 Shell은 기본 비활성화이며 root에는 allowShellRoot와 호스트 shell.root 권한이 추가로 필요합니다. 일치하는 P3.4 호스트 빌드가 필요합니다.
 - 연결 경로: `adb forward`를 통한 USB, 명시적으로 켜야 하는 로컬 네트워크, PC 측 stdio 브리지, 그리고 OAuth 2.1을 갖춘 선택적 공개 터널.
 - 보안: 교체 가능한 Bearer 토큰, 휴대폰에서의 최초 페어링 확인, 그룹별 도구 스위치. 서버는 기본적으로 루프백 인터페이스에서만 수신합니다.
 
@@ -155,7 +155,8 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 _2026/09/13_
 
-- `힌트` P3.3 개발 미리 보기: 인증과 페어링을 사용하는 MCP 엔드포인트, 스크립트, UI, 스크린샷 도구가 구현되었습니다. screen_capture는 JPEG, PNG, WebP 이미지를 반환하고 screen_state는 화면 크기와 방향을 반환합니다. 서랍 스위치와 설정 화면은 P4에서 구현할 예정입니다. 진행 상황과 기기 검증 결과는 ROADMAP.md를 참조하세요.
+- `힌트` P3.4 개발 미리보기: 도구 37개 중 33개가 기본 활성화됩니다. 파일 작업, 편집기 위치 지정, 앱 조회, 클립보드, 접근성 자동 활성화, 출력이 제한된 Shell을 사용할 수 있습니다. 서랍 스위치와 설정 화면은 P4에서 구현할 예정입니다. ROADMAP.md.
+- `기능` 작업 디렉터리 도구 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1부터 시작하는 행과 열을 받는 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. 바이너리 읽기는 base64이며 원본 데이터 최대 1 MiB입니다. 쓰기는 호스트 요청 한도도 따릅니다 (보통 JSON 이스케이프 포함 96 KiB). 삭제와 Shell은 기본 비활성화이며 root에는 allowShellRoot와 호스트 shell.root 권한이 추가로 필요합니다. 일치하는 P3.4 호스트 빌드가 필요합니다.
 - `기능` 호스트 발견을 위한 INFO 서비스, Wake Activity, `org.autojs.plugin.MCP_SERVER` 서비스 뼈대를 갖춘 플러그인 ID `mcp-server`
 - `기능` 10개 언어의 README, 플러그인 센터 안내, 변경 기록
 - `기능` `http://127.0.0.1:9637/mcp`의 Streamable HTTP 엔드포인트와 `device_ping` 도구. adb 또는 호스트가 켜고 끌 수 있는 포그라운드 서비스가 제공 (개발 프리뷰)

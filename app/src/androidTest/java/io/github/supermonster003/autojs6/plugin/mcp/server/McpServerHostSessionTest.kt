@@ -352,7 +352,7 @@ class McpServerHostSessionTest {
         val requestsBeforeGate = broker.requests.size
 
         ToolPermissionStore(context).save(ToolPermissions.DEFAULT.with(ToolGroup.UI_GESTURE, true))
-        assertEquals(ToolCatalog.all.map { it.name }, toolNames(post(toolsListRequest(), sessionId)))
+        assertEquals(ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.UI_GESTURE, true)).map { it.name }, toolNames(post(toolsListRequest(), sessionId)))
         val tap = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"x":10,"y":20}"""), sessionId).json().getJSONObject("result")
         assertFalse(tap.toString(), tap.optBoolean("isError"))
         assertEquals("coordinates", tap.getJSONObject("structuredContent").getString("via"))
@@ -477,6 +477,58 @@ class McpServerHostSessionTest {
         session.close()
     }
 
+    @Test
+    fun workspaceToolsBridgeArgumentsPayloadsAndSeparateDangerousSwitches() {
+        val broker = FakeBroker()
+        val session = runtime.openSession(configBundle(PORT), broker, RecordingCallback(), Process.myUid())
+        awaitStatus(session) { it.getString(McpServerContract.KEY_STATUS_STATE) == McpServerContract.STATE_RUNNING }
+        val sessionId = post(initializeRequest(), sessionId = null).header("mcp-session-id")
+        post(initializedNotification(), sessionId)
+        val held = post(toolsCallRequest(ToolCatalog.FILES_LIST), sessionId)
+        assertTrue(runtime.server.pairingGate!!.approve(held.json().getJSONObject("error").getJSONObject("data").getString("fingerprint")))
+        fun call(name: String, args: String = "{}"): JSONObject = post(toolsCallRequest(name, args), sessionId).json().getJSONObject("result")
+        fun success(name: String, args: String = "{}"): JSONObject = call(name, args).also { assertFalse("$name: $it", it.optBoolean("isError")) }.getJSONObject("structuredContent")
+        success(ToolCatalog.FILES_WRITE, """{"path":"./test.js","content":"a\nb","overwrite":false}""")
+        val write = broker.requests.last()
+        assertEquals("files", write.getString("module")); assertEquals("write", write.getString("method"))
+        assertEquals("test.js", write.getJSONArray("args").getString(0))
+        assertFalse(write.getJSONArray("args").getJSONObject(2).getBoolean("overwrite"))
+        assertEquals("files.write", write.getJSONArray("permissions").getString(1))
+        success(ToolCatalog.FILES_LIST, """{"path":".","maxEntries":7}""")
+        assertEquals(7, broker.requests.last().getJSONArray("args").getJSONObject(1).getInt("maxEntries"))
+        success(ToolCatalog.FILES_STAT, """{"path":"test.js"}""")
+        success(ToolCatalog.FILES_MKDIR, """{"path":"sub"}""")
+        success(ToolCatalog.FILES_RENAME, """{"path":"test.js","to":"sub/test.js"}""")
+        val read = success(ToolCatalog.FILES_READ, """{"path":"large.bin","encoding":"base64"}""")
+        assertEquals(1024 * 1024, android.util.Base64.decode(read.getString("content"), android.util.Base64.DEFAULT).size)
+        assertEquals("base64", read.getString("encoding")); assertFalse(read.has("schema"))
+        success(ToolCatalog.EDITOR_OPEN, """{"path":"test.js","line":3,"column":4}""")
+        assertEquals(3, broker.requests.last().getJSONArray("args").getJSONObject(1).getInt("line"))
+        success(ToolCatalog.APP_LIST, """{"query":"AutoJs"}""")
+        assertEquals("listApps", broker.requests.last().getString("method"))
+        success(ToolCatalog.APP_LAUNCH, """{"appName":"Settings"}""")
+        assertEquals("launchApp", broker.requests.last().getString("method"))
+        success(ToolCatalog.CLIPBOARD_SET, """{"text":"sample"}""")
+        assertEquals("sample", success(ToolCatalog.CLIPBOARD_GET).getString("text"))
+        success(ToolCatalog.DEVICE_ENSURE_ACCESSIBILITY)
+        success(ToolCatalog.TOAST, """{"text":"sample"}""")
+        val before = broker.requests.size
+        assertEquals("INVALID_ARGUMENTS", call(ToolCatalog.FILES_WRITE, """{"path":"../escape","content":"x"}""").getJSONObject("structuredContent").getJSONObject("error").getString("code"))
+        assertEquals(before, broker.requests.size)
+        assertEquals("TOOL_DISABLED", call(ToolCatalog.FILES_DELETE, """{"path":"test.js"}""").getJSONObject("structuredContent").getJSONObject("error").getString("code"))
+        assertEquals("TOOL_DISABLED", call(ToolCatalog.SHELL_EXEC, """{"cmd":"id"}""").getJSONObject("structuredContent").getJSONObject("error").getString("code"))
+        val policy = ToolPermissions.DEFAULT.with(ToolGroup.FILES_DELETE, true).with(ToolGroup.SHELL, true)
+        ToolPermissionStore(context).save(policy)
+        success(ToolCatalog.FILES_DELETE, """{"path":"test.js"}""")
+        success(ToolCatalog.SHELL_EXEC, """{"cmd":"id","maxOutputBytes":9,"timeoutMs":1000}""")
+        assertEquals(9, broker.requests.last().getJSONArray("args").getJSONObject(1).getInt("maxOutputBytes"))
+        assertEquals("TOOL_DISABLED", call(ToolCatalog.SHELL_EXEC, """{"cmd":"id","root":true}""").getJSONObject("structuredContent").getJSONObject("error").getString("code"))
+        ToolPermissionStore(context).save(policy.copy(allowShellRoot = true))
+        success(ToolCatalog.SHELL_EXEC, """{"cmd":"id","root":true}""")
+        assertEquals("shell.root", broker.requests.last().getJSONArray("permissions").getString(1))
+        session.close()
+    }
+
     private class FakeBroker : IMcpHostCapabilityBroker.Stub() {
 
         val requests = CopyOnWriteArrayList<JSONObject>()
@@ -497,9 +549,12 @@ class McpServerHostSessionTest {
                     "accessibility.dump", "accessibility.findAll", "accessibility.findOne", "accessibility.click", "accessibility.setText",
                     "accessibility.scrollForward", "accessibility.swipe", "accessibility.back", "keys.notifications", "app.currentWindow",
                     "device.isScreenOn", "accessibility.screenshot", "media_projection.requestScreenCapture", "image.captureScreen",
+                    "files.list", "files.stat", "files.read", "files.write", "files.mkdir", "files.rename", "files.delete",
+                    "app.editFile", "app.launchPackage", "app.launchApp", "package_manager.listApps", "clipboard.getText", "clipboard.setText",
+                    "accessibility.ensureEnabled", "toast.toast", "shell.exec",
                 ),
             )
-            putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query"))
+            putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query", "files", "files.write", "files.delete", "app.activity", "app.launch", "package_manager", "clipboard", "toast", "shell", "shell.root"))
             putInt(McpServerContract.KEY_GRANT_MAX_REQUEST_BYTES, McpServerContract.MAX_BRIDGE_INLINE_JSON_BYTES)
             putInt(McpServerContract.KEY_GRANT_MAX_CONCURRENT_CALLS, McpServerContract.MAX_CONCURRENT_TOOL_CALLS)
             putLong(McpServerContract.KEY_GRANT_DEFAULT_TIMEOUT_MS, McpServerContract.DEFAULT_TOOL_TIMEOUT_MS)
@@ -512,7 +567,20 @@ class McpServerHostSessionTest {
             clientNames += request?.getString(McpServerContract.KEY_BRIDGE_CLIENT_NAME)
             val id = json.getString("id")
             var imageBytes: ByteArray? = null
+            var payloadMime = "image/jpeg"
             val response = when ("${json.getString("module")}.${json.getString("method")}") {
+                "files.list", "files.stat", "files.write", "files.mkdir", "files.rename", "files.delete" -> ok(id, JSONObject().put("schema", "file-v1").put("path", json.getJSONArray("args").getString(0)))
+                "files.read" -> {
+                    payloadMime = "application/json"
+                    imageBytes = JSONObject().put("schema", "file-v1").put("encoding", "base64").put("bytes", 1024 * 1024)
+                        .put("content", android.util.Base64.encodeToString(ByteArray(1024 * 1024), android.util.Base64.NO_WRAP)).toString().toByteArray()
+                    ok(id, JSONObject().put("payload", JSONObject().put("kind", "descriptor")))
+                }
+                "app.editFile", "app.launchPackage", "app.launchApp", "accessibility.ensureEnabled" -> ok(id, true)
+                "clipboard.getText" -> ok(id, "sample")
+                "clipboard.setText", "toast.toast" -> ok(id, JSONObject.NULL)
+                "package_manager.listApps" -> ok(id, JSONObject().put("schema", "apps-v1").put("apps", JSONArray()).put("count", 0))
+                "shell.exec" -> ok(id, JSONObject().put("code", 0).put("stdout", "ok").put("stderr", "").put("truncated", false).put("timedOut", false))
                 "device.info" -> JSONObject()
                     .put("id", id)
                     .put("ok", true)
@@ -631,7 +699,7 @@ class McpServerHostSessionTest {
                     file.delete()
                     putParcelable(McpServerContract.KEY_BRIDGE_PAYLOAD_FD, fd)
                     putLong(McpServerContract.KEY_BRIDGE_PAYLOAD_BYTES, bytes.size.toLong())
-                    putString(McpServerContract.KEY_BRIDGE_PAYLOAD_MIME, "image/jpeg")
+                    putString(McpServerContract.KEY_BRIDGE_PAYLOAD_MIME, payloadMime)
                 }
                 putString(McpServerContract.KEY_BRIDGE_RESPONSE_JSON, response.toString())
                 putBoolean(McpServerContract.KEY_BRIDGE_RESPONSE_OK, response.getBoolean("ok"))

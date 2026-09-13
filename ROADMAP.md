@@ -340,10 +340,10 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 ### P3.4 文件, 应用与设备 (`files` / `files_delete` / `device` / `shell` 组)
 
-- [ ] (插件) `files_list(path, recursive, maxEntries)`, `files_stat`, `files_read(path, encoding, maxBytes)`, `files_write(path, content, createDirs, overwrite)`, `files_mkdir`, `files_rename`; `files_delete` 单独成组默认关闭; 二进制文件读取返回 base64 并标注.
-- [ ] (插件) `editor_open(path, line, column)` (`app.editFile` -> 宿主 `EditActivity.editFileAt`), `app_launch(packageName|appName)`, `app_list(query)` (`package_manager`), `clipboard_get` / `clipboard_set`, `device_info`, `device_ensure_accessibility`, `toast(text)`.
-- [ ] (插件) `shell_exec(cmd, root, timeoutMs, maxOutputBytes)` (默认关闭组; `root=true` 需 `shell.root` 令牌且组开关另有 "允许 root" 子开关).
-- [ ] (测试) JVM: 路径规范化与逃逸拒绝 (在插件侧也做一遍, 双重防线), 体积上限; DEVICE: 写入后宿主文件管理器刷新可见, 编辑器打开到指定行.
+- [x] (插件) `files_list(path, recursive, maxEntries)`, `files_stat`, `files_read(path, encoding, maxBytes)`, `files_write(path, content, createDirs, overwrite)`, `files_mkdir`, `files_rename`; `files_delete` 单独成组默认关闭; 二进制文件读取返回 base64 并标注. (SOURCE: `FileTools` / `WorkspacePath` / `ToolCatalog`; 宿主 83f780852. API 24 / 33 / 35 真实 MCP 读取 1049600 字节文件, 返回 1048576 字节 base64 内容并标记 truncated=true, 分别 1174 / 397 / 953 ms; 100000 字符写入按宿主 96 KiB 请求预算拒绝且不留文件. 1 MiB 为内容上限, 写入同时受完整 JSON 请求预算约束, 见 docs/dev/p34-workspace-tools.md)
+- [x] (插件) `editor_open(path, line, column)` (`app.editFile` -> 宿主 `EditActivity.editFileAt`), `app_launch(packageName|appName)`, `app_list(query)` (`package_manager`), `clipboard_get` / `clipboard_set`, `device_info`, `device_ensure_accessibility`, `toast(text)`. (SOURCE: `DeviceTools`, 宿主 `NodeBridgeDeviceActions` / `AccessibilityTool`; app_list 使用新增只读方法 `package_manager.listApps`, 原 list 的脚本依赖包语义保留. API 24 / 33 / 35 编辑器状态栏均显示 3:4, 应用查询与启动, 剪贴板往返, toast 通过; API 24 经临时 WSS 授权实测自动启用无障碍并恢复原授权状态)
+- [x] (插件) `shell_exec(cmd, root, timeoutMs, maxOutputBytes)` (默认关闭组; `root=true` 需 `shell.root` 令牌且组开关另有 "允许 root" 子开关). (SOURCE: `ShellTools` / `ToolPermissions.allowShellRoot` / `HostBridgeClient`, 宿主 `NodeBridgeShellOutput`; 两端按 UTF-8 字节限制 stdout + stderr, 默认 64 KiB / 最大 256 KiB, 超时默认 15 s / 最大 120 s. JVM 与假 broker 验证 root 开关和 grant 独立, 三设备验证默认 TOOL_DISABLED, 合计输出限制和超时 code=124 / timedOut=true; 未执行真机 root Shell)
+- [x] (测试) JVM: 路径规范化与逃逸拒绝 (在插件侧也做一遍, 双重防线), 体积上限; DEVICE: 写入后宿主文件管理器刷新可见, 编辑器打开到指定行. (EVIDENCE: 插件 JVM 175/175, 宿主相关 JVM 19/19; 插件 instrumentation 17/17 于 API 24 / 28 / 31 / 33 (Sony 与 Xiaomi) / 35 共 6 台设备; API 31 经 connectedDebugAndroidTest, 其余经 adb instrument. API 24 / 33 / 35 的真实 MCP 文件夹刷新与编辑器 3:4 定位通过; 宿主 NodeBridgeFileScopeDeviceTest 三设备各 1/1, 覆盖重命名覆盖策略, 二进制读取和符号链接目标保留. 详见 docs/dev/p34-workspace-tools.md)
 
 ### P3.5 资源与提示
 
@@ -447,7 +447,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 ### A.1 命名与通用约定
 
-- 名称: snake_case, `<组>_<动作>`; 描述用英文 (MCP 客户端与模型消费), 设置页文案 10 语言.
+- 名称: snake_case, `<组>_<动作>` (P3.4 指定的 `toast` 保留单词名称); 描述用英文 (MCP 客户端与模型消费), 设置页文案 10 语言.
 - 输入 Schema: JSON Schema 2020-12, `additionalProperties: false`, 必填最少化; 坐标为设备像素整数; 路径为相对工作目录的 POSIX 风格.
 - 结果: 主体为 `text` 内容 (紧凑文本或 JSON 字符串), 需要时附 `structuredContent`; 错误用 `isError: true` + 文本 `code: message (hint)`; 错误码见 A.5.
 - 注解: 只读工具 `readOnlyHint: true`; `files_delete` / `shell_exec` / `script_stop_all` 标 `destructiveHint: true`.
@@ -478,7 +478,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 | files_delete (关) | `files_delete` | `path` | `files.delete` |
 | files | `editor_open` | `path`, `line?`, `column?` | `app.editFile` |
 | device (开) | `device_info` / `device_ping` / `device_ensure_accessibility` | - | `device.info` / 插件本地 / `accessibility.ensureEnabled` |
-| device | `app_launch` / `app_list` | `packageName?|appName?` / `query?` | `app.launchPackage` / `app.launchApp` / `package_manager` |
+| device | `app_launch` / `app_list` | `packageName?|appName?` / `query?` | `app.launchPackage` / `app.launchApp` / `package_manager.listApps` |
 | device | `clipboard_get` / `clipboard_set` / `toast` | `text` | `clipboard.*` / `toast` |
 | shell (关) | `shell_exec` | `cmd`, `root?=false`, `timeoutMs?=15000`, `maxOutputBytes?=64 KiB` | `shell.exec` |
 
@@ -513,7 +513,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 ### A.6 grant 允许的 bridge 方法全集
 
-`accessibility.{isEnabled, ensureEnabled, dump, explain, screenshot, findOne, findAll, findByText, click, longClick, setText, scrollForward, scrollBackward, swipe, gesture, back, home, recentApps}`, `engines.{execScript, execScriptFile, list, stop, stopAll}`, `console.tail`, `files.{list, stat, read, write, mkdir, rename, delete}`, `app.{launchPackage, launchApp, isInstalled, editFile, currentWindow, listSamples, readSample}`, `package_manager.{query 类只读方法}`, `clipboard.{getText, setText, hasText}`, `device.{info, isScreenOn, wakeUp, isIgnoringBatteryOptimizations}`, `media_projection.{requestScreenCapture, stop}`, `image.{captureScreen, recycle}`, `shell.exec`, `toast`. 不在此列的模块 (如 `rhino`, `java`, `websocket`, `fetch`, `ui.overlay`, `input_observer`) 一律 `capability-denied`.
+`accessibility.{isEnabled, ensureEnabled, dump, explain, screenshot, findOne, findAll, findByText, click, longClick, setText, scrollForward, scrollBackward, swipe, gesture, back, home, recentApps}`, `engines.{execScript, execScriptFile, list, stop, stopAll}`, `console.tail`, `files.{list, stat, read, write, mkdir, rename, delete}`, `app.{launchPackage, launchApp, isInstalled, editFile, currentWindow, listSamples, readSample}`, `package_manager.{list, verify, listApps}`, `clipboard.{getText, setText, hasText}`, `device.{info, isScreenOn, wakeUp, isIgnoringBatteryOptimizations}`, `media_projection.{requestScreenCapture, stop}`, `image.{captureScreen, recycle}`, `shell.exec`, `toast`. 不在此列的模块 (如 `rhino`, `java`, `websocket`, `fetch`, `ui.overlay`, `input_observer`) 一律 `capability-denied`.
 
 ### A.7 上限常量 (写入 `McpServerContract`)
 
@@ -729,3 +729,12 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 环境恢复: 根据维护者要求重新下载 Gradle 9.5.0 官方发行 ZIP, 官方 SHA-256 与 ZIP CRC 检查通过, wrapper 可用, 缓存受损后的完整构建重新通过.
 - 未做: 图片在 Inspector / Claude Code 等客户端界面内的显示矩阵 (P5); 可选节点编号标注 (P6); P3.4 及以后. 宿主仓库同时存在另一组 SDK 37 未提交改动, 本次未纳入截图任务, 宿主自动提交按工作区约定暂缓.
 - 下次会话建议起点: P3.4 文件 / 应用 / 设备 / Shell 工具, 先处理路径规范化与上限, 再补 `device_ensure_accessibility` 并接入现有无障碍错误提示; 随后 P3.5 resources / prompts.
+
+
+### 2026-09-13: P3.4 工作目录, 应用, 设备与 Shell
+
+- 完成 P3.4 全部 4 条: 目录 37 工具 / 8 分组 / 默认 33 工具, 新增 FileTools, WorkspacePath, DeviceTools, ShellTools; 文件删除和 Shell 默认关闭, root 另需 allowShellRoot 与宿主 shell.root grant. 全部参数上限和工具目录快照已同步, 10 语言 README / 插件说明 / changelog 已重新生成.
+- 宿主 83f780852: Android 应用查询 listApps, 编辑器从 1 到 0 的行列转换, 既有控制器自动启用无障碍, 大 JSON 描述符传输与 Shell 合计输出限制. API 24 实测发现并处理 File.toPath / Process 新方法兼容性, 递归删除改为不跟随符号链接. 上轮 P3.3 宿主内容已补提交 dd521ed5d; 同时进行的 SDK 37 工作分别提交, 未混入 MCP 提交.
+- 验证: 插件 JVM 175/175, 宿主相关 JVM 19/19; debug / androidTest / release / lintDebug 通过, lint 0 errors / 6 既有 warnings, Temurin 模拟构建只有一段版本平台信息. 六设备插件 instrumentation 各 17/17 (API 24 / 28 / 31 / 33 / 33 / 35). API 24 / 33 / 35 真实 MCP 流程均通过, 文件夹刷新可见, 编辑器状态 3:4, 二进制读取返回 1048576 / 1049600 字节且标记截断; 宿主文件作用域真机测试三设备各 1/1. 证据和耗时见 docs/dev/p34-workspace-tools.md.
+- 边界: 写入内容上限 1 MiB, 当前宿主请求预算 96 KiB 仍先行约束完整 JSON, 超限不写入; 未执行真机 root Shell 与 Shizuku 自动启用. P4 前手机端设置界面尚未提供. 未执行新的运行时依赖升级, 宿主 release 构建未重复, 插件 release 已验证. IDE 无法启动项目外宿主调试测试, 日志断点已清理, 行列定位以真实 UI 查询为证.
+- 下次会话建议起点: P3.5 resources / prompts, 接入控制台, 设备状态, 宿主示例目录与提示模板; 随后 P4 设置页与宿主入口.

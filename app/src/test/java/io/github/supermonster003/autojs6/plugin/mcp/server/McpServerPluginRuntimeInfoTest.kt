@@ -59,7 +59,7 @@ class McpServerPluginRuntimeInfoTest {
 
         assertEquals(McpServerContract.CONTRACT_VERSION, info.contractVersion)
         assertTrue(McpServerContract.supportsContractVersion(info.contractVersion))
-        assertEquals(listOf("script", "ui", "ui_gesture", "screen", "device"), info.toolGroups)
+        assertEquals(listOf("script", "ui", "ui_gesture", "screen", "files", "files_delete", "device", "shell"), info.toolGroups)
         assertEquals(info.protocolVersions, info.protocolVersions.sortedDescending())
         assertTrue(info.protocolVersions.containsAll(listOf("2025-06-18", "2025-03-26")))
         assertEquals("0.15.0", info.sdkVersion)
