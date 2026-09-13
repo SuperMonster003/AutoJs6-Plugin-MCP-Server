@@ -10,6 +10,14 @@ import org.junit.Test
 
 class SessionConfigTest {
 
+    @Test fun `settings extension uses saved port scope and developer mode on reconnect`() {
+        val saved = io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfig(10001, BindScope.LAN, true, listOf("phone.local"))
+        val active = io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfig(10002)
+        assertEquals(saved, SessionConfig(useSavedSettings = true).listenerConfiguration(saved, active))
+        assertEquals(saved.copy(port = 9637, bindScope = BindScope.LOOPBACK), SessionConfig().listenerConfiguration(saved))
+        assertEquals(active.copy(port = 10003), SessionConfig(port = 10003).listenerConfiguration(saved, active))
+    }
+
     private fun rejected(block: () -> SessionConfig): String = try {
         block()
         fail("expected the configuration to be rejected")

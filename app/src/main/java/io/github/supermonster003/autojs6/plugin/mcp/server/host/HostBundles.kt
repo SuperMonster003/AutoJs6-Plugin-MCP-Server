@@ -12,6 +12,7 @@ internal object HostBundles {
         bindScope = bundle?.getString(McpServerContract.KEY_SERVER_CONFIG_BIND_SCOPE),
         protocolMode = bundle?.getString(McpServerContract.KEY_SERVER_CONFIG_PROTOCOL_MODE),
         hostLabel = bundle?.getString(McpServerContract.KEY_SERVER_CONFIG_HOST_LABEL),
+        useSavedSettings = bundle?.getBoolean(McpServerContract.KEY_SERVER_CONFIG_USE_SAVED_SETTINGS, false) ?: false,
     )
 
     fun status(status: SessionStatus): Bundle = Bundle().apply {

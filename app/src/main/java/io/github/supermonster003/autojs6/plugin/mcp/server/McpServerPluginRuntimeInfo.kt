@@ -39,4 +39,5 @@ data class McpServerPluginRuntimeInfo(
     val protocolVersions: List<String> get() = SUPPORTED_PROTOCOL_VERSIONS.sortedDescending()
 
     val sdkVersion: String get() = McpServerPlugin.SDK_VERSION
+    val settingsVersion: Int get() = McpServerContract.SETTINGS_VERSION
 }

@@ -1,13 +1,7 @@
-# AutoJs6 host protocol distribution lock.
-# Staged from the AutoJs6 6.8.0 host release distribution
-# (host HEAD afca7b14c4ba3971b60a9ce3587e2f10bfd0ab1e, clean source tree).
-# The digest is identical to the artifact consumed by AutoJs6-Plugin-Three-Stone-AI and
-# AutoJs6-Plugin-Python-Runtime.
-# mcp-server-api.aar (roadmap P2.3) is the release AAR of the host module plugin-api/mcp-server-api
-# built from host HEAD a37bbd2ae (clean source tree, versionCode 5279, the build that delivers
-# the MCP contract; roadmap P1.4).
+# AutoJs6 6.8.0 / 5280 release API pair, built together for the P4 settings extension.
+# Host source: e1aa3f813 (feat/mcp-p4); no AIDL transaction changes.
 format=1
 common-plugin-api.file=common-plugin-api.aar
-common-plugin-api.sha256=c526f4fd0adbf38b36a7bf54f9931385e6cc20050d6ea8fb741c60496af635d5
+common-plugin-api.sha256=59706b9fdb76a2312d295d9ad48b3bfe96d1da899cf76434e96ef646a673f400
 mcp-server-api.file=mcp-server-api.aar
-mcp-server-api.sha256=cbbdf53992dbded760026224c91cf883b03f3c2c9e67581cf1bde42676cc19f1
+mcp-server-api.sha256=6ee668b2d883be7bc5c2be88b1b7787da0f7e1072410b0d5d2efca1df9a43400

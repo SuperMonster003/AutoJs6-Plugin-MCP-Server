@@ -52,7 +52,7 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 
 ******
 
-P3.5 开发预览: 工具目录共 37 项, 默认启用 33 项. 文件操作, 编辑器定位, 应用查询, 剪贴板, 无障碍自动启用和限制输出的 Shell 已接入, 与脚本, UI 和截图工具配合使用. 抽屉开关和设置页仍计划在 P4 实现. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+P4 开发预览: 37 个工具, 默认启用 33 个, 提供 AutoJs6 抽屉开关和插件设置页. 需要配套的 P4 AutoJs6 构建. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -62,6 +62,7 @@ P3.5 开发预览: 工具目录共 37 项, 默认启用 33 项. 文件操作, �
 
 路线图分阶段交付以下能力:
 
+- 手机设置页提供服务状态, USB 转发, 端口和局域网访问, 令牌显示/复制/轮换, 配对撤销, 工具分组和 root 权限, 开发者模式, 可复制的 Claude Code / Cursor / Codex / 通用 HTTP 配置及发行历史, 并跟随 AutoJs6 外观. 网络设置会重启运行中的监听器, 令牌和权限变更立即生效. 敏感信息窗口禁止截图.
 - 脚本执行: 在 AutoJs6 内运行文本或文件形式的 JavaScript, 列出与停止引擎, 读取最近的控制台输出.
 - 无障碍界面: 以紧凑文本格式导出节点树, 用 AutoJs6 选择器语法查找节点, 点击, 长按, 滚动, 设置文本, 以及触发返回和主屏幕等全局按键.
 - 截图分组 (P3.3): screen_capture 返回 MCP 图片, 支持裁剪, scale 或 maxWidth, JPEG / PNG / WebP 与质量参数. 默认 JPEG 质量 70, 最长边 1280 px. base64 超过 4 MiB 时降低质量或尺寸重试, 元数据说明调整情况. screen_state 返回亮屏状态, 尺寸, 方向和密度. 工具目录现有 37 项. MediaProjection 回退需要 2026-09-13 或之后构建的 AutoJs6 宿主及手机端授权, 宿主会话复用该授权.
@@ -78,10 +79,11 @@ P3.5 开发预览: 工具目录共 37 项, 默认启用 33 项. 文件操作, �
 
 1. 在安装了 AutoJs6 构建 5279 (6.8.0) 或更高版本的设备上, 从 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) 下载并安装插件 APK.
 2. 打开 AutoJs6 插件中心, 确认 `MCP Server` 已被识别并启用. 官方发布包会自动通过签名校验.
-3. 本开发预览通过开发文档中的 adb 控制面与宿主测试会话连接; 抽屉开关和插件设置页计划在 P4 实现.
+3. 在 AutoJs6 抽屉中打开 MCP 服务器. 长按条目标题或点击插件中心的设置入口, 进入设置页并复制电脑客户端所需配置.
 4. 在电脑上执行 `adb forward tcp:9637 tcp:9637`, 并让 MCP 客户端连接 `http://127.0.0.1:9637/mcp`, 以令牌作为 Bearer 凭据.
+5. 首次连接时在手机上确认配对请求. 使用完毕后可从抽屉, 设置页或通知中停止服务.
 
-> 本开发预览通过开发文档中的 adb 控制面与宿主测试会话连接; 抽屉开关和插件设置页计划在 P4 实现.
+> MCP 服务器抽屉开关提供安装, 激活, 启用, 授权与兼容性引导, 与通知停止操作同步, 重连时保留插件配置, 抽屉及插件中心通过权限校验打开同一设置页. AutoJs6 打开时恢复此前启用的服务器, 但尊重宿主离线期间的用户停止操作, 不随设备开机自启.
 
 ******
 
@@ -96,7 +98,7 @@ adb forward tcp:9637 tcp:9637
 claude mcp add --transport http autojs6 http://127.0.0.1:9637/mcp --header "Authorization: Bearer <token>"
 ```
 
-本预览通过开发文档中的开发者模式 adb 控制面读取令牌. 设置页的令牌展示计划在 P4 实现.
+在 AutoJs6 抽屉中打开 MCP 服务器. 长按条目标题或点击插件中心的设置入口, 进入设置页并复制电脑客户端所需配置. 首次连接时在手机上确认配对请求. 使用完毕后可从抽屉, 设置页或通知中停止服务.
 
 ******
 
@@ -156,7 +158,8 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 _2026/09/13_
 
-- `提示` P3.5 开发预览: 工具目录共 37 项, 默认启用 33 项. 文件操作, 编辑器定位, 应用查询, 剪贴板, 无障碍自动启用和限制输出的 Shell 已接入, 与脚本, UI 和截图工具配合使用. 抽屉开关和设置页仍计划在 P4 实现. ROADMAP.md.
+- `提示` P4 开发预览: 37 个工具, 默认启用 33 个, 提供 AutoJs6 抽屉开关和插件设置页. 需要配套的 P4 AutoJs6 构建. ROADMAP.md.
+- `新增` 手机设置页提供服务状态, USB 转发, 端口和局域网访问, 令牌显示/复制/轮换, 配对撤销, 工具分组和 root 权限, 开发者模式, 可复制的 Claude Code / Cursor / Codex / 通用 HTTP 配置及发行历史, 并跟随 AutoJs6 外观. 网络设置会重启运行中的监听器, 令牌和权限变更立即生效. 敏感信息窗口禁止截图.
 - `新增` MCP 资源 (P3.5) 提供只读工作目录文件, 可浏览的宿主示例, 设备信息和最近控制台输出, 遵守配对与分组开关. 文本和二进制读取报告截断状态. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指导, 其他手机语言回退英语.
 - `新增` 工作目录工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用从 1 开始的行列号的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二进制读取使用 base64, 原始数据最多 1 MiB. 写入还受宿主请求预算约束 (通常为包含 JSON 转义的 96 KiB). 文件删除和 Shell 默认关闭; root 另需 allowShellRoot 开关与宿主 shell.root 授权. 这些能力需要匹配的 P3.4 宿主构建.
 - `新增` 插件标识 `mcp-server`, 含 INFO 服务, Wake Activity 以及供宿主发现的 `org.autojs.plugin.MCP_SERVER` 服务骨架
@@ -179,6 +182,7 @@ _2026/09/13_
 - `依赖` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 与 Ktor 3.5.1 CIO 引擎
 - `依赖` 附加 Ktor 3.5.1 `ktor-server-test-host` 用于 JVM 传输测试 (仅测试范围)
 - `依赖` 附加 `mcp-server-api.aar` (AutoJs6 模块 `plugin-api/mcp-server-api`, 宿主构建 6.8.0 / 5279, MPL 2.0) 作为 AutoJs6 与插件之间的 Binder 契约, 并在 `locks/host-api-aars.lock` 中锁定哈希
+- `依赖` 更新来自 P4 宿主构建的 common-plugin-api 和 mcp-server-api 配套 AAR: 可选设置扩展 v1, AIDL transaction 顺序不变, SHA-256 锁定, 保留 SDK 36 消费兼容性.
 
 ##### 更多发行历史
 

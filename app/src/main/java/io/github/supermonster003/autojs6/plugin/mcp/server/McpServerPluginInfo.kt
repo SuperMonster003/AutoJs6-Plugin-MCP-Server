@@ -58,4 +58,5 @@ internal fun McpServerPluginRuntimeInfo.capabilitiesBundle(): Bundle = Bundle().
     putStringArray(McpServerCapabilityKeys.TOOL_GROUPS, toolGroups.toTypedArray())
     putStringArray(McpServerCapabilityKeys.PROTOCOL_VERSIONS, protocolVersions.toTypedArray())
     putString(McpServerCapabilityKeys.SDK_VERSION, sdkVersion)
+    putInt(McpServerCapabilityKeys.SETTINGS_VERSION, settingsVersion)
 }

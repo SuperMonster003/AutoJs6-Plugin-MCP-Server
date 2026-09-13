@@ -60,6 +60,27 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.McpServerSettingsActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:permission="org.autojs.permission.PLUGIN">
+            <intent-filter>
+                <action android:name="org.autojs.plugin.mcp.server.action.OPEN_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.ReleaseHistoryActivity"
+            android:exported="false"
+            android:excludeFromRecents="true" />
+
+        <receiver
+            android:name=".ui.McpSettingsReceiver"
+            android:exported="false"
+            android:process=":mcp_server" />
+
         <service
             android:name=".McpServerPluginInfoService"
             android:enabled="true"

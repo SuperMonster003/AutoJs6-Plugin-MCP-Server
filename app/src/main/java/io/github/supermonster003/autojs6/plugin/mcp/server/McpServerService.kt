@@ -222,6 +222,9 @@ class McpServerService : Service() {
         val stopAction = Notification.Action.Builder(R.drawable.ic_stat_mcp_server, getString(R.string.server_action_stop), stopPending).build()
         return builder
             .setSmallIcon(R.drawable.ic_stat_mcp_server)
+            .setContentIntent(PendingIntent.getActivity(this, 1,
+                Intent(this, io.github.supermonster003.autojs6.plugin.mcp.server.ui.McpServerSettingsActivity::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
             .setContentTitle(getString(R.string.app_name))
             .setContentText(text)
             .setStyle(Notification.BigTextStyle().bigText("$text\n$details"))

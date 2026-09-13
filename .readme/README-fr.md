@@ -52,7 +52,7 @@ Le serveur s'exécute dans le processus propre du plugin et est joignable via un
 
 ******
 
-Version de développement P3.5: 37 outils disponibles, dont 33 activés par défaut. Fichiers, positions dans un éditeur, recherche des applications, presse-papiers, activation automatique de l'accessibilité et Shell à sortie limitée sont disponibles. Le commutateur du menu et les réglages restent prévus pour P4. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Aperçu P4: 37 outils, dont 33 activés par défaut, avec un bouton dans le volet AutoJs6 et une page de paramètres du plugin. Nécessite la version AutoJs6 P4 correspondante. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -62,6 +62,7 @@ Version de développement P3.5: 37 outils disponibles, dont 33 activés par déf
 
 La feuille de route livre les capacités suivantes par étapes:
 
+- Paramètres du téléphone pour l'état, USB, le port et le réseau local, les jetons, la révocation des associations, les groupes et root, le mode développeur, les configurations copiables Claude Code / Cursor / Codex / HTTP et l'historique, avec l'apparence AutoJs6. Les changements réseau redémarrent le serveur actif; jetons et autorisations prennent effet immédiatement. Les fenêtres secrètes bloquent les captures.
 - Exécution de scripts : exécuter du JavaScript depuis un texte ou un fichier dans AutoJs6, lister et arrêter les moteurs, et lire la sortie récente de la console.
 - Interface d'accessibilité : exporter l'arbre des noeuds dans un format texte compact, trouver des noeuds avec la syntaxe de sélecteur d'AutoJs6, cliquer, appuyer longuement, faire défiler, saisir du texte et déclencher des touches globales comme Retour et Accueil.
 - Groupe de capture (P3.3): screen_capture renvoie des images MCP avec recadrage, scale ou maxWidth, JPEG / PNG / WebP et qualité réglable. Valeurs par défaut: JPEG, qualité 70, côté le plus long de 1280 px. Au-delà de 4 MiB de base64, la qualité ou les dimensions diminuent et les métadonnées indiquent les ajustements. screen_state fournit l'état, les dimensions, l'orientation et la densité. Le catalogue compte 37 outils. Le repli MediaProjection nécessite AutoJs6 compilé le 2026-09-13 ou après et un accord sur le téléphone, réutilisé par la session hôte.
@@ -78,10 +79,11 @@ La feuille de route livre les capacités suivantes par étapes:
 
 1. Installez l'APK du plugin depuis [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) sur un appareil disposant d'AutoJs6 build 5279 (6.8.0) ou ultérieur.
 2. Ouvrez le centre de plugins d'AutoJs6, vérifiez que `MCP Server` est reconnu et activez-le. Les paquets officiels passent automatiquement la vérification de signature.
-3. Pour cet aperçu, utilisez les commandes adb et une session de test hôte décrites dans les notes de développement; le commutateur du tiroir et les réglages du plugin sont prévus en P4.
+3. Activez MCP Server dans le volet AutoJs6. Appuyez longuement sur son titre ou ouvrez ses paramètres depuis le Centre de plugins. Copiez la configuration du client PC.
 4. Sur le PC, exécutez `adb forward tcp:9637 tcp:9637` et pointez le client MCP vers `http://127.0.0.1:9637/mcp` avec le jeton comme identifiant bearer.
+5. Confirmez la première demande d'association sur le téléphone. Arrêtez ensuite le serveur depuis le volet, les paramètres ou la notification.
 
-> Pour cet aperçu, utilisez les commandes adb et une session de test hôte décrites dans les notes de développement; le commutateur du tiroir et les réglages du plugin sont prévus en P4.
+> Bouton MCP Server avec guides d'installation, d'activation, d'autorisation et de compatibilité; arrêt synchronisé avec la notification; paramètres conservés à la reconnexion; accès vérifié à la même page depuis le volet et le Centre de plugins. Restaure le serveur à l'ouverture d'AutoJs6 sauf arrêt par l'utilisateur en l'absence de l'hôte; aucun lancement au démarrage de l'appareil.
 
 ******
 
@@ -96,7 +98,7 @@ adb forward tcp:9637 tcp:9637
 claude mcp add --transport http autojs6 http://127.0.0.1:9637/mcp --header "Authorization: Bearer <token>"
 ```
 
-Dans cette version de développement, lisez le jeton via le contrôle adb en mode développeur décrit dans les notes techniques. Son affichage dans les paramètres est prévu en P4.
+Activez MCP Server dans le volet AutoJs6. Appuyez longuement sur son titre ou ouvrez ses paramètres depuis le Centre de plugins. Copiez la configuration du client PC. Confirmez la première demande d'association sur le téléphone. Arrêtez ensuite le serveur depuis le volet, les paramètres ou la notification.
 
 ******
 
@@ -156,7 +158,8 @@ Les plans et l'avancement du plugin sont tenus sous forme de liste cochable dans
 
 _2026/09/13_
 
-- `Note` Version de développement P3.5: 37 outils disponibles, dont 33 activés par défaut. Fichiers, positions dans un éditeur, recherche des applications, presse-papiers, activation automatique de l'accessibilité et Shell à sortie limitée sont disponibles. Le commutateur du menu et les réglages restent prévus pour P4. ROADMAP.md.
+- `Note` Aperçu P4: 37 outils, dont 33 activés par défaut, avec un bouton dans le volet AutoJs6 et une page de paramètres du plugin. Nécessite la version AutoJs6 P4 correspondante. ROADMAP.md.
+- `Fonctionnalité` Paramètres du téléphone pour l'état, USB, le port et le réseau local, les jetons, la révocation des associations, les groupes et root, le mode développeur, les configurations copiables Claude Code / Cursor / Codex / HTTP et l'historique, avec l'apparence AutoJs6. Les changements réseau redémarrent le serveur actif; jetons et autorisations prennent effet immédiatement. Les fenêtres secrètes bloquent les captures.
 - `Fonctionnalité` Les ressources MCP (P3.5) donnent accès en lecture seule aux fichiers de travail, aux exemples du serveur hôte, aux informations de l'appareil et à la console récente, selon l'appairage et les groupes actifs. Les lectures de texte et de données binaires signalent toute troncature. Les modèles write_autojs6_script, automate_task et debug_selector proposent des instructions en anglais et en chinois, avec repli en anglais pour les autres langues du téléphone.
 - `Fonctionnalité` Outils du répertoire de travail (P3.4): files_list / stat / read / write / mkdir / rename / delete, editor_open avec ligne et colonne à partir de 1, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast et shell_exec. Lecture binaire en base64, au plus 1 MiB de données brutes. Les écritures respectent aussi le budget du host (normalement 96 KiB avec les échappements JSON). Suppression et Shell sont désactivés par défaut; root exige allowShellRoot et une autorisation shell.root du host. La version P3.4 correspondante du host est nécessaire.
 - `Fonctionnalité` Identité de plugin `mcp-server` avec le service INFO, la Wake Activity et le squelette du service `org.autojs.plugin.MCP_SERVER` pour la découverte par l'hôte
@@ -179,6 +182,7 @@ _2026/09/13_
 - `Dépendance` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) sur le moteur Ktor 3.5.1 CIO
 - `Dépendance` Ajout de Ktor 3.5.1 `ktor-server-test-host` pour les tests de transport JVM (portee de test uniquement)
 - `Dépendance` Ajout de `mcp-server-api.aar` (module `plugin-api/mcp-server-api` d'AutoJs6, build de l'hote 6.8.0 / 5279, MPL 2.0) comme contrat Binder entre AutoJs6 et le plugin, empreinte verrouillee dans `locks/host-api-aars.lock`
+- `Dépendance` Mise à jour des AAR common-plugin-api et mcp-server-api de l'hôte P4: extension facultative de paramètres v1, ordre AIDL inchangé, SHA-256 verrouillés et compatibilité SDK 36.
 
 ##### Pour plus d'historique des versions
 

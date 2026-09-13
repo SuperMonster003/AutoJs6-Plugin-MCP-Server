@@ -8,7 +8,8 @@
 
 ###### 2026/09/13
 
-* `ヒント` P3.5 開発プレビュー: 37 個のツールを提供し, 初期状態で 33 個が有効です. ファイル操作, エディターの位置指定, アプリ検索, クリップボード, アクセシビリティの自動有効化, 出力制限付き Shell が利用できます. ドロワーのスイッチと設定画面は P4 で実装予定です. ROADMAP.md.
+* `ヒント` P4 開発プレビュー: 37 ツール中 33 が既定で有効です. AutoJs6 のドロワースイッチとプラグイン設定画面を提供します. 対応する P4 AutoJs6 ビルドが必要です. ROADMAP.md.
+* `機能` サーバー状態, USB 転送, ポートと LAN, トークンの表示/コピー/更新, ペアリング解除, ツールグループと root, 開発者モード, Claude Code / Cursor / Codex / 汎用 HTTP 設定のコピー, リリース履歴を提供し AutoJs6 の外観に追従します. ネットワーク変更はリスナーを再起動し, トークンと権限は即時反映します. 秘密情報の画面は撮影を防止します.
 * `機能` MCP リソース (P3.5) は読み取り専用の作業ファイル, ホストのサンプル参照, デバイス情報, 最近のコンソール出力を提供し, ペアリングとグループ設定に従います. テキストとバイナリの読み取りには切り詰め情報が含まれます. write_autojs6_script, automate_task, debug_selector は英語と中国語に対応し, その他の端末言語では英語を使用します.
 * `機能` 作業ディレクトリのツール (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1 から始まる行と列を指定する editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. バイナリ読み取りは base64 で元データ最大 1 MiB. 書き込みはホストの要求上限にも従います (通常は JSON エスケープ込みで 96 KiB). 削除と Shell は初期状態で無効. root には allowShellRoot とホストの shell.root 許可が必要です. 対応する P3.4 ホストビルドが必要です.
 * `機能` ホスト検出用の INFO サービス, Wake Activity, `org.autojs.plugin.MCP_SERVER` サービスの骨組みを備えたプラグイン ID `mcp-server`
@@ -31,3 +32,4 @@
 * `依存関係` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) と Ktor 3.5.1 CIO エンジン
 * `依存関係` JVM トランスポートテスト用に Ktor 3.5.1 `ktor-server-test-host` を追加 (テストスコープのみ)
 * `依存関係` `mcp-server-api.aar` (AutoJs6 のモジュール `plugin-api/mcp-server-api`, ホストビルド 6.8.0 / 5279, MPL 2.0) を AutoJs6 とプラグイン間の Binder コントラクトとして追加し, `locks/host-api-aars.lock` でハッシュを固定
+* `依存関係` P4 ホストの common-plugin-api と mcp-server-api AAR を更新: 任意の設定拡張 v1, AIDL 順序維持, SHA-256 固定, SDK 36 互換性保持.

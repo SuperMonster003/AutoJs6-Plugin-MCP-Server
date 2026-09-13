@@ -52,7 +52,7 @@ MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]
 
 ******
 
-P3.5 개발 미리보기: 도구 37개 중 33개가 기본 활성화됩니다. 파일 작업, 편집기 위치 지정, 앱 조회, 클립보드, 접근성 자동 활성화, 출력이 제한된 Shell을 사용할 수 있습니다. 서랍 스위치와 설정 화면은 P4에서 구현할 예정입니다. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+P4 개발 미리 보기: 도구 37개 중 33개가 기본 활성화되며 AutoJs6 서랍 스위치와 플러그인 설정 페이지를 제공합니다. 해당 P4 AutoJs6 빌드가 필요합니다. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -62,6 +62,7 @@ P3.5 개발 미리보기: 도구 37개 중 33개가 기본 활성화됩니다. �
 
 로드맵은 다음 기능을 단계별로 제공합니다:
 
+- 서버 상태, USB 전달, 포트와 LAN, 토큰 표시/복사/교체, 페어링 해제, 도구 그룹과 root 권한, 개발자 모드, Claude Code / Cursor / Codex / 일반 HTTP 설정 복사, 출시 기록을 제공하며 AutoJs6 테마를 따릅니다. 네트워크 변경은 리스너를 재시작하고 토큰과 권한은 즉시 적용됩니다. 비밀 정보 창은 스크린샷을 차단합니다.
 - 스크립트 실행: AutoJs6 안에서 텍스트 또는 파일의 JavaScript를 실행하고, 엔진을 나열하거나 중지하며, 최근 콘솔 출력을 읽습니다.
 - 접근성 UI: 노드 트리를 간결한 텍스트 형식으로 덤프하고, AutoJs6 선택자 문법으로 노드를 찾고, 클릭, 길게 누르기, 스크롤, 텍스트 설정, 뒤로와 홈 같은 전역 키를 누릅니다.
 - 스크린샷 그룹 (P3.3): screen_capture는 자르기, scale 또는 maxWidth, JPEG / PNG / WebP, 품질 설정을 지원하는 MCP 이미지를 반환합니다. 기본값은 JPEG 품질 70, 긴 변 1280 px입니다. base64가 4 MiB를 초과하면 품질이나 크기를 낮춰 재시도하고 메타데이터에 변경을 표시합니다. screen_state는 화면 켜짐 상태, 크기, 방향, 밀도를 반환합니다. 도구 목록은 37개입니다. MediaProjection 대체 경로에는 2026-09-13 이후 빌드한 AutoJs6와 휴대전화의 승인이 필요하며 호스트 세션에서 승인을 재사용합니다.
@@ -78,10 +79,11 @@ P3.5 개발 미리보기: 도구 37개 중 33개가 기본 활성화됩니다. �
 
 1. AutoJs6 빌드 5279 (6.8.0) 이상이 설치된 기기에 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases)에서 플러그인 APK를 설치합니다.
 2. AutoJs6 플러그인 센터를 열어 `MCP Server`가 인식되었는지 확인하고 활성화합니다. 공식 릴리스 패키지는 서명 검증을 자동으로 통과합니다.
-3. 이 개발 미리 보기에서는 개발 문서에 설명된 adb 제어와 호스트 테스트 세션으로 연결합니다. 서랍 스위치와 플러그인 설정 화면은 P4에서 구현할 예정입니다.
+3. AutoJs6 서랍에서 MCP 서버를 켜세요. 제목을 길게 누르거나 플러그인 센터의 설정을 열어 PC 클라이언트 설정을 복사하세요.
 4. PC에서 `adb forward tcp:9637 tcp:9637`를 실행하고, MCP 클라이언트가 토큰을 Bearer 자격 증명으로 사용해 `http://127.0.0.1:9637/mcp`에 연결하도록 설정합니다.
+5. 휴대전화에서 첫 페어링 요청을 승인하세요. 사용 후 서랍, 설정 또는 알림에서 서버를 중지하세요.
 
-> 이 개발 미리 보기에서는 개발 문서에 설명된 adb 제어와 호스트 테스트 세션으로 연결합니다. 서랍 스위치와 플러그인 설정 화면은 P4에서 구현할 예정입니다.
+> 설치, 활성화, 승인, 호환성 안내를 갖춘 MCP 서버 스위치, 알림 중지 동기화, 재연결 시 설정 유지, 서랍과 플러그인 센터에서 권한 확인 후 동일한 설정 페이지 열기를 제공합니다. AutoJs6를 열면 이전 활성 상태를 복원하되 호스트 부재 중 사용자가 중지했다면 유지합니다. 기기 부팅 시 자동 시작하지 않습니다.
 
 ******
 
@@ -96,7 +98,7 @@ adb forward tcp:9637 tcp:9637
 claude mcp add --transport http autojs6 http://127.0.0.1:9637/mcp --header "Authorization: Bearer <token>"
 ```
 
-이 미리보기에서는 개발 문서에 설명된 개발자 모드 adb 제어 경로로 토큰을 읽습니다. 설정 페이지의 토큰 표시는 P4에서 구현할 예정입니다.
+AutoJs6 서랍에서 MCP 서버를 켜세요. 제목을 길게 누르거나 플러그인 센터의 설정을 열어 PC 클라이언트 설정을 복사하세요. 휴대전화에서 첫 페어링 요청을 승인하세요. 사용 후 서랍, 설정 또는 알림에서 서버를 중지하세요.
 
 ******
 
@@ -156,7 +158,8 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 _2026/09/13_
 
-- `힌트` P3.5 개발 미리보기: 도구 37개 중 33개가 기본 활성화됩니다. 파일 작업, 편집기 위치 지정, 앱 조회, 클립보드, 접근성 자동 활성화, 출력이 제한된 Shell을 사용할 수 있습니다. 서랍 스위치와 설정 화면은 P4에서 구현할 예정입니다. ROADMAP.md.
+- `힌트` P4 개발 미리 보기: 도구 37개 중 33개가 기본 활성화되며 AutoJs6 서랍 스위치와 플러그인 설정 페이지를 제공합니다. 해당 P4 AutoJs6 빌드가 필요합니다. ROADMAP.md.
+- `기능` 서버 상태, USB 전달, 포트와 LAN, 토큰 표시/복사/교체, 페어링 해제, 도구 그룹과 root 권한, 개발자 모드, Claude Code / Cursor / Codex / 일반 HTTP 설정 복사, 출시 기록을 제공하며 AutoJs6 테마를 따릅니다. 네트워크 변경은 리스너를 재시작하고 토큰과 권한은 즉시 적용됩니다. 비밀 정보 창은 스크린샷을 차단합니다.
 - `기능` MCP 리소스 (P3.5)는 페어링 및 그룹 설정에 따라 읽기 전용 작업 파일, 호스트 예제 탐색, 기기 정보, 최근 콘솔 출력을 제공합니다. 텍스트 및 바이너리 읽기는 잘림 상태를 보고합니다. write_autojs6_script, automate_task, debug_selector는 영어와 중국어를 지원하며, 다른 기기 언어에서는 영어를 사용합니다.
 - `기능` 작업 디렉터리 도구 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1부터 시작하는 행과 열을 받는 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. 바이너리 읽기는 base64이며 원본 데이터 최대 1 MiB입니다. 쓰기는 호스트 요청 한도도 따릅니다 (보통 JSON 이스케이프 포함 96 KiB). 삭제와 Shell은 기본 비활성화이며 root에는 allowShellRoot와 호스트 shell.root 권한이 추가로 필요합니다. 일치하는 P3.4 호스트 빌드가 필요합니다.
 - `기능` 호스트 발견을 위한 INFO 서비스, Wake Activity, `org.autojs.plugin.MCP_SERVER` 서비스 뼈대를 갖춘 플러그인 ID `mcp-server`
@@ -179,6 +182,7 @@ _2026/09/13_
 - `의존성` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`)과 Ktor 3.5.1 CIO 엔진
 - `의존성` JVM 전송 테스트를 위해 Ktor 3.5.1 `ktor-server-test-host` 추가 (테스트 범위만)
 - `의존성` `mcp-server-api.aar` (AutoJs6 모듈 `plugin-api/mcp-server-api`, 호스트 빌드 6.8.0 / 5279, MPL 2.0)을 AutoJs6와 플러그인 사이의 Binder 계약으로 추가하고 `locks/host-api-aars.lock`에 해시를 고정
+- `의존성` P4 호스트의 common-plugin-api 및 mcp-server-api AAR 업데이트: 선택적 설정 확장 v1, AIDL 순서 유지, SHA-256 잠금, SDK 36 호환성 유지.
 
 ##### 더 많은 릴리스 기록
 

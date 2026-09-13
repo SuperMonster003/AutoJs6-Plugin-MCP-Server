@@ -12,6 +12,8 @@ import org.autojs.plugin.mcp.server.api.IMcpServerCallback
 import org.autojs.plugin.mcp.server.api.IMcpServerPlugin
 import org.autojs.plugin.mcp.server.api.IMcpServerSession
 import org.autojs.plugin.mcp.server.api.McpServerContract
+import org.autojs.plugin.mcp.server.api.McpServerCapabilityKeys
+import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerLifecycleStore
 
 /**
  * Entry point the AutoJs6 host binds to (action `org.autojs.plugin.MCP_SERVER`, category
@@ -30,7 +32,9 @@ class McpServerPluginService : Service() {
 
         override fun getInfo(): PluginInfo = applicationContext.mcpServerPluginRuntimeInfo().toPluginInfo()
 
-        override fun getCapabilities(): Bundle = applicationContext.mcpServerPluginRuntimeInfo().capabilitiesBundle()
+        override fun getCapabilities(): Bundle = applicationContext.mcpServerPluginRuntimeInfo().capabilitiesBundle().apply {
+            putBoolean(McpServerCapabilityKeys.USER_STOPPED, ServerLifecycleStore(applicationContext).userStopped)
+        }
 
         override fun openServer(config: Bundle?, broker: IMcpHostCapabilityBroker?, callback: IMcpServerCallback?): IMcpServerSession {
             val callerUid = verifier.enforceHost()

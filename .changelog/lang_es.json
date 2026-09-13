@@ -8,9 +8,10 @@
     "v1.0.0": {
       "released_date": "2026/09/13",
       "hint": [
-        "Vista previa P3.5: 37 herramientas disponibles, 33 activadas de forma predeterminada. Incluye archivos, posiciones del editor, consultas de aplicaciones, portapapeles, activación de accesibilidad y Shell con salida limitada. El interruptor del menú lateral y los ajustes siguen previstos para P4. ROADMAP.md."
+        "Vista previa P4: 37 herramientas, 33 activadas por defecto, con un interruptor en AutoJs6 y una página de ajustes del complemento. Requiere la compilación AutoJs6 de P4 correspondiente. ROADMAP.md."
       ],
       "feature": [
+        "Ajustes del teléfono para estado del servidor, USB, puerto y red local, token, revocación de vínculos, grupos y root, modo de desarrollador, configuraciones copiables de Claude Code / Cursor / Codex / HTTP e historial de versiones, siguiendo el aspecto de AutoJs6. Los cambios de red reinician el servidor activo; tokens y permisos se aplican inmediatamente. Los diálogos secretos bloquean capturas.",
         "Los recursos MCP (P3.5) ofrecen archivos de trabajo de solo lectura, ejemplos del anfitrión, información del dispositivo y salida reciente de consola, respetando el emparejamiento y los grupos activos. Las lecturas de texto y datos binarios indican el truncamiento. Las plantillas write_autojs6_script, automate_task y debug_selector están disponibles en inglés y chino, con inglés para los demás idiomas del teléfono.",
         "Herramientas del directorio de trabajo (P3.4): files_list / stat / read / write / mkdir / rename / delete, editor_open con fila y columna desde 1, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast y shell_exec. Lectura binaria en base64, hasta 1 MiB de datos originales. La escritura respeta además el límite del host (normalmente 96 KiB con escapes JSON). El borrado y Shell están desactivados inicialmente; root requiere allowShellRoot y el permiso shell.root del host. Se necesita el host P3.4 correspondiente.",
         "Identidad de plugin `mcp-server` con el servicio INFO, la Wake Activity y el esqueleto del servicio `org.autojs.plugin.MCP_SERVER` para el descubrimiento por el anfitrión",
@@ -33,7 +34,8 @@
       "dependency": [
         "MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) sobre el motor Ktor 3.5.1 CIO",
         "Se agrega Ktor 3.5.1 `ktor-server-test-host` para las pruebas de transporte en JVM (solo ambito de pruebas)",
-        "Se agrega `mcp-server-api.aar` (modulo `plugin-api/mcp-server-api` de AutoJs6, compilacion del anfitrion 6.8.0 / 5279, MPL 2.0) como contrato Binder entre AutoJs6 y el plugin, con el hash fijado en `locks/host-api-aars.lock`"
+        "Se agrega `mcp-server-api.aar` (modulo `plugin-api/mcp-server-api` de AutoJs6, compilacion del anfitrion 6.8.0 / 5279, MPL 2.0) como contrato Binder entre AutoJs6 y el plugin, con el hash fijado en `locks/host-api-aars.lock`",
+        "Actualizar los AAR common-plugin-api y mcp-server-api del anfitrión P4: extensión opcional de ajustes v1, orden AIDL sin cambios, hashes SHA-256 y compatibilidad con SDK 36."
       ],
       "improvement": [
         "La verificación de compilación rechaza dependencias nativas accidentales y genera un informe JSON"

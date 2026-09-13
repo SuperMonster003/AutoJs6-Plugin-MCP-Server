@@ -8,7 +8,8 @@
 
 ###### 2026/09/13
 
-* `提示` P3.5 开发预览: 工具目录共 37 项, 默认启用 33 项. 文件操作, 编辑器定位, 应用查询, 剪贴板, 无障碍自动启用和限制输出的 Shell 已接入, 与脚本, UI 和截图工具配合使用. 抽屉开关和设置页仍计划在 P4 实现. ROADMAP.md.
+* `提示` P4 开发预览: 37 个工具, 默认启用 33 个, 提供 AutoJs6 抽屉开关和插件设置页. 需要配套的 P4 AutoJs6 构建. ROADMAP.md.
+* `新增` 手机设置页提供服务状态, USB 转发, 端口和局域网访问, 令牌显示/复制/轮换, 配对撤销, 工具分组和 root 权限, 开发者模式, 可复制的 Claude Code / Cursor / Codex / 通用 HTTP 配置及发行历史, 并跟随 AutoJs6 外观. 网络设置会重启运行中的监听器, 令牌和权限变更立即生效. 敏感信息窗口禁止截图.
 * `新增` MCP 资源 (P3.5) 提供只读工作目录文件, 可浏览的宿主示例, 设备信息和最近控制台输出, 遵守配对与分组开关. 文本和二进制读取报告截断状态. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指导, 其他手机语言回退英语.
 * `新增` 工作目录工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用从 1 开始的行列号的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二进制读取使用 base64, 原始数据最多 1 MiB. 写入还受宿主请求预算约束 (通常为包含 JSON 转义的 96 KiB). 文件删除和 Shell 默认关闭; root 另需 allowShellRoot 开关与宿主 shell.root 授权. 这些能力需要匹配的 P3.4 宿主构建.
 * `新增` 插件标识 `mcp-server`, 含 INFO 服务, Wake Activity 以及供宿主发现的 `org.autojs.plugin.MCP_SERVER` 服务骨架
@@ -31,3 +32,4 @@
 * `依赖` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 与 Ktor 3.5.1 CIO 引擎
 * `依赖` 附加 Ktor 3.5.1 `ktor-server-test-host` 用于 JVM 传输测试 (仅测试范围)
 * `依赖` 附加 `mcp-server-api.aar` (AutoJs6 模块 `plugin-api/mcp-server-api`, 宿主构建 6.8.0 / 5279, MPL 2.0) 作为 AutoJs6 与插件之间的 Binder 契约, 并在 `locks/host-api-aars.lock` 中锁定哈希
+* `依赖` 更新来自 P4 宿主构建的 common-plugin-api 和 mcp-server-api 配套 AAR: 可选设置扩展 v1, AIDL transaction 顺序不变, SHA-256 锁定, 保留 SDK 36 消费兼容性.

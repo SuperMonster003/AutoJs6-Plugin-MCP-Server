@@ -8,10 +8,11 @@
   "p_introduction_what": "MCP Server turns an Android device running AutoJs6 into a [Model Context Protocol]({{ mcp_spec_url }}) server. AI agents on a PC, such as Claude Code, Cursor, or the MCP Inspector, connect to the phone over USB or Wi-Fi and use tools to run scripts, read logs, inspect the accessibility node tree, tap and type, take screenshots, and work with files and apps.",
   "p_introduction_how": "The server runs inside the plugin's own process and is reached through a single Streamable HTTP endpoint. AutoJs6 hands the plugin a capability broker over Binder, so every tool call is executed by the host with its existing permissions, engines, and accessibility service; the plugin never duplicates host functionality.",
   "h3_status": "Status",
-  "p_status": "P3.5 development preview: 37 tools are available, with 33 enabled by default. File operations, editor positioning, application queries, clipboard, accessibility activation, and bounded Shell execution join the script, UI, and screenshot tools. The drawer switch and settings page remain planned in P4. [ROADMAP.md]({{ roadmap_url }}).",
+  "p_status": "P4 development preview: 37 tools, 33 enabled by default, with an AutoJs6 drawer switch and a plugin settings page. Requires the matching P4 AutoJs6 build. [ROADMAP.md]({{ roadmap_url }}).",
   "h3_features": "Planned Features",
   "p_features_intro": "The roadmap delivers the following capabilities in stages",
   "features": [
+    "Phone settings for server status, USB forwarding, port and LAN access, token display/copy/rotation, pairing revocation, tool groups and root permission, developer mode, copyable Claude Code / Cursor / Codex / generic HTTP configurations, release history, and appearance following AutoJs6. Network settings apply by restarting an active listener; token and permission changes take effect immediately. Secret dialogs block screenshots.",
     "Script execution: run JavaScript from text or from a file inside AutoJs6, list and stop engines, and read recent console output.",
     "Accessibility UI: dump the node tree in a compact text format, find nodes with the AutoJs6 selector syntax, click, long-press, scroll, set text, and press global keys such as Back and Home.",
     "Screenshot group (P3.3): screen_capture returns MCP images with crop, scale or maxWidth, JPEG / PNG / WebP, and quality controls. Defaults are JPEG quality 70 and longest edge 1280 px. Images above 4 MiB of base64 are retried at lower quality or smaller dimensions, with metadata reporting adjustments. screen_state reports power, dimensions, orientation and density. The catalog now has 37 tools. MediaProjection fallback requires an AutoJs6 host built on 2026-09-13 or later and consent on the phone; the host session reuses that consent.",
@@ -24,13 +25,14 @@
   "usage_steps": [
     "Install the plugin APK from [Releases]({{ repo_url }}/releases) on a device with AutoJs6 build {{ required_host_version_code }} ({{ required_host_version_name }}) or later.",
     "Open the AutoJs6 plugin center, confirm that `MCP Server` is recognized, and enable it. Official release packages pass signature verification automatically.",
-    "For this development preview, use the adb control plane and a host test session described in the developer notes; the drawer switch and plugin settings page are planned in P4.",
-    "On the PC, run `adb forward tcp:{{ mcp_default_port }} tcp:{{ mcp_default_port }}` and point the MCP client at `http://127.0.0.1:{{ mcp_default_port }}{{ mcp_endpoint_path }}` with the token as a bearer credential."
+    "Turn on MCP Server in the AutoJs6 drawer. Long-press its title to open settings, or use Settings in its Plugin Center entry. Copy the configuration for your PC client.",
+    "On the PC, run `adb forward tcp:{{ mcp_default_port }} tcp:{{ mcp_default_port }}` and point the MCP client at `http://127.0.0.1:{{ mcp_default_port }}{{ mcp_endpoint_path }}` with the token as a bearer credential.",
+    "Confirm the first pairing request on the phone. Stop the server from the drawer, settings, or the notification when finished."
   ],
-  "p_usage_note": "For this development preview, use the adb control plane and a host test session described in the developer notes; the drawer switch and plugin settings page are planned in P4.",
+  "p_usage_note": "MCP Server drawer switch with installation, activation, enablement, authorization, and compatibility guidance; notification Stop synchronization; saved plugin settings retained on reconnect; permission-checked settings entry from the drawer and Plugin Center. Restores a previously enabled server when AutoJs6 opens, unless the user stopped it while the host was absent; no boot startup.",
   "h3_quick_start": "Client Configuration",
   "p_quick_start_intro": "Claude Code registers the server with one command; other clients use the same URL and header in their MCP configuration",
-  "p_quick_start_note": "In this preview, read the token through the developer-mode adb control plane described in the developer notes. The token display in the settings page is planned in P4.",
+  "p_quick_start_note": "Turn on MCP Server in the AutoJs6 drawer. Long-press its title to open settings, or use Settings in its Plugin Center entry. Copy the configuration for your PC client. Confirm the first pairing request on the phone. Stop the server from the drawer, settings, or the notification when finished.",
   "h3_security": "Permissions and Security",
   "p_security_intro": "The plugin follows explicit boundaries:",
   "security_points": [

@@ -24,7 +24,8 @@ class ToolPermissionStore(context: Context) {
         }
     }
 
-    fun update(transform: (ToolPermissions) -> ToolPermissions): ToolPermissions = transform(load()).also(::save)
+    fun update(transform: (ToolPermissions) -> ToolPermissions): ToolPermissions =
+        ToolPermissions.decode(document.update { transform(ToolPermissions.decode(it)).encode() })
 
     /** Drops every override; the next [load] yields the D6 defaults. */
     fun reset() {

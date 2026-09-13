@@ -33,7 +33,10 @@ class ServerConfigStore(context: Context) {
         }
     }
 
-    fun update(transform: (ServerConfig) -> ServerConfig): ServerConfig = transform(load()).also(::save)
+    fun update(transform: (ServerConfig) -> ServerConfig): ServerConfig {
+        val stored = document.update { encode(transform(ServerConfig.fromMap(decode(it)))) }
+        return ServerConfig.fromMap(decode(stored))
+    }
 
     private fun encode(config: ServerConfig): String = buildJsonObject {
         config.toMap().forEach { (key, value) -> put(key, value) }
