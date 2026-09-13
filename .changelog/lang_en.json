@@ -41,7 +41,8 @@
         "Build verification rejects accidental native dependencies and produces a JSON report"
       ],
       "fix": [
-        "IDE rebuild no longer looks for an APK for JVM unit tests. APK verification tasks automatically assemble their inputs and work from a clean build."
+        "IDE rebuild no longer looks for an APK for JVM unit tests. APK verification tasks automatically assemble their inputs and work from a clean build.",
+        "Plugin Center icon proportions differed between light and dark modes; night mode now also uses the adaptive icon, with layer sizing adjusted to preserve the complete ic_launcher_round.png artwork and margins while changing only the background color"
       ]
     }
   }
