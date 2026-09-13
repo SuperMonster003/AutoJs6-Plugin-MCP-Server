@@ -8,6 +8,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import org.autojs.plugin.mcp.server.api.McpServerContract
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -99,6 +101,10 @@ class HostBridgeClient(
                 ToolFailure(ToolErrorCodes.CAPABILITY_DENIED, "the host grant does not include $module.$method", ToolFailure.HINT_CAPABILITY, module = module, method = method),
             )
         }
+        if ("shell.root" in permissions && "shell.root" !in info.permissions) {
+            return BridgeOutcome.Failed(ToolFailure(ToolErrorCodes.CAPABILITY_DENIED,
+                "the host grant does not include shell.root", ToolFailure.HINT_CAPABILITY, module = module, method = method))
+        }
         val effectiveTimeoutMs = timeoutMs.coerceIn(1L, info.maxTimeoutMs.coerceAtLeast(1L))
         if (!semaphore.tryAcquire()) {
             val acquired = withTimeoutOrNull(minOf(effectiveTimeoutMs, QUEUE_WAIT_MS)) {
@@ -112,6 +118,9 @@ class HostBridgeClient(
         try {
             val id = "$ID_PREFIX${nextId.getAndIncrement()}"
             val request = BridgeRequest(id, module, method, args, effectiveTimeoutMs, permissions)
+            if (request.toJson().toByteArray(Charsets.UTF_8).size > minOf(info.maxRequestBytes, McpServerContract.MAX_BRIDGE_INLINE_JSON_BYTES)) {
+                return BridgeOutcome.Failed(ToolFailure.limitExceeded("the encoded bridge request exceeds the negotiated ${info.maxRequestBytes} byte budget"))
+            }
             val startedAt = clock()
             val outcome = withTimeoutOrNull(effectiveTimeoutMs + GRACE_MS) {
                 val reply = suspendCancellableCoroutine { continuation: CancellableContinuation<BridgeReply> ->
@@ -140,7 +149,9 @@ class HostBridgeClient(
                                 BridgeOutcome.Failed(ToolFailure.limitExceeded("the host payload length is outside the bridge limit"))
                             } else {
                                 val payload = reply.payload?.let { withContext(Dispatchers.IO) { it.read() } }
-                                BridgeOutcome.Ok(response.result, clock() - startedAt, payload)
+                                if (payload?.mime == "application/json" && (response.result as? JsonObject)?.keys == setOf("payload")) {
+                                    BridgeOutcome.Ok(Json.parseToJsonElement(payload.data.decodeToString(throwOnInvalidSequence = true)), clock() - startedAt)
+                                } else BridgeOutcome.Ok(response.result, clock() - startedAt, payload)
                             }
                         }
                     }

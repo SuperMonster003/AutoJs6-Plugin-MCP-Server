@@ -38,6 +38,65 @@ object ToolCatalog {
     const val UI_GESTURE = "ui_gesture"
     const val SCREEN_CAPTURE = "screen_capture"
     const val SCREEN_STATE = "screen_state"
+    const val FILES_LIST = "files_list"
+    const val FILES_STAT = "files_stat"
+    const val FILES_READ = "files_read"
+    const val FILES_WRITE = "files_write"
+    const val FILES_MKDIR = "files_mkdir"
+    const val FILES_RENAME = "files_rename"
+    const val FILES_DELETE = "files_delete"
+    const val EDITOR_OPEN = "editor_open"
+    const val APP_LAUNCH = "app_launch"
+    const val APP_LIST = "app_list"
+    const val CLIPBOARD_GET = "clipboard_get"
+    const val CLIPBOARD_SET = "clipboard_set"
+    const val DEVICE_ENSURE_ACCESSIBILITY = "device_ensure_accessibility"
+    const val TOAST = "toast"
+    const val SHELL_EXEC = "shell_exec"
+
+    val FILE_NAMES = listOf(FILES_LIST, FILES_STAT, FILES_READ, FILES_WRITE, FILES_MKDIR, FILES_RENAME, FILES_DELETE)
+    val DEVICE_ACTION_NAMES = listOf(EDITOR_OPEN, APP_LAUNCH, APP_LIST, CLIPBOARD_GET, CLIPBOARD_SET, DEVICE_ENSURE_ACCESSIBILITY, TOAST)
+
+    object Files {
+        const val MAX_BYTES = 1024 * 1024
+        const val MAX_ENTRIES = 2000L
+    }
+
+    object Device {
+        const val MAX_TEXT_BYTES = 64 * 1024
+        const val ENSURE_TIMEOUT_MS = 15_000L
+    }
+
+    object Shell {
+        const val DEFAULT_TIMEOUT_MS = 15_000L
+        const val MAX_TIMEOUT_MS = 120_000L
+        const val DEFAULT_OUTPUT_BYTES = 64 * 1024L
+        const val MAX_OUTPUT_BYTES = 256 * 1024L
+        const val MAX_COMMAND_BYTES = 16 * 1024
+    }
+
+    /** Argument keys for workspace, application, device, and shell tools (P3.4). */
+    object Workspace {
+        const val PATH = "path"
+        const val RECURSIVE = "recursive"
+        const val MAX_ENTRIES = "maxEntries"
+        const val ENCODING = "encoding"
+        const val MAX_BYTES = "maxBytes"
+        const val CONTENT = "content"
+        const val CREATE_DIRS = "createDirs"
+        const val OVERWRITE = "overwrite"
+        const val TO = "to"
+        const val LINE = "line"
+        const val COLUMN = "column"
+        const val PACKAGE_NAME = "packageName"
+        const val APP_NAME = "appName"
+        const val QUERY = "query"
+        const val TEXT = "text"
+        const val CMD = "cmd"
+        const val ROOT = "root"
+        const val TIMEOUT_MS = "timeoutMs"
+        const val MAX_OUTPUT_BYTES = "maxOutputBytes"
+    }
 
     /** Screenshot options shared by the catalog and ScreenTools (P3.3). */
     object Screen {
@@ -566,12 +625,70 @@ object ToolCatalog {
         hints = ToolHints(readOnly = true, idempotent = true),
     )
 
+    private fun pathSchema() = JsonSchemas.string("POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal", maxLength = WorkspacePath.MAX_BYTES)
+
+    val filesList = fileSpec(FILES_LIST, "List files", "Lists workspace files with metadata. Results are bounded and report truncation.", "list",
+        linkedMapOf(Workspace.PATH to pathSchema(), Workspace.RECURSIVE to JsonSchemas.boolean("Include subdirectories", default = false),
+            Workspace.MAX_ENTRIES to JsonSchemas.integer("Maximum entries", minimum = 1, maximum = Files.MAX_ENTRIES, default = 500)), emptyList())
+    val filesStat = fileSpec(FILES_STAT, "File metadata", "Returns existence, type, size, and modification time of a workspace path.", "stat")
+    val filesRead = fileSpec(FILES_READ, "Read file", "Reads up to 1 MiB. Use encoding base64 for binary data; encoding, bytes, totalBytes, and truncated identify the representation and limit.", "read",
+        linkedMapOf(Workspace.PATH to pathSchema(), Workspace.ENCODING to JsonSchemas.string("Content encoding", enum = listOf("utf-8", "base64"), default = "utf-8"),
+            Workspace.MAX_BYTES to JsonSchemas.integer("Maximum raw file bytes", minimum = 1, maximum = Files.MAX_BYTES.toLong(), default = Files.MAX_BYTES.toLong())))
+    val filesWrite = fileSpec(FILES_WRITE, "Write file", "Writes UTF-8 text and refreshes the host explorer. Content is limited to 1 MiB and the negotiated Binder request budget (normally 96 KiB including JSON escaping); oversized calls fail before writing.", "write",
+        linkedMapOf(Workspace.PATH to pathSchema(), Workspace.CONTENT to JsonSchemas.string("UTF-8 text", maxLength = Files.MAX_BYTES),
+            Workspace.CREATE_DIRS to JsonSchemas.boolean("Create missing parents", default = true), Workspace.OVERWRITE to JsonSchemas.boolean("Replace an existing file", default = true)),
+        listOf(Workspace.PATH, Workspace.CONTENT), writes = true)
+    val filesMkdir = fileSpec(FILES_MKDIR, "Create directory", "Creates a workspace directory and missing parents, then refreshes the host explorer.", "mkdir", writes = true)
+    val filesRename = fileSpec(FILES_RENAME, "Rename file", "Moves a workspace file or directory to another workspace path and refreshes the host explorer.", "rename",
+        linkedMapOf(Workspace.PATH to pathSchema(), Workspace.TO to pathSchema(), Workspace.OVERWRITE to JsonSchemas.boolean("Replace an existing destination", default = false)), listOf(Workspace.PATH, Workspace.TO), writes = true)
+    val filesDelete = fileSpec(FILES_DELETE, "Delete file", "Deletes a workspace entry. The separate files_delete group is off by default. The workspace root cannot be deleted.", "delete",
+        linkedMapOf(Workspace.PATH to pathSchema(), Workspace.RECURSIVE to JsonSchemas.boolean("Delete a directory and its contents", default = false)), writes = true, deletes = true)
+
+    val editorOpen = ToolSpec(EDITOR_OPEN, "Open editor", "Opens a workspace file in the AutoJs6 editor at a one-based line and column. Lines outside the file are ignored by the editor.",
+        JsonSchemas.objectSchema(linkedMapOf(Workspace.PATH to pathSchema(),
+            Workspace.LINE to JsonSchemas.integer("One-based line", minimum = 1, maximum = 1_000_000, default = 1),
+            Workspace.COLUMN to JsonSchemas.integer("One-based column", minimum = 1, maximum = 1_000_000, default = 1)), listOf(Workspace.PATH)),
+        ToolGroup.FILES, bridge = BridgeMethod("app", "editFile"), permissions = listOf("app.activity"))
+    val appLaunch = ToolSpec(APP_LAUNCH, "Launch application", "Opens an installed Android application. Provide exactly one of packageName or appName.",
+        JsonSchemas.objectSchema(linkedMapOf(Workspace.PACKAGE_NAME to JsonSchemas.string("Android package name", maxLength = 512),
+            Workspace.APP_NAME to JsonSchemas.string("Application label", maxLength = 512))),
+        ToolGroup.DEVICE, bridge = BridgeMethod("app", "launchPackage"), permissions = listOf("app.launch"), hints = ToolHints(openWorld = true))
+    val appList = ToolSpec(APP_LIST, "List applications", "Lists up to 1000 Android applications visible to AutoJs6, optionally matching a package name or label. Android package visibility restrictions apply.",
+        JsonSchemas.objectSchema(linkedMapOf(Workspace.QUERY to JsonSchemas.string("Case-insensitive package or label substring", maxLength = 512, default = ""))),
+        ToolGroup.DEVICE, bridge = BridgeMethod("package_manager", "listApps"), permissions = listOf("package_manager"), hints = ToolHints(readOnly = true, idempotent = true))
+    val clipboardGet = ToolSpec(CLIPBOARD_GET, "Read clipboard", "Reads clipboard text (up to 64 KiB). Android may restrict clipboard access while AutoJs6 is in the background.",
+        JsonSchemas.objectSchema(), ToolGroup.DEVICE, bridge = BridgeMethod("clipboard", "getText"), permissions = listOf("clipboard"), hints = ToolHints(readOnly = true, idempotent = true))
+    val clipboardSet = ToolSpec(CLIPBOARD_SET, "Write clipboard", "Replaces clipboard text, including an empty string to clear it.",
+        JsonSchemas.objectSchema(linkedMapOf(Workspace.TEXT to JsonSchemas.string("Clipboard text", maxLength = Device.MAX_TEXT_BYTES)), listOf(Workspace.TEXT)),
+        ToolGroup.DEVICE, bridge = BridgeMethod("clipboard", "setText"), permissions = listOf("clipboard"))
+    val deviceEnsureAccessibility = ToolSpec(DEVICE_ENSURE_ACCESSIBILITY, "Enable accessibility", "Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance.",
+        JsonSchemas.objectSchema(), ToolGroup.DEVICE, bridge = BridgeMethod("accessibility", "ensureEnabled"), permissions = listOf("accessibility"), timeoutMs = Device.ENSURE_TIMEOUT_MS)
+    val toast = ToolSpec(TOAST, "Show toast", "Shows a short Android toast on the phone.",
+        JsonSchemas.objectSchema(linkedMapOf(Workspace.TEXT to JsonSchemas.string("Toast text", maxLength = 4096)), listOf(Workspace.TEXT)),
+        ToolGroup.DEVICE, bridge = BridgeMethod("toast", "toast"), permissions = listOf("toast"))
+    val shellExec = ToolSpec(SHELL_EXEC, "Execute shell command", "Runs an Android shell command in the host workspace. The shell group is off by default; root also requires the separate allow root switch and a shell.root host grant. Reports exit code, timeout, stdout, stderr, and truncation. maxOutputBytes bounds stdout and stderr together.",
+        JsonSchemas.objectSchema(linkedMapOf(Workspace.CMD to JsonSchemas.string("Shell command", maxLength = Shell.MAX_COMMAND_BYTES),
+            Workspace.ROOT to JsonSchemas.boolean("Request root privileges", default = false),
+            Workspace.TIMEOUT_MS to JsonSchemas.integer("Process timeout in milliseconds", minimum = 1, maximum = Shell.MAX_TIMEOUT_MS, default = Shell.DEFAULT_TIMEOUT_MS),
+            Workspace.MAX_OUTPUT_BYTES to JsonSchemas.integer("Combined UTF-8 output byte limit", minimum = 1, maximum = Shell.MAX_OUTPUT_BYTES, default = Shell.DEFAULT_OUTPUT_BYTES)), listOf(Workspace.CMD)),
+        ToolGroup.SHELL, bridge = BridgeMethod("shell", "exec"), permissions = listOf("shell"), timeoutMs = Shell.DEFAULT_TIMEOUT_MS + 2_000,
+        maxTimeoutMs = Shell.MAX_TIMEOUT_MS + 2_000, hints = ToolHints(destructive = true, openWorld = true))
+
+    private fun fileSpec(name: String, title: String, description: String, method: String,
+        properties: LinkedHashMap<String, JsonObject> = linkedMapOf(Workspace.PATH to pathSchema()), required: List<String> = listOf(Workspace.PATH),
+        writes: Boolean = false, deletes: Boolean = false) = ToolSpec(name, title, description,
+        JsonSchemas.objectSchema(properties, required), if (deletes) ToolGroup.FILES_DELETE else ToolGroup.FILES,
+        bridge = BridgeMethod("files", method), permissions = listOf("files") + when { deletes -> listOf("files.delete"); writes -> listOf("files.write"); else -> emptyList() },
+        hints = ToolHints(readOnly = !writes, destructive = writes, idempotent = !writes))
+
     val all: List<ToolSpec> = listOf(
         devicePing, deviceInfo,
         scriptRun, scriptRunFile, scriptStop, scriptStopAll, scriptList, consoleTail,
         uiDump, uiFind, uiCurrentWindow, uiExplainSelector, uiWaitFor, uiClick, uiLongClick, uiSetText, uiScroll, uiPressKey,
         uiSwipe, uiGesture,
         screenCapture, screenState,
+        filesList, filesStat, filesRead, filesWrite, filesMkdir, filesRename, filesDelete, editorOpen,
+        appLaunch, appList, clipboardGet, clipboardSet, deviceEnsureAccessibility, toast, shellExec,
     )
 
     val byName: Map<String, ToolSpec> = all.associateBy { it.name }

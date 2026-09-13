@@ -8,7 +8,8 @@
 
 ###### 2026/09/13
 
-* `힌트` P3.3 개발 미리 보기: 인증과 페어링을 사용하는 MCP 엔드포인트, 스크립트, UI, 스크린샷 도구가 구현되었습니다. screen_capture는 JPEG, PNG, WebP 이미지를 반환하고 screen_state는 화면 크기와 방향을 반환합니다. 서랍 스위치와 설정 화면은 P4에서 구현할 예정입니다. 진행 상황과 기기 검증 결과는 ROADMAP.md를 참조하세요.
+* `힌트` P3.4 개발 미리보기: 도구 37개 중 33개가 기본 활성화됩니다. 파일 작업, 편집기 위치 지정, 앱 조회, 클립보드, 접근성 자동 활성화, 출력이 제한된 Shell을 사용할 수 있습니다. 서랍 스위치와 설정 화면은 P4에서 구현할 예정입니다. ROADMAP.md.
+* `기능` 작업 디렉터리 도구 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1부터 시작하는 행과 열을 받는 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. 바이너리 읽기는 base64이며 원본 데이터 최대 1 MiB입니다. 쓰기는 호스트 요청 한도도 따릅니다 (보통 JSON 이스케이프 포함 96 KiB). 삭제와 Shell은 기본 비활성화이며 root에는 allowShellRoot와 호스트 shell.root 권한이 추가로 필요합니다. 일치하는 P3.4 호스트 빌드가 필요합니다.
 * `기능` 호스트 발견을 위한 INFO 서비스, Wake Activity, `org.autojs.plugin.MCP_SERVER` 서비스 뼈대를 갖춘 플러그인 ID `mcp-server`
 * `기능` 10개 언어의 README, 플러그인 센터 안내, 변경 기록
 * `기능` `http://127.0.0.1:9637/mcp`의 Streamable HTTP 엔드포인트와 `device_ping` 도구. adb 또는 호스트가 켜고 끌 수 있는 포그라운드 서비스가 제공 (개발 프리뷰)
