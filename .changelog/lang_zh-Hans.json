@@ -39,6 +39,9 @@
       ],
       "improvement": [
         "构建阶段阻止意外引入原生依赖, 并输出 JSON 校验报告"
+      ],
+      "fix": [
+        "IDE rebuild 不再为 JVM 单元测试查找 APK. APK 校验任务会自动组装所需产物, 可直接从 clean 后执行."
       ]
     }
   }

@@ -39,6 +39,9 @@
       ],
       "improvement": [
         "La vérification de compilation rejette les dépendances natives involontaires et produit un rapport JSON"
+      ],
+      "fix": [
+        "Le rebuild de l'IDE ne recherche plus d'APK pour les tests unitaires JVM. Les tâches de vérification des APK assemblent automatiquement leurs entrées et fonctionnent après un clean."
       ]
     }
   }

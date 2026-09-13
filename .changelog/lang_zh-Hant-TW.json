@@ -39,6 +39,9 @@
       ],
       "improvement": [
         "建置階段阻止意外引入原生相依套件, 並輸出 JSON 校驗報告"
+      ],
+      "fix": [
+        "IDE rebuild 不再為 JVM 單元測試尋找 APK. APK 驗證工作會自動組建所需產物, 可直接從 clean 後執行."
       ]
     }
   }

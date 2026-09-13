@@ -767,3 +767,12 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 修复与环境: stop / close 恢复同步 Binder 语义并与启动队列排序; Activity 重建测试改为定位新的 resumed 实例; 工具栏 / 系统栏按亮度选文字颜色. API 24 AVD 在截图中发生 SurfaceFlinger / RenderThread 原生图形错误, adb 重启仍复现; 保留用户数据以 SwiftShader 冷启动后 20/20 通过 (5m 27s), 已补最终截图, 未修改 AVD 配置文件. 宿主全量 lint 运行约 45 分钟仍在分析, 本次主动取消, 不计为通过.
 - 未完成: 真机四态截图与 OEM 新装激活矩阵, 键盘 / TalkBack, 完整进程死亡恢复, 手机复制粘贴与 Cursor 客户端连接. P4 对应验收条目保持未勾选. 无宿主运行时依赖变化, 本次未重复宿主 release 构建; 插件签名发行 APK `autojs6-plugin-mcp-server-v1.0.0-e9042e6d.apk` 已生成, 1356610 字节, CRC32 `e9042e6d` 校验一致; 最后 Temurin 模拟构建 5m 20s, 平台信息仅 1 段. 未 push 或发布.
 - 下次会话建议起点: 将宿主 feat/mcp-p4 与同期新增的 SDK 37 主线提交集成并复验 (本轮未合并宿主 master); 补齐 P4 的真机四态 / 无障碍 / 进程恢复与客户端粘贴验收, 再进入 P5 连接路径和客户端兼容矩阵.
+
+### 2026-09-13: rebuild 与 APK 校验任务依赖
+
+- 完成: 修正 native-alignment 1.8.0 按 assemble 任务名误注册 JVM 单元测试 APK 校验的问题. 仅禁用无 APK 产物的 UnitTest 校验任务, Debug / Release 与聚合校验任务通过 dependsOn 自动组装各自输入, expectNoNativeLibraries 继续生效. CI 先编译 JVM 测试, 再由聚合校验入口构建应用 APK. 10 语言 changelog 与生成文档同步, 操作说明见 docs/16kb.md.
+- 回归证据: 修改前 assembleDebugUnitTest 在 44 s 后复现 No APK found for 'DebugUnitTest'; 修改后 clean + assembleDebugUnitTest 在 35 s 内通过, app/build 下 APK 数量为 0, 误注册校验任务为 SKIPPED. 验证环境为 Gradle 9.5.0, AGP 9.3.2, JDK 21, 模拟 Temurin 21.0.12.1+1 平台选择.
+- 构建验证: 在上述 0 APK 状态下直接调用 verifyNativePageAlignment, 自动完成 Debug / Release (含 R8) 组装, 两份变体报告与 all.json 均为 ok=true / skipped=false, 汇总包含 2 个 APK / 0 个原生条目. 同轮 JVM 202/202, androidTest APK 与 lintDebug 通过 (lint 0 errors / 8 warnings), 总耗时 2m 46s, 平台版本信息仅 1 段. IDE build_project(rebuild=true) 也成功完成完整 rebuild, 仅报告 2 条测试源码编译警告.
+- 设备与文档: API 35 / 23046RP50C 的 connectedDebugAndroidTest 限定 McpServerPluginContractTest, 3/3 通过 (38 s), 覆盖发现 / INFO / Binder / 非宿主调用拒绝, 使用 leaveApksInstalledAfterRun 保留安装包和应用数据. 10 语言 / 36 产物生成检查通过. 本轮未重复完整多设备运行时矩阵, 未执行发行打包或远程 CI, 验证范围限定为构建回归与插件契约.
+- 范围: 本轮为构建任务配置修复, 未改动服务器运行时, 宿主契约或依赖版本. VERSION_BUILD 按本次提交后的 Git 可达提交数校正.
+- 下次会话建议起点: 继续上一条记录中的 P4 集成与验收, 随后 P5 连接路径和客户端兼容矩阵.
