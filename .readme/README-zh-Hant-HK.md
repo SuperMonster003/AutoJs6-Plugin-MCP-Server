@@ -179,6 +179,7 @@ _2026/09/13_
 - `新增` 新增 UI 分組 (roadmap P3.2): `ui_dump` 以帶 `#n` 引用的緊湊節點樹回傳當前視窗 (`format` 為 text / json / xml, `maxNodes` 最多 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` 輪詢選擇器, `ui_current_window` 與 `ui_explain_selector` 報告視窗與選擇器失敗的原因, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` 作用於 `nodeRef` (按指紋重新定位, 節點消失時回傳 `NODE_REF_STALE`) 或 `selector`, `ui_press_key` 按下 back / home / recents / notifications / quick_settings / power_dialog / lock_screen, 預設關閉的 `ui_gesture` 分組新增 `ui_swipe`, `ui_gesture` 與點擊工具的座標形式 (分組關閉時回傳 `TOOL_DISABLED`); 工具目錄快照增至 20 個工具; 座標手勢需要 2026-09-11 或之後構建的 AutoJs6 宿主 (更早的宿主會隨機以 "the system cancelled ..." 回應)
 - `新增` 截圖分組 (P3.3): screen_capture 傳回 MCP 圖片, 支援裁剪, scale 或 maxWidth, JPEG / PNG / WebP 與品質參數. 預設 JPEG 品質 70, 最長邊 1280 px. base64 超過 4 MiB 時降低品質或尺寸重試, 中繼資料說明調整情況. screen_state 傳回亮屏狀態, 尺寸, 方向和密度. 工具目錄現有 22 項. MediaProjection 回退需要 2026-09-13 或之後建置的 AutoJs6 主程式及手機端授權, 主程式工作階段重用該授權.
 - `修復` IDE rebuild 不再為 JVM 單元測試尋找 APK. APK 驗證任務會自動組裝所需產物, 可直接從 clean 後執行.
+- `修復` 外掛程式中心明暗模式下圖示比例不一致及自適應圖示留白不足的問題; 夜間同樣使用自適應圖示, 調整圖層尺寸以保留 ic_launcher_round.png 的完整圖形和留白, 僅切換背景色
 - `優化` 建置階段阻止意外引入原生相依套件, 並輸出 JSON 校驗報告
 - `依賴` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 與 Ktor 3.5.1 CIO 引擎
 - `依賴` 附加 Ktor 3.5.1 `ktor-server-test-host` 用於 JVM 傳輸測試 (僅測試範圍)

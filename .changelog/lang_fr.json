@@ -41,7 +41,8 @@
         "La vérification de compilation rejette les dépendances natives involontaires et produit un rapport JSON"
       ],
       "fix": [
-        "Le rebuild de l'IDE ne recherche plus d'APK pour les tests unitaires JVM. Les tâches de vérification des APK assemblent automatiquement leurs entrées et fonctionnent après un clean."
+        "Le rebuild de l'IDE ne recherche plus d'APK pour les tests unitaires JVM. Les tâches de vérification des APK assemblent automatiquement leurs entrées et fonctionnent après un clean.",
+        "Les proportions de l'icône du centre de plugins variaient entre les modes clair et sombre; le mode nuit utilise aussi l'icône adaptative, avec des couches redimensionnées pour conserver le dessin complet et les marges de ic_launcher_round.png, seul le fond changeant de couleur"
       ]
     }
   }
