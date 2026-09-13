@@ -8,9 +8,10 @@
     "v1.0.0": {
       "released_date": "2026/09/13",
       "hint": [
-        "Aperçu de développement jusqu'à P3.3: le point MCP authentifié, l'appairage, les outils de script, d'interface et de capture sont implémentés. screen_capture renvoie des images JPEG, PNG ou WebP; screen_state indique les dimensions et l'orientation. Le commutateur du tiroir et les réglages sont prévus en P4. Voir ROADMAP.md pour les progrès et les essais sur appareils."
+        "Version de développement P3.4: 37 outils disponibles, dont 33 activés par défaut. Fichiers, positions dans un éditeur, recherche des applications, presse-papiers, activation automatique de l'accessibilité et Shell à sortie limitée sont disponibles. Le commutateur du menu et les réglages restent prévus pour P4. ROADMAP.md."
       ],
       "feature": [
+        "Outils du répertoire de travail (P3.4): files_list / stat / read / write / mkdir / rename / delete, editor_open avec ligne et colonne à partir de 1, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast et shell_exec. Lecture binaire en base64, au plus 1 MiB de données brutes. Les écritures respectent aussi le budget du host (normalement 96 KiB avec les échappements JSON). Suppression et Shell sont désactivés par défaut; root exige allowShellRoot et une autorisation shell.root du host. La version P3.4 correspondante du host est nécessaire.",
         "Identité de plugin `mcp-server` avec le service INFO, la Wake Activity et le squelette du service `org.autojs.plugin.MCP_SERVER` pour la découverte par l'hôte",
         "README, instructions du centre de plugins et journal des modifications en 10 langues",
         "Point de terminaison Streamable HTTP sur `http://127.0.0.1:9637/mcp` avec l'outil `device_ping`, hébergé par un service de premier plan que adb ou l'hôte peut activer et désactiver (aperçu de développement)",

@@ -52,7 +52,7 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 
 ******
 
-开发预览已推进至 P3.3: 带鉴权与配对的 MCP 端点, 脚本工具, UI 工具和截图工具均已实现. screen_capture 返回 JPEG, PNG 或 WebP 图片, screen_state 返回屏幕尺寸与方向. 抽屉开关和设置页仍计划在 P4 实现. 进度与设备证据见 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+P3.4 开发预览: 工具目录共 37 项, 默认启用 33 项. 文件操作, 编辑器定位, 应用查询, 剪贴板, 无障碍自动启用和限制输出的 Shell 已接入, 与脚本, UI 和截图工具配合使用. 抽屉开关和设置页仍计划在 P4 实现. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -64,8 +64,8 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 
 - 脚本执行: 在 AutoJs6 内运行文本或文件形式的 JavaScript, 列出与停止引擎, 读取最近的控制台输出.
 - 无障碍界面: 以紧凑文本格式导出节点树, 用 AutoJs6 选择器语法查找节点, 点击, 长按, 滚动, 设置文本, 以及触发返回和主屏幕等全局按键.
-- 截图分组 (P3.3): screen_capture 返回 MCP 图片, 支持裁剪, scale 或 maxWidth, JPEG / PNG / WebP 与质量参数. 默认 JPEG 质量 70, 最长边 1280 px. base64 超过 4 MiB 时降低质量或尺寸重试, 元数据说明调整情况. screen_state 返回亮屏状态, 尺寸, 方向和密度. 工具目录现有 22 项. MediaProjection 回退需要 2026-09-13 或之后构建的 AutoJs6 宿主及手机端授权, 宿主会话复用该授权.
-- 文件, 应用与设备: 读写 AutoJs6 工作目录下的文件, 启动应用, 查询前台窗口, 报告设备信息.
+- 截图分组 (P3.3): screen_capture 返回 MCP 图片, 支持裁剪, scale 或 maxWidth, JPEG / PNG / WebP 与质量参数. 默认 JPEG 质量 70, 最长边 1280 px. base64 超过 4 MiB 时降低质量或尺寸重试, 元数据说明调整情况. screen_state 返回亮屏状态, 尺寸, 方向和密度. 工具目录现有 37 项. MediaProjection 回退需要 2026-09-13 或之后构建的 AutoJs6 宿主及手机端授权, 宿主会话复用该授权.
+- 工作目录工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用从 1 开始的行列号的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二进制读取使用 base64, 原始数据最多 1 MiB. 写入还受宿主请求预算约束 (通常为包含 JSON 转义的 96 KiB). 文件删除和 Shell 默认关闭; root 另需 allowShellRoot 开关与宿主 shell.root 授权. 这些能力需要匹配的 P3.4 宿主构建.
 - 连接方式: 通过 `adb forward` 的 USB 连接, 需显式开启的局域网连接, 电脑端 stdio 桥接程序, 以及可选的公网隧道与 OAuth 2.1.
 - 安全: 可轮换的 Bearer 令牌, 手机端首次配对确认, 按分组的工具开关; 服务器默认只监听回环接口.
 
@@ -155,7 +155,8 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 _2026/09/13_
 
-- `提示` 开发预览已推进至 P3.3: 带鉴权与配对的 MCP 端点, 脚本工具, UI 工具和截图工具均已实现. screen_capture 返回 JPEG, PNG 或 WebP 图片, screen_state 返回屏幕尺寸与方向. 抽屉开关和设置页仍计划在 P4 实现. 进度与设备证据见 ROADMAP.md.
+- `提示` P3.4 开发预览: 工具目录共 37 项, 默认启用 33 项. 文件操作, 编辑器定位, 应用查询, 剪贴板, 无障碍自动启用和限制输出的 Shell 已接入, 与脚本, UI 和截图工具配合使用. 抽屉开关和设置页仍计划在 P4 实现. ROADMAP.md.
+- `新增` 工作目录工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用从 1 开始的行列号的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二进制读取使用 base64, 原始数据最多 1 MiB. 写入还受宿主请求预算约束 (通常为包含 JSON 转义的 96 KiB). 文件删除和 Shell 默认关闭; root 另需 allowShellRoot 开关与宿主 shell.root 授权. 这些能力需要匹配的 P3.4 宿主构建.
 - `新增` 插件标识 `mcp-server`, 含 INFO 服务, Wake Activity 以及供宿主发现的 `org.autojs.plugin.MCP_SERVER` 服务骨架
 - `新增` 10 种语言的 README, 插件中心说明与更新日志
 - `新增` 位于 `http://127.0.0.1:9637/mcp` 的 Streamable HTTP 端点及 `device_ping` 工具, 由可经 adb 或宿主启停的前台服务承载 (开发预览)

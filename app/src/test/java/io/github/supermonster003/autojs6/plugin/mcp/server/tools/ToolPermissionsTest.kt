@@ -20,7 +20,7 @@ class ToolPermissionsTest {
 
         val encoded = permissions.encode()
         assertEquals(
-            """{"format":1,"groups":{"script":false,"ui":true,"ui_gesture":false,"screen":true,"files":true,"files_delete":false,"device":true,"shell":true}}""",
+            """{"format":1,"allowShellRoot":false,"groups":{"script":false,"ui":true,"ui_gesture":false,"screen":true,"files":true,"files_delete":false,"device":true,"shell":true}}""",
             encoded,
         )
         val decoded = ToolPermissions.decode(encoded)
@@ -34,7 +34,7 @@ class ToolPermissionsTest {
         assertEquals(ToolPermissions.DEFAULT.effective, ToolPermissions.decode(null).effective)
         assertEquals(ToolPermissions.DEFAULT.effective, ToolPermissions.decode("{{").effective)
         assertEquals(ToolPermissions.DEFAULT.effective, ToolPermissions.decode("""{"format":1}""").effective)
-        val partial = ToolPermissions.decode("""{"format":1,"groups":{"future_group":true,"ui":"yes","files_delete":true}}""")
+        val partial = ToolPermissions.decode("""{"format":1,"allowShellRoot":false,"groups":{"future_group":true,"ui":"yes","files_delete":true}}""")
         assertEquals(mapOf(ToolGroup.FILES_DELETE to true), partial.overrides)
         assertTrue(partial.isEnabled(ToolGroup.UI))
         assertTrue(partial.isEnabled(ToolGroup.FILES_DELETE))

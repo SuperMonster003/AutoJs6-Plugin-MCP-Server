@@ -57,8 +57,9 @@ data class ToolFailure(
     companion object {
 
         const val HINT_HOST = "start AutoJs6 and switch the MCP server on again; the listener keeps running"
-        const val HINT_ACCESSIBILITY = "enable the AutoJs6 accessibility service on the phone (Settings > Accessibility); " +
+        const val HINT_ACCESSIBILITY_MANUAL = "enable the AutoJs6 accessibility service on the phone (Settings > Accessibility); " +
                 "on Android 13+ open the AutoJs6 app info page and allow restricted settings first"
+        const val HINT_ACCESSIBILITY = "call device_ensure_accessibility to try automatic activation, or " + HINT_ACCESSIBILITY_MANUAL
         const val HINT_CAPABILITY = "the host grant or the AutoJs6 permission set does not cover this method"
         const val HINT_TIMEOUT = "raise timeoutMs or split the work into smaller calls"
         const val HINT_RATE = "retry after a short pause"

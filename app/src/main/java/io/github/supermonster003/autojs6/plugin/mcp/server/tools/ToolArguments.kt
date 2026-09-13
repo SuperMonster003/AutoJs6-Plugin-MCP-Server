@@ -42,7 +42,7 @@ object ToolArguments {
         (arguments[name] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: default
 
     fun long(arguments: JsonObject, name: String, default: Long): Long =
-        (arguments[name] as? JsonPrimitive)?.longOrNull ?: default
+        (arguments[name] as? JsonPrimitive)?.let { it.longOrNull ?: it.doubleOrNull?.takeIf { n -> n.isFinite() && n == Math.floor(n) }?.toLong() } ?: default
 
     fun boolean(arguments: JsonObject, name: String, default: Boolean): Boolean =
         (arguments[name] as? JsonPrimitive)?.booleanOrNull ?: default

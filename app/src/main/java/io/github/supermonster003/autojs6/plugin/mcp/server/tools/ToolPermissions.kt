@@ -12,11 +12,11 @@ import kotlinx.serialization.json.putJsonObject
  * The per-group switches (roadmap P2.3, decision D6). Groups the document does not mention keep
  * their default, so a build that adds a group never silently enables or disables it for the user.
  */
-data class ToolPermissions(val overrides: Map<ToolGroup, Boolean> = emptyMap()) {
+data class ToolPermissions(val overrides: Map<ToolGroup, Boolean> = emptyMap(), val allowShellRoot: Boolean = false) {
 
     fun isEnabled(group: ToolGroup): Boolean = overrides[group] ?: group.defaultEnabled
 
-    fun with(group: ToolGroup, enabled: Boolean): ToolPermissions = ToolPermissions(overrides + (group to enabled))
+    fun with(group: ToolGroup, enabled: Boolean): ToolPermissions = copy(overrides = overrides + (group to enabled))
 
     /** Every group with its effective value. */
     val effective: Map<ToolGroup, Boolean>
@@ -24,6 +24,7 @@ data class ToolPermissions(val overrides: Map<ToolGroup, Boolean> = emptyMap()) 
 
     fun encode(): String = buildJsonObject {
         put("format", FORMAT)
+        put("allowShellRoot", allowShellRoot)
         putJsonObject("groups") {
             ToolGroup.entries.forEach { group -> put(group.id, isEnabled(group)) }
         }
@@ -45,7 +46,7 @@ data class ToolPermissions(val overrides: Map<ToolGroup, Boolean> = emptyMap()) 
                 val enabled = (value as? JsonPrimitive)?.booleanOrNull ?: return@forEach
                 overrides[group] = enabled
             }
-            return ToolPermissions(overrides)
+            return ToolPermissions(overrides, (root["allowShellRoot"] as? JsonPrimitive)?.takeIf { !it.isString }?.booleanOrNull == true)
         }
     }
 }

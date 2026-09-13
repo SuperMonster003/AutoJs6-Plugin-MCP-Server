@@ -32,7 +32,7 @@ class ToolRegistryTest {
         // The script group comes back: its rows return to their catalog position, not to the end.
         permissions = ToolPermissions.DEFAULT.with(ToolGroup.UI_GESTURE, true)
         assertTrue(registry.refresh())
-        assertEquals(ToolCatalog.all.map { it.name }, registry.enabledNames)
+        assertEquals(ToolCatalog.enabled(permissions).map { it.name }, registry.enabledNames)
         assertNull(registry.disabledFailure(ToolCatalog.UI_SWIPE))
 
         permissions = ToolPermissions.DEFAULT
