@@ -170,6 +170,8 @@ AutoJs6-Plugin-MCP-Server/
 
 - 截图分组 (P3.3 起): `screen_capture` / `screen_state` 的参数与结果只在 `tools/ScreenTools` 整形; 捕获, 授权, 裁剪和图片编码由宿主执行, 默认 JPEG / quality 70 / 最长边 1280 px, base64 上限 4 MiB, 降质最多 12 次且完整调用预算 120 s. 无障碍截图声明 `accessibility` + `screen_capture`, MediaProjection 请求声明 `screen_capture`, 图片捕获声明 `image` + `screen_capture`. 宿主在会话内复用 MediaProjection 授权, 插件 MUST NOT 缓存授权布尔值. PFD 只经 `BridgePayload` 与 `HostBridgeClient` 读取和关闭, 校验声明长度 / 实际文件长度 / MIME, 取消 / 迟到 / 重复回调必须关闭; 普通日志不得含图片数据或临时路径. `device.info` 的屏幕宽高已随旋转变化, `screen_state` 从宽高计算方向, 不按可能滞后的 Configuration orientation 再次交换.
 
+- 资源与提示 (P3.5 起): 资源只经 `ResourceCatalog` 与 `HostBridgeClient` 读取宿主数据, 工作目录读取复用 `FileTools`. `ResourceUri` 只解码一次 URI 段, 拒绝路径逃逸, 非法 UTF-8 与编码分隔符. 资源遵守 files / device / script 分组开关, 读取前后检查; 列表不枚举工作目录文件名. 有状态协议的 `ttlMs=0` / `cacheScope=private` 放在 `_meta`, 分页上限 100, 样例枚举上限 2000, 文件读取 1 MiB. `PromptCatalog` 使用 assets/prompts/en 与 zh, 其他语言回退英语, 参数最多 8192 UTF-8 字节且不参与资产路径拼接. `resources/read` / `prompts/get` 继续受配对门保护. 错误异常消息不得包含私有 URI 或宿主路径, SDK 会记录异常消息.
+
 ## 10. 主项目职责
 
 若改动同时需要修改 `D:/idea-projects/AutoJs6`, MUST 遵循:

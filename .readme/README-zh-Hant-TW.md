@@ -52,7 +52,7 @@ MCP Server 讓執行 AutoJs6 的 Android 裝置成為一台 [Model Context Proto
 
 ******
 
-P3.4 開發預覽: 工具目錄共 37 項, 預設啟用 33 項. 檔案操作, 編輯器定位, 應用程式查詢, 剪貼簿, 無障礙自動啟用和限制輸出的 Shell 已接入, 與指令碼, UI 和截圖工具配合使用. 抽屜開關和設定頁仍規劃在 P4 實作. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+P3.5 開發預覽: 工具目錄共 37 項, 預設啟用 33 項. 檔案操作, 編輯器定位, 應用程式查詢, 剪貼簿, 無障礙自動啟用和限制輸出的 Shell 已接入, 與指令碼, UI 和截圖工具配合使用. 抽屜開關和設定頁仍規劃在 P4 實作. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -66,6 +66,7 @@ P3.4 開發預覽: 工具目錄共 37 項, 預設啟用 33 項. 檔案操作, �
 - 無障礙介面: 以精簡文字格式匯出節點樹, 用 AutoJs6 選擇器語法尋找節點, 點擊, 長按, 捲動, 設定文字, 以及觸發返回和主畫面等全域按鍵.
 - 螢幕擷取群組 (P3.3): screen_capture 傳回 MCP 圖片, 支援裁切, scale 或 maxWidth, JPEG / PNG / WebP 與品質參數. 預設 JPEG 品質 70, 最長邊 1280 px. base64 超過 4 MiB 時降低品質或尺寸重試, 中繼資料說明調整情況. screen_state 傳回亮屏狀態, 尺寸, 方向和密度. 工具目錄現有 37 項. MediaProjection 備援需要 2026-09-13 或之後建置的 AutoJs6 主程式及手機端授權, 主程式工作階段重用該授權.
 - 工作目錄工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用從 1 開始的行列號的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二進位讀取使用 base64, 原始資料最多 1 MiB. 寫入亦受宿主請求預算約束 (通常為包含 JSON 跳脫的 96 KiB). 檔案刪除和 Shell 預設關閉; root 另需 allowShellRoot 開關與宿主 shell.root 授權. 這些能力需要相符的 P3.4 宿主建置.
+- MCP 資源 (P3.5) 提供唯讀工作目錄檔案, 可瀏覽的宿主範例, 裝置資訊和最近主控台輸出, 遵守配對與分組開關. 文字和二進位讀取報告截斷狀態. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指引, 其他手機語言回退英語.
 - 連線方式: 透過 `adb forward` 的 USB 連線, 須明確開啟的區域網路連線, 電腦端 stdio 橋接程式, 以及可選的公網通道與 OAuth 2.1.
 - 安全: 可輪換的 Bearer 權杖, 手機端首次配對確認, 依分組的工具開關; 伺服器預設只監聽回送介面.
 
@@ -155,7 +156,8 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 _2026/09/13_
 
-- `提示` P3.4 開發預覽: 工具目錄共 37 項, 預設啟用 33 項. 檔案操作, 編輯器定位, 應用程式查詢, 剪貼簿, 無障礙自動啟用和限制輸出的 Shell 已接入, 與指令碼, UI 和截圖工具配合使用. 抽屜開關和設定頁仍規劃在 P4 實作. ROADMAP.md.
+- `提示` P3.5 開發預覽: 工具目錄共 37 項, 預設啟用 33 項. 檔案操作, 編輯器定位, 應用程式查詢, 剪貼簿, 無障礙自動啟用和限制輸出的 Shell 已接入, 與指令碼, UI 和截圖工具配合使用. 抽屜開關和設定頁仍規劃在 P4 實作. ROADMAP.md.
+- `新增` MCP 資源 (P3.5) 提供唯讀工作目錄檔案, 可瀏覽的宿主範例, 裝置資訊和最近主控台輸出, 遵守配對與分組開關. 文字和二進位讀取報告截斷狀態. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指引, 其他手機語言回退英語.
 - `新增` 工作目錄工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用從 1 開始的行列號的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二進位讀取使用 base64, 原始資料最多 1 MiB. 寫入亦受宿主請求預算約束 (通常為包含 JSON 跳脫的 96 KiB). 檔案刪除和 Shell 預設關閉; root 另需 allowShellRoot 開關與宿主 shell.root 授權. 這些能力需要相符的 P3.4 宿主建置.
 - `新增` 外掛識別碼 `mcp-server`, 含 INFO 服務, Wake Activity 以及供主程式探索的 `org.autojs.plugin.MCP_SERVER` 服務骨架
 - `新增` 10 種語言的 README, 外掛中心說明與更新日誌

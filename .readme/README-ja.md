@@ -52,7 +52,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 
 ******
 
-P3.4 開発プレビュー: 37 個のツールを提供し, 初期状態で 33 個が有効です. ファイル操作, エディターの位置指定, アプリ検索, クリップボード, アクセシビリティの自動有効化, 出力制限付き Shell が利用できます. ドロワーのスイッチと設定画面は P4 で実装予定です. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+P3.5 開発プレビュー: 37 個のツールを提供し, 初期状態で 33 個が有効です. ファイル操作, エディターの位置指定, アプリ検索, クリップボード, アクセシビリティの自動有効化, 出力制限付き Shell が利用できます. ドロワーのスイッチと設定画面は P4 で実装予定です. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -66,6 +66,7 @@ P3.4 開発プレビュー: 37 個のツールを提供し, 初期状態で 33 �
 - アクセシビリティ UI: ノードツリーをコンパクトなテキスト形式で出力し, AutoJs6 のセレクター構文でノードを検索し, クリック, 長押し, スクロール, テキスト設定, 戻るやホームなどのグローバルキー操作を行います.
 - スクリーンショットグループ (P3.3): screen_capture は切り抜き, scale または maxWidth, JPEG / PNG / WebP, 品質指定に対応した MCP 画像を返します. 既定値は JPEG 品質 70, 長辺 1280 px です. base64 が 4 MiB を超える場合は品質やサイズを下げて再試行し, 変更をメタデータに記録します. screen_state は画面の点灯状態, サイズ, 向き, 密度を返します. ツール数は 37 になりました. MediaProjection のフォールバックには 2026-09-13 以降にビルドされた AutoJs6 と端末での許可が必要で, 許可はホストセッションで再利用されます.
 - 作業ディレクトリのツール (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1 から始まる行と列を指定する editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. バイナリ読み取りは base64 で元データ最大 1 MiB. 書き込みはホストの要求上限にも従います (通常は JSON エスケープ込みで 96 KiB). 削除と Shell は初期状態で無効. root には allowShellRoot とホストの shell.root 許可が必要です. 対応する P3.4 ホストビルドが必要です.
+- MCP リソース (P3.5) は読み取り専用の作業ファイル, ホストのサンプル参照, デバイス情報, 最近のコンソール出力を提供し, ペアリングとグループ設定に従います. テキストとバイナリの読み取りには切り詰め情報が含まれます. write_autojs6_script, automate_task, debug_selector は英語と中国語に対応し, その他の端末言語では英語を使用します.
 - 接続経路: `adb forward` による USB 接続, 明示的に有効化するローカルネットワーク接続, PC 側の stdio ブリッジ, および OAuth 2.1 を備えたオプションの公開トンネル.
 - セキュリティ: ローテーション可能な Bearer トークン, スマートフォン上での初回ペアリング確認, グループ単位のツールスイッチ. サーバーはデフォルトでループバックインターフェースのみを待ち受けます.
 
@@ -155,7 +156,8 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 _2026/09/13_
 
-- `ヒント` P3.4 開発プレビュー: 37 個のツールを提供し, 初期状態で 33 個が有効です. ファイル操作, エディターの位置指定, アプリ検索, クリップボード, アクセシビリティの自動有効化, 出力制限付き Shell が利用できます. ドロワーのスイッチと設定画面は P4 で実装予定です. ROADMAP.md.
+- `ヒント` P3.5 開発プレビュー: 37 個のツールを提供し, 初期状態で 33 個が有効です. ファイル操作, エディターの位置指定, アプリ検索, クリップボード, アクセシビリティの自動有効化, 出力制限付き Shell が利用できます. ドロワーのスイッチと設定画面は P4 で実装予定です. ROADMAP.md.
+- `機能` MCP リソース (P3.5) は読み取り専用の作業ファイル, ホストのサンプル参照, デバイス情報, 最近のコンソール出力を提供し, ペアリングとグループ設定に従います. テキストとバイナリの読み取りには切り詰め情報が含まれます. write_autojs6_script, automate_task, debug_selector は英語と中国語に対応し, その他の端末言語では英語を使用します.
 - `機能` 作業ディレクトリのツール (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1 から始まる行と列を指定する editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. バイナリ読み取りは base64 で元データ最大 1 MiB. 書き込みはホストの要求上限にも従います (通常は JSON エスケープ込みで 96 KiB). 削除と Shell は初期状態で無効. root には allowShellRoot とホストの shell.root 許可が必要です. 対応する P3.4 ホストビルドが必要です.
 - `機能` ホスト検出用の INFO サービス, Wake Activity, `org.autojs.plugin.MCP_SERVER` サービスの骨組みを備えたプラグイン ID `mcp-server`
 - `機能` 10 言語の README, プラグインセンターの説明, 変更履歴

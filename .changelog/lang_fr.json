@@ -8,9 +8,10 @@
     "v1.0.0": {
       "released_date": "2026/09/13",
       "hint": [
-        "Version de développement P3.4: 37 outils disponibles, dont 33 activés par défaut. Fichiers, positions dans un éditeur, recherche des applications, presse-papiers, activation automatique de l'accessibilité et Shell à sortie limitée sont disponibles. Le commutateur du menu et les réglages restent prévus pour P4. ROADMAP.md."
+        "Version de développement P3.5: 37 outils disponibles, dont 33 activés par défaut. Fichiers, positions dans un éditeur, recherche des applications, presse-papiers, activation automatique de l'accessibilité et Shell à sortie limitée sont disponibles. Le commutateur du menu et les réglages restent prévus pour P4. ROADMAP.md."
       ],
       "feature": [
+        "Les ressources MCP (P3.5) donnent accès en lecture seule aux fichiers de travail, aux exemples du serveur hôte, aux informations de l'appareil et à la console récente, selon l'appairage et les groupes actifs. Les lectures de texte et de données binaires signalent toute troncature. Les modèles write_autojs6_script, automate_task et debug_selector proposent des instructions en anglais et en chinois, avec repli en anglais pour les autres langues du téléphone.",
         "Outils du répertoire de travail (P3.4): files_list / stat / read / write / mkdir / rename / delete, editor_open avec ligne et colonne à partir de 1, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast et shell_exec. Lecture binaire en base64, au plus 1 MiB de données brutes. Les écritures respectent aussi le budget du host (normalement 96 KiB avec les échappements JSON). Suppression et Shell sont désactivés par défaut; root exige allowShellRoot et une autorisation shell.root du host. La version P3.4 correspondante du host est nécessaire.",
         "Identité de plugin `mcp-server` avec le service INFO, la Wake Activity et le squelette du service `org.autojs.plugin.MCP_SERVER` pour la découverte par l'hôte",
         "README, instructions du centre de plugins et journal des modifications en 10 langues",
