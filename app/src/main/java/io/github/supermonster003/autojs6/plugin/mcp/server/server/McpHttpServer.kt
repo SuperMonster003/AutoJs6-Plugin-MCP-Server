@@ -212,6 +212,7 @@ class McpHttpServer(
             endpoints = endpointUrls(config, addresses)
         }
         Log.i(TAG, "LAN allow list refreshed")
+        statusListener(status)
     }
 
     private fun publish(next: ServerStatus): ServerStatus {

@@ -58,6 +58,9 @@ class McpServerPluginRuntimeInfoTest {
         val info = McpServerPluginRuntimeInfo("MCP Server", "d", null, "1.0.0", 1L, "Sep 10, 2026")
 
         assertEquals(McpServerContract.CONTRACT_VERSION, info.contractVersion)
+        assertEquals(1, info.settingsVersion)
+        assertEquals("mcpServerSettingsVersion", McpServerCapabilityKeys.SETTINGS_VERSION)
+        assertEquals("mcpServerUserStopped", McpServerCapabilityKeys.USER_STOPPED)
         assertTrue(McpServerContract.supportsContractVersion(info.contractVersion))
         assertEquals(listOf("script", "ui", "ui_gesture", "screen", "files", "files_delete", "device", "shell"), info.toolGroups)
         assertEquals(info.protocolVersions, info.protocolVersions.sortedDescending())

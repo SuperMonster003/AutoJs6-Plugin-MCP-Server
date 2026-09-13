@@ -44,7 +44,7 @@ class ManifestContractTest {
         assertEquals("@string/plugin_author", metaData["org.autojs.plugin.info.AUTHOR"])
 
         val activities = application.children("activity")
-        assertEquals(listOf(".WakeActivity", ".ui.PairingConfirmActivity"), activities.map { it.androidAttribute("name") })
+        assertEquals(listOf(".WakeActivity", ".ui.McpServerSettingsActivity", ".ui.ReleaseHistoryActivity", ".ui.PairingConfirmActivity"), activities.map { it.androidAttribute("name") })
         val wake = activities.first()
         assertEquals("true", wake.androidAttribute("exported"))
         assertEquals("true", wake.androidAttribute("excludeFromRecents"))
@@ -62,10 +62,20 @@ class ManifestContractTest {
         assertTrue(pairing.children("intent-filter").isEmpty())
 
         val receivers = application.children("receiver")
-        assertEquals(listOf(".ui.PairingDecisionReceiver"), receivers.map { it.androidAttribute("name") })
-        assertEquals("false", receivers.single().androidAttribute("exported"))
-        assertEquals(":mcp_server", receivers.single().androidAttribute("process"))
-        assertTrue(receivers.single().children("intent-filter").isEmpty())
+        assertEquals(setOf(".ui.PairingDecisionReceiver", ".ui.McpSettingsReceiver"), receivers.map { it.androidAttribute("name") }.toSet())
+        receivers.forEach { receiver ->
+            assertEquals("false", receiver.androidAttribute("exported"))
+            assertEquals(":mcp_server", receiver.androidAttribute("process"))
+            assertTrue(receiver.children("intent-filter").isEmpty())
+        }
+        val settings = activities.single { it.androidAttribute("name") == ".ui.McpServerSettingsActivity" }
+        assertEquals("true", settings.androidAttribute("exported"))
+        assertEquals(PLUGIN_PERMISSION, settings.androidAttribute("permission"))
+        assertNull(settings.androidAttributeOrNull("process"))
+        assertEquals(org.autojs.plugin.mcp.server.api.McpServerActions.OPEN_SETTINGS,
+            settings.child("intent-filter").children("action").single().androidAttribute("name"))
+        val history = activities.single { it.androidAttribute("name") == ".ui.ReleaseHistoryActivity" }
+        assertEquals("false", history.androidAttribute("exported"))
     }
 
     @Test
