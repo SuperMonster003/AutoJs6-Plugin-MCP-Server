@@ -529,6 +529,37 @@ class McpServerHostSessionTest {
         session.close()
     }
 
+    @Test
+    fun resourcesAndPromptsUsePairedHostSessionsAndLiveFilePermissions() {
+        val broker = FakeBroker()
+        val session = runtime.openSession(configBundle(PORT), broker, RecordingCallback(), Process.myUid())
+        awaitStatus(session) { it.getString(McpServerContract.KEY_STATUS_STATE) == McpServerContract.STATE_RUNNING }
+        val sessionId = post(initializeRequest(), sessionId = null).header("mcp-session-id")
+        post(initializedNotification(), sessionId)
+        fun rpc(method: String, params: String = "{}"): JSONObject =
+            post("""{"jsonrpc":"2.0","id":71,"method":"$method","params":$params}""", sessionId).json()
+        val listed = rpc("resources/list").getJSONObject("result")
+        assertEquals(0, listed.getJSONObject("_meta").getInt("ttlMs"))
+        assertEquals(4, listed.getJSONArray("resources").length())
+        assertEquals(2, rpc("resources/templates/list").getJSONObject("result").getJSONArray("resourceTemplates").length())
+        assertEquals(3, rpc("prompts/list").getJSONObject("result").getJSONArray("prompts").length())
+        val held = rpc("resources/read", """{"uri":"autojs6://samples/Examples/hello.js"}""").getJSONObject("error")
+        assertEquals("PAIRING_REQUIRED", held.getJSONObject("data").getString("code"))
+        assertTrue(runtime.server.pairingGate!!.approve(held.getJSONObject("data").getString("fingerprint")))
+        val sample = rpc("resources/read", """{"uri":"autojs6://samples/Examples/hello.js"}""").getJSONObject("result")
+        assertEquals("console.log('sample');", sample.getJSONArray("contents").getJSONObject(0).getString("text"))
+        assertEquals("readSample", broker.requests.last().getString("method"))
+        val binary = rpc("resources/read", """{"uri":"autojs6://workspace/large.bin"}""").getJSONObject("result")
+        assertEquals(1024 * 1024, android.util.Base64.decode(binary.getJSONArray("contents").getJSONObject(0).getString("blob"), android.util.Base64.DEFAULT).size)
+        val prompt = rpc("prompts/get", """{"name":"write_autojs6_script","arguments":{"goal":"Log a message","language":"zh"}}""").getJSONObject("result")
+        assertTrue(prompt.getJSONArray("messages").getJSONObject(0).getJSONObject("content").getString("text").contains("ui_dump"))
+        assertEquals(-32602, rpc("resources/read", """{"uri":"autojs6://workspace/%2e%2e/escape"}""").getJSONObject("error").getInt("code"))
+        ToolPermissionStore(context).save(ToolPermissions.DEFAULT.with(ToolGroup.FILES, false))
+        assertEquals(0, rpc("resources/templates/list").getJSONObject("result").getJSONArray("resourceTemplates").length())
+        assertEquals("TOOL_DISABLED", rpc("resources/read", """{"uri":"autojs6://samples/Examples/hello.js"}""").getJSONObject("error").getJSONObject("data").getString("code"))
+        session.close()
+    }
+
     private class FakeBroker : IMcpHostCapabilityBroker.Stub() {
 
         val requests = CopyOnWriteArrayList<JSONObject>()
@@ -551,7 +582,7 @@ class McpServerHostSessionTest {
                     "device.isScreenOn", "accessibility.screenshot", "media_projection.requestScreenCapture", "image.captureScreen",
                     "files.list", "files.stat", "files.read", "files.write", "files.mkdir", "files.rename", "files.delete",
                     "app.editFile", "app.launchPackage", "app.launchApp", "package_manager.listApps", "clipboard.getText", "clipboard.setText",
-                    "accessibility.ensureEnabled", "toast.toast", "shell.exec",
+                    "accessibility.ensureEnabled", "toast.toast", "shell.exec", "app.listSamples", "app.readSample",
                 ),
             )
             putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query", "files", "files.write", "files.delete", "app.activity", "app.launch", "package_manager", "clipboard", "toast", "shell", "shell.root"))
@@ -569,6 +600,8 @@ class McpServerHostSessionTest {
             var imageBytes: ByteArray? = null
             var payloadMime = "image/jpeg"
             val response = when ("${json.getString("module")}.${json.getString("method")}") {
+                "app.listSamples" -> ok(id, JSONObject().put("available", true).put("truncated", false).put("entries", JSONArray().put(JSONObject().put("path", "Examples/hello.js").put("name", "hello.js").put("type", "file"))))
+                "app.readSample" -> ok(id, JSONObject().put("content", "console.log('sample');").put("encoding", "utf-8").put("bytes", 22).put("truncated", false))
                 "files.list", "files.stat", "files.write", "files.mkdir", "files.rename", "files.delete" -> ok(id, JSONObject().put("schema", "file-v1").put("path", json.getJSONArray("args").getString(0)))
                 "files.read" -> {
                     payloadMime = "application/json"

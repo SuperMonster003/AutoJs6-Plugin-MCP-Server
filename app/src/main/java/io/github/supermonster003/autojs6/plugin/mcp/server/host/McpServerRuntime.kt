@@ -33,6 +33,10 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolFlows
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.FileTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.DeviceTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ShellTools
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.BridgeCaller
+import io.github.supermonster003.autojs6.plugin.mcp.server.bridge.ToolFailure
+import io.github.supermonster003.autojs6.plugin.mcp.server.resources.ResourceCatalog
+import io.github.supermonster003.autojs6.plugin.mcp.server.prompts.PromptCatalog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -99,7 +103,20 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
     val server: McpHttpServer = McpHttpServer(
         this.context,
         statusListener = ::onServerStatus,
-        toolInstaller = { sdkServer, _ -> registry.install(sdkServer) },
+        toolInstaller = { sdkServer, _ ->
+            registry.install(sdkServer)
+            ResourceCatalog(
+                callerFor = { clientName -> BridgeCaller { module, method, args, timeout, permissions ->
+                    bridge?.call(module, method, args, timeout, permissions, clientName)
+                        ?: BridgeOutcome.Failed(ToolFailure.hostUnavailable())
+                } },
+                permissions = { toolPermissions.load() },
+            ).install(sdkServer) { id -> server.clientNameOf(id) }
+            PromptCatalog(
+                loadText = { path -> this.context.assets.open(path).bufferedReader(Charsets.UTF_8).use { it.readText() } },
+                defaultLanguage = { this.context.resources.configuration.locales[0].language },
+            ).install(sdkServer)
+        },
         toolGate = registry,
         eventListener = this,
     )
