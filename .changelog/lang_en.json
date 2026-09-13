@@ -39,6 +39,9 @@
       ],
       "improvement": [
         "Build verification rejects accidental native dependencies and produces a JSON report"
+      ],
+      "fix": [
+        "IDE rebuild no longer looks for an APK for JVM unit tests. APK verification tasks automatically assemble their inputs and work from a clean build."
       ]
     }
   }
