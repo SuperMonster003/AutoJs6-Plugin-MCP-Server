@@ -59,7 +59,9 @@ fun Application.mcpServerModule(
  * and a hard ceiling on the bytes of a `POST` body. The body is read here (at most the ceiling
  * plus one byte) and replayed to the transport through the receive pipeline, so an oversized
  * body is refused with `413` before the SDK parses anything, whether or not the client declared
- * its length.
+ * its length. A body that nests deeper than [RequestBodyChecks.MAX_JSON_DEPTH] or repeats a
+ * request id is refused with `400` before any parser recurses into it (roadmap P6); the
+ * request list parsed here is kept in [JSON_RPC_CALLS] for the gates behind.
  */
 fun Application.installRequestGate(policy: () -> GatePolicy) {
     intercept(ApplicationCallPipeline.Plugins) {
@@ -78,8 +80,18 @@ fun Application.installRequestGate(policy: () -> GatePolicy) {
                     if (bytes.size > active.maxBodyBytes) {
                         call.reject(RequestGate.rejectBodyTooLarge(active.maxBodyBytes))
                         finish()
+                    } else if (RequestBodyChecks.isTooDeep(bytes)) {
+                        call.reject(RequestGate.rejectBody(RequestBodyChecks.MESSAGE_TOO_DEEP))
+                        finish()
                     } else {
-                        call.attributes.put(BUFFERED_BODY, bytes)
+                        val calls = JsonRpcCalls.parse(String(bytes, Charsets.UTF_8))
+                        if (calls != null && RequestBodyChecks.hasDuplicateIds(calls)) {
+                            call.reject(RequestGate.rejectBody(RequestBodyChecks.MESSAGE_DUPLICATE_ID))
+                            finish()
+                        } else {
+                            call.attributes.put(BUFFERED_BODY, bytes)
+                            calls?.let { call.attributes.put(JSON_RPC_CALLS, it) }
+                        }
                     }
                 }
             }
@@ -105,6 +117,9 @@ fun Application.installRequestGate(policy: () -> GatePolicy) {
 
 /** The POST body the gate read, replayed to the transport and inspected by the pairing gate. */
 internal val BUFFERED_BODY = AttributeKey<ByteArray>("McpRequestGate.bufferedBody")
+
+/** The JSON-RPC requests of the buffered body, when it parsed as JSON-RPC at all. */
+internal val JSON_RPC_CALLS = AttributeKey<JsonRpcCalls>("McpRequestGate.jsonRpcCalls")
 
 private const val CORS_ALLOWED_HEADERS = "Content-Type, Accept, Authorization, Mcp-Session-Id, MCP-Protocol-Version, Last-Event-ID"
 private const val CORS_EXPOSED_HEADERS = "Mcp-Session-Id, MCP-Protocol-Version"
