@@ -114,6 +114,62 @@ Ambas rutas usan el mismo token y el mismo emparejamiento en el teléfono. Un pu
 
 ******
 
+### Clientes
+
+******
+
+La página de ajustes copia una configuración lista con el token real para cada cliente de abajo; los fragmentos de aquí usan `<token>` como marcador. Todos los clientes hablan Streamable HTTP con una cabecera Authorization, y la primera llamada de un cliente nuevo se confirma en el teléfono. Verificados: Claude Code, Codex CLI y MCP Inspector; los demás clientes usan la misma URL y cabecera, pero el mantenedor aún no los ha probado.
+
+Claude Code: ejecuta el comando mostrado en "Configuración del cliente" (la página de ajustes lo copia con el token); después `claude mcp list` muestra `autojs6` como Connected.
+
+Cursor: añade la entrada de abajo a `mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "autojs6": {
+      "url": "http://127.0.0.1:9637/mcp",
+      "headers": {
+        "Authorization": "Bearer <token>"
+      }
+    }
+  }
+}
+```
+
+Codex CLI: pon el token en la variable de entorno `AUTOJS6_MCP_TOKEN` (la página de ajustes copia un comando de PowerShell para ello) y añade el servidor a `config.toml`, o ejecuta `codex mcp add autojs6 --url <url> --bearer-token-env-var AUTOJS6_MCP_TOKEN`:
+
+```toml
+[mcp_servers.autojs6]
+url = "http://127.0.0.1:9637/mcp"
+bearer_token_env_var = "AUTOJS6_MCP_TOKEN"
+```
+
+MCP Inspector: el modo CLI no necesita configuración adicional, y la interfaz web llega al teléfono a través de su propio proxy de Node. Activa el modo de desarrollador en la página de ajustes solo cuando una página del navegador se conecte directamente al endpoint:
+
+```shell
+npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport http --header "Authorization: Bearer <token>" --method tools/list
+```
+
+Cline, VS Code Copilot Chat, Gemini CLI y clientes similares: usa la misma URL y cabecera en su configuración MCP; la página de ajustes ofrece un fragmento JSON genérico con `"type": "http"`.
+
+Claude Desktop solo lanza servidores stdio; hay un programa puente planificado para él (ver la hoja de ruta).
+
+******
+
+### Preguntas frecuentes
+
+******
+
+- 401 Unauthorized: el token falta, está mal escrito o fue rotado. Copia de nuevo la configuración desde la página de ajustes; tras Rotar token, cada cliente necesita el valor nuevo.
+- Tiempo de emparejamiento agotado: la primera llamada de un cliente nuevo espera alrededor de un minuto a que pulses Permitir en el teléfono. Desbloquea el teléfono, acepta el diálogo o la acción de la notificación y repite la llamada. Denegar inicia un breve periodo de espera, tras el cual la siguiente llamada vuelve a preguntar.
+- HOST_UNAVAILABLE: AutoJs6 no está en ejecución o su sesión de plugin está cerrada. Abre AutoJs6, mantén el interruptor del cajón activado y revisa el estado de conexión en la página de ajustes.
+- Accesibilidad desactivada: las herramientas `ui_*` y la captura de pantalla necesitan el servicio de accesibilidad de AutoJs6. Llama a `device_ensure_accessibility` o activa el servicio en los ajustes de accesibilidad del sistema.
+- Puerto en uso: el cajón informa `port_in_use`. Cambia el puerto en la página de ajustes y reenvía el nuevo puerto con adb.
+- Red local inaccesible: activa el acceso desde la red local, usa una dirección de las listadas en la página de ajustes, mantén el PC y el teléfono en la misma red sin aislamiento de invitados y permite el puerto en el cortafuegos del PC. El ahorro de energía Wi-Fi del teléfono añade unos cientos de milisegundos por llamada.
+
+******
+
 ### Permisos y seguridad
 
 ******
@@ -194,6 +250,7 @@ _2026/09/15_
 - `Corrección` El rebuild del IDE ya no busca un APK para las pruebas unitarias JVM. Las tareas de verificación de APK generan automáticamente sus entradas y funcionan después de un clean.
 - `Corrección` Las proporciones del icono del centro de complementos variaban entre los modos claro y oscuro; el modo nocturno también usa el icono adaptable, con las capas ajustadas para conservar el dibujo completo y los márgenes de ic_launcher_round.png, cambiando solo el color de fondo
 - `Corrección` La navegación con Tab en la página de ajustes omitía el botón atrás de la barra de herramientas; ahora el ciclo de Tab cubre el botón atrás y todos los controles, incluido Android 7. Las pruebas en dispositivo comprueban las etiquetas del lector de pantalla y el uso con teclado.
+- `Corrección` El mapa arguments de script_run y script_run_file declaraba el tipo de sus valores como un arreglo JSON Schema que algunos clientes MCP rechazan o debilitan; el esquema ahora usa ramas anyOf de un solo tipo. El README gana las secciones Clientes y Preguntas frecuentes con la matriz de clientes probados.
 - `Mejora` La verificación de compilación rechaza dependencias nativas accidentales y genera un informe JSON
 - `Dependencia` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) sobre el motor Ktor 3.5.1 CIO
 - `Dependencia` Se agrega Ktor 3.5.1 `ktor-server-test-host` para las pruebas de transporte en JVM (solo ambito de pruebas)

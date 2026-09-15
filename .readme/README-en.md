@@ -114,6 +114,62 @@ Both paths keep the same token and the same phone-side pairing. A stdio bridge f
 
 ******
 
+### Clients
+
+******
+
+The settings page copies a ready configuration with the real token for each client below; the snippets here use `<token>` as a placeholder. Every client speaks Streamable HTTP with an Authorization header, and the first call of a new client is confirmed on the phone. Verified: Claude Code, Codex CLI and MCP Inspector; the other clients use the same URL and header but have not been tested by the maintainer yet.
+
+Claude Code: run the command shown under Client Configuration (the settings page copies it with the token); `claude mcp list` then reports `autojs6` as Connected.
+
+Cursor: add the entry below to `mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "autojs6": {
+      "url": "http://127.0.0.1:9637/mcp",
+      "headers": {
+        "Authorization": "Bearer <token>"
+      }
+    }
+  }
+}
+```
+
+Codex CLI: put the token into the `AUTOJS6_MCP_TOKEN` environment variable (the settings page copies a PowerShell command for it) and add the server to `config.toml`, or run `codex mcp add autojs6 --url <url> --bearer-token-env-var AUTOJS6_MCP_TOKEN`:
+
+```toml
+[mcp_servers.autojs6]
+url = "http://127.0.0.1:9637/mcp"
+bearer_token_env_var = "AUTOJS6_MCP_TOKEN"
+```
+
+MCP Inspector: the CLI mode needs no extra setup, and the web UI reaches the phone through its own Node proxy. Turn on Developer mode on the settings page only when a browser page connects to the endpoint directly:
+
+```shell
+npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport http --header "Authorization: Bearer <token>" --method tools/list
+```
+
+Cline, VS Code Copilot Chat, Gemini CLI and similar clients: use the same URL and header in their MCP configuration; the settings page offers a generic JSON snippet with `"type": "http"`.
+
+Claude Desktop launches stdio servers only; a bridge program for it is planned (see the roadmap).
+
+******
+
+### FAQ
+
+******
+
+- 401 Unauthorized: the token is missing, mistyped or rotated. Copy the configuration again from the settings page; after Rotate token every client needs the new value.
+- Pairing timeout: the first call of a new client waits about a minute for Allow on the phone. Unlock the phone, accept the dialog or the notification action, then repeat the call. Deny starts a short cooldown, after which the next call asks again.
+- HOST_UNAVAILABLE: AutoJs6 is not running or its plugin session is closed. Open AutoJs6, keep the drawer switch on, and check the connection state on the settings page.
+- Accessibility off: the `ui_*` tools and screen capture need the AutoJs6 accessibility service. Call `device_ensure_accessibility` or enable the service in the system accessibility settings.
+- Port in use: the drawer reports `port_in_use`. Change the port on the settings page and forward the new port with adb.
+- Local network unreachable: turn on local network access, use an address listed on the settings page, keep the PC and the phone on the same network without guest isolation, and allow the port through the PC firewall. Wi-Fi power saving on the phone adds a few hundred milliseconds per call.
+
+******
+
 ### Permissions and Security
 
 ******
@@ -194,6 +250,7 @@ _2026/09/15_
 - `Fix` IDE rebuild no longer looks for an APK for JVM unit tests. APK verification tasks automatically assemble their inputs and work from a clean build.
 - `Fix` Plugin Center icon proportions differed between light and dark modes; night mode now also uses the adaptive icon, with layer sizing adjusted to preserve the complete ic_launcher_round.png artwork and margins while changing only the background color
 - `Fix` Keyboard Tab navigation on the settings page skipped the toolbar back button; the Tab cycle now covers the back button and every control, including on Android 7. Device tests check screen reader labels and keyboard operation.
+- `Fix` The arguments map of script_run and script_run_file declared its value type as a JSON Schema array, which some MCP clients reject or weaken; the schema now uses single-type anyOf branches. README gains Clients and FAQ sections with the tested client matrix.
 - `Improvement` Build verification rejects accidental native dependencies and produces a JSON report
 - `Dependency` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) on the Ktor 3.5.1 CIO engine
 - `Dependency` Ktor 3.5.1 `ktor-server-test-host` added for the JVM transport tests (test scope only)
