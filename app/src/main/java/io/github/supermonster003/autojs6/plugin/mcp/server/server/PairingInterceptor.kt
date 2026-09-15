@@ -58,6 +58,12 @@ data class JsonRpcCalls(val ids: List<JsonElement?>, val methods: List<String>, 
  * class of the remote address. A gated request from an unpaired client is answered with a
  * JSON-RPC error (`PAIRING_REQUIRED` or `PAIRING_DENIED`, `data.fingerprint` identifies the
  * confirmation) and never reaches the transport.
+ *
+ * A request that names a session this listener does not have (closed, or created by a previous
+ * listener process that died or was restarted for a token rotation) is left to the transport,
+ * which answers `404` so the client initializes again; gating it under the `User-Agent` would
+ * raise a pairing prompt for a client that is already paired under its `clientInfo` name
+ * (roadmap P6 lifecycle matrix).
  */
 fun Application.installPairingGate(server: Server, gate: PairingGate) {
     intercept(ApplicationCallPipeline.Plugins) {
@@ -65,7 +71,9 @@ fun Application.installPairingGate(server: Server, gate: PairingGate) {
         val body = call.attributes.getOrNull(BUFFERED_BODY) ?: return@intercept
         val calls = call.attributes.getOrNull(JSON_RPC_CALLS) ?: JsonRpcCalls.parse(String(body, Charsets.UTF_8)) ?: return@intercept
         if (calls.ids.isEmpty() || !calls.hasGated(gate)) return@intercept
-        val identity = resolveIdentity(server, call.request.header(SESSION_HEADER), call.request.header(HttpHeaders.UserAgent), call.request.origin.remoteHost)
+        val sessionId = call.request.header(SESSION_HEADER)
+        if (!sessionId.isNullOrEmpty() && !server.hasSession(sessionId)) return@intercept
+        val identity = resolveIdentity(server, sessionId, call.request.header(HttpHeaders.UserAgent), call.request.origin.remoteHost)
         val method = calls.methods.first(gate::isGated)
         val document: JsonElement = when (val decision = gate.check(identity, method)) {
             is PairingDecision.Allowed -> return@intercept
@@ -109,11 +117,14 @@ private const val SESSION_HEADER = "Mcp-Session-Id"
  * session is found through its transport; the client version is unset until `initialize` ran.
  */
 internal fun resolveIdentity(server: Server, sessionId: String?, userAgent: String?, remoteHost: String?): ClientIdentity {
-    val clientInfo = sessionId?.let { id ->
-        runCatching {
-            server.sessions.values.firstOrNull { (it.transport as? StreamableHttpServerTransport)?.sessionId == id }?.clientVersion
-        }.getOrNull()
-    }
+    val clientInfo = sessionId?.let { id -> server.sessionOf(id)?.clientVersion }
     val name = PairingGate.normalizeName(clientInfo?.name ?: userAgent)
     return ClientIdentity(name, clientInfo?.version, AddressClass.ofRemoteHost(remoteHost))
 }
+
+/** True when a live session of this server has the Streamable HTTP transport with [sessionId]. */
+internal fun Server.hasSession(sessionId: String): Boolean = sessionOf(sessionId) != null
+
+private fun Server.sessionOf(sessionId: String) = runCatching {
+    sessions.values.firstOrNull { (it.transport as? StreamableHttpServerTransport)?.sessionId == sessionId }
+}.getOrNull()
