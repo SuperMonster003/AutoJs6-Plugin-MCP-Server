@@ -110,7 +110,7 @@ USB: `adb forward tcp:9637 tcp:9637` fait correspondre le port du téléphone au
 
 Réseau local: activez "Autoriser les connexions du réseau local" sur la page des paramètres. La page liste alors les adresses actuelles du téléphone (elles suivent les changements de Wi-Fi) et rappelle que le client doit rejoindre le même réseau; les réseaux invités, l'isolation du point d'accès et le pare-feu du PC sont les blocages habituels. Les demandes d'appairage venant du réseau local sont signalées comme telles, et une notification quotidienne le rappelle tant que le serveur reste joignable depuis le réseau; le rappel peut être désactivé.
 
-Les deux chemins utilisent le même jeton et le même appairage côté téléphone. Un pont stdio pour les clients sans prise en charge HTTP est prévu séparément.
+Les deux chemins utilisent le même jeton et le même appairage côté téléphone. Les clients sans transport HTTP utilisent le pont stdio décrit dans Clients.
 
 ******
 
@@ -153,7 +153,7 @@ npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport 
 
 Cline, VS Code Copilot Chat, Gemini CLI et clients similaires: utilisez la même URL et le même en-tête dans leur configuration MCP; la page des paramètres propose un extrait JSON générique avec `"type": "http"`.
 
-Claude Desktop ne lance que des serveurs stdio; un programme pont est prévu pour lui (voir la feuille de route).
+Claude Desktop et les autres clients stdio uniquement: installez le pont avec `npm install -g autojs6-mcp-bridge`, enregistrez `autojs6-mcp-bridge --serial <serial>` comme serveur stdio et placez `AUTOJS6_MCP_TOKEN` dans son bloc d'environnement (les extraits pour Claude Desktop et Claude Code sont dans le [README du pont](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)). Le pont 0.1.0 accompagne le plugin 1.0.0 et transmet la version de protocole du client telle quelle; vérifié avec Claude Code 2.1.257 en stdio.
 
 ******
 

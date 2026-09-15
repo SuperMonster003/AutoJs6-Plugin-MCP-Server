@@ -110,7 +110,7 @@ USB: `adb forward tcp:9637 tcp:9637` maps the phone port to the PC; with several
 
 Local network: turn on Allow local network connections on the settings page. The page then lists the current addresses of the phone (they follow Wi-Fi changes) and reminds you that the client must join the same network; guest networks, AP isolation and the PC firewall are the usual blockers. Pairing requests from the local network are marked as such, and a daily notification reminds you while the server stays reachable from the network; the reminder can be turned off.
 
-Both paths keep the same token and the same phone-side pairing. A stdio bridge for clients without HTTP support is planned separately.
+Both paths keep the same token and the same phone-side pairing. Clients without an HTTP transport use the stdio bridge described under Clients.
 
 ******
 
@@ -153,7 +153,7 @@ npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport 
 
 Cline, VS Code Copilot Chat, Gemini CLI and similar clients: use the same URL and header in their MCP configuration; the settings page offers a generic JSON snippet with `"type": "http"`.
 
-Claude Desktop launches stdio servers only; a bridge program for it is planned (see the roadmap).
+Claude Desktop and other stdio-only clients: install the bridge with `npm install -g autojs6-mcp-bridge` and register `autojs6-mcp-bridge --serial <serial>` as a stdio server with `AUTOJS6_MCP_TOKEN` in its environment block (see the [bridge README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) for the Claude Desktop and Claude Code snippets). Bridge 0.1.0 pairs with plugin 1.0.0 and passes the client's protocol version through; it was verified with Claude Code 2.1.257 over stdio.
 
 ******
 
