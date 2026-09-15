@@ -114,6 +114,62 @@ USB: `adb forward tcp:9637 tcp:9637` 로 휴대전화 포트를 PC에 매핑합�
 
 ******
 
+### 클라이언트 연결
+
+******
+
+설정 페이지는 아래 각 클라이언트용으로 실제 토큰이 들어간 설정을 복사합니다. 여기의 조각은 `<token>` 을 자리 표시자로 사용합니다. 모든 클라이언트는 Authorization 헤더가 있는 Streamable HTTP로 통신하며, 새 클라이언트의 첫 호출은 휴대전화에서 확인합니다. 검증됨: Claude Code, Codex CLI, MCP Inspector. 나머지 클라이언트는 같은 URL과 헤더를 사용하지만 관리자가 아직 테스트하지 않았습니다.
+
+Claude Code: "클라이언트 설정" 에 있는 명령을 실행합니다 (설정 페이지는 토큰이 포함된 명령을 복사합니다). 이후 `claude mcp list` 가 `autojs6` 를 Connected로 표시합니다.
+
+Cursor: 아래 항목을 `mcp.json` 에 추가합니다:
+
+```json
+{
+  "mcpServers": {
+    "autojs6": {
+      "url": "http://127.0.0.1:9637/mcp",
+      "headers": {
+        "Authorization": "Bearer <token>"
+      }
+    }
+  }
+}
+```
+
+Codex CLI: 토큰을 환경 변수 `AUTOJS6_MCP_TOKEN` 에 넣고 (설정 페이지에서 해당 PowerShell 명령을 복사할 수 있음) 서버를 `config.toml` 에 추가하거나, `codex mcp add autojs6 --url <url> --bearer-token-env-var AUTOJS6_MCP_TOKEN` 을 실행합니다:
+
+```toml
+[mcp_servers.autojs6]
+url = "http://127.0.0.1:9637/mcp"
+bearer_token_env_var = "AUTOJS6_MCP_TOKEN"
+```
+
+MCP Inspector: CLI 모드는 추가 설정이 필요 없고, 웹 UI는 자체 Node 프록시를 통해 휴대전화에 접근합니다. 브라우저 페이지가 엔드포인트에 직접 연결할 때만 설정 페이지에서 개발자 모드를 켜세요:
+
+```shell
+npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport http --header "Authorization: Bearer <token>" --method tools/list
+```
+
+Cline, VS Code Copilot Chat, Gemini CLI 등의 클라이언트: 각자의 MCP 설정에서 같은 URL과 헤더를 사용합니다. 설정 페이지는 `"type": "http"` 가 포함된 범용 JSON 조각을 제공합니다.
+
+Claude Desktop은 stdio 서버만 실행합니다. 이를 위한 브리지 프로그램이 계획되어 있습니다 (로드맵 참조).
+
+******
+
+### 자주 묻는 질문
+
+******
+
+- 401 Unauthorized: 토큰이 없거나 잘못 입력되었거나 교체되었습니다. 설정 페이지에서 설정을 다시 복사하세요. 토큰을 교체한 뒤에는 모든 클라이언트에 새 값이 필요합니다.
+- 페어링 시간 초과: 새 클라이언트의 첫 호출은 휴대전화에서 허용할 때까지 약 1분을 기다립니다. 휴대전화 잠금을 해제하고 대화상자나 알림 동작을 수락한 뒤 호출을 반복하세요. 거부하면 짧은 대기 시간이 시작되고, 그 뒤의 호출에서 다시 묻습니다.
+- HOST_UNAVAILABLE: AutoJs6가 실행 중이 아니거나 플러그인 세션이 닫혔습니다. AutoJs6를 열고 서랍 스위치를 켠 상태로 두며 설정 페이지에서 연결 상태를 확인하세요.
+- 접근성 꺼짐: `ui_*` 도구와 화면 캡처에는 AutoJs6 접근성 서비스가 필요합니다. `device_ensure_accessibility` 를 호출하거나 시스템 접근성 설정에서 서비스를 켜세요.
+- 포트 사용 중: 서랍에 `port_in_use` 가 표시됩니다. 설정 페이지에서 포트를 바꾸고 새 포트를 adb로 포워딩하세요.
+- 로컬 네트워크에 접근 불가: 로컬 네트워크 접근을 켜고, 설정 페이지에 표시된 주소를 사용하며, PC와 휴대전화를 게스트 격리가 없는 같은 네트워크에 두고, PC 방화벽에서 포트를 허용하세요. 휴대전화의 Wi-Fi 절전은 호출마다 수백 밀리초를 더합니다.
+
+******
+
 ### 권한과 보안
 
 ******
@@ -194,6 +250,7 @@ _2026/09/15_
 - `수정` IDE rebuild 시 JVM 단위 테스트용 APK를 찾던 문제 해결. APK 검증 작업이 필요한 산출물을 자동으로 빌드하므로 clean 후에도 바로 실행 가능.
 - `수정` 플러그인 센터의 밝은 모드와 어두운 모드에서 아이콘 비율이 달라지는 문제; 야간에도 적응형 아이콘을 사용하고 레이어 크기를 조정하여 ic_launcher_round.png 의 전체 그림과 여백을 유지하며 배경색만 변경
 - `수정` 설정 페이지의 키보드 Tab 이동이 툴바 뒤로 버튼을 건너뛰던 문제 해결. 이제 Tab 순환이 뒤로 버튼과 모든 컨트롤을 포함 (Android 7 포함). 기기 테스트로 스크린 리더 레이블과 키보드 조작을 확인.
+- `수정` script_run 과 script_run_file 의 arguments 맵이 값 타입을 JSON Schema 배열로 선언해 일부 MCP 클라이언트가 거부하거나 약화하던 문제 수정. 이제 스키마는 단일 타입 anyOf 분기를 사용. README에 클라이언트 연결과 자주 묻는 질문 장, 검증된 클라이언트 표 추가.
 - `개선` 빌드 시 의도하지 않은 네이티브 의존성을 거부하고 JSON 보고서 생성
 - `의존성` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`)과 Ktor 3.5.1 CIO 엔진
 - `의존성` JVM 전송 테스트를 위해 Ktor 3.5.1 `ktor-server-test-host` 추가 (테스트 범위만)

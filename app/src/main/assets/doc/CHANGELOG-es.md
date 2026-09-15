@@ -32,6 +32,7 @@
 * `Corrección` El rebuild del IDE ya no busca un APK para las pruebas unitarias JVM. Las tareas de verificación de APK generan automáticamente sus entradas y funcionan después de un clean.
 * `Corrección` Las proporciones del icono del centro de complementos variaban entre los modos claro y oscuro; el modo nocturno también usa el icono adaptable, con las capas ajustadas para conservar el dibujo completo y los márgenes de ic_launcher_round.png, cambiando solo el color de fondo
 * `Corrección` La navegación con Tab en la página de ajustes omitía el botón atrás de la barra de herramientas; ahora el ciclo de Tab cubre el botón atrás y todos los controles, incluido Android 7. Las pruebas en dispositivo comprueban las etiquetas del lector de pantalla y el uso con teclado.
+* `Corrección` El mapa arguments de script_run y script_run_file declaraba el tipo de sus valores como un arreglo JSON Schema que algunos clientes MCP rechazan o debilitan; el esquema ahora usa ramas anyOf de un solo tipo. El README gana las secciones Clientes y Preguntas frecuentes con la matriz de clientes probados.
 * `Mejora` La verificación de compilación rechaza dependencias nativas accidentales y genera un informe JSON
 * `Dependencia` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) sobre el motor Ktor 3.5.1 CIO
 * `Dependencia` Se agrega Ktor 3.5.1 `ktor-server-test-host` para las pruebas de transporte en JVM (solo ambito de pruebas)

@@ -44,12 +44,16 @@ object JsonSchemas {
         default?.let { put("default", it) }
     }
 
-    /** A free-form object whose values are primitives (strings, numbers, booleans, null). */
+    /**
+     * A free-form object whose values are primitives (strings, numbers, booleans, null). The value
+     * schema is an `anyOf` of single-type branches rather than an array-valued `type`: several MCP
+     * clients read `type` as one string and reject or weaken the tool otherwise (roadmap P5.2).
+     */
     fun primitiveMap(description: String): JsonObject = buildJsonObject {
         put("type", "object")
         put("description", description)
         put("additionalProperties", buildJsonObject {
-            put("type", JsonArray(listOf("string", "number", "boolean", "null").map { JsonPrimitive(it) }))
+            put("anyOf", JsonArray(listOf("string", "number", "boolean", "null").map { type -> buildJsonObject { put("type", type) } }))
         })
     }
 

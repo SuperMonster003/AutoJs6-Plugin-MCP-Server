@@ -32,6 +32,7 @@
 * `修復` IDE rebuild 不再為 JVM 單元測試尋找 APK. APK 驗證任務會自動組裝所需產物, 可直接從 clean 後執行.
 * `修復` 外掛程式中心明暗模式下圖示比例不一致及自適應圖示留白不足的問題; 夜間同樣使用自適應圖示, 調整圖層尺寸以保留 ic_launcher_round.png 的完整圖形和留白, 僅切換背景色
 * `修復` 設定頁的鍵盤 Tab 導覽會跳過工具列返回按鈕; 現在 Tab 循環覆蓋返回按鈕和全部控制項 (含 Android 7). 裝置測試檢查讀屏標籤與鍵盤操作.
+* `修復` script_run 與 script_run_file 的 arguments 對應以 JSON Schema 陣列宣告值類型, 部分 MCP 客戶端會拒絕或弱化; 現改為單類型 anyOf 分支. README 新增 "接入" 與 "常見問題" 章節及實測客戶端矩陣.
 * `優化` 建置階段阻止意外引入原生相依套件, 並輸出 JSON 校驗報告
 * `依賴` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 與 Ktor 3.5.1 CIO 引擎
 * `依賴` 附加 Ktor 3.5.1 `ktor-server-test-host` 用於 JVM 傳輸測試 (僅測試範圍)

@@ -37,6 +37,23 @@
   "p_connection_usb": "USB: `adb forward tcp:9637 tcp:9637` 將手機連接埠對應到 PC; 多台裝置時加上 `-s <serial>` (透過 `adb devices` 查看), 模擬器同樣適用. 任一側連接埠被占用時, 在設定頁修改連接埠並轉送新連接埠. 連線卡片提供可直接複製的轉送命令.",
   "p_connection_lan": "區域網路: 在設定頁開啟 \"允許區域網路連線\". 設定頁隨後列出手機目前位址 (隨 Wi-Fi 變化重新整理) 並提示用戶端需處於同一網路; 訪客網路, AP 隔離和 PC 防火牆是常見阻礙. 來自區域網路的配對要求會被顯著標註; 伺服器持續可從網路存取期間每日通知提醒, 提醒可關閉.",
   "p_connection_note": "兩條路徑使用相同的權杖和相同的手機側配對. 面向不支援 HTTP 的用戶端的 stdio 橋接程式另行規劃.",
+  "h3_clients": "接入",
+  "p_clients_intro": "設定頁會為下列每個用戶端複製帶真實權杖的現成設定; 此處的片段以 `<token>` 作為占位. 所有用戶端都透過帶 Authorization 標頭的 Streamable HTTP 通訊, 新用戶端的首次呼叫需在手機上確認. 已實測: Claude Code, Codex CLI 與 MCP Inspector; 其餘用戶端使用相同的 URL 與標頭, 但維護者尚未測試",
+  "p_client_claude_code": "Claude Code: 執行 \"用戶端設定\" 中的命令 (設定頁複製的版本已帶權杖); 隨後 `claude mcp list` 會將 `autojs6` 顯示為 Connected",
+  "p_client_cursor": "Cursor: 將下面的條目加入 `mcp.json`",
+  "p_client_codex": "Codex CLI: 將權杖放入環境變數 `AUTOJS6_MCP_TOKEN` (設定頁可複製對應的 PowerShell 命令), 再把伺服器加入 `config.toml`, 或執行 `codex mcp add autojs6 --url <url> --bearer-token-env-var AUTOJS6_MCP_TOKEN`",
+  "p_client_inspector": "MCP Inspector: CLI 模式無需額外設定, Web 介面透過自帶的 Node 代理存取手機. 僅當瀏覽器頁面直接連線端點時, 才需在設定頁開啟開發者模式",
+  "p_client_generic": "Cline, VS Code Copilot Chat, Gemini CLI 等用戶端: 在各自的 MCP 設定中使用相同的 URL 與標頭; 設定頁提供帶 `\"type\": \"http\"` 的通用 JSON 片段",
+  "p_client_claude_desktop": "Claude Desktop 只能啟動 stdio 伺服器; 面向它的橋接程式已列入規劃 (見路線圖)",
+  "h3_faq": "常見問題",
+  "faq_points": [
+    "401 Unauthorized: 權杖缺失, 輸錯或已輪換. 從設定頁重新複製設定; 輪換權杖後每個用戶端都需要新值.",
+    "配對逾時: 新用戶端的首次呼叫會等待約一分鐘, 直到手機上點選允許. 解鎖手機, 接受對話方塊或通知動作, 然後重複呼叫. 拒絕會進入短暫冷卻, 之後下一次呼叫會再次詢問.",
+    "HOST_UNAVAILABLE: AutoJs6 未執行或外掛工作階段已關閉. 開啟 AutoJs6, 保持抽屜開關開啟, 並在設定頁查看連線狀態.",
+    "無障礙未啟用: `ui_*` 工具與截圖需要 AutoJs6 無障礙服務. 呼叫 `device_ensure_accessibility`, 或在系統無障礙設定中啟用該服務.",
+    "連接埠被占用: 抽屜會回報 `port_in_use`. 在設定頁修改連接埠, 並用 adb 轉送新連接埠.",
+    "區域網路不可達: 開啟區域網路存取, 使用設定頁列出的位址, 讓 PC 與手機處於同一網路且無訪客隔離, 並在 PC 防火牆放行該連接埠. 手機 Wi-Fi 省電會使每次呼叫增加幾百毫秒."
+  ],
   "h3_security": "權限與安全",
   "p_security_intro": "外掛遵循明確的邊界:",
   "security_points": [
