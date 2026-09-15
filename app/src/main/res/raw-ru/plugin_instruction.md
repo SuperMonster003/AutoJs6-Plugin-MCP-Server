@@ -1,6 +1,6 @@
 MCP Server превращает Android-устройство с AutoJs6 в сервер [Model Context Protocol](https://modelcontextprotocol.io). ИИ-агенты на ПК, такие как Claude Code, Cursor или MCP Inspector, подключаются к телефону по USB или Wi-Fi и с помощью инструментов запускают скрипты, читают журналы, изучают дерево узлов специальных возможностей, нажимают и вводят текст, делают снимки экрана и работают с файлами и приложениями.
 
-Предварительная версия P4: 37 инструментов, 33 включены по умолчанию, переключатель в AutoJs6 и страница настроек плагина. Требуется соответствующая сборка AutoJs6 P4. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Версия 1.0.1: 37 инструментов (33 включены по умолчанию), ресурсы и подсказки MCP, переключатель в панели AutoJs6 и страница настроек плагина. Требуется AutoJs6 6.8.0 (сборка 5279) или новее; необязательным ресурсам autojs6://docs/ также нужны плагин AutoJs6 Offline Docs и хост с методами ретрансляции. Ход работ и свидетельства записаны в [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ### Использование
 

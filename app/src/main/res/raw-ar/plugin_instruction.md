@@ -1,6 +1,6 @@
 يحول MCP Server جهاز Android الذي يعمل عليه AutoJs6 إلى خادم [Model Context Protocol](https://modelcontextprotocol.io). يتصل وكلاء الذكاء الاصطناعي على الحاسوب, مثل Claude Code أو Cursor أو MCP Inspector, بالهاتف عبر USB أو Wi-Fi ويستخدمون الأدوات لتشغيل البرامج النصية, وقراءة السجلات, وفحص شجرة عقد إمكانية الوصول, والنقر والكتابة, والتقاط لقطات الشاشة, والتعامل مع الملفات والتطبيقات.
 
-معاينة P4: 37 أداة, منها 33 مفعلة افتراضيا, مع مفتاح في قائمة AutoJs6 وصفحة إعدادات للإضافة. تتطلب نسخة AutoJs6 المتوافقة مع P4. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+الإصدار 1.0.1: 37 أداة (33 مفعلة افتراضيا), موارد وقوالب MCP, مفتاح في قائمة AutoJs6 وصفحة إعدادات للإضافة. يتطلب AutoJs6 6.8.0 (البناء 5279) أو أحدث; كما تحتاج موارد autojs6://docs/ الاختيارية إلى إضافة AutoJs6 Offline Docs ومضيف يملك طرق التمرير. يسجل التقدم والأدلة في [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ### الاستخدام
 

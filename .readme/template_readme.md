@@ -57,6 +57,16 @@
 
 ******
 
+### {{ h3_tools }}
+
+******
+
+{{ p_tools_intro }}:
+
+{{ placeholder_tools_table }}
+
+******
+
 ### {{ h3_usage }}
 
 ******
@@ -64,6 +74,11 @@
 {{ placeholder_usage_steps }}
 
 > {{ p_usage_note }}
+
+<p align="center">
+  <img src="{{ repo_url }}/blob/master/docs/images/readme/drawer-{{ screenshot_language }}.png?raw=true" alt="{{ text_screenshot_drawer }}" width="300" />
+  <img src="{{ repo_url }}/blob/master/docs/images/readme/settings-{{ screenshot_language }}.png?raw=true" alt="{{ text_screenshot_settings }}" width="300" />
+</p>
 
 ******
 

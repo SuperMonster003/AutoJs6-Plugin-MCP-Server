@@ -52,15 +52,15 @@ Le serveur s'exécute dans le processus propre du plugin et est joignable via un
 
 ******
 
-Aperçu P4: 37 outils, dont 33 activés par défaut, avec un bouton dans le volet AutoJs6 et une page de paramètres du plugin. Nécessite la version AutoJs6 P4 correspondante. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Version 1.0.1: 37 outils (33 activés par défaut), ressources et invites MCP, un bouton dans le volet AutoJs6 et une page de paramètres du plugin. Nécessite AutoJs6 6.8.0 (build 5279) ou plus récent; les ressources optionnelles autojs6://docs/ demandent aussi le plugin AutoJs6 Offline Docs et un hôte doté de ses méthodes de relais. L'avancement et les preuves sont consignés dans [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
-### Fonctionnalités prévues
+### Fonctionnalités
 
 ******
 
-La feuille de route livre les capacités suivantes par étapes:
+Le plugin fournit les capacités suivantes:
 
 - Paramètres du téléphone pour l'état, USB, le port et le réseau local, les jetons, la révocation des associations, les groupes et root, le mode développeur, les configurations copiables Claude Code / Cursor / Codex / HTTP et l'historique, avec l'apparence AutoJs6. Les changements réseau redémarrent le serveur actif; jetons et autorisations prennent effet immédiatement. Les fenêtres secrètes bloquent les captures.
 - Exécution de scripts : exécuter du JavaScript depuis un texte ou un fichier dans AutoJs6, lister et arrêter les moteurs, et lire la sortie récente de la console.
@@ -68,8 +68,56 @@ La feuille de route livre les capacités suivantes par étapes:
 - Groupe de capture (P3.3): screen_capture renvoie des images MCP avec recadrage, scale ou maxWidth, JPEG / PNG / WebP et qualité réglable. Valeurs par défaut: JPEG, qualité 70, côté le plus long de 1280 px. Au-delà de 4 MiB de base64, la qualité ou les dimensions diminuent et les métadonnées indiquent les ajustements. screen_state fournit l'état, les dimensions, l'orientation et la densité. Le catalogue compte 37 outils. Le repli MediaProjection nécessite AutoJs6 compilé le 2026-09-13 ou après et un accord sur le téléphone, réutilisé par la session hôte.
 - Outils du répertoire de travail (P3.4): files_list / stat / read / write / mkdir / rename / delete, editor_open avec ligne et colonne à partir de 1, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast et shell_exec. Lecture binaire en base64, au plus 1 MiB de données brutes. Les écritures respectent aussi le budget du host (normalement 96 KiB avec les échappements JSON). Suppression et Shell sont désactivés par défaut; root exige allowShellRoot et une autorisation shell.root du host. La version P3.4 correspondante du host est nécessaire.
 - Les ressources MCP (P3.5) donnent accès en lecture seule aux fichiers de travail, aux exemples du serveur hôte, à la documentation hors ligne lorsque le plugin AutoJs6 Offline Docs est installé, aux informations de l'appareil et à la console récente, selon l'appairage et les groupes actifs. Les lectures de texte et de données binaires signalent toute troncature. Les modèles write_autojs6_script, automate_task et debug_selector proposent des instructions en anglais et en chinois, avec repli en anglais pour les autres langues du téléphone.
-- Chemins de connexion : USB via `adb forward`, réseau local avec activation explicite, pont stdio côté PC et tunnel public optionnel avec OAuth 2.1.
+- Chemins de connexion : USB via `adb forward`, réseau local avec activation explicite et pont stdio côté PC pour les clients sans transport HTTP.
 - Sécurité : jeton bearer renouvelable, confirmation d'appairage à la première utilisation sur le téléphone et interrupteurs d'outils par groupe ; le serveur n'écoute par défaut que sur l'interface de bouclage.
+
+******
+
+### Outils
+
+******
+
+Le tableau ci-dessous est généré à partir de l'instantané du catalogue d'outils du plugin (`app/src/test/resources/tool-catalog.snapshot.json`); les descriptions sont les textes anglais reçus par les clients et chaque groupe peut être désactivé depuis la page de paramètres:
+
+| Outil | Groupe | Par défaut | Description |
+|---|---|---|---|
+| `device_ping` | `device` | activé | Confirms that the AutoJs6 MCP Server plugin is reachable and returns its version, the device model, the Android API level, and the device time. |
+| `device_info` | `device` | activé | Returns the device build, screen, battery, memory, AutoJs6 host version and process, accessibility service state, screen state, locale, and time zone as AutoJs6 reports them (schema autojs6-bridge-device-info-v1). No hardware identifiers. |
+| `script_run` | `script` | activé | Runs JavaScript source in AutoJs6 (its Rhino engine with the full AutoJs6 API) and by default waits for it to finish. Use it for automation steps: toasts, UI actions, file work, app launches. The result carries executionId, status (finished, error, running), durationMs, the exception with its line when the script threw, and the newest console lines. A script still running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output. |
+| `script_run_file` | `script` | activé | Runs a script file that already exists on the device (AutoJs6 picks the engine from the suffix) and by default waits for it to finish. The result carries executionId, status (finished, error, running), durationMs, the exception with its line when the script threw, and the newest console lines. A script still running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output. |
+| `script_stop` | `script` | activé | Stops one running AutoJs6 script by the executionId that script_run, script_run_file, or script_list reported. |
+| `script_stop_all` | `script` | activé | Stops every script AutoJs6 is running, including ones started on the phone, and returns how many were stopped. |
+| `script_list` | `script` | activé | Lists the scripts AutoJs6 is running or starting, with executionId, name, path, working directory, state, and uptime. |
+| `console_tail` | `script` | activé | Returns the newest lines of the AutoJs6 console, which every script shares; optionally only entries after sinceId or at least a level. nextSinceId in the result continues from where this call ended. |
+| `ui_dump` | `ui` | activé | Dumps the accessibility node tree of the active window as compact text: one node per line with a #n reference, an indent per depth, the short class name, the state markers that apply (clickable, long_clickable, checkable, checked, scrollable, editable, focused, selected, !enabled, hidden), the text in quotes, desc=, id= (name part only), and the position (bounds [l,t][r,b] for a node with children, c=(x,y) for a leaf). Pass a #n reference as nodeRef to ui_click, ui_long_click, ui_set_text, or ui_scroll; references stay valid until the next ui_dump or for 60 s. Call it before acting and again after the screen changed. format json returns the nodes as objects with every flag; format xml returns the uiautomator-style export. |
+| `ui_find` | `ui` | activé | Finds the nodes of the active window that match every condition of the selector, optionally waiting up to timeoutMs for the first match, and returns up to limit of them with #n references, bounds, and center. An empty count is not an error; ui_explain_selector tells which condition fails. |
+| `ui_current_window` | `ui` | activé | Returns the package and activity in the foreground, whether the AutoJs6 accessibility service is available, and the accessibility windows with their type, title, bounds, and focus. |
+| `ui_explain_selector` | `ui` | activé | Explains why a selector matches or not: evaluates its conditions one by one over the active window and reports how many nodes pass each step cumulatively, the first failing condition, the matches, and the near misses. Use it when ui_find returns nothing. |
+| `ui_wait_for` | `ui` | activé | Waits until a node matching the selector appears (default) or disappears, polling the active window every 0.5 s for up to timeoutMs, and answers TIMEOUT when the state is not reached. Use it after an action that opens a screen or dismisses a dialog. |
+| `ui_click` | `ui` | activé | Clicks a node given by nodeRef (a #n reference from the last ui_dump), by selector (the first match in pre-order), or by x and y (a coordinate tap, allowed only while the ui_gesture group is enabled). The accessibility click climbs to the nearest clickable ancestor when the node itself is not clickable. Returns the node it acted on. Give nodeRef or selector, not both. |
+| `ui_long_click` | `ui` | activé | Long-presses a node given by nodeRef or selector (the accessibility long click climbs to the nearest node that accepts it), or by x and y as a 700 ms press at that point (allowed only while the ui_gesture group is enabled). Give nodeRef or selector, not both. |
+| `ui_set_text` | `ui` | activé | Sets the text of an editable node (an EditText, marked editable by ui_dump) given by nodeRef or selector; append adds to the current text instead of replacing it. Works without focus or the keyboard; ACTION_FAILED means the node is not editable or not enabled. Give nodeRef or selector, not both. |
+| `ui_scroll` | `ui` | activé | Scrolls a node given by nodeRef or selector, or the first scrollable node of the window when neither is given: forward, down, and right move towards the end, backward, up, and left towards the start; times repeats the step. performed counts the steps the node accepted, fewer than requested means it reached the end. Give nodeRef or selector, not both. |
+| `ui_press_key` | `ui` | activé | Presses a global key through the accessibility service: back, home, recents, notifications (opens the notification shade), quick_settings, power_dialog, or lock_screen (Android 9 or later). |
+| `ui_swipe` | `ui_gesture` | désactivé | Swipes one finger from (x1, y1) to (x2, y2) in device pixels over durationMs; take the coordinates from ui_dump bounds or a screenshot. Part of the ui_gesture group, which is off by default. |
+| `ui_gesture` | `ui_gesture` | désactivé | Performs a free-path one-finger gesture through the given points over durationMs (at most 10 s): the first point is the touch down, the last the lift. Part of the ui_gesture group, which is off by default. |
+| `screen_capture` | `screen` | activé | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
+| `screen_state` | `screen` | activé | Read whether the screen is on, its current width and height, orientation, rotation, and density. Does not request screen capture consent. |
+| `files_list` | `files` | activé | Lists workspace files with metadata. Results are bounded and report truncation. |
+| `files_stat` | `files` | activé | Returns existence, type, size, and modification time of a workspace path. |
+| `files_read` | `files` | activé | Reads up to 1 MiB. Use encoding base64 for binary data; encoding, bytes, totalBytes, and truncated identify the representation and limit. |
+| `files_write` | `files` | activé | Writes UTF-8 text and refreshes the host explorer. Content is limited to 1 MiB and the negotiated Binder request budget (normally 96 KiB including JSON escaping); oversized calls fail before writing. |
+| `files_mkdir` | `files` | activé | Creates a workspace directory and missing parents, then refreshes the host explorer. |
+| `files_rename` | `files` | activé | Moves a workspace file or directory to another workspace path and refreshes the host explorer. |
+| `files_delete` | `files_delete` | désactivé | Deletes a workspace entry. The separate files_delete group is off by default. The workspace root cannot be deleted. |
+| `editor_open` | `files` | activé | Opens a workspace file in the AutoJs6 editor at a one-based line and column. Lines outside the file are ignored by the editor. |
+| `app_launch` | `device` | activé | Opens an installed Android application. Provide exactly one of packageName or appName. |
+| `app_list` | `device` | activé | Lists up to 1000 Android applications visible to AutoJs6, optionally matching a package name or label. Android package visibility restrictions apply. |
+| `clipboard_get` | `device` | activé | Reads clipboard text (up to 64 KiB). Android may restrict clipboard access while AutoJs6 is in the background. |
+| `clipboard_set` | `device` | activé | Replaces clipboard text, including an empty string to clear it. |
+| `device_ensure_accessibility` | `device` | activé | Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance. |
+| `toast` | `device` | activé | Shows a short Android toast on the phone. |
+| `shell_exec` | `shell` | désactivé | Runs an Android shell command in the host workspace. The shell group is off by default; root also requires the separate allow root switch and a shell.root host grant. Reports exit code, timeout, stdout, stderr, and truncation. maxOutputBytes bounds stdout and stderr together. |
 
 ******
 
@@ -84,6 +132,11 @@ La feuille de route livre les capacités suivantes par étapes:
 5. Confirmez la première demande d'association sur le téléphone. Arrêtez ensuite le serveur depuis le volet, les paramètres ou la notification.
 
 > Bouton MCP Server avec guides d'installation, d'activation, d'autorisation et de compatibilité; arrêt synchronisé avec la notification; paramètres conservés à la reconnexion; accès vérifié à la même page depuis le volet et le Centre de plugins. Restaure le serveur à l'ouverture d'AutoJs6 sauf arrêt par l'utilisateur en l'absence de l'hôte; aucun lancement au démarrage de l'appareil.
+
+<p align="center">
+  <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/docs/images/readme/drawer-en.png?raw=true" alt="Bouton MCP Server dans le volet AutoJs6" width="300" />
+  <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/docs/images/readme/settings-en.png?raw=true" alt="Page de paramètres de MCP Server" width="300" />
+</p>
 
 ******
 

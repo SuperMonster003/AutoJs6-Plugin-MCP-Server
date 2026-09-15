@@ -8,9 +8,9 @@
   "p_introduction_what": "MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Protocol]({{ mcp_spec_url }}) 服务器. 电脑上的 AI 代理 (如 Claude Code, Cursor 或 MCP Inspector) 通过 USB 或 Wi-Fi 连接手机, 借助工具运行脚本, 读取日志, 查看无障碍节点树, 点击与输入, 截取屏幕, 以及操作文件与应用.",
   "p_introduction_how": "服务器运行在插件自己的进程中, 通过单一的 Streamable HTTP 端点对外提供服务. AutoJs6 通过 Binder 向插件下发能力代理, 每次工具调用都由宿主以其既有的权限, 引擎和无障碍服务执行; 插件不会复制宿主的任何功能.",
   "h3_status": "当前状态",
-  "p_status": "P4 开发预览: 37 个工具, 默认启用 33 个, 提供 AutoJs6 抽屉开关和插件设置页. 需要配套的 P4 AutoJs6 构建. [ROADMAP.md]({{ roadmap_url }}).",
-  "h3_features": "规划功能",
-  "p_features_intro": "路线图分阶段交付以下能力",
+  "p_status": "版本 {{ version_name }}: 37 个工具 (默认启用 33 个), MCP 资源与提示, AutoJs6 抽屉开关和插件设置页. 需要 AutoJs6 {{ required_host_version_name }} (构建 {{ required_host_version_code }}) 或更高版本; 可选的 autojs6://docs/ 资源还需要 AutoJs6 离线文档插件以及带转读方法的宿主. 进度与证据记录在 [ROADMAP.md]({{ roadmap_url }}).",
+  "h3_features": "功能",
+  "p_features_intro": "插件提供以下能力",
   "features": [
     "手机设置页提供服务状态, USB 转发, 端口和局域网访问, 令牌显示/复制/轮换, 配对撤销, 工具分组和 root 权限, 开发者模式, 可复制的 Claude Code / Cursor / Codex / 通用 HTTP 配置及发行历史, 并跟随 AutoJs6 外观. 网络设置会重启运行中的监听器, 令牌和权限变更立即生效. 敏感信息窗口禁止截图.",
     "脚本执行: 在 AutoJs6 内运行文本或文件形式的 JavaScript, 列出与停止引擎, 读取最近的控制台输出.",
@@ -18,9 +18,19 @@
     "截图分组 (P3.3): screen_capture 返回 MCP 图片, 支持裁剪, scale 或 maxWidth, JPEG / PNG / WebP 与质量参数. 默认 JPEG 质量 70, 最长边 1280 px. base64 超过 4 MiB 时降低质量或尺寸重试, 元数据说明调整情况. screen_state 返回亮屏状态, 尺寸, 方向和密度. 工具目录现有 37 项. MediaProjection 回退需要 2026-09-13 或之后构建的 AutoJs6 宿主及手机端授权, 宿主会话复用该授权.",
     "工作目录工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用从 1 开始的行列号的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二进制读取使用 base64, 原始数据最多 1 MiB. 写入还受宿主请求预算约束 (通常为包含 JSON 转义的 96 KiB). 文件删除和 Shell 默认关闭; root 另需 allowShellRoot 开关与宿主 shell.root 授权. 这些能力需要匹配的 P3.4 宿主构建.",
     "MCP 资源 (P3.5) 提供只读工作目录文件, 可浏览的宿主示例, 安装 AutoJs6 离线文档插件后的离线文档, 设备信息和最近控制台输出, 遵守配对与分组开关. 文本和二进制读取报告截断状态. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指导, 其他手机语言回退英语.",
-    "连接方式: 通过 `adb forward` 的 USB 连接, 需显式开启的局域网连接, 电脑端 stdio 桥接程序, 以及可选的公网隧道与 OAuth 2.1.",
+    "连接方式: 通过 `adb forward` 的 USB 连接, 需显式开启的局域网连接, 以及面向无 HTTP 传输客户端的电脑端 stdio 桥接程序.",
     "安全: 可轮换的 Bearer 令牌, 手机端首次配对确认, 按分组的工具开关; 服务器默认只监听回环接口."
   ],
+  "h3_tools": "工具清单",
+  "p_tools_intro": "下表由插件的工具目录快照 (`app/src/test/resources/tool-catalog.snapshot.json`) 生成; 描述为客户端收到的英文原文, 每个分组都可在设置页关闭",
+  "tools_table_headers": [
+    "工具",
+    "分组",
+    "默认",
+    "描述"
+  ],
+  "text_on": "开",
+  "text_off": "关",
   "h3_usage": "使用方法",
   "usage_steps": [
     "在安装了 AutoJs6 构建 {{ required_host_version_code }} ({{ required_host_version_name }}) 或更高版本的设备上, 从 [Releases]({{ repo_url }}/releases) 下载并安装插件 APK.",
@@ -30,6 +40,9 @@
     "首次连接时在手机上确认配对请求. 使用完毕后可从抽屉, 设置页或通知中停止服务."
   ],
   "p_usage_note": "MCP 服务器抽屉开关提供安装, 激活, 启用, 授权与兼容性引导, 与通知停止操作同步, 重连时保留插件配置, 抽屉及插件中心通过权限校验打开同一设置页. AutoJs6 打开时恢复此前启用的服务器, 但尊重宿主离线期间的用户停止操作, 不随设备开机自启.",
+  "text_screenshot_drawer": "AutoJs6 抽屉中的 MCP Server 开关",
+  "text_screenshot_settings": "MCP Server 设置页",
+  "screenshot_language": "zh",
   "h3_quick_start": "客户端配置",
   "p_quick_start_intro": "Claude Code 只需一条命令即可注册服务器; 其他客户端在各自的 MCP 配置中使用相同的 URL 与请求头",
   "p_quick_start_note": "在 AutoJs6 抽屉中打开 MCP 服务器. 长按条目标题或点击插件中心的设置入口, 进入设置页并复制电脑客户端所需配置. 首次连接时在手机上确认配对请求. 使用完毕后可从抽屉, 设置页或通知中停止服务.",

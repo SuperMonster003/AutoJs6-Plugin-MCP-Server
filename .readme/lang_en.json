@@ -8,9 +8,9 @@
   "p_introduction_what": "MCP Server turns an Android device running AutoJs6 into a [Model Context Protocol]({{ mcp_spec_url }}) server. AI agents on a PC, such as Claude Code, Cursor, or the MCP Inspector, connect to the phone over USB or Wi-Fi and use tools to run scripts, read logs, inspect the accessibility node tree, tap and type, take screenshots, and work with files and apps.",
   "p_introduction_how": "The server runs inside the plugin's own process and is reached through a single Streamable HTTP endpoint. AutoJs6 hands the plugin a capability broker over Binder, so every tool call is executed by the host with its existing permissions, engines, and accessibility service; the plugin never duplicates host functionality.",
   "h3_status": "Status",
-  "p_status": "P4 development preview: 37 tools, 33 enabled by default, with an AutoJs6 drawer switch and a plugin settings page. Requires the matching P4 AutoJs6 build. [ROADMAP.md]({{ roadmap_url }}).",
-  "h3_features": "Planned Features",
-  "p_features_intro": "The roadmap delivers the following capabilities in stages",
+  "p_status": "Version {{ version_name }}: 37 tools (33 enabled by default), MCP resources and prompts, an AutoJs6 drawer switch and a plugin settings page. Requires AutoJs6 {{ required_host_version_name }} (build {{ required_host_version_code }}) or later; the optional autojs6://docs/ resources also need the AutoJs6 Offline Docs plugin and a host with its relay methods. Progress and evidence are tracked in [ROADMAP.md]({{ roadmap_url }}).",
+  "h3_features": "Features",
+  "p_features_intro": "The plugin provides the following capabilities",
   "features": [
     "Phone settings for server status, USB forwarding, port and LAN access, token display/copy/rotation, pairing revocation, tool groups and root permission, developer mode, copyable Claude Code / Cursor / Codex / generic HTTP configurations, release history, and appearance following AutoJs6. Network settings apply by restarting an active listener; token and permission changes take effect immediately. Secret dialogs block screenshots.",
     "Script execution: run JavaScript from text or from a file inside AutoJs6, list and stop engines, and read recent console output.",
@@ -18,9 +18,19 @@
     "Screenshot group (P3.3): screen_capture returns MCP images with crop, scale or maxWidth, JPEG / PNG / WebP, and quality controls. Defaults are JPEG quality 70 and longest edge 1280 px. Images above 4 MiB of base64 are retried at lower quality or smaller dimensions, with metadata reporting adjustments. screen_state reports power, dimensions, orientation and density. The catalog now has 37 tools. MediaProjection fallback requires an AutoJs6 host built on 2026-09-13 or later and consent on the phone; the host session reuses that consent.",
     "Workspace tools (P3.4): files_list / stat / read / write / mkdir / rename / delete, editor_open with one-based line and column, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, and shell_exec. Binary reads use base64, up to 1 MiB of raw data. Writes also obey the host request budget (normally 96 KiB including JSON escaping). File deletion and Shell are off by default; root additionally requires allowShellRoot and a shell.root host grant. These additions require the matching P3.4 host build.",
     "MCP resources (P3.5) expose read-only workspace files, browsable host samples, the offline documentation when the AutoJs6 Offline Docs plugin is installed, device information, and recent console output, respecting pairing and group switches. Text and binary reads report truncation. The write_autojs6_script, automate_task, and debug_selector prompts provide English and Chinese guidance, with English fallback for other phone languages.",
-    "Connection paths: USB through `adb forward`, local network with an explicit opt-in, a PC-side stdio bridge, and an optional public tunnel with OAuth 2.1.",
+    "Connection paths: USB through `adb forward`, local network with an explicit opt-in, and a PC-side stdio bridge for clients without an HTTP transport.",
     "Security: a rotating bearer token, first-use pairing confirmation on the phone, and per-group tool switches; the server listens only on the loopback interface by default."
   ],
+  "h3_tools": "Tools",
+  "p_tools_intro": "The table below is generated from the plugin's tool catalog snapshot (`app/src/test/resources/tool-catalog.snapshot.json`); descriptions are the English texts that clients receive, and each group can be switched off on the settings page",
+  "tools_table_headers": [
+    "Tool",
+    "Group",
+    "Default",
+    "Description"
+  ],
+  "text_on": "on",
+  "text_off": "off",
   "h3_usage": "Usage",
   "usage_steps": [
     "Install the plugin APK from [Releases]({{ repo_url }}/releases) on a device with AutoJs6 build {{ required_host_version_code }} ({{ required_host_version_name }}) or later.",
@@ -30,6 +40,9 @@
     "Confirm the first pairing request on the phone. Stop the server from the drawer, settings, or the notification when finished."
   ],
   "p_usage_note": "MCP Server drawer switch with installation, activation, enablement, authorization, and compatibility guidance; notification Stop synchronization; saved plugin settings retained on reconnect; permission-checked settings entry from the drawer and Plugin Center. Restores a previously enabled server when AutoJs6 opens, unless the user stopped it while the host was absent; no boot startup.",
+  "text_screenshot_drawer": "AutoJs6 drawer with the MCP Server switch",
+  "text_screenshot_settings": "MCP Server settings page",
+  "screenshot_language": "en",
   "h3_quick_start": "Client Configuration",
   "p_quick_start_intro": "Claude Code registers the server with one command; other clients use the same URL and header in their MCP configuration",
   "p_quick_start_note": "Turn on MCP Server in the AutoJs6 drawer. Long-press its title to open settings, or use Settings in its Plugin Center entry. Copy the configuration for your PC client. Confirm the first pairing request on the phone. Stop the server from the drawer, settings, or the notification when finished.",

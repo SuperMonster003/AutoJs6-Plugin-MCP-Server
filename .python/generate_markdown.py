@@ -70,7 +70,7 @@ CHANGELOG_CATEGORIES = ["hint", "feature", "fix", "improvement", "dependency"]
 CHANGELOG_LABEL_KEYS = [f"changelog_label_{category}" for category in CHANGELOG_CATEGORIES]
 CHANGELOG_DATA_KEY = "$data"
 
-README_LIST_KEYS = ["features", "usage_steps", "security_points", "faq_points"]
+README_LIST_KEYS = ["features", "usage_steps", "security_points", "faq_points", "tools_table_headers"]
 
 EXPECTED_ARTIFACT_COUNT = 36
 README_LATEST_RELEASES = 3
@@ -311,6 +311,34 @@ def numbered_list(items: list[str]) -> str:
     return "\n".join(f"{index}. {item}" for index, item in enumerate(items, start=1))
 
 
+def load_tool_catalog(root: Path) -> list[dict[str, Any]]:
+    """The committed ToolCatalog snapshot (kept in sync by ToolCatalogTest) drives the README tool table."""
+    path = root / "app" / "src" / "test" / "resources" / "tool-catalog.snapshot.json"
+    tools = json.loads(load_text(path))
+    require(isinstance(tools, list) and tools, f"{path} must hold a non-empty list of tools")
+    for tool in tools:
+        require(
+            isinstance(tool, dict) and all(isinstance(tool.get(key), str) and tool[key] for key in ("name", "group", "description")),
+            f"{path} tool entries need name, group and description",
+        )
+        require(isinstance(tool.get("defaultEnabled"), bool), f"{path} tool {tool.get('name')!r} needs a boolean defaultEnabled")
+    return tools
+
+
+def tools_table(tools: list[dict[str, Any]], content: dict[str, Any]) -> str:
+    headers = content["tools_table_headers"]
+    require(len(headers) == 4, "tools_table_headers must list exactly four column titles")
+
+    def cell(text: str) -> str:
+        return text.replace("|", "\\|").replace("\n", " ")
+
+    lines = ["| " + " | ".join(cell(header) for header in headers) + " |", "|---|---|---|---|"]
+    for tool in tools:
+        default = content["text_on"] if tool["defaultEnabled"] else content["text_off"]
+        lines.append(f"| `{tool['name']}` | `{tool['group']}` | {default} | {cell(tool['description'])} |")
+    return "\n".join(lines)
+
+
 def markdown_link(label: str, url: str) -> str:
     return f"[{label}]({url})"
 
@@ -393,9 +421,11 @@ def build_readme_values(
     code: str,
     languages: dict[str, dict[str, Any]],
     changelogs: dict[str, dict[str, Any]],
+    tools: list[dict[str, Any]],
 ) -> dict[str, Any]:
     content = dict(languages[code])
     repo_url = content["repo_url"]
+    content["placeholder_tools_table"] = tools_table(tools, content)
     content["placeholder_ul_languages_all_supported"] = build_language_list(code, languages)
     content["placeholder_features"] = bullet_list(content["features"])
     content["placeholder_usage_steps"] = numbered_list(content["usage_steps"])
@@ -424,6 +454,7 @@ def build_artifacts(root: Path) -> dict[Path, str]:
     android_resource_dir = root / "app" / "src" / "main" / "res"
 
     languages, changelogs = load_languages(root)
+    tools = load_tool_catalog(root)
     readme_template = load_text(readme_dir / "template_readme.md")
     instruction_template = load_text(readme_dir / "template_plugin_instruction.md")
     changelog_template = load_text(changelog_dir / "template_changelog.md")
@@ -440,13 +471,13 @@ def build_artifacts(root: Path) -> dict[Path, str]:
             artifacts[android_changelog_dir / "CHANGELOG.md"] = output
 
     for code in LANGUAGE_CODES:
-        output = render_template(readme_template, build_readme_values(code, languages, changelogs))
+        output = render_template(readme_template, build_readme_values(code, languages, changelogs, tools))
         artifacts[readme_dir / f"README-{code}.md"] = output
         if code == LANGUAGE_CODE_DEFAULT:
             artifacts[root / "README.md"] = output
 
     for code in LANGUAGE_CODES:
-        output = render_template(instruction_template, build_readme_values(code, languages, changelogs))
+        output = render_template(instruction_template, build_readme_values(code, languages, changelogs, tools))
         directory = ANDROID_INSTRUCTION_DIRECTORIES[code]
         artifacts[android_resource_dir / directory / "plugin_instruction.md"] = output
         if code == ANDROID_DEFAULT_LANGUAGE:
