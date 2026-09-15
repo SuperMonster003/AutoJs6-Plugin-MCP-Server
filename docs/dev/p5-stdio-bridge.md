@@ -57,6 +57,53 @@ both READMEs, CHANGELOG, LICENSE). `npm ls --omit=dev --all` lists 95
 packages under the single runtime dependency `@modelcontextprotocol/sdk`;
 `npm audit --omit=dev` reports 0 vulnerabilities.
 
+## GitHub publication and npm release preparation
+
+On 2026-09-15, the public repository
+[SuperMonster003/AutoJs6-MCP-Bridge](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)
+was created, with default branch `master` and annotated tag
+[`v0.1.0`](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge/tree/v0.1.0)
+both pointing to source commit `27b15c2527190f12c259bcb3a6924acdfc07e732`.
+GitHub rejected the first push because the original local commit used a
+private email. Only that unpublished commit's author and committer email
+were changed to the maintainer's GitHub noreply address; its tree hash was
+verified unchanged before the successful push.
+
+The release candidate was verified again with Node.js 24.13.0 and npm 11.6.2:
+
+- `npm ci`: installed the committed lockfile; audit reported no vulnerabilities.
+- `npm test`: 23 tests passed, no failures or skips.
+- `npm audit --omit=dev`: no vulnerabilities.
+- `npm pack --dry-run` and the actual tarball: 17 files, 20,443 bytes packed,
+  62,463 bytes unpacked. The allowlist contains only `dist/`, `package.json`,
+  the two READMEs, CHANGELOG and LICENSE. A tracked-file scan found no
+  credential patterns or developer filesystem paths.
+- Installing the actual tarball in an isolated prefix succeeded; its installed
+  command printed `0.1.0` for `--version` and the expected `--help` output.
+- `npm publish` with `--dry-run`, `--access public` and `--tag latest` passed.
+  The real publish attempt returned `ENEEDAUTH`; the environment has no npm
+  login. Web login was requested but was not completed; the waiting login
+  process was closed. **npm 0.1.0 has not been published.**
+
+Prepared artifact: `build/autojs6-mcp-bridge-0.1.0.tgz` in the bridge
+repository (git-ignored). Its hashes are:
+
+```text
+SHA-1: d7545277949e3e03dde7ff202f73f1006b79fcb7
+Integrity: sha512-R9Ysw0nu6siQsh0oYf7m5E+nQddGRvBhvIPHoPKM57HP52DnbjW5zb3SpwZkF4QYwKfgEu7g3bp/b9gEK+oSRQ==
+```
+
+After the maintainer logs into npm on this machine, publish this verified
+tarball from the bridge repository:
+
+```shell
+npm publish ./build/autojs6-mcp-bridge-0.1.0.tgz --access public --tag latest --registry=https://registry.npmjs.org/
+```
+
+Then verify the registry version and integrity, install `autojs6-mcp-bridge@0.1.0`
+from the registry in a fresh prefix, and record the result before checking off
+the P5 publication item. The registry install has not yet been exercised.
+
 ## CLIENT_E2E: Claude Code over stdio through the bridge
 
 Run 4 of `p5_bridge_e2e.py QV770340J7` (17:28-17:30):
@@ -116,10 +163,9 @@ copied into the repository.
   `claude_desktop_config.json`); the `claude_desktop_config.json` snippet in
   the bridge README follows its documented stdio server format and was not
   exercised.
-- The package is prepared (`build/autojs6-mcp-bridge-0.1.0.tgz` in the bridge
-  repository, git-ignored) but not yet published to npm; publishing needs the
-  maintainer's npm account, and the plugin README already names
-  `npm install -g autojs6-mcp-bridge` as the install command.
+- GitHub source and tag publication are complete, but npm publication still
+  requires the maintainer's login as recorded above. The plugin README already
+  names `npm install -g autojs6-mcp-bridge` as the install command.
 - Node.js 18, 20 and 22 were not run; the package declares `engines.node
   >=18` and uses only APIs available since Node 18 (`fetch` through the SDK,
   `node:test` only for the test suite).
