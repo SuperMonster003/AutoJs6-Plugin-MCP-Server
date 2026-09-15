@@ -836,4 +836,11 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 真机: Sony API 33 六项全过 (S1 hostAvailable=false 56 ms / 重连 73 ms; S2 新监听 1192 ms + 宿主重连 208 ms; S3 宿主启动后 154 ms; S4 20 s 内监听器未复活, 重新打开 24.7 s (含自动化); S5 / S6 如期); Xiaomi Pad API 35 六项全过 (S2 1693 + 219 ms; S4 29.0 s; 配对经展开后的通知动作); Sony API 31 五项 (S5 未执行: 该机 uiautomator 持续 "could not get idle state", 状态栏网速指示不停刷新, 设置页无法由脚本打开); Sony API 28 未能驱动 (uiautomator 返回 null root, 该机启用了两个第三方无障碍服务, 未改动用户设备设置). 修复前 (同一 API 33): S2 / S5 旧会话得 PAIRING_REQUIRED 并留配对通知, S6b 重启后残留 2 条通知, S4 1.2 s 内被宿主拉起.
 - 验证: JVM 227 项全过, lintDebug 0 错误 8 警告, debug / androidTest 构建, 10 语言 / 36 产物生成检查, git diff --check 通过; 宿主 worktree `:app:assembleAppDebug` 通过并装机验证 S4.
 - 工具备注: `p6_lifecycle.py --local-port N` 允许多台设备并行 (各自转发到手机 9637); `p4_ui.Device.dump` 不再复用上一次的 XML (Sony 上失败的 dump 曾返回旧界面); `accept_pairing_on_phone` 在 HyperOS 上先展开分组卡片再展开子通知才能点到 "允许".
-- 下次会话建议起点: P6 第 4 项电量与常驻 (空闲 N 分钟自动停止选项, 1 小时空闲电量增量), 之后一致性套件, 安全审计清单 (README "安全" 章节), 性能基线; 维护者侧: 合并宿主分支 `mcp-p6-lifecycle`, 创建 GitHub 仓库 AutoJs6-MCP-Bridge 并 npm publish 0.1.0.
+- 下次会话建议起点: P6 第 4 项电量与常驻 (空闲 N 分钟自动停止选项, 1 小时空闲电量增量), 之后一致性套件, 安全审计清单 (README "安全" 章节), 性能基线; 维护者侧: 合并宿主分支 `mcp-p6-lifecycle`, 创建 GitHub 仓库 AutoJs6-MCP-Bridge 并 npm publish 0.1.0. 后续合并与发布进展见下面的会话记录.
+
+### 2026-09-15: 宿主生命周期分支合并
+
+- 完成: 宿主 `master` 以 merge commit `7c31269cc` 合入 `mcp-p6-lifecycle` (`89347f22b`), 双亲为原 master `541d15ffb` 与生命周期修复分支. 合并无冲突, 保留 master 后续改动, 10 语言 changelog 逐一验证仅追加该分支的 fix 条目; 重新运行宿主文档生成器没有额外漂移. `git merge-base --is-ancestor mcp-p6-lifecycle master` 通过, 宿主工作树干净.
+- 验证: 合并树的 MCP 包与插件中心 MCP 注册 JVM 测试 21/21, `:app:assembleAppDebug` 通过 (AutoJs6 6.8.0 / 5280); Sony XQ-DQ72 (API 33) 的 `McpServerPluginRoundTripTest` 1/1, 真实 Binder 会话到 running 且宿主已连接, 随后 stop / close 正常; `git diff --check` 通过. 全量生命周期矩阵沿用上一次真机证据, 本次未重复. 证据: `docs/dev/lifecycle-matrix.md` 的合并验收节.
+- 范围: 宿主仅完成本地 master 合并; Bridge 的 GitHub 建仓与 npm 0.1.0 发布单独记录.
+- 下次会话建议起点: 完成 Bridge 发布, 之后继续 P6 第 4 项电量与常驻.
