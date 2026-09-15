@@ -881,3 +881,9 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 修正: `RequestGate` 对回环 `Origin` 的普通请求在任何模式下放行 (原 P2.1 规则拒绝所有非开发者模式的 Origin, conformance `localhost-host-valid-accepted` 得 403); 非回环 Origin 仍 403, CORS 头与预检仍仅开发者模式, 非开发者模式带 Origin 的 OPTIONS 回 403 `Cross-origin access needs developer mode`. JVM `RequestGateTest` / `McpTransportTest` 改写, 233 项全过, lint 0 问题. P2.1 决策行已追加修订说明.
 - 发现: (1) 单进程 `--suite all` 在约 1 s 内打完 32 个场景, 第 8 个场景起触发 20 请求 / s 客户端限流 (429 / -32004), 28 / 32 失败; 限流为 P6 设计, 保留, 脚本改为逐场景单进程 + 1.5 s 间隔. (2) SSE 挂载无事件 id / priming 事件 / retry 字段 (SEP-1699 SHOULD, 套件 2 条 warning); SDK 0.15.0 有 `EventStore` 接口而 `mcpStreamableSse` 未用, 记为后续候选. (3) kotlin-sdk 0.15.0 无可指向第三方服务器的套件; 已发布 0.1.16 无 `server-stateless` 场景 (仅主分支), 无状态路径以 4 个探针记录 (2026-07-28 initialize 400 Unsupported protocol version; 无会话 server/discover 与 tools/list 400 Server not initialized; /mcp/stateless 404), 与 D9 一致. (4) Windows 上每个场景进程结束时 libuv 断言退出 (0xC0000409), 退出码不可用, `checks.json` 完整.
 - 下次会话建议起点: P6 第 7 项安全审计清单 (令牌存储 / 日志脱敏 / 导出组件 / usesCleartextTraffic / 局域网默认关闭 / 配对撤销 / 工具默认关闭项, 记入 README "安全" 章节), 之后第 8 项性能基线 (API 24 AVD `emulator-5600` 可用, 实体机一组; 注意 Xiaomi Pad 吞吐与 Ktor 500 ms 唤醒); 第 6 项宿主一致性测试应用为可选, 视维护者意见. 设备: Sony API 33 与 Xiaomi Pad 已就绪 (宿主 5280, 插件 build 43 + 测试 APK), Pad 电池策略仍为受限 (仅影响息屏用电池).
+
+### 2026-09-16: 空闲停止测试的通知权限回归
+
+- McpServerIdleStopTest 根据实际通知权限验证空闲通知, 默认不修改权限. 未授权时仍完整验证 60 秒停止, idle_timeout, userStopped=false 和前台通知移除; 已授权时必须出现空闲通知. HTTP 初始化请求增加有界连接和读取超时.
+- 验证: API 37 x86_64 模拟器全新安装未授权与授权两种情况均通过, 两次均在最后请求后 60 秒停止, 测试后恢复未授权状态. JVM 233/233, debug / androidTest 构建, lintDebug 与文档生成检查通过. 证据: docs/dev/idle-stop-notification-regression.md.
+- 本次仅调整测试与证据, 不改变服务器运行逻辑, 公共 API 或 P6 其余条目的完成状态.
