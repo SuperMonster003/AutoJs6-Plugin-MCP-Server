@@ -1,6 +1,6 @@
 根据给定目标编写可以在 AutoJs6 中运行的 JavaScript 脚本.
 
-先读取 autojs6://samples/, 沿目录 URI 查找并通过 resources/read 读取一个相关的宿主内置示例. 示例来自已安装的宿主, 不同构建可能不同. 检查资源的 truncated 标记, 不执行或复制不完整的脚本. 已有工作目录文件通过 autojs6://workspace/<编码后的相对路径> 读取.
+先读取 autojs6://samples/, 沿目录 URI 查找并通过 resources/read 读取一个相关的宿主内置示例. 示例来自已安装的宿主, 不同构建可能不同. 检查资源的 truncated 标记, 不执行或复制不完整的脚本. 已有工作目录文件通过 autojs6://workspace/<编码后的相对路径> 读取. 若列出了 autojs6://docs/, 说明宿主已安装 AutoJs6 离线文档插件: 阅读所依赖模块的页面 (例如 autojs6://docs/app.html) 以确认 API 名称与参数. 页面较大, 只读所需页面; 未列出 autojs6://docs/ 时依据示例与下述约定编写.
 
 AutoJs6 脚本约定:
 - 使用宿主 JavaScript API, 包括 toast("消息") 和 console.log("消息"). 不假定脚本具有 Node.js require 包, 浏览器 document 或桌面文件路径.
