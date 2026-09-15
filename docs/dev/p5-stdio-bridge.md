@@ -57,7 +57,7 @@ both READMEs, CHANGELOG, LICENSE). `npm ls --omit=dev --all` lists 95
 packages under the single runtime dependency `@modelcontextprotocol/sdk`;
 `npm audit --omit=dev` reports 0 vulnerabilities.
 
-## GitHub publication and npm release preparation
+## GitHub and npm release
 
 On 2026-09-15, the public repository
 [SuperMonster003/AutoJs6-MCP-Bridge](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)
@@ -81,13 +81,13 @@ The release candidate was verified again with Node.js 24.13.0 and npm 11.6.2:
 - Installing the actual tarball in an isolated prefix succeeded; its installed
   command printed `0.1.0` for `--version` and the expected `--help` output.
 - `npm publish` with `--dry-run`, `--access public` and `--tag latest` passed.
-  The first real publish attempt returned `ENEEDAUTH`. After the maintainer
-  logged in, `npm whoami` succeeded, but publishing the same verified tarball
-  returned `E403`: npm requires two-factor authentication for publishing, and
-  the account had not enabled it. No package was uploaded.
-  **npm 0.1.0 has not been published.**
+  The maintainer completed login, 2FA setup and the browser authentication
+  challenge, then the real publish succeeded. npm records publication at
+  `2026-09-15T13:26:10.980Z` (21:26:10.980, UTC+08:00).
+  **[autojs6-mcp-bridge 0.1.0](https://www.npmjs.com/package/autojs6-mcp-bridge/v/0.1.0)
+  is published with the `latest` tag.**
 
-Prepared artifact: `build/autojs6-mcp-bridge-0.1.0.tgz` in the bridge
+Published artifact: `build/autojs6-mcp-bridge-0.1.0.tgz` in the bridge
 repository (git-ignored). Its hashes are:
 
 ```text
@@ -95,19 +95,35 @@ SHA-1: d7545277949e3e03dde7ff202f73f1006b79fcb7
 Integrity: sha512-R9Ysw0nu6siQsh0oYf7m5E+nQddGRvBhvIPHoPKM57HP52DnbjW5zb3SpwZkF4QYwKfgEu7g3bp/b9gEK+oSRQ==
 ```
 
-The maintainer must first enable 2FA through the npm account settings and
-complete any subsequent browser authentication challenge. This is a registry
-requirement, documented in
-[Configuring two-factor authentication](https://docs.npmjs.com/configuring-two-factor-authentication/).
-Then publish this verified tarball from the bridge repository:
+The successful publish used the verified tarball from the bridge repository:
 
 ```shell
 npm publish ./build/autojs6-mcp-bridge-0.1.0.tgz --access public --tag latest --registry=https://registry.npmjs.org/
 ```
 
-Then verify the registry version and integrity, install `autojs6-mcp-bridge@0.1.0`
-from the registry in a fresh prefix, and record the result before checking off
-the P5 publication item. The registry install has not yet been exercised.
+Post-publication verification:
+
+- `build/verify_npm_release.py` (git-ignored) read the public registry without
+  credentials: the version and `latest` are both `0.1.0`, and `dist.shasum`
+  and `dist.integrity` match the hashes above.
+- The script downloaded the registry tarball anonymously. Its 20,443 bytes
+  match the local release artifact byte for byte. The public verification
+  metadata is saved in `build/published-release-verification.json` (git-ignored).
+- `npm install autojs6-mcp-bridge@0.1.0` with a fresh prefix, fresh cache and
+  an npm configuration without credentials installed 95 packages. The
+  generated lockfile resolves the bridge from `https://registry.npmjs.org/`,
+  and every one of its 17 installed files matches the release tarball.
+- The installed `autojs6-mcp-bridge --version` returns `0.1.0`, and `--help`
+  displays the expected options. The runtime SDK resolves to
+  `@modelcontextprotocol/sdk` 1.30.0. Auditing this fresh installation with
+  `npm audit --omit=dev` reports no vulnerabilities.
+
+The P5 publication item is complete. Users can install the release with:
+
+```shell
+npm install -g autojs6-mcp-bridge@0.1.0
+autojs6-mcp-bridge --version
+```
 
 ## CLIENT_E2E: Claude Code over stdio through the bridge
 
@@ -168,9 +184,6 @@ copied into the repository.
   `claude_desktop_config.json`); the `claude_desktop_config.json` snippet in
   the bridge README follows its documented stdio server format and was not
   exercised.
-- GitHub source and tag publication are complete, but npm publication still
-  requires the maintainer's 2FA setup as recorded above. The plugin README already
-  names `npm install -g autojs6-mcp-bridge` as the install command.
 - Node.js 18, 20 and 22 were not run; the package declares `engines.node
   >=18` and uses only APIs available since Node 18 (`fetch` through the SDK,
   `node:test` only for the test suite).
