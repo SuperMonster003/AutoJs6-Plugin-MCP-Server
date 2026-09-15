@@ -110,7 +110,7 @@ USB: `adb forward tcp:9637 tcp:9637` 로 휴대전화 포트를 PC에 매핑합�
 
 로컬 네트워크: 설정 페이지에서 "로컬 네트워크 연결 허용" 을 켭니다. 그러면 설정 페이지에 휴대전화의 현재 주소 (Wi-Fi 변경을 따라감) 와 클라이언트가 같은 네트워크에 있어야 한다는 안내가 표시됩니다. 게스트 네트워크, AP 격리, PC 방화벽이 흔한 장애 요인입니다. 로컬 네트워크에서 온 페어링 요청은 표시되며, 서버가 네트워크에서 접근 가능한 동안 매일 알림으로 상기시킵니다. 알림은 끌 수 있습니다.
 
-두 경로 모두 같은 토큰과 같은 휴대전화 측 페어링을 사용합니다. HTTP를 지원하지 않는 클라이언트를 위한 stdio 브리지는 별도로 계획되어 있습니다.
+두 경로 모두 같은 토큰과 같은 휴대전화 측 페어링을 사용합니다. HTTP 전송이 없는 클라이언트는 클라이언트 연결 절에서 설명하는 stdio 브리지를 사용합니다.
 
 ******
 
@@ -153,7 +153,7 @@ npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport 
 
 Cline, VS Code Copilot Chat, Gemini CLI 등의 클라이언트: 각자의 MCP 설정에서 같은 URL과 헤더를 사용합니다. 설정 페이지는 `"type": "http"` 가 포함된 범용 JSON 조각을 제공합니다.
 
-Claude Desktop은 stdio 서버만 실행합니다. 이를 위한 브리지 프로그램이 계획되어 있습니다 (로드맵 참조).
+Claude Desktop 등 stdio 전용 클라이언트: `npm install -g autojs6-mcp-bridge` 로 브리지를 설치하고 `autojs6-mcp-bridge --serial <serial>` 을 stdio 서버로 등록하며 환경 변수 블록에 `AUTOJS6_MCP_TOKEN` 을 넣습니다 (Claude Desktop 과 Claude Code 조각은 [브리지 README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) 참조). 브리지 0.1.0 은 플러그인 1.0.0 과 짝을 이루며 클라이언트의 프로토콜 버전을 그대로 전달합니다. Claude Code 2.1.257 의 stdio 연결로 검증했습니다.
 
 ******
 

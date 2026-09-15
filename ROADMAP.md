@@ -389,9 +389,9 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 ### P5.3 PC 端 stdio 桥接程序
 
-- [ ] (PC) 独立仓库 `D:/idea-projects/AutoJs6-MCP-Bridge` (TypeScript, Node 18+), npm 包 `autojs6-mcp-bridge` (D19): 以 stdio 对接客户端, 以 Streamable HTTP 对接手机; 参数 / 环境变量: `--url`, `--token` / `AUTOJS6_MCP_TOKEN`, `--serial` (自动执行 `adb forward`, 退出时清理), `--protocol` (透传或降级); 令牌不出现在进程参数时优先环境变量; 错误信息可读.
-- [ ] (PC) 单元测试 (协议透传, forward 生命周期, 错误映射), `npm pack` 产物体积与依赖审计, README (与插件 README 互链), 版本与插件解耦但两侧 README 记录兼容矩阵.
-- [ ] (测试) CLIENT_E2E: Claude Desktop 经桥接程序完成一次工具调用; Claude Code 以 stdio 方式接入作为 http 路径的备选.
+- [x] (PC) 独立仓库 `D:/idea-projects/AutoJs6-MCP-Bridge` (TypeScript, Node 18+), npm 包 `autojs6-mcp-bridge` (D19): 以 stdio 对接客户端, 以 Streamable HTTP 对接手机; 参数 / 环境变量: `--url`, `--token` / `AUTOJS6_MCP_TOKEN`, `--serial` (自动执行 `adb forward`, 退出时清理), `--protocol` (透传或降级); 令牌不出现在进程参数时优先环境变量; 错误信息可读.
+- [x] (PC) 单元测试 (协议透传, forward 生命周期, 错误映射), `npm pack` 产物体积与依赖审计, README (与插件 README 互链), 版本与插件解耦但两侧 README 记录兼容矩阵.
+- [x] (测试) CLIENT_E2E: Claude Desktop 经桥接程序完成一次工具调用; Claude Code 以 stdio 方式接入作为 http 路径的备选. (Claude Code stdio 已在真机验证; Claude Desktop 本机未安装, 如实记录为未验证, 配置片段见桥接 README.)
 
 验收条件: 兼容矩阵至少 5 个客户端有真实结果; 桥接程序发布到 npm (或以 GitHub Release 附件形式) 并在 README 记录安装命令.
 
@@ -811,3 +811,12 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 观察: Inspector CLI 的 --catalog 不能与临时 URL 同用; Codex 在临时 CODEX_HOME 下提示无法创建 PATH 别名 (无害); 配对截图含来电通知与个人文件名, 未入库.
 - 验证: JVM 全部通过, 10 语言 / 36 产物生成检查通过, debug 构建通过; 重新安装后 Inspector --strict 0 warnings.
 - 下次会话建议起点: P5.3 stdio 桥接程序 (独立仓库 AutoJs6-MCP-Bridge), 完成后补 Claude Desktop 行与 Claude Code stdio 备选.
+
+### 2026-09-15: P5.3 stdio 桥接程序
+
+- 完成: 独立仓库 AutoJs6-MCP-Bridge (TypeScript, Node 18+, MPL-2.0) 首个提交, npm 包 autojs6-mcp-bridge 0.1.0: SDK StdioServerTransport 对接客户端, StreamableHTTPClientTransport 对接手机; 参数 --url / --serial / --forward / --adb / --protocol / --token, 令牌优先读 AUTOJS6_MCP_TOKEN (--token 打印警告, --serial 与非回环 URL 互斥); --serial 在首个请求前执行 adb forward, stdin 结束或 SIGINT / SIGTERM 时 --remove; 送达失败映射为一句可读的 JSON-RPC -32000 错误 (HTTP 401 / 403 / 404 / 421 / 429 / 503, ECONNREFUSED, EHOSTUNREACH, ENOTFOUND, ECONNRESET 等), 手机自身错误 (如 PAIRING_REQUIRED) 原样透传; initialize 遇连接级失败最多重发 4 次, 其他请求不重发; stdin 结束后在途请求最多再等 10 s; 退出码 0 / 1 / 2 (参数) / 3 (adb forward). 单元测试 23 项 (参数, forward 生命周期, 错误映射, 本地假手机的消息流 / 协议改写 / 重试); npm pack 17 文件 20.4 kB (解包 62.5 kB), 运行时依赖仅 @modelcontextprotocol/sdk 1.30.0 (含传递依赖 95 包), npm audit 0 漏洞; README 英文 / 简中 (安装命令, 参数, Claude Desktop 与 Claude Code 片段, 错误表, 兼容矩阵) 与 CHANGELOG. 插件 README 的连接路径说明与 Claude Desktop 段落改为指向桥接程序并记录兼容矩阵 (10 语言, common.json 新增 bridge_url); 矩阵新增 "Claude Code 经桥接 (stdio)" 行, Claude Desktop 行改为经桥接待验证. 证据: docs/dev/p5-stdio-bridge.md.
+- 真机 (Sony API 33, USB): Claude Code 2.1.257 以 claude mcp add autojs6 -e AUTOJS6_MCP_TOKEN=... -- node dist/cli.js --serial <serial> 接入 (隔离 CLAUDE_CONFIG_DIR, 令牌仅在服务器环境块); claude mcp list Connected (355 ms); claude -p 调用 device_info: 首次 PAIRING_REQUIRED 49 ms, 手机配对对话框显示 claude-code 经 USB (adb), 允许后第二次 75 ms 成功, 4 轮 28 s 回答型号与 API 级别; 会话结束桥接进程干净退出且 adb forward 已移除; 配对记录随后删除, 监听从抽屉停止.
+- 观察: 桥接程序刚建立的 forward 上首个 initialize 约三分之一概率被重置 (同一时刻 Python urllib 即时探测 10/10 得到 401), 故加入 initialize 重试后 claude mcp list 每次连接成功; SDK 的 stdio 服务端传输不监听 stdin 结束, 桥接程序自行处理以免进程与 forward 残留; 一次验收运行中 claude -p 在连接建立后 300 s 无任何 MCP 活动 (模型网关卡顿, 前后两次同样提示 27-28 s 完成), 脚本改为超时可重试并保留每次的 Claude Code 调试日志; 配对截图含手机上的个人文件名, 未入库.
+- 未做: Claude Desktop 本机未安装, 桥接 README 的 claude_desktop_config.json 片段未实测; npm 发布需维护者账号 (tgz 已在桥接仓库 build/ 目录生成, git 忽略), 插件 README 已按发布后的安装命令书写; Node 18 / 20 / 22 未运行 (engines >= 18, 以 24.15 测试).
+- 验证: 桥接 npm test 23/23, npm pack --dry-run 与 npm audit --omit=dev 通过; 插件 JVM 测试全部通过, 10 语言 / 36 产物生成检查通过, git diff --check 通过.
+- 下次会话建议起点: P6 (先读 ROADMAP 的 P6 目标与附录 C 待决事项); 维护者侧: 创建 GitHub 仓库 AutoJs6-MCP-Bridge 并 npm publish 0.1.0, 之后在插件 README 的兼容矩阵中补 Claude Desktop 实测.

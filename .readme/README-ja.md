@@ -110,7 +110,7 @@ USB: `adb forward tcp:9637 tcp:9637` で端末のポートを PC に対応付け
 
 ローカルネットワーク: 設定ページで "ローカルネットワーク接続を許可" を有効にします. 設定ページに端末の現在のアドレス (Wi-Fi の変化に追従) と, クライアントが同じネットワークに参加する必要があることが表示されます. ゲストネットワーク, AP 分離, PC のファイアウォールがよくある障害です. ローカルネットワークからのペアリング要求は明示され, サーバーがネットワークから到達可能な間は毎日通知で知らせます. 通知はオフにできます.
 
-どちらの経路も同じトークンと同じ端末側ペアリングを使います. HTTP に対応しないクライアント向けの stdio ブリッジは別途計画しています.
+どちらの経路も同じトークンと同じ端末側ペアリングを使います. HTTP トランスポートのないクライアントは, クライアント接続の節で説明する stdio ブリッジを使います.
 
 ******
 
@@ -153,7 +153,7 @@ npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport 
 
 Cline, VS Code Copilot Chat, Gemini CLI などのクライアント: それぞれの MCP 設定で同じ URL とヘッダーを使います. 設定ページには `"type": "http"` 付きの汎用 JSON 断片があります.
 
-Claude Desktop は stdio サーバーしか起動できません. そのためのブリッジプログラムを計画しています (ロードマップ参照).
+Claude Desktop などの stdio 専用クライアント: `npm install -g autojs6-mcp-bridge` でブリッジをインストールし, `autojs6-mcp-bridge --serial <serial>` を stdio サーバーとして登録して, その環境変数ブロックに `AUTOJS6_MCP_TOKEN` を入れます (Claude Desktop と Claude Code の断片は[ブリッジの README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) を参照). ブリッジ 0.1.0 はプラグイン 1.0.0 と組み合わせ, クライアントのプロトコルバージョンをそのまま渡します. Claude Code 2.1.257 の stdio 接続で検証済みです.
 
 ******
 
