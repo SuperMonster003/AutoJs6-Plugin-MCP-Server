@@ -20,10 +20,12 @@ object McpErrors {
     const val UNAUTHORIZED = -32001
     const val PAIRING_REQUIRED = -32002
     const val PAIRING_DENIED = -32003
+    const val RATE_LIMITED = -32004
 
     const val CODE_UNAUTHORIZED = "UNAUTHORIZED"
     const val CODE_PAIRING_REQUIRED = "PAIRING_REQUIRED"
     const val CODE_PAIRING_DENIED = "PAIRING_DENIED"
+    const val CODE_RATE_LIMITED = "RATE_LIMITED"
 
     fun error(id: JsonElement?, code: Int, message: String, data: JsonObject? = null): JsonObject = buildJsonObject {
         put("jsonrpc", "2.0")

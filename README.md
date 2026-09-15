@@ -247,6 +247,7 @@ _2026/09/15_
 - `新增` 新增 UI 分组 (roadmap P3.2): `ui_dump` 以带 `#n` 引用的紧凑节点树返回当前窗口 (`format` 为 text / json / xml, `maxNodes` 最多 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` 轮询选择器, `ui_current_window` 与 `ui_explain_selector` 报告窗口与选择器失败的原因, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` 作用于 `nodeRef` (按指纹重定位, 节点消失时返回 `NODE_REF_STALE`) 或 `selector`, `ui_press_key` 按下 back / home / recents / notifications / quick_settings / power_dialog / lock_screen, 默认关闭的 `ui_gesture` 分组增加 `ui_swipe`, `ui_gesture` 与点击工具的坐标形式 (分组关闭时返回 `TOOL_DISABLED`); 工具目录快照增至 20 个工具; 坐标手势需要 2026-09-11 或之后构建的 AutoJs6 宿主 (更早的宿主会随机以 "the system cancelled ..." 应答)
 - `新增` 截图分组 (P3.3): screen_capture 返回 MCP 图片, 支持裁剪, scale 或 maxWidth, JPEG / PNG / WebP 与质量参数. 默认 JPEG 质量 70, 最长边 1280 px. base64 超过 4 MiB 时降低质量或尺寸重试, 元数据说明调整情况. screen_state 返回亮屏状态, 尺寸, 方向和密度. 工具目录现有 22 项. MediaProjection 回退需要 2026-09-13 或之后构建的 AutoJs6 宿主及手机端授权, 宿主会话复用该授权.
 - `新增` 局域网路径 (P5.1): 开启局域网访问后, 设置页列出手机当前地址 (Wi-Fi 变化时刷新) 并提示同网段与防火墙; 来自局域网的配对请求在对话框和通知中显著标注; 每日提醒服务器仍可从局域网访问, 可关闭且不重启监听. README 记录 USB 与局域网路径.
+- `新增` 每客户端速率限制 (P6): 每客户端每秒最多 20 个请求, 每分钟最多 30 次 screen_capture. 超限请求返回 HTTP 429, 带 Retry-After 头和含 retryAfterMs 的 JSON-RPC RATE_LIMITED 错误; 超限截图以带 retryAfterMs 的 RATE_LIMITED 工具结果应答, 便于模型等待. 宿主 grant 的无障碍查询速率在此之上仍然生效.
 - `修复` IDE rebuild 不再为 JVM 单元测试查找 APK. APK 校验任务会自动组装所需产物, 可直接从 clean 后执行.
 - `修复` 插件中心亮暗模式下图标比例不一致及自适应图标留白不足的问题; 夜间同样使用自适应图标, 调整图层尺寸以保留 ic_launcher_round.png 的完整图形和留白, 仅切换背景色
 - `修复` 设置页的键盘 Tab 导航会跳过工具栏返回按钮; 现在 Tab 循环覆盖返回按钮和全部控件 (含 Android 7). 设备测试检查读屏标签与键盘操作.

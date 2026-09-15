@@ -37,6 +37,8 @@ data class ToolFailure(
     val hostCode: String? = null,
     val module: String? = null,
     val method: String? = null,
+    /** For `RATE_LIMITED`: milliseconds until the client may retry (roadmap P6). */
+    val retryAfterMs: Long? = null,
 ) {
 
     fun render(): String = buildString {
@@ -52,6 +54,7 @@ data class ToolFailure(
         hostCode?.let { put("hostCode", it) }
         module?.let { put("module", it) }
         method?.let { put("method", it) }
+        retryAfterMs?.let { put("retryAfterMs", it) }
     }
 
     companion object {
@@ -115,6 +118,15 @@ data class ToolFailure(
 
         fun limitExceeded(message: String): ToolFailure =
             ToolFailure(ToolErrorCodes.LIMIT_EXCEEDED, message, HINT_LIMIT, category = BridgeError.CATEGORY_RESOURCE_LIMIT)
+
+        /** The plugin's own per-client window for a tool (roadmap P6); the host grant has a separate rate. */
+        fun rateLimited(toolName: String, limit: Int, windowMs: Long, retryAfterMs: Long): ToolFailure = ToolFailure(
+            ToolErrorCodes.RATE_LIMITED,
+            "$toolName is limited to $limit calls per ${windowMs / 1_000L} s per client",
+            "wait ${retryAfterMs} ms before calling it again",
+            category = BridgeError.CATEGORY_RATE_LIMITED,
+            retryAfterMs = retryAfterMs,
+        )
 
         fun internal(message: String): ToolFailure = ToolFailure(ToolErrorCodes.HOST_ERROR, message)
 
