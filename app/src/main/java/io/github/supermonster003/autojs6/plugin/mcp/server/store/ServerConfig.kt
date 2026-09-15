@@ -27,7 +27,10 @@ enum class BindScope(val id: String, val bindAddress: String) {
  * name; the current IPv4 addresses are added at runtime. [developerMode] lets the MCP Inspector's
  * browser page (a loopback origin) reach the endpoint through CORS; it is off by default.
  * [lanReminder] keeps the daily "still listening on the local network" notification (roadmap
- * P5.1); it only matters in LAN scope and never affects the listener itself.
+ * P5.1); it only matters in LAN scope and never affects the listener itself. [idleStopMinutes]
+ * stops the listener after that many minutes without a client request (roadmap P6); 0, the
+ * default, keeps it running until it is stopped, and like the reminder the value never restarts
+ * a running listener.
  */
 data class ServerConfig(
     val port: Int = McpServerPlugin.DEFAULT_PORT,
@@ -35,13 +38,19 @@ data class ServerConfig(
     val developerMode: Boolean = false,
     val extraAllowedHosts: List<String> = emptyList(),
     val lanReminder: Boolean = true,
+    val idleStopMinutes: Int = 0,
 ) {
 
     val bindAddress: String
         get() = bindScope.bindAddress
 
-    /** True when [other] would run the same listener: every field except the reminder switch matches. */
-    fun sameListener(other: ServerConfig): Boolean = copy(lanReminder = other.lanReminder) == other
+    /** The idle auto-stop timeout in milliseconds, or null while the option is off. */
+    val idleStopMs: Long?
+        get() = idleStopMinutes.takeIf { it > 0 }?.times(60_000L)
+
+    /** True when [other] would run the same listener: every field except the reminder and idle-stop switches matches. */
+    fun sameListener(other: ServerConfig): Boolean =
+        copy(lanReminder = other.lanReminder, idleStopMinutes = other.idleStopMinutes) == other
 
     /** Reasons this configuration cannot be applied; empty when it is usable. */
     fun problems(): List<String> = buildList {
@@ -53,6 +62,9 @@ data class ServerConfig(
         }
         extraAllowedHosts.forEach { host ->
             if (normalizeHost(host) != host) add("invalid host name: $host")
+        }
+        if (idleStopMinutes !in 0..MAX_IDLE_STOP_MINUTES) {
+            add("idle stop minutes must be between 0 and $MAX_IDLE_STOP_MINUTES, got $idleStopMinutes")
         }
     }
 
@@ -70,6 +82,7 @@ data class ServerConfig(
         KEY_DEVELOPER_MODE to developerMode.toString(),
         KEY_EXTRA_ALLOWED_HOSTS to extraAllowedHosts.joinToString(","),
         KEY_LAN_REMINDER to lanReminder.toString(),
+        KEY_IDLE_STOP_MINUTES to idleStopMinutes.toString(),
     )
 
     companion object {
@@ -78,13 +91,17 @@ data class ServerConfig(
         const val MAX_PORT = 65535
         const val MAX_EXTRA_ALLOWED_HOSTS = 8
 
+        /** One day; the settings page offers 5 to 120 minutes. */
+        const val MAX_IDLE_STOP_MINUTES = 1440
+
         const val KEY_PORT = "port"
         const val KEY_BIND_SCOPE = "bind_scope"
         const val KEY_DEVELOPER_MODE = "developer_mode"
         const val KEY_EXTRA_ALLOWED_HOSTS = "extra_allowed_hosts"
         const val KEY_LAN_REMINDER = "lan_reminder"
+        const val KEY_IDLE_STOP_MINUTES = "idle_stop_minutes"
 
-        val KEYS: List<String> = listOf(KEY_PORT, KEY_BIND_SCOPE, KEY_DEVELOPER_MODE, KEY_EXTRA_ALLOWED_HOSTS, KEY_LAN_REMINDER)
+        val KEYS: List<String> = listOf(KEY_PORT, KEY_BIND_SCOPE, KEY_DEVELOPER_MODE, KEY_EXTRA_ALLOWED_HOSTS, KEY_LAN_REMINDER, KEY_IDLE_STOP_MINUTES)
 
         fun isValidPort(port: Int): Boolean = port in MIN_PORT..MAX_PORT
 
@@ -109,7 +126,8 @@ data class ServerConfig(
                 .distinct()
                 .take(MAX_EXTRA_ALLOWED_HOSTS)
             val lanReminder = values[KEY_LAN_REMINDER]?.trim()?.lowercase()?.toBooleanStrictOrNull() ?: defaults.lanReminder
-            return ServerConfig(port, bindScope, developerMode, extraAllowedHosts, lanReminder)
+            val idleStopMinutes = values[KEY_IDLE_STOP_MINUTES]?.trim()?.toIntOrNull()?.takeIf { it in 0..MAX_IDLE_STOP_MINUTES } ?: defaults.idleStopMinutes
+            return ServerConfig(port, bindScope, developerMode, extraAllowedHosts, lanReminder, idleStopMinutes)
         }
     }
 }

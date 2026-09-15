@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="pairing_address_lan">the local network</string>
     <string name="pairing_address_loopback">this computer over USB (adb)</string>
     <string name="pairing_allow">Allow</string>
@@ -16,6 +16,7 @@
     <string name="server_action_stop">Stop</string>
     <string name="server_host_connected">AutoJs6 connected</string>
     <string name="server_host_disconnected">Waiting for AutoJs6</string>
+    <string name="server_idle_stopped">MCP Server stopped after %1$d min without requests. Turn the switch on in AutoJs6 when you need it again.</string>
     <string name="server_lan_channel_name">Local network reminders</string>
     <string name="server_lan_reminder_text">%1$s has been reachable from the local network for a day. Stop the server if you no longer need it.</string>
     <string name="server_lan_reminder_title">MCP Server is still listening on the local network</string>
@@ -28,6 +29,8 @@
     <string name="settings_about">About</string>
     <string name="settings_about_text">MCP Server %1$s (%2$d)\nDevice automation through AutoJs6\nSuperMonster003\nMozilla Public License 2.0</string>
     <string name="settings_back">Back</string>
+    <string name="settings_background_restricted">Battery usage of this app is restricted. Android may stop the server while the screen is off. Choose Unrestricted for MCP Server in the system battery settings.</string>
+    <string name="settings_battery_settings">Battery settings</string>
     <string name="settings_choose_endpoint">Choose a connection address</string>
     <string name="settings_claude_hint">Run this command in PowerShell or Bash on the computer where Claude Code is installed.</string>
     <string name="settings_client_claude">Claude Code command</string>
@@ -58,6 +61,12 @@
     <string name="settings_group_shell">Shell commands</string>
     <string name="settings_group_ui">Accessibility UI</string>
     <string name="settings_host_unavailable">Install and enable AutoJs6 to start the server.</string>
+    <string name="settings_idle_stop">Stop automatically when idle</string>
+    <string name="settings_idle_stop_choice" tools:ignore="PluralsCandidate">%1$d minutes</string>
+    <string name="settings_idle_stop_choice_off">Off</string>
+    <string name="settings_idle_stop_hint">Off by default. Stops the server after the chosen time without requests from clients; a client that stays connected without sending requests does not keep it running. Pairing and the token are kept.</string>
+    <string name="settings_idle_stop_off">Stop automatically when idle: off</string>
+    <string name="settings_idle_stop_value">Stop automatically when idle: after %1$d min without requests</string>
     <string name="settings_lan">Allow local network connections</string>
     <string name="settings_lan_addresses">Current local network addresses:\n%1$s</string>
     <string name="settings_lan_hint">Clients must join the same network as the phone; guest networks and AP isolation block them. When a connection times out, check the router and the firewall of the computer.</string>
@@ -88,6 +97,7 @@
     <string name="settings_save_failed">Cannot save or read settings. Try again.</string>
     <string name="settings_shell_root">Allow root Shell</string>
     <string name="settings_show_token">Show / copy token</string>
+    <string name="settings_stopped_idle">Stopped automatically after being idle</string>
     <string name="settings_stopping">Stopping</string>
     <string name="settings_title">MCP Server settings</string>
     <string name="settings_token">Access token</string>

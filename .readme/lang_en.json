@@ -52,7 +52,8 @@
     "HOST_UNAVAILABLE: AutoJs6 is not running or its plugin session is closed. Open AutoJs6, keep the drawer switch on, and check the connection state on the settings page.",
     "Accessibility off: the `ui_*` tools and screen capture need the AutoJs6 accessibility service. Call `device_ensure_accessibility` or enable the service in the system accessibility settings.",
     "Port in use: the drawer reports `port_in_use`. Change the port on the settings page and forward the new port with adb.",
-    "Local network unreachable: turn on local network access, use an address listed on the settings page, keep the PC and the phone on the same network without guest isolation, and allow the port through the PC firewall. Wi-Fi power saving on the phone adds a few hundred milliseconds per call."
+    "Local network unreachable: turn on local network access, use an address listed on the settings page, keep the PC and the phone on the same network without guest isolation, and allow the port through the PC firewall. Wi-Fi power saving on the phone adds a few hundred milliseconds per call.",
+    "Server gone after the screen turned off: phones that restrict the app's battery usage (HyperOS and MIUI do so for sideloaded apps by default) stop the foreground service about a minute after the screen turns off on battery. The settings page then shows a warning with a Battery settings button; choose Unrestricted for MCP Server there. The optional Stop automatically when idle setting (off by default) also stops the server after the chosen minutes without requests and leaves a notification saying so."
   ],
   "h3_security": "Permissions and Security",
   "p_security_intro": "The plugin follows explicit boundaries:",

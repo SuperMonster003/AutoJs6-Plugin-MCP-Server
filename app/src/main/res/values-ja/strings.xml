@@ -16,6 +16,7 @@
     <string name="server_action_stop">停止</string>
     <string name="server_host_connected">AutoJs6 接続済み</string>
     <string name="server_host_disconnected">AutoJs6 の接続を待機中</string>
+    <string name="server_idle_stopped">MCP Server はリクエストのない状態が %1$d 分続いたため自動停止しました. 必要になったら AutoJs6 でスイッチを再びオンにしてください.</string>
     <string name="server_lan_channel_name">ローカルネットワークの通知</string>
     <string name="server_lan_reminder_text">%1$s は 1 日にわたりローカルネットワークから到達可能な状態です. 不要であればサーバーを停止してください.</string>
     <string name="server_lan_reminder_title">MCP サーバーはまだローカルネットワークで待ち受けています</string>
@@ -28,6 +29,8 @@
     <string name="settings_about">このアプリについて</string>
     <string name="settings_about_text">MCP Server %1$s (%2$d)\nAutoJs6 によるデバイス自動化\nSuperMonster003\nMozilla Public License 2.0</string>
     <string name="settings_back">戻る</string>
+    <string name="settings_background_restricted">このアプリのバッテリー使用が制限されています. 画面オフ中に Android がサーバーを停止することがあります. システムのバッテリー設定で MCP Server を \"制限なし\" にしてください.</string>
+    <string name="settings_battery_settings">バッテリー設定</string>
     <string name="settings_choose_endpoint">接続先を選択</string>
     <string name="settings_claude_hint">Claude Code をインストールした PC の PowerShell または Bash で実行してください.</string>
     <string name="settings_client_claude">Claude Code コマンド</string>
@@ -58,6 +61,12 @@
     <string name="settings_group_shell">Shell コマンド</string>
     <string name="settings_group_ui">ユーザー補助による UI 操作</string>
     <string name="settings_host_unavailable">サーバーを起動するには AutoJs6 をインストールして有効にしてください.</string>
+    <string name="settings_idle_stop">アイドル時に自動停止</string>
+    <string name="settings_idle_stop_choice">%1$d 分</string>
+    <string name="settings_idle_stop_choice_off">オフ</string>
+    <string name="settings_idle_stop_hint">デフォルトはオフ. 選んだ時間クライアントからリクエストがないとサーバーを停止します. 接続したままリクエストを送らないクライアントは停止を妨げません. ペアリングとトークンは保持されます.</string>
+    <string name="settings_idle_stop_off">アイドル時に自動停止: オフ</string>
+    <string name="settings_idle_stop_value">アイドル時に自動停止: リクエストなし %1$d 分後</string>
     <string name="settings_lan">LAN 接続を許可</string>
     <string name="settings_lan_addresses">現在のローカルネットワークアドレス:\n%1$s</string>
     <string name="settings_lan_hint">クライアントは端末と同じネットワークに接続してください. ゲストネットワークや AP 分離では接続できません. 接続がタイムアウトする場合はルーターと PC のファイアウォールを確認してください.</string>
@@ -88,6 +97,7 @@
     <string name="settings_save_failed">設定を保存または読み込めません. 再試行してください.</string>
     <string name="settings_shell_root">root Shell を許可</string>
     <string name="settings_show_token">トークンを表示 / コピー</string>
+    <string name="settings_stopped_idle">アイドルのため自動停止しました</string>
     <string name="settings_stopping">停止中</string>
     <string name="settings_title">MCP Server の設定</string>
     <string name="settings_token">アクセストークン</string>

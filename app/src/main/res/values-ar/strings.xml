@@ -16,6 +16,7 @@
     <string name="server_action_stop">إيقاف</string>
     <string name="server_host_connected">AutoJs6 متصل</string>
     <string name="server_host_disconnected">في انتظار AutoJs6</string>
+    <string name="server_idle_stopped">توقف MCP Server تلقائيا بعد %1$d دقيقة بدون طلبات. عند الحاجة أعد تشغيل المفتاح في AutoJs6.</string>
     <string name="server_lan_channel_name">تذكيرات الشبكة المحلية</string>
     <string name="server_lan_reminder_text">%1$s متاح من الشبكة المحلية منذ يوم. أوقف الخادم إذا لم تعد بحاجة إليه.</string>
     <string name="server_lan_reminder_title">لا يزال خادم MCP يستمع على الشبكة المحلية</string>
@@ -28,6 +29,8 @@
     <string name="settings_about">حول</string>
     <string name="settings_about_text">MCP Server %1$s (%2$d)\nأتمتة الجهاز عبر AutoJs6\nSuperMonster003\nMozilla Public License 2.0</string>
     <string name="settings_back">رجوع</string>
+    <string name="settings_background_restricted">استخدام البطارية لهذا التطبيق مقيد. قد يوقف Android الخادم أثناء إطفاء الشاشة. اختر \"بدون قيود\" لـ MCP Server في إعدادات البطارية بالنظام.</string>
+    <string name="settings_battery_settings">إعدادات البطارية</string>
     <string name="settings_choose_endpoint">اختر عنوان الاتصال</string>
     <string name="settings_claude_hint">نفذ هذا الأمر في PowerShell أو Bash على الكمبيوتر المثبت عليه Claude Code.</string>
     <string name="settings_client_claude">أمر Claude Code</string>
@@ -58,6 +61,12 @@
     <string name="settings_group_shell">أوامر Shell</string>
     <string name="settings_group_ui">واجهة إمكانية الوصول</string>
     <string name="settings_host_unavailable">ثبت AutoJs6 وفعله لبدء الخادم.</string>
+    <string name="settings_idle_stop">الإيقاف التلقائي عند الخمول</string>
+    <string name="settings_idle_stop_choice">%1$d دقيقة</string>
+    <string name="settings_idle_stop_choice_off">إيقاف</string>
+    <string name="settings_idle_stop_hint">معطل افتراضيا. يوقف الخادم بعد المدة المختارة بدون طلبات من العملاء, والعميل المتصل الذي لا يرسل طلبات لا يمنع الإيقاف. يبقى الاقتران والرمز محفوظين.</string>
+    <string name="settings_idle_stop_off">الإيقاف التلقائي عند الخمول: إيقاف</string>
+    <string name="settings_idle_stop_value">الإيقاف التلقائي عند الخمول: بعد %1$d دقيقة بدون طلبات</string>
     <string name="settings_lan">السماح باتصالات الشبكة المحلية</string>
     <string name="settings_lan_addresses">عناوين الشبكة المحلية الحالية:\n%1$s</string>
     <string name="settings_lan_hint">يجب أن يكون العملاء على نفس شبكة الهاتف; شبكات الضيوف وعزل نقطة الوصول تمنعهم. عند انتهاء مهلة الاتصال تحقق من جهاز التوجيه وجدار حماية الكمبيوتر.</string>
@@ -88,6 +97,7 @@
     <string name="settings_save_failed">تعذر حفظ الإعدادات أو قراءتها. حاول مجددا.</string>
     <string name="settings_shell_root">السماح بـ Shell بصلاحيات root</string>
     <string name="settings_show_token">عرض / نسخ الرمز</string>
+    <string name="settings_stopped_idle">توقف تلقائيا بسبب الخمول</string>
     <string name="settings_stopping">جار الإيقاف</string>
     <string name="settings_title">إعدادات MCP Server</string>
     <string name="settings_token">رمز الوصول</string>
