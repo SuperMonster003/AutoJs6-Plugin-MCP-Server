@@ -28,7 +28,9 @@ import java.util.concurrent.CopyOnWriteArrayList
  * dialog is told to close through [addSettledListener].
  *
  * One coordinator exists per running listener; [instance] lets the dialog and the broadcast
- * receiver in the `:mcp_server` process find it.
+ * receiver in the `:mcp_server` process find it. A listener process that dies takes its pending
+ * requests with it but not their notifications, so a new coordinator first clears the pairing
+ * notifications a previous process left in the shade (roadmap P6 lifecycle matrix).
  */
 @SuppressLint("StaticFieldLeak") // [instance] holds the application context only
 class PairingCoordinator(context: Context, private val tokenTail: () -> String) : PairingGate.Listener {
@@ -53,6 +55,10 @@ class PairingCoordinator(context: Context, private val tokenTail: () -> String) 
     var eventListener: EventListener? = null
 
     private val settledListeners = CopyOnWriteArrayList<(String) -> Unit>()
+
+    init {
+        clearStaleNotifications()
+    }
 
     fun attach(gate: PairingGate) {
         this.gate = gate
@@ -160,6 +166,13 @@ class PairingCoordinator(context: Context, private val tokenTail: () -> String) 
     private fun settle(fingerprint: String) {
         notifications.cancel(TAG_PAIRING, notificationId(fingerprint))
         handler.post { settledListeners.forEach { it(fingerprint) } }
+    }
+
+    /** Cancels pairing notifications whose requests died with a previous listener process. */
+    private fun clearStaleNotifications() {
+        val stale = runCatching { notifications.activeNotifications.filter { it.tag == TAG_PAIRING } }.getOrDefault(emptyList())
+        stale.forEach { notifications.cancel(it.tag, it.id) }
+        if (stale.isNotEmpty()) Log.i(TAG, "Cleared ${stale.size} pairing notification(s) of a previous listener process")
     }
 
     private fun isKeyguardLocked(): Boolean =
