@@ -5,6 +5,12 @@
   "changelog_label_improvement": "개선",
   "changelog_label_dependency": "의존성",
   "$data": {
+    "v1.0.1": {
+      "released_date": "2026/09/15",
+      "improvement": [
+        "compileSdk 를 37 (Android 17) 로 올리며, targetSdk 는 대상 버전에 의존하는 동작을 검증할 때까지 36 으로 유지"
+      ]
+    },
     "v1.0.0": {
       "released_date": "2026/09/15",
       "hint": [

@@ -223,6 +223,12 @@ Los planes y el progreso del plugin se mantienen como una lista verificable en R
 
 ******
 
+#### v1.0.1
+
+_2026/09/15_
+
+- `Mejora` compileSdk sube a 37 (Android 17); targetSdk se mantiene en 36 hasta verificar el comportamiento que depende del objetivo
+
 #### v1.0.0
 
 _2026/09/15_
@@ -304,7 +310,7 @@ Verificar que las fuentes de documentación multilingüe y los artefactos genera
 py .python\generate_markdown.py --check
 ```
 
-La compilación requiere JDK 21 o posterior y Android SDK 36; las versiones de Gradle y de los plugins se gestionan de forma centralizada mediante `version.properties` e `io.github.supermonster003.autojs6-platform-versions`.
+La compilación requiere JDK 21 o posterior y Android SDK 37; las versiones de Gradle y de los plugins se gestionan de forma centralizada mediante `version.properties` e `io.github.supermonster003.autojs6-platform-versions`.
 
 ******
 

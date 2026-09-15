@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Improvement",
   "changelog_label_dependency": "Dependency",
   "$data": {
+    "v1.0.1": {
+      "released_date": "2026/09/15",
+      "improvement": [
+        "Raise compileSdk to 37 (Android 17); targetSdk stays at 36 until the behavior that depends on the target is verified"
+      ]
+    },
     "v1.0.0": {
       "released_date": "2026/09/15",
       "hint": [

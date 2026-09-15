@@ -223,6 +223,12 @@ The plugin's plans and progress are maintained as a checkable list in ROADMAP.md
 
 ******
 
+#### v1.0.1
+
+_2026/09/15_
+
+- `Improvement` Raise compileSdk to 37 (Android 17); targetSdk stays at 36 until the behavior that depends on the target is verified
+
 #### v1.0.0
 
 _2026/09/15_
@@ -304,7 +310,7 @@ Verify that the multilingual documentation sources and generated artifacts are i
 py .python\generate_markdown.py --check
 ```
 
-Building requires JDK 21 or later and Android SDK 36; Gradle and plugin versions are managed centrally by `version.properties` and `io.github.supermonster003.autojs6-platform-versions`.
+Building requires JDK 21 or later and Android SDK 37; Gradle and plugin versions are managed centrally by `version.properties` and `io.github.supermonster003.autojs6-platform-versions`.
 
 ******
 
