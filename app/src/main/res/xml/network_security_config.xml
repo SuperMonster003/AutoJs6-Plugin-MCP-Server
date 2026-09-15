@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Cleartext HTTP is permitted only towards loopback names (roadmap P6 security audit): the
+    plugin itself opens no client connections, its instrumentation tests talk to the listener at
+    127.0.0.1, and the listener's own server socket is not subject to this policy.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

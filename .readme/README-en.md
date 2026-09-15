@@ -177,10 +177,13 @@ Claude Desktop and other stdio-only clients: install the bridge with `npm instal
 
 The plugin follows explicit boundaries:
 
-- The Binder entry points are protected by the `org.autojs.permission.PLUGIN` signature permission, so only AutoJs6 can bind to them.
-- The INTERNET permission is used only for the plugin's own HTTP listener; the plugin makes no outbound requests and collects no data.
-- Tool calls run through the AutoJs6 capability broker and never exceed what the host itself is allowed to do; dangerous groups such as shell commands and file deletion stay off until the user enables them.
-- Backups are disabled, and tokens are stored only in the plugin's private storage.
+- The Binder entry points and the settings page are protected by the `org.autojs.permission.PLUGIN` signature permission, so only AutoJs6 can reach them; the pairing dialog, its receiver and the release history page are not exported. Only the foreground service that hosts the listener accepts adb (`android.permission.DUMP`), which is the developer's start / stop switch.
+- The INTERNET permission serves only the plugin's own HTTP listener; the plugin makes no outbound requests and collects no data. Cleartext HTTP is permitted only towards loopback addresses through the network security configuration.
+- The server listens on 127.0.0.1 by default. Local network access stays off until you turn it on; the token, the pairing confirmation, the Host allow list and the rate limits still apply on the local network, and a daily notification reminds you while it is on.
+- The access token comes from a secure random source, is wrapped with an AES-GCM key from the Android Keystore and lives in the plugin's private, never-backed-up storage; backups and device transfers are disabled. The settings page shows only its last 4 characters, the full-token dialogs block screenshots, and copies are marked sensitive for the clipboard.
+- Logs never contain the token, request bodies, file contents or screenshots; the plugin logs tool names, client names and token fingerprints only. This was verified with logcat on two devices during real file and screenshot calls (docs/dev/p6-security-audit.md).
+- Tool calls run through the AutoJs6 capability broker and never exceed what the host itself is allowed to do; shell commands, file deletion and gestures stay off until you enable their groups, and a root shell additionally needs its own switch and a host grant.
+- Pairings can be revoked one by one or all at once on the settings page; a revoked client must be confirmed on the phone again before its next tool call. Rotating the token keeps the pairings but cuts off every client that still uses the old token.
 
 Only obtain the plugin from the official [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) page or the AutoJs6 plugin center. Packages from unknown sources may fail host verification or carry risks even when the version number looks identical.
 
@@ -229,6 +232,7 @@ _2026/09/15_
 
 - `Improvement` Raise compileSdk to 37 (Android 17); targetSdk stays at 36 until the behavior that depends on the target is verified
 - `Improvement` MCP conformance (P6): the official @modelcontextprotocol/conformance suite 0.1.16 was run against the stateful /mcp path on two devices. 9 of its 32 server scenarios pass (initialize, ping, tools/list, text and error tool results, resources/list, prompts/list, concurrent SSE streams, DNS rebinding protection); 18 call the suite's own reference fixtures (test_* tools, prompts and test:// resources, which this server answers with an unknown-tool result, -32602 or isError) and 5 need capabilities the server does not declare (logging, completions, resource subscriptions). A loopback Origin header is now accepted in every mode, as the suite expects; CORS headers and preflight answers stay limited to developer mode. The stateless 2026-07-28 model has no route (Roadmap D9). Details in docs/dev/p6-conformance.md.
+- `Improvement` Security audit (P6): the seven checklist items (token storage, log redaction, exported components, cleartext scope, local network off by default, pairing revocation, default-off tool groups) are verified in the code and on two devices in docs/dev/p6-security-audit.md, and the README security section now states these boundaries. Cleartext HTTP is limited to loopback addresses by a network security configuration instead of the app-wide usesCleartextTraffic flag; the plugin opens no client connections and the listener does not need the flag.
 
 #### v1.0.0
 

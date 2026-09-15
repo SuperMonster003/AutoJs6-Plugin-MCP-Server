@@ -10,6 +10,7 @@
 
 * `優化` 將 compileSdk 提升到 37 (Android 17), targetSdk 保持 36, 待依賴目標版本的行為驗證後再提升
 * `優化` MCP 一致性 (P6): 在兩台裝置上以官方 @modelcontextprotocol/conformance 套件 0.1.16 測試有狀態的 /mcp 路徑. 32 個伺服器場景中 9 個通過 (initialize, ping, tools/list, 文字與錯誤工具結果, resources/list, prompts/list, 並行 SSE 串流, DNS rebinding 保護); 18 個呼叫套件自帶的參考夾具 (test_* 工具, 提示與 test:// 資源, 本伺服器以未知工具結果, -32602 或 isError 回應), 5 個依賴本伺服器未宣告的能力 (logging, completions, 資源訂閱). 回環 Origin 標頭現在在任何模式下都被接受 (套件如此要求); CORS 標頭與預檢回應仍僅限開發者模式. 2026-07-28 無狀態模型沒有路由 (Roadmap D9). 詳見 docs/dev/p6-conformance.md.
+* `優化` 安全審計 (P6): 七項清單 (權杖儲存, 日誌脫敏, 匯出元件, 明文範圍, 區域網路預設關閉, 配對撤銷, 工具分組預設關閉) 已在程式碼與兩台裝置上逐項核對, 記錄於 docs/dev/p6-security-audit.md, README 安全章節改為說明這些邊界. 明文 HTTP 由網路安全設定限定為回送位址, 取代應用程式層級的 usesCleartextTraffic 旗標; 外掛不發起用戶端連線, 監聽器也不需要該旗標.
 
 # v1.0.0
 
