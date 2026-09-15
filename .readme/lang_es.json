@@ -33,6 +33,10 @@
   "h3_quick_start": "Configuración del cliente",
   "p_quick_start_intro": "Claude Code registra el servidor con un solo comando; los demás clientes usan la misma URL y cabecera en su configuración MCP",
   "p_quick_start_note": "Activa MCP Server en el panel de AutoJs6. Mantén pulsado su título o abre Ajustes desde el Centro de complementos. Copia la configuración del cliente de PC. Confirma la primera solicitud de vinculación en el teléfono. Al terminar, detén el servidor desde el panel, los ajustes o la notificación.",
+  "h3_connection_paths": "Rutas de conexión",
+  "p_connection_usb": "USB: `adb forward tcp:9637 tcp:9637` asigna el puerto del teléfono al PC; con varios dispositivos añade `-s <serial>` (consúltalo con `adb devices`), y los emuladores funcionan igual. Si el puerto está ocupado en cualquiera de los lados, cámbialo en la página de ajustes y reenvía el nuevo. La tarjeta de conexión ofrece el comando de reenvío listo para copiar.",
+  "p_connection_lan": "Red local: activa \"Permitir conexiones de red local\" en la página de ajustes. La página muestra entonces las direcciones actuales del teléfono (siguen los cambios de Wi-Fi) y recuerda que el cliente debe estar en la misma red; las redes de invitados, el aislamiento del punto de acceso y el cortafuegos del PC son los bloqueos habituales. Las solicitudes de emparejamiento desde la red local se marcan como tales y una notificación diaria lo recuerda mientras el servidor siga accesible desde la red; el recordatorio puede desactivarse.",
+  "p_connection_note": "Ambas rutas usan el mismo token y el mismo emparejamiento en el teléfono. Un puente stdio para clientes sin soporte HTTP está planificado por separado.",
   "h3_security": "Permisos y seguridad",
   "p_security_intro": "El plugin sigue límites explícitos:",
   "security_points": [

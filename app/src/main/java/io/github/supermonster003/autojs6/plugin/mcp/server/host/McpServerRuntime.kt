@@ -166,7 +166,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
     fun start(config: ServerConfig): ServerStatus {
         val running = server.activeConfiguration
         if (running != null) {
-            if (running == config) {
+            if (running.sameListener(config)) {
                 activeConfig = config
                 ServerLifecycleStore(context).userStopped = false
                 return server.status

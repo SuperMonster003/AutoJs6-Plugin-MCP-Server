@@ -102,6 +102,18 @@ Activez MCP Server dans le volet AutoJs6. Appuyez longuement sur son titre ou ou
 
 ******
 
+### Chemins de connexion
+
+******
+
+USB: `adb forward tcp:9637 tcp:9637` fait correspondre le port du téléphone au PC; avec plusieurs appareils ajoutez `-s <serial>` (trouvez-le avec `adb devices`), et les émulateurs fonctionnent de la même façon. Si le port est pris d'un côté ou de l'autre, changez-le sur la page des paramètres et redirigez le nouveau. La carte Connexion propose la commande de redirection prête à copier.
+
+Réseau local: activez "Autoriser les connexions du réseau local" sur la page des paramètres. La page liste alors les adresses actuelles du téléphone (elles suivent les changements de Wi-Fi) et rappelle que le client doit rejoindre le même réseau; les réseaux invités, l'isolation du point d'accès et le pare-feu du PC sont les blocages habituels. Les demandes d'appairage venant du réseau local sont signalées comme telles, et une notification quotidienne le rappelle tant que le serveur reste joignable depuis le réseau; le rappel peut être désactivé.
+
+Les deux chemins utilisent le même jeton et le même appairage côté téléphone. Un pont stdio pour les clients sans prise en charge HTTP est prévu séparément.
+
+******
+
 ### Permissions et sécurité
 
 ******
@@ -178,6 +190,7 @@ _2026/09/15_
 - `Fonctionnalité` Les reponses du point de terminaison MCP sont diffusees en flux d'evenements envoyes par le serveur (le mode de reponse JSON du SDK n'est pas utilise), si bien qu'une notification liee a une requete, comme le battement de progression d'un script en cours, parvient au client dans la reponse de cette requete
 - `Fonctionnalité` Groupe UI ajoute (roadmap P3.2) : `ui_dump` renvoie la fenetre active sous forme d'arbre compact de noeuds avec des references `#n` (`format` text / json / xml, `maxNodes` jusqu'a 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` interrogent un selecteur, `ui_current_window` et `ui_explain_selector` indiquent la fenetre et la raison de l'echec d'un selecteur, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` agissent sur un `nodeRef` (relocalise par son empreinte, `NODE_REF_STALE` s'il a disparu) ou un `selector`, `ui_press_key` appuie sur back / home / recents / notifications / quick_settings / power_dialog / lock_screen, et le groupe `ui_gesture` (desactive par defaut) ajoute `ui_swipe`, `ui_gesture` et la forme par coordonnees des outils de clic (`TOOL_DISABLED` tant que le groupe est desactive) ; l'instantane du catalogue d'outils passe a 20 outils ; les gestes par coordonnees necessitent un hote AutoJs6 compile le 2026-09-11 ou apres (un hote plus ancien repond au hasard "the system cancelled ...")
 - `Fonctionnalité` Groupe de capture (P3.3): screen_capture renvoie des images MCP avec recadrage, scale ou maxWidth, JPEG / PNG / WebP et qualité réglable. Valeurs par défaut: JPEG, qualité 70, côté le plus long de 1280 px. Au-delà de 4 MiB de base64, la qualité ou les dimensions diminuent et les métadonnées indiquent les ajustements. screen_state fournit l'état, les dimensions, l'orientation et la densité. Le catalogue compte 22 outils. Le repli MediaProjection nécessite AutoJs6 compilé le 2026-09-13 ou après et un accord sur le téléphone, réutilisé par la session hôte.
+- `Fonctionnalité` Chemin par réseau local (P5.1): avec l'accès depuis le réseau local activé, la page des paramètres liste les adresses actuelles du téléphone (mises à jour quand le Wi-Fi change) avec des rappels sur le même réseau et le pare-feu; une demande d'appairage venant du réseau local est signalée dans la boîte de dialogue et la notification; un rappel quotidien indique que le serveur reste joignable depuis le réseau local et peut être désactivé sans redémarrer l'écouteur. Le README documente les chemins USB et réseau local.
 - `Correctif` Le rebuild de l'IDE ne recherche plus d'APK pour les tests unitaires JVM. Les tâches de vérification des APK assemblent automatiquement leurs entrées et fonctionnent après un clean.
 - `Correctif` Les proportions de l'icône du centre de plugins variaient entre les modes clair et sombre; le mode nuit utilise aussi l'icône adaptative, avec des couches redimensionnées pour conserver le dessin complet et les marges de ic_launcher_round.png, seul le fond changeant de couleur
 - `Correctif` La navigation au clavier avec Tab sur la page des paramètres ignorait le bouton retour de la barre d'outils; le cycle Tab couvre désormais le bouton retour et tous les contrôles, y compris sur Android 7. Les tests sur appareil vérifient les libellés du lecteur d'écran et l'utilisation au clavier.

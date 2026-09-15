@@ -82,6 +82,18 @@ claude mcp add --transport http autojs6 http://127.0.0.1:{{ mcp_default_port }}{
 
 ******
 
+### {{ h3_connection_paths }}
+
+******
+
+{{ p_connection_usb }}
+
+{{ p_connection_lan }}
+
+{{ p_connection_note }}
+
+******
+
 ### {{ h3_security }}
 
 ******

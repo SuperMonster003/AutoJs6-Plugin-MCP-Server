@@ -33,6 +33,10 @@
   "h3_quick_start": "客户端配置",
   "p_quick_start_intro": "Claude Code 只需一条命令即可注册服务器; 其他客户端在各自的 MCP 配置中使用相同的 URL 与请求头",
   "p_quick_start_note": "在 AutoJs6 抽屉中打开 MCP 服务器. 长按条目标题或点击插件中心的设置入口, 进入设置页并复制电脑客户端所需配置. 首次连接时在手机上确认配对请求. 使用完毕后可从抽屉, 设置页或通知中停止服务.",
+  "h3_connection_paths": "连接路径",
+  "p_connection_usb": "USB: `adb forward tcp:9637 tcp:9637` 将手机端口映射到 PC; 多台设备时加上 `-s <serial>` (通过 `adb devices` 查看), 模拟器同样适用. 任一侧端口被占用时, 在设置页修改端口并转发新端口. 连接卡片提供可直接复制的转发命令.",
+  "p_connection_lan": "局域网: 在设置页开启 \"允许局域网连接\". 设置页随后列出手机当前地址 (随 Wi-Fi 变化刷新) 并提示客户端需处于同一网络; 访客网络, AP 隔离和 PC 防火墙是常见阻碍. 来自局域网的配对请求会被显著标注; 服务器持续可从网络访问期间每日通知提醒, 提醒可关闭.",
+  "p_connection_note": "两条路径使用相同的令牌和相同的手机侧配对. 面向不支持 HTTP 的客户端的 stdio 桥接程序另行规划.",
   "h3_security": "权限与安全",
   "p_security_intro": "插件遵循明确的边界:",
   "security_points": [

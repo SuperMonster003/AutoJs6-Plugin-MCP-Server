@@ -31,6 +31,8 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.McpServerPlugin
 import io.github.supermonster003.autojs6.plugin.mcp.server.mcpServerPluginRuntimeInfo
 import io.github.supermonster003.autojs6.plugin.mcp.server.R
 import io.github.supermonster003.autojs6.plugin.mcp.server.host.SessionStatus
+import io.github.supermonster003.autojs6.plugin.mcp.server.server.LanAddressWatcher
+import io.github.supermonster003.autojs6.plugin.mcp.server.server.McpHttpServer
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.PairedClient
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.*
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.*
@@ -50,6 +52,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
     private var config = ServerConfig()
     private var status = SessionStatus(C.STATE_STOPPED)
     private var paired = emptyList<PairedClient>()
+    private var lanUrls = emptyList<String>()
     private var ready = false
     private var resumed = false
     private var reading = false
@@ -64,6 +67,9 @@ class McpServerSettingsActivity : SettingsPageActivity() {
     private lateinit var stopButton: Button
     private lateinit var tokenText: TextView
     private lateinit var lan: Switch
+    private lateinit var lanAddressText: TextView
+    private lateinit var lanHint: TextView
+    private lateinit var lanReminder: Switch
     private lateinit var developer: Switch
     private lateinit var rootShell: Switch
     private lateinit var pairedRows: LinearLayout
@@ -94,6 +100,9 @@ class McpServerSettingsActivity : SettingsPageActivity() {
                     saveConfig { it.copy(bindScope = BindScope.LAN) }
                 } else saveConfig { it.copy(bindScope = BindScope.LOOPBACK) }
             }
+            lanAddressText = label("", box).apply { setTextIsSelectable(true); visibility = View.GONE }
+            lanHint = label(getString(R.string.settings_lan_hint), box).apply { setTextColor(secondary); visibility = View.GONE }
+            lanReminder = toggle(R.string.settings_lan_reminder, box) { enabled -> saveConfig { it.copy(lanReminder = enabled) } }
             label(getString(R.string.settings_network_hint), box).setTextColor(secondary)
         }
         card(R.string.settings_token).also { box ->
@@ -182,7 +191,10 @@ class McpServerSettingsActivity : SettingsPageActivity() {
         io.execute {
             val result = runCatching {
                 action()
-                Snapshot(configStore.load(), statuses.load(), groups.load(), clients.all(), tokens.tail())
+                val config = configStore.load()
+                // While the listener is down the LAN addresses come from the interfaces directly.
+                val lanUrls = if (config.bindScope == BindScope.LAN) McpHttpServer.endpointUrls(config, LanAddressWatcher.currentAddresses()).drop(1) else emptyList()
+                Snapshot(config, statuses.load(), groups.load(), clients.all(), tokens.tail(), lanUrls)
             }
             main.post {
                 reading = false
@@ -191,7 +203,10 @@ class McpServerSettingsActivity : SettingsPageActivity() {
         }
     }
 
-    private data class Snapshot(val config: ServerConfig, val status: SessionStatus, val groups: ToolPermissions, val clients: List<PairedClient>, val tokenTail: String)
+    private data class Snapshot(
+        val config: ServerConfig, val status: SessionStatus, val groups: ToolPermissions, val clients: List<PairedClient>, val tokenTail: String,
+        val lanUrls: List<String>,
+    )
 
     private fun render(snapshot: Snapshot) {
         config = snapshot.config; status = snapshot.status; ready = true; rendering = true
@@ -206,7 +221,14 @@ class McpServerSettingsActivity : SettingsPageActivity() {
             endpointText.text = status.endpoints.joinToString("\n").ifEmpty { "http://127.0.0.1:${config.port}/mcp" }
             stopButton.isEnabled = status.state in setOf(C.STATE_RUNNING, C.STATE_STARTING)
             portButton.text = getString(R.string.settings_port_value, config.port)
-            lan.isChecked = config.bindScope == BindScope.LAN
+            val lanOn = config.bindScope == BindScope.LAN
+            lan.isChecked = lanOn
+            lanUrls = snapshot.lanUrls
+            lanAddressText.visibility = if (lanOn) View.VISIBLE else View.GONE
+            lanHint.visibility = lanAddressText.visibility
+            lanAddressText.text = if (lanUrls.isEmpty()) getString(R.string.settings_lan_no_address) else getString(R.string.settings_lan_addresses, lanUrls.joinToString("\n"))
+            lanReminder.isChecked = config.lanReminder
+            lanReminder.isEnabled = lanOn
             developer.isChecked = config.developerMode
             tokenText.text = getString(R.string.settings_token_masked, snapshot.tokenTail)
             groupSwitches.forEach { (group, view) -> view.isChecked = snapshot.groups.isEnabled(group) }
@@ -272,7 +294,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
 
     private fun chooseEndpoint(client: McpClient) {
         if (!ready) return
-        val endpoints = (listOf("http://127.0.0.1:${config.port}/mcp") + status.endpoints).distinct()
+        val endpoints = (listOf("http://127.0.0.1:${config.port}/mcp") + status.endpoints + lanUrls).distinct()
         val show: (String) -> Unit = { endpoint -> work {
             val snippet = ClientConfigSnippet.create(client, endpoint, tokens.current())
             main.post { if (resumed) showSecret(getString(clientTitle(client)), snippet.text, snippet.environmentCommand, getString(clientHint(client))) }

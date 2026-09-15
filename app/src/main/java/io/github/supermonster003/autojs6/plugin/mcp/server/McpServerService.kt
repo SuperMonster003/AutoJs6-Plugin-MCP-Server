@@ -16,6 +16,7 @@ import android.util.Log
 import android.widget.Toast
 import io.github.supermonster003.autojs6.plugin.mcp.server.host.McpServerRuntime
 import io.github.supermonster003.autojs6.plugin.mcp.server.host.SessionStatus
+import io.github.supermonster003.autojs6.plugin.mcp.server.server.LanReminder
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.ServerStatus
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfig
 import org.autojs.plugin.mcp.server.api.McpServerContract
@@ -77,6 +78,11 @@ class McpServerService : Service() {
     @Volatile
     private var toastShown = false
 
+    /** Armed while a LAN listener runs with the reminder on; fires [postLanReminder] (P5.1). */
+    private var lanReminderArmed = false
+
+    private val lanReminderTask = Runnable { postLanReminder() }
+
     override fun onCreate() {
         super.onCreate()
         runtime = McpServerRuntime.get(this)
@@ -126,6 +132,8 @@ class McpServerService : Service() {
     override fun onDestroy() {
         lifecycle.shutdown()
         foreground = false
+        mainHandler.removeCallbacks(lanReminderTask)
+        lanReminderArmed = false
         // Synchronous, so the port is free by the time the next start command (a new service
         // instance on this same main thread) tries to bind it.
         runtime.detachService(this)
@@ -155,6 +163,7 @@ class McpServerService : Service() {
         if (pendingStarts.get() > 0) return
         finishing = true
         foreground = false
+        disarmLanReminder()
         stopForeground(STOP_FOREGROUND_REMOVE)
         if (!stopSelfResult(lastStartId)) {
             // A newer start command is being handled; stay in the foreground for it.
@@ -174,7 +183,54 @@ class McpServerService : Service() {
                 toastShown = true
                 Toast.makeText(this, getString(R.string.server_notifications_disabled, snapshot.endpoints.firstOrNull().orEmpty()), Toast.LENGTH_LONG).show()
             }
+            syncLanReminder(snapshot)
         }
+    }
+
+    /** Arms or disarms the daily LAN reminder so it matches the listener state; main thread only. */
+    private fun syncLanReminder(snapshot: SessionStatus) {
+        val wanted = foreground && LanReminder.wanted(snapshot.state == ServerStatus.STATE_RUNNING, runtime.activeConfig)
+        if (wanted && !lanReminderArmed) {
+            lanReminderArmed = true
+            mainHandler.postDelayed(lanReminderTask, LanReminder.INTERVAL_MS)
+        } else if (!wanted) {
+            disarmLanReminder()
+        }
+    }
+
+    private fun disarmLanReminder() {
+        if (!lanReminderArmed) return
+        lanReminderArmed = false
+        mainHandler.removeCallbacks(lanReminderTask)
+        notifications().cancel(LAN_REMINDER_ID)
+    }
+
+    private fun postLanReminder() {
+        lanReminderArmed = false
+        val snapshot = runtime.statusSnapshot()
+        if (!foreground || !LanReminder.wanted(snapshot.state == ServerStatus.STATE_RUNNING, runtime.activeConfig)) return
+        val manager = notifications()
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            manager.createNotificationChannel(
+                NotificationChannel(LAN_CHANNEL_ID, getString(R.string.server_lan_channel_name), NotificationManager.IMPORTANCE_DEFAULT),
+            )
+            Notification.Builder(this, LAN_CHANNEL_ID)
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(this)
+        }
+        val text = getString(R.string.server_lan_reminder_text, LanReminder.endpoint(snapshot.endpoints))
+        manager.notify(LAN_REMINDER_ID, builder
+            .setSmallIcon(R.drawable.ic_stat_mcp_server)
+            .setContentIntent(settingsPendingIntent())
+            .setContentTitle(getString(R.string.server_lan_reminder_title))
+            .setContentText(text)
+            .setStyle(Notification.BigTextStyle().bigText(text))
+            .setCategory(Notification.CATEGORY_REMINDER)
+            .setAutoCancel(true)
+            .addAction(stopAction())
+            .build())
+        syncLanReminder(snapshot)
     }
 
     private fun resolveConfig(intent: Intent?): ServerConfig {
@@ -213,25 +269,30 @@ class McpServerService : Service() {
         }
         val details = getString(if (snapshot.hostAvailable) R.string.server_host_connected else R.string.server_host_disconnected) +
                 ", " + getString(R.string.server_paired_clients, snapshot.pairedClientCount)
+        return builder
+            .setSmallIcon(R.drawable.ic_stat_mcp_server)
+            .setContentIntent(settingsPendingIntent())
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(text)
+            .setStyle(Notification.BigTextStyle().bigText("$text\n$details"))
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .setOngoing(true)
+            .addAction(stopAction())
+            .build()
+    }
+
+    private fun settingsPendingIntent(): PendingIntent = PendingIntent.getActivity(this, 1,
+        Intent(this, io.github.supermonster003.autojs6.plugin.mcp.server.ui.McpServerSettingsActivity::class.java),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+    private fun stopAction(): Notification.Action {
         val stopPending = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             PendingIntent.getForegroundService(this, 0, stopIntent(this), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         } else {
             PendingIntent.getService(this, 0, stopIntent(this), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         }
         @Suppress("DEPRECATION")
-        val stopAction = Notification.Action.Builder(R.drawable.ic_stat_mcp_server, getString(R.string.server_action_stop), stopPending).build()
-        return builder
-            .setSmallIcon(R.drawable.ic_stat_mcp_server)
-            .setContentIntent(PendingIntent.getActivity(this, 1,
-                Intent(this, io.github.supermonster003.autojs6.plugin.mcp.server.ui.McpServerSettingsActivity::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
-            .setContentTitle(getString(R.string.app_name))
-            .setContentText(text)
-            .setStyle(Notification.BigTextStyle().bigText("$text\n$details"))
-            .setCategory(Notification.CATEGORY_SERVICE)
-            .setOngoing(true)
-            .addAction(stopAction)
-            .build()
+        return Notification.Action.Builder(R.drawable.ic_stat_mcp_server, getString(R.string.server_action_stop), stopPending).build()
     }
 
     private fun notifications(): NotificationManager = getSystemService(NotificationManager::class.java)
@@ -254,7 +315,9 @@ class McpServerService : Service() {
         const val EXTRA_DEVELOPER_MODE = "developer_mode"
 
         private const val CHANNEL_ID = "mcp_server"
+        private const val LAN_CHANNEL_ID = "mcp_server_lan"
         private const val NOTIFICATION_ID = 0x4D43
+        private const val LAN_REMINDER_ID = 0x4D44
         private const val TAG = "McpServerService"
 
         fun startIntent(context: Context, port: Int? = null, developerMode: Boolean? = null): Intent =

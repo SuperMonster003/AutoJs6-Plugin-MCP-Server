@@ -102,6 +102,18 @@ claude mcp add --transport http autojs6 http://127.0.0.1:9637/mcp --header "Auth
 
 ******
 
+### 連線路徑
+
+******
+
+USB: `adb forward tcp:9637 tcp:9637` 將手機連接埠對應到 PC; 多台裝置時加上 `-s <serial>` (透過 `adb devices` 查看), 模擬器同樣適用. 任一側連接埠被占用時, 在設定頁修改連接埠並轉送新連接埠. 連線卡片提供可直接複製的轉送命令.
+
+區域網路: 在設定頁開啟 "允許區域網路連線". 設定頁隨後列出手機目前位址 (隨 Wi-Fi 變化重新整理) 並提示用戶端需處於同一網路; 訪客網路, AP 隔離和 PC 防火牆是常見阻礙. 來自區域網路的配對要求會被顯著標註; 伺服器持續可從網路存取期間每日通知提醒, 提醒可關閉.
+
+兩條路徑使用相同的權杖和相同的手機側配對. 面向不支援 HTTP 的用戶端的 stdio 橋接程式另行規劃.
+
+******
+
 ### 權限與安全
 
 ******
@@ -178,6 +190,7 @@ _2026/09/15_
 - `新增` MCP 端點的回應改為以伺服器傳送事件 (SSE) 串流回傳 (不再使用 SDK 的 JSON 回應模式), 屬於某個請求的通知 (如執行中指令碼的進度心跳) 會隨該請求自身的回應送達用戶端
 - `新增` 新增 UI 分組 (roadmap P3.2): `ui_dump` 以帶 `#n` 參照的緊湊節點樹回傳目前視窗 (`format` 為 text / json / xml, `maxNodes` 最多 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` 輪詢選擇器, `ui_current_window` 與 `ui_explain_selector` 回報視窗與選擇器失敗的原因, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` 作用於 `nodeRef` (依指紋重新定位, 節點消失時回傳 `NODE_REF_STALE`) 或 `selector`, `ui_press_key` 按下 back / home / recents / notifications / quick_settings / power_dialog / lock_screen, 預設關閉的 `ui_gesture` 分組新增 `ui_swipe`, `ui_gesture` 與點擊工具的座標形式 (分組關閉時回傳 `TOOL_DISABLED`); 工具目錄快照增至 20 個工具; 座標手勢需要 2026-09-11 或之後建置的 AutoJs6 宿主 (更早的宿主會隨機以 "the system cancelled ..." 回應)
 - `新增` 螢幕擷取群組 (P3.3): screen_capture 傳回 MCP 圖片, 支援裁切, scale 或 maxWidth, JPEG / PNG / WebP 與品質參數. 預設 JPEG 品質 70, 最長邊 1280 px. base64 超過 4 MiB 時降低品質或尺寸重試, 中繼資料說明調整情況. screen_state 傳回亮屏狀態, 尺寸, 方向和密度. 工具目錄現有 22 項. MediaProjection 備援需要 2026-09-13 或之後建置的 AutoJs6 主程式及手機端授權, 主程式工作階段重用該授權.
+- `新增` 區域網路路徑 (P5.1): 開啟區域網路存取後, 設定頁列出手機目前位址 (Wi-Fi 變化時重新整理) 並提示同網段與防火牆; 來自區域網路的配對要求在對話方塊和通知中顯著標註; 每日提醒伺服器仍可從區域網路存取, 可關閉且不重啟監聽. README 記錄 USB 與區域網路路徑.
 - `修復` IDE rebuild 不再為 JVM 單元測試尋找 APK. APK 驗證工作會自動組建所需產物, 可直接從 clean 後執行.
 - `修復` 外掛程式中心明暗模式下圖示比例不一致及自適應圖示留白不足的問題; 夜間同樣使用自適應圖示, 調整圖層尺寸以保留 ic_launcher_round.png 的完整圖形和留白, 僅切換背景色
 - `修復` 設定頁的鍵盤 Tab 導覽會略過工具列返回按鈕; 現在 Tab 循環涵蓋返回按鈕和全部控制項 (含 Android 7). 裝置測試檢查螢幕閱讀器標籤與鍵盤操作.

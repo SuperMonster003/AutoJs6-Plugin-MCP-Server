@@ -63,12 +63,12 @@ class PairingConfirmActivity : Activity() {
         val client = intent.getStringExtra(EXTRA_CLIENT_NAME).orEmpty()
         val addressClass = AddressClass.fromId(intent.getStringExtra(EXTRA_ADDRESS_CLASS)) ?: AddressClass.LOOPBACK
         val tokenTail = intent.getStringExtra(EXTRA_TOKEN_TAIL).orEmpty()
-        val addressText = getString(
-            if (addressClass == AddressClass.LAN) R.string.pairing_address_lan else R.string.pairing_address_loopback,
-        )
+        val lan = addressClass == AddressClass.LAN
+        val addressText = getString(if (lan) R.string.pairing_address_lan else R.string.pairing_address_loopback)
+        val message = getString(R.string.pairing_dialog_message, client, addressText, tokenTail)
         dialog = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Light_Dialog_Alert)
-            .setTitle(R.string.pairing_dialog_title)
-            .setMessage(getString(R.string.pairing_dialog_message, client, addressText, tokenTail))
+            .setTitle(if (lan) R.string.pairing_dialog_title_lan else R.string.pairing_dialog_title)
+            .setMessage(if (lan) getString(R.string.pairing_lan_warning) + "\n\n" + message else message)
             .setPositiveButton(R.string.pairing_allow) { _, _ -> decide(fingerprint, allow = true) }
             .setNegativeButton(R.string.pairing_deny) { _, _ -> decide(fingerprint, allow = false) }
             .setOnDismissListener { if (!isFinishing) finish() }
