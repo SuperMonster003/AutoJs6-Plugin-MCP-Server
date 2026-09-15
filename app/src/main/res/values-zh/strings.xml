@@ -16,6 +16,7 @@
     <string name="server_action_stop">停止</string>
     <string name="server_host_connected">AutoJs6 已连接</string>
     <string name="server_host_disconnected">等待 AutoJs6 连接</string>
+    <string name="server_idle_stopped">MCP Server 在 %1$d 分钟无请求后已自动停止. 需要时在 AutoJs6 中重新打开开关.</string>
     <string name="server_lan_channel_name">局域网提醒</string>
     <string name="server_lan_reminder_text">%1$s 已在局域网中可访问一天. 如不再需要, 请停止服务器.</string>
     <string name="server_lan_reminder_title">MCP 服务器仍在监听局域网</string>
@@ -28,6 +29,8 @@
     <string name="settings_about">关于</string>
     <string name="settings_about_text">MCP Server %1$s (%2$d)\n通过 AutoJs6 执行设备自动化\nSuperMonster003\nMozilla Public License 2.0</string>
     <string name="settings_back">返回</string>
+    <string name="settings_background_restricted">此应用的电池用量已被限制, 息屏后 Android 可能停止服务器. 请在系统电池设置中为 MCP Server 选择 \"无限制\".</string>
+    <string name="settings_battery_settings">电池设置</string>
     <string name="settings_choose_endpoint">选择连接地址</string>
     <string name="settings_claude_hint">在已安装 Claude Code 的电脑上, 使用 PowerShell 或 Bash 执行此命令.</string>
     <string name="settings_client_claude">Claude Code 命令</string>
@@ -58,6 +61,12 @@
     <string name="settings_group_shell">Shell 命令</string>
     <string name="settings_group_ui">无障碍界面操作</string>
     <string name="settings_host_unavailable">请安装并启用 AutoJs6 以启动服务器.</string>
+    <string name="settings_idle_stop">空闲时自动停止</string>
+    <string name="settings_idle_stop_choice">%1$d 分钟</string>
+    <string name="settings_idle_stop_choice_off">关闭</string>
+    <string name="settings_idle_stop_hint">默认关闭. 客户端在所选时间内没有发出请求时停止服务器; 仅保持连接而不发请求的客户端不会阻止停止. 配对和令牌保留.</string>
+    <string name="settings_idle_stop_off">空闲时自动停止: 关闭</string>
+    <string name="settings_idle_stop_value">空闲时自动停止: %1$d 分钟无请求后</string>
     <string name="settings_lan">允许局域网连接</string>
     <string name="settings_lan_addresses">当前局域网地址:\n%1$s</string>
     <string name="settings_lan_hint">客户端需与手机处于同一网络; 访客网络与 AP 隔离会阻止连接. 连接超时时请检查路由器和电脑防火墙.</string>
@@ -88,6 +97,7 @@
     <string name="settings_save_failed">无法保存或读取设置. 请重试.</string>
     <string name="settings_shell_root">允许 root Shell</string>
     <string name="settings_show_token">显示 / 复制令牌</string>
+    <string name="settings_stopped_idle">已因空闲自动停止</string>
     <string name="settings_stopping">正在停止</string>
     <string name="settings_title">MCP Server 设置</string>
     <string name="settings_token">访问令牌</string>

@@ -16,6 +16,7 @@
     <string name="server_action_stop">Остановить</string>
     <string name="server_host_connected">AutoJs6 подключен</string>
     <string name="server_host_disconnected">Ожидание AutoJs6</string>
+    <string name="server_idle_stopped">MCP Server остановлен: %1$d мин без запросов. Когда он снова понадобится, включите переключатель в AutoJs6.</string>
     <string name="server_lan_channel_name">Напоминания о локальной сети</string>
     <string name="server_lan_reminder_text">%1$s уже сутки доступен из локальной сети. Остановите сервер, если он больше не нужен.</string>
     <string name="server_lan_reminder_title">Сервер MCP все еще слушает локальную сеть</string>
@@ -28,6 +29,8 @@
     <string name="settings_about">О приложении</string>
     <string name="settings_about_text">MCP Server %1$s (%2$d)\nАвтоматизация устройства через AutoJs6\nSuperMonster003\nMozilla Public License 2.0</string>
     <string name="settings_back">Назад</string>
+    <string name="settings_background_restricted">Использование батареи этим приложением ограничено. Android может остановить сервер при выключенном экране. Выберите \"Без ограничений\" для MCP Server в настройках батареи системы.</string>
+    <string name="settings_battery_settings">Настройки батареи</string>
     <string name="settings_choose_endpoint">Выберите адрес подключения</string>
     <string name="settings_claude_hint">Выполните команду в PowerShell или Bash на компьютере с Claude Code.</string>
     <string name="settings_client_claude">Команда Claude Code</string>
@@ -58,6 +61,12 @@
     <string name="settings_group_shell">Команды Shell</string>
     <string name="settings_group_ui">Интерфейс специальных возможностей</string>
     <string name="settings_host_unavailable">Для запуска сервера установите и включите AutoJs6.</string>
+    <string name="settings_idle_stop">Останавливать при простое</string>
+    <string name="settings_idle_stop_choice">%1$d мин</string>
+    <string name="settings_idle_stop_choice_off">Выкл.</string>
+    <string name="settings_idle_stop_hint">По умолчанию выключено. Сервер останавливается, если клиенты не присылали запросов выбранное время; подключенный, но молчащий клиент остановке не мешает. Сопряжение и токен сохраняются.</string>
+    <string name="settings_idle_stop_off">Останавливать при простое: выкл.</string>
+    <string name="settings_idle_stop_value">Останавливать при простое: через %1$d мин без запросов</string>
     <string name="settings_lan">Разрешить подключения из локальной сети</string>
     <string name="settings_lan_addresses">Текущие адреса в локальной сети:\n%1$s</string>
     <string name="settings_lan_hint">Клиенты должны быть в той же сети, что и телефон; гостевые сети и изоляция точки доступа блокируют их. Если подключение не проходит по таймауту, проверьте маршрутизатор и брандмауэр компьютера.</string>
@@ -88,6 +97,7 @@
     <string name="settings_save_failed">Не удалось сохранить или прочитать настройки. Повторите попытку.</string>
     <string name="settings_shell_root">Разрешить Shell с root</string>
     <string name="settings_show_token">Показать / скопировать токен</string>
+    <string name="settings_stopped_idle">Остановлен автоматически из-за простоя</string>
     <string name="settings_stopping">Остановка</string>
     <string name="settings_title">Настройки MCP Server</string>
     <string name="settings_token">Токен доступа</string>

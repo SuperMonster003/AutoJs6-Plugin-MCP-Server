@@ -14,6 +14,7 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.bridge.BridgeOutcome
 import io.github.supermonster003.autojs6.plugin.mcp.server.bridge.HostAvailability
 import io.github.supermonster003.autojs6.plugin.mcp.server.bridge.HostBridgeClient
 import io.github.supermonster003.autojs6.plugin.mcp.server.mcpServerPluginRuntimeInfo
+import io.github.supermonster003.autojs6.plugin.mcp.server.server.BackgroundRestriction
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.McpHttpServer
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.PairedClient
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.PairingCoordinator
@@ -64,6 +65,14 @@ import java.util.concurrent.atomic.AtomicReference
  * page in P4.2), and the pairing coordinator through events. The listener outlives the host: when
  * AutoJs6 dies, the bridge marks itself degraded, every host-backed tool answers
  * `HOST_UNAVAILABLE`, and the next `openServer` attaches the new broker to the running listener.
+ *
+ * The idle auto-stop option (roadmap P6) is a delayed main-thread message armed whenever the
+ * listener (re)starts or its configuration is applied: when it fires and the listener's
+ * [IdleStopMonitor][io.github.supermonster003.autojs6.plugin.mcp.server.server.IdleStopMonitor]
+ * reports no activity for the configured minutes, the listener stops with
+ * [ServerStatus.REASON_IDLE_TIMEOUT]; otherwise the message is re-armed for the remaining time.
+ * A delayed message never wakes the device, so a stop that falls into deep sleep happens on
+ * the next wake-up, and the stop does not count as a user stop.
  */
 @SuppressLint("StaticFieldLeak") // [instance] holds the application context only
 class McpServerRuntime private constructor(context: Context) : PairingCoordinator.EventListener {
@@ -143,6 +152,8 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
     @Volatile
     private var lastStopReason: String? = null
 
+    private val idleStopTask = Runnable { checkIdleStop() }
+
     val isListening: Boolean
         get() = server.isRunning
 
@@ -169,6 +180,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
             if (running.sameListener(config)) {
                 activeConfig = config
                 ServerLifecycleStore(context).userStopped = false
+                scheduleIdleStop()
                 return server.status
             }
             Log.i(TAG, "Listener configuration changed (${running.port}/${running.bindScope.id} -> ${config.port}/${config.bindScope.id}); restarting")
@@ -181,6 +193,8 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
         if (status.isRunning) {
             ServerLifecycleStore(context).userStopped = false
             ensureForeground()
+            scheduleIdleStop()
+            warnIfBackgroundRestricted()
         } else {
             activeConfig = null
         }
@@ -195,9 +209,56 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
             Log.i(TAG, "Stopping the listener ($reasonCode${message?.let { ": $it" }.orEmpty()})")
         }
         activeConfig = null
+        mainHandler.removeCallbacks(idleStopTask)
         server.stop()
         nodeRefs.clear()
         leaveForeground()
+    }
+
+    // ------------------------------------------------------------------ idle auto-stop
+
+    /** (Re)arms the idle check for the active configuration; a 0 setting disarms it. Safe from any thread. */
+    private fun scheduleIdleStop() {
+        mainHandler.removeCallbacks(idleStopTask)
+        val timeoutMs = activeConfig?.idleStopMs ?: return
+        val monitor = server.idleMonitor ?: return
+        mainHandler.postDelayed(idleStopTask, monitor.remainingMs(timeoutMs))
+    }
+
+    /** Main thread: stops the listener once it has been idle long enough, else waits for the rest. */
+    private fun checkIdleStop() {
+        val timeoutMs = activeConfig?.idleStopMs ?: return
+        val monitor = server.idleMonitor ?: return
+        val remaining = monitor.remainingMs(timeoutMs)
+        if (remaining > 0) {
+            mainHandler.postDelayed(idleStopTask, remaining)
+            return
+        }
+        lifecycle.execute { stopForIdle(timeoutMs) }
+    }
+
+    private fun stopForIdle(timeoutMs: Long) {
+        val config = activeConfig ?: return
+        val monitor = server.idleMonitor ?: return
+        if (!server.isRunning || config.idleStopMs != timeoutMs) return
+        if (monitor.remainingMs(timeoutMs) > 0) {
+            // A request arrived while the stop was queued.
+            scheduleIdleStop()
+            return
+        }
+        val minutes = config.idleStopMinutes
+        Log.i(TAG, "No client request for $minutes minute(s); stopping the listener (idle auto-stop)")
+        foregroundService?.notifyIdleStop(minutes)
+        stop(ServerStatus.REASON_IDLE_TIMEOUT)
+        ServerStatusStore(context).save(statusSnapshot())
+        session?.publishStatus()
+    }
+
+    /** Android stops the services of a background-restricted app once its uid is idle; say so where the user can see it. */
+    private fun warnIfBackgroundRestricted() {
+        if (!BackgroundRestriction.isRestricted(context)) return
+        Log.w(TAG, BackgroundRestriction.WARNING)
+        session?.publishEvent(McpServerContract.EVENT_WARNING, BackgroundRestriction.WARNING)
     }
 
     // ------------------------------------------------------------------ host session
