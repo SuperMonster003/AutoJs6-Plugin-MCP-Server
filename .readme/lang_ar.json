@@ -79,7 +79,7 @@
   "p_build_release": "بناء APK الإصدار",
   "p_build_digest": "جمع ناتج الإصدار وإلحاق الإصدار وملخص CRC32 باسم الملف",
   "p_build_docs_check": "التحقق من تزامن مصادر التوثيق متعدد اللغات مع النواتج المولدة (يفرض ذلك CI أيضا)",
-  "p_build_requirements": "يتطلب البناء JDK 21 أو أحدث و Android SDK 36; وتدار إصدارات Gradle والمكونات الإضافية مركزيا عبر `version.properties` و `io.github.supermonster003.autojs6-platform-versions`.",
+  "p_build_requirements": "يتطلب البناء JDK 21 أو أحدث و Android SDK 37; وتدار إصدارات Gradle والمكونات الإضافية مركزيا عبر `version.properties` و `io.github.supermonster003.autojs6-platform-versions`.",
   "h3_resource_layout": "التعريب وتوليد التوثيق",
   "p_resource_layout": "ملفات JSON اللغوية في `.readme/` و `.changelog/` هي المصدر الوحيد لملف README وتعليمات مركز المكونات الإضافية وسجل التغييرات. عدل دائما مصادر JSON هذه وأعد تشغيل `py .python/generate_markdown.py`; ولا تحرر يدويا نواتج README و `plugin_instruction.md` وسجل التغييرات المولدة أبدا. شغل `py .python/generate_markdown.py --check` للتحقق من جميع النواتج المولدة.",
   "h3_license": "الترخيص",

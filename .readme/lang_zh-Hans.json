@@ -79,7 +79,7 @@
   "p_build_release": "构建 Release APK",
   "p_build_digest": "收集发布产物并在文件名后追加版本与 CRC32 摘要",
   "p_build_docs_check": "校验多语言文档源与生成产物是否同步 (CI 同样执行此检查)",
-  "p_build_requirements": "构建需要 JDK 21 或更高版本以及 Android SDK 36; Gradle 与插件版本由 `version.properties` 和 `io.github.supermonster003.autojs6-platform-versions` 统一管理.",
+  "p_build_requirements": "构建需要 JDK 21 或更高版本以及 Android SDK 37; Gradle 与插件版本由 `version.properties` 和 `io.github.supermonster003.autojs6-platform-versions` 统一管理.",
   "h3_resource_layout": "本地化与文档生成",
   "p_resource_layout": "`.readme/` 与 `.changelog/` 下的语言 JSON 文件是 README, 插件中心说明与更新日志的唯一文案源. 请始终修改这些 JSON 源文件并重新运行 `py .python/generate_markdown.py`; 生成的 README, `plugin_instruction.md` 与更新日志产物不得手工编辑. 运行 `py .python/generate_markdown.py --check` 可校验全部生成产物.",
   "h3_license": "许可证",

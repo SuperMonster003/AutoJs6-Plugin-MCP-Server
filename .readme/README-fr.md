@@ -223,6 +223,12 @@ Les plans et l'avancement du plugin sont tenus sous forme de liste cochable dans
 
 ******
 
+#### v1.0.1
+
+_2026/09/15_
+
+- `Amélioration` compileSdk passe à 37 (Android 17) ; targetSdk reste à 36 jusqu'à la vérification du comportement dépendant de la cible
+
 #### v1.0.0
 
 _2026/09/15_
@@ -304,7 +310,7 @@ Vérifier que les sources de documentation multilingues et les artefacts génér
 py .python\generate_markdown.py --check
 ```
 
-La compilation nécessite JDK 21 ou ultérieur et Android SDK 36 ; les versions de Gradle et des plugins sont gérées de manière centralisée par `version.properties` et `io.github.supermonster003.autojs6-platform-versions`.
+La compilation nécessite JDK 21 ou ultérieur et Android SDK 37 ; les versions de Gradle et des plugins sont gérées de manière centralisée par `version.properties` et `io.github.supermonster003.autojs6-platform-versions`.
 
 ******
 

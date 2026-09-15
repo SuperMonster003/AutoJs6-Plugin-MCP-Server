@@ -223,6 +223,12 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 ******
 
+#### v1.0.1
+
+_2026/09/15_
+
+- `تحسين` رفع compileSdk إلى 37 (Android 17), يبقى targetSdk عند 36 حتى يتم التحقق من السلوك المعتمد على الهدف
+
 #### v1.0.0
 
 _2026/09/15_
@@ -304,7 +310,7 @@ _2026/09/15_
 py .python\generate_markdown.py --check
 ```
 
-يتطلب البناء JDK 21 أو أحدث و Android SDK 36; وتدار إصدارات Gradle والمكونات الإضافية مركزيا عبر `version.properties` و `io.github.supermonster003.autojs6-platform-versions`.
+يتطلب البناء JDK 21 أو أحدث و Android SDK 37; وتدار إصدارات Gradle والمكونات الإضافية مركزيا عبر `version.properties` و `io.github.supermonster003.autojs6-platform-versions`.
 
 ******
 
