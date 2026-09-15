@@ -31,8 +31,9 @@ import java.util.concurrent.TimeUnit
 /**
  * The idle auto-stop option on a device (roadmap P6): a listener whose clients send no request
  * for the configured minutes stops itself, records the plugin-only `idle_timeout` reason, does
- * not count as a user stop, and leaves one auto-cancelling notification behind. All private
- * files are restored.
+ * not count as a user stop, and leaves one auto-cancelling notification behind when Android
+ * allows notifications. Run once with POST_NOTIFICATIONS granted and once without it on API 33+.
+ * All saved private files are restored; the test does not change notification permission.
  */
 @RunWith(AndroidJUnit4::class)
 class McpServerIdleStopTest {
@@ -40,9 +41,11 @@ class McpServerIdleStopTest {
     private val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
     private val saved = linkedMapOf<String, String?>()
     private val port = 18439
+    private var notificationsEnabled = false
 
     @Before
     fun prepare() {
+        notificationsEnabled = notifications().areNotificationsEnabled()
         listOf("config.json", "lifecycle.json", "status.json").forEach { saved[it] = ProcessSharedFile(context, it).read() }
         ServerConfigStore(context).save(ServerConfig(port = port, idleStopMinutes = 1))
         notifications().cancel(McpServerService.IDLE_STOP_NOTIFICATION_ID)
@@ -70,16 +73,22 @@ class McpServerIdleStopTest {
         await("shared stopped status", 10) { ServerStatusStore(context).load().state == McpServerContract.STATE_STOPPED }
         assertEquals(ServerStatus.REASON_IDLE_TIMEOUT, ServerStatusStore(context).load().lastErrorCode)
         assertFalse("an idle stop is not a user stop", ServerLifecycleStore(context).userStopped)
-        if (Build.VERSION.SDK_INT >= 23) {
+        assertEquals("Notification permission changed during the test", notificationsEnabled, notifications().areNotificationsEnabled())
+        if (notificationsEnabled) {
             await("idle notification", 10) { notifications().activeNotifications.any { it.id == McpServerService.IDLE_STOP_NOTIFICATION_ID } }
-            // The foreground notification goes with the service; its removal is posted to the main thread.
-            await("foreground notification removed", 10) { notifications().activeNotifications.none { it.id == McpServerService.NOTIFICATION_ID } }
+        } else {
+            assertTrue("Blocked notifications must not leave an idle notice", notifications().activeNotifications.none { it.id == McpServerService.IDLE_STOP_NOTIFICATION_ID })
         }
+        // The foreground notification goes with the service; its removal is posted to the main thread.
+        await("foreground notification removed", 10) { notifications().activeNotifications.none { it.id == McpServerService.NOTIFICATION_ID } }
+        println("MCP_IDLE_STOP notificationsEnabled=$notificationsEnabled elapsedSeconds=$elapsedSeconds")
     }
 
     private fun initialize(): Int {
         val connection = URL("http://127.0.0.1:$port/mcp").openConnection() as HttpURLConnection
         try {
+            connection.connectTimeout = 5_000
+            connection.readTimeout = 10_000
             connection.requestMethod = "POST"
             connection.doOutput = true
             connection.setRequestProperty("Host", "127.0.0.1:$port")
