@@ -233,6 +233,7 @@ _2026/09/15_
 - `优化` 将 compileSdk 提升到 37 (Android 17), targetSdk 保持 36, 待依赖目标版本的行为验证后再提升
 - `优化` MCP 一致性 (P6): 在两台设备上以官方 @modelcontextprotocol/conformance 套件 0.1.16 测试有状态的 /mcp 路径. 32 个服务器场景中 9 个通过 (initialize, ping, tools/list, 文本与错误工具结果, resources/list, prompts/list, 并发 SSE 流, DNS rebinding 保护); 18 个调用套件自带的参考夹具 (test_* 工具, 提示与 test:// 资源, 本服务器以未知工具结果, -32602 或 isError 应答), 5 个依赖本服务器未声明的能力 (logging, completions, 资源订阅). 回环 Origin 头现在在任何模式下都被接受 (套件如此要求); CORS 头与预检应答仍仅限开发者模式. 2026-07-28 无状态模型没有路由 (Roadmap D9). 详见 docs/dev/p6-conformance.md.
 - `优化` 安全审计 (P6): 七项清单 (令牌存储, 日志脱敏, 导出组件, 明文范围, 局域网默认关闭, 配对撤销, 工具分组默认关闭) 已在代码与两台设备上逐项核对, 记录于 docs/dev/p6-security-audit.md, README 安全章节改为说明这些边界. 明文 HTTP 由网络安全配置限定为回环地址, 取代应用级 usesCleartextTraffic 标志; 插件不发起客户端连接, 监听器也不需要该标志.
+- `优化` 性能基线 (P6): 在 API 24 模拟器, Sony 手机 (API 33) 与小米平板 (API 35) 上测量 ui_dump 50 / 200 / 400 节点, screen_capture 三档尺寸, script_run 往返与 4 路并发请求, 记录于 docs/dev/p6-performance-baseline.md, 仅作参考不设阈值. 仅由插件应答的调用在模拟器与手机上约 20 ms, ui_dump 每节点约增加 0.05 ms, 无障碍截图路径 100 ms 内应答而 API 24 的 MediaProjection 路径每次约 1.35 s, 4 路并发请求在宿主 4 路并发上限内以单次往返的 1.0-1.8 倍完成.
 
 #### v1.0.0
 
