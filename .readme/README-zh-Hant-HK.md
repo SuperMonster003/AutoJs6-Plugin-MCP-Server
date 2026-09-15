@@ -52,15 +52,15 @@ MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Proto
 
 ******
 
-P4 開發預覽: 37 個工具, 預設啟用 33 個, 提供 AutoJs6 抽屜開關與外掛程式設定頁. 需要配套的 P4 AutoJs6 組建. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+版本 1.0.1: 37 個工具 (預設啟用 33 個), MCP 資源與提示, AutoJs6 抽屜開關與外掛程式設定頁. 需要 AutoJs6 6.8.0 (組建 5279) 或更高版本; 可選的 autojs6://docs/ 資源還需要 AutoJs6 離線文件外掛以及帶轉讀方法的宿主. 進度與證據記錄在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
-### 規劃功能
+### 功能
 
 ******
 
-路線圖分階段交付以下能力:
+外掛程式提供以下能力:
 
 - 手機設定頁提供服務狀態, USB 轉發, 連接埠與區域網絡存取, 權杖顯示/複製/輪換, 配對撤銷, 工具群組與 root 權限, 開發者模式, 可複製的 Claude Code / Cursor / Codex / 通用 HTTP 設定及發行歷史, 並跟隨 AutoJs6 外觀. 網絡設定會重新啟動執行中的監聽器, 權杖與權限變更立即生效. 敏感資訊視窗禁止截圖.
 - 腳本執行: 在 AutoJs6 內執行文字或檔案形式的 JavaScript, 列出與停止引擎, 讀取最近的主控台輸出.
@@ -68,8 +68,56 @@ P4 開發預覽: 37 個工具, 預設啟用 33 個, 提供 AutoJs6 抽屜開關�
 - 截圖分組 (P3.3): screen_capture 傳回 MCP 圖片, 支援裁剪, scale 或 maxWidth, JPEG / PNG / WebP 與品質參數. 預設 JPEG 品質 70, 最長邊 1280 px. base64 超過 4 MiB 時降低品質或尺寸重試, 中繼資料說明調整情況. screen_state 傳回亮屏狀態, 尺寸, 方向和密度. 工具目錄現有 37 項. MediaProjection 回退需要 2026-09-13 或之後建置的 AutoJs6 主程式及手機端授權, 主程式工作階段重用該授權.
 - 工作目錄工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用從 1 開始的行列號的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二進制讀取使用 base64, 原始資料最多 1 MiB. 寫入亦受宿主請求預算約束 (通常為包含 JSON 轉義的 96 KiB). 檔案刪除和 Shell 預設關閉; root 另需 allowShellRoot 開關與宿主 shell.root 授權. 這些能力需要匹配的 P3.4 宿主構建.
 - MCP 資源 (P3.5) 提供唯讀工作目錄檔案, 可瀏覽的宿主範例, 安裝 AutoJs6 離線文件外掛後的離線文件, 裝置資訊和最近主控台輸出, 遵守配對與分組開關. 文字和二進制讀取報告截斷狀態. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指引, 其他手機語言回退英語.
-- 連接方式: 透過 `adb forward` 的 USB 連接, 須明確開啟的區域網絡連接, 電腦端 stdio 橋接程式, 以及可選的公網隧道與 OAuth 2.1.
+- 連接方式: 透過 `adb forward` 的 USB 連接, 須明確開啟的區域網絡連接, 以及面向無 HTTP 傳輸用戶端的電腦端 stdio 橋接程式.
 - 安全: 可輪換的 Bearer 權杖, 手機端首次配對確認, 按分組的工具開關; 伺服器預設只監聽回環介面.
+
+******
+
+### 工具清單
+
+******
+
+下表由外掛程式的工具目錄快照 (`app/src/test/resources/tool-catalog.snapshot.json`) 產生; 描述為用戶端收到的英文原文, 每個分組都可在設定頁關閉:
+
+| 工具 | 分組 | 預設 | 描述 |
+|---|---|---|---|
+| `device_ping` | `device` | 開 | Confirms that the AutoJs6 MCP Server plugin is reachable and returns its version, the device model, the Android API level, and the device time. |
+| `device_info` | `device` | 開 | Returns the device build, screen, battery, memory, AutoJs6 host version and process, accessibility service state, screen state, locale, and time zone as AutoJs6 reports them (schema autojs6-bridge-device-info-v1). No hardware identifiers. |
+| `script_run` | `script` | 開 | Runs JavaScript source in AutoJs6 (its Rhino engine with the full AutoJs6 API) and by default waits for it to finish. Use it for automation steps: toasts, UI actions, file work, app launches. The result carries executionId, status (finished, error, running), durationMs, the exception with its line when the script threw, and the newest console lines. A script still running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output. |
+| `script_run_file` | `script` | 開 | Runs a script file that already exists on the device (AutoJs6 picks the engine from the suffix) and by default waits for it to finish. The result carries executionId, status (finished, error, running), durationMs, the exception with its line when the script threw, and the newest console lines. A script still running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output. |
+| `script_stop` | `script` | 開 | Stops one running AutoJs6 script by the executionId that script_run, script_run_file, or script_list reported. |
+| `script_stop_all` | `script` | 開 | Stops every script AutoJs6 is running, including ones started on the phone, and returns how many were stopped. |
+| `script_list` | `script` | 開 | Lists the scripts AutoJs6 is running or starting, with executionId, name, path, working directory, state, and uptime. |
+| `console_tail` | `script` | 開 | Returns the newest lines of the AutoJs6 console, which every script shares; optionally only entries after sinceId or at least a level. nextSinceId in the result continues from where this call ended. |
+| `ui_dump` | `ui` | 開 | Dumps the accessibility node tree of the active window as compact text: one node per line with a #n reference, an indent per depth, the short class name, the state markers that apply (clickable, long_clickable, checkable, checked, scrollable, editable, focused, selected, !enabled, hidden), the text in quotes, desc=, id= (name part only), and the position (bounds [l,t][r,b] for a node with children, c=(x,y) for a leaf). Pass a #n reference as nodeRef to ui_click, ui_long_click, ui_set_text, or ui_scroll; references stay valid until the next ui_dump or for 60 s. Call it before acting and again after the screen changed. format json returns the nodes as objects with every flag; format xml returns the uiautomator-style export. |
+| `ui_find` | `ui` | 開 | Finds the nodes of the active window that match every condition of the selector, optionally waiting up to timeoutMs for the first match, and returns up to limit of them with #n references, bounds, and center. An empty count is not an error; ui_explain_selector tells which condition fails. |
+| `ui_current_window` | `ui` | 開 | Returns the package and activity in the foreground, whether the AutoJs6 accessibility service is available, and the accessibility windows with their type, title, bounds, and focus. |
+| `ui_explain_selector` | `ui` | 開 | Explains why a selector matches or not: evaluates its conditions one by one over the active window and reports how many nodes pass each step cumulatively, the first failing condition, the matches, and the near misses. Use it when ui_find returns nothing. |
+| `ui_wait_for` | `ui` | 開 | Waits until a node matching the selector appears (default) or disappears, polling the active window every 0.5 s for up to timeoutMs, and answers TIMEOUT when the state is not reached. Use it after an action that opens a screen or dismisses a dialog. |
+| `ui_click` | `ui` | 開 | Clicks a node given by nodeRef (a #n reference from the last ui_dump), by selector (the first match in pre-order), or by x and y (a coordinate tap, allowed only while the ui_gesture group is enabled). The accessibility click climbs to the nearest clickable ancestor when the node itself is not clickable. Returns the node it acted on. Give nodeRef or selector, not both. |
+| `ui_long_click` | `ui` | 開 | Long-presses a node given by nodeRef or selector (the accessibility long click climbs to the nearest node that accepts it), or by x and y as a 700 ms press at that point (allowed only while the ui_gesture group is enabled). Give nodeRef or selector, not both. |
+| `ui_set_text` | `ui` | 開 | Sets the text of an editable node (an EditText, marked editable by ui_dump) given by nodeRef or selector; append adds to the current text instead of replacing it. Works without focus or the keyboard; ACTION_FAILED means the node is not editable or not enabled. Give nodeRef or selector, not both. |
+| `ui_scroll` | `ui` | 開 | Scrolls a node given by nodeRef or selector, or the first scrollable node of the window when neither is given: forward, down, and right move towards the end, backward, up, and left towards the start; times repeats the step. performed counts the steps the node accepted, fewer than requested means it reached the end. Give nodeRef or selector, not both. |
+| `ui_press_key` | `ui` | 開 | Presses a global key through the accessibility service: back, home, recents, notifications (opens the notification shade), quick_settings, power_dialog, or lock_screen (Android 9 or later). |
+| `ui_swipe` | `ui_gesture` | 關 | Swipes one finger from (x1, y1) to (x2, y2) in device pixels over durationMs; take the coordinates from ui_dump bounds or a screenshot. Part of the ui_gesture group, which is off by default. |
+| `ui_gesture` | `ui_gesture` | 關 | Performs a free-path one-finger gesture through the given points over durationMs (at most 10 s): the first point is the touch down, the last the lift. Part of the ui_gesture group, which is off by default. |
+| `screen_capture` | `screen` | 開 | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
+| `screen_state` | `screen` | 開 | Read whether the screen is on, its current width and height, orientation, rotation, and density. Does not request screen capture consent. |
+| `files_list` | `files` | 開 | Lists workspace files with metadata. Results are bounded and report truncation. |
+| `files_stat` | `files` | 開 | Returns existence, type, size, and modification time of a workspace path. |
+| `files_read` | `files` | 開 | Reads up to 1 MiB. Use encoding base64 for binary data; encoding, bytes, totalBytes, and truncated identify the representation and limit. |
+| `files_write` | `files` | 開 | Writes UTF-8 text and refreshes the host explorer. Content is limited to 1 MiB and the negotiated Binder request budget (normally 96 KiB including JSON escaping); oversized calls fail before writing. |
+| `files_mkdir` | `files` | 開 | Creates a workspace directory and missing parents, then refreshes the host explorer. |
+| `files_rename` | `files` | 開 | Moves a workspace file or directory to another workspace path and refreshes the host explorer. |
+| `files_delete` | `files_delete` | 關 | Deletes a workspace entry. The separate files_delete group is off by default. The workspace root cannot be deleted. |
+| `editor_open` | `files` | 開 | Opens a workspace file in the AutoJs6 editor at a one-based line and column. Lines outside the file are ignored by the editor. |
+| `app_launch` | `device` | 開 | Opens an installed Android application. Provide exactly one of packageName or appName. |
+| `app_list` | `device` | 開 | Lists up to 1000 Android applications visible to AutoJs6, optionally matching a package name or label. Android package visibility restrictions apply. |
+| `clipboard_get` | `device` | 開 | Reads clipboard text (up to 64 KiB). Android may restrict clipboard access while AutoJs6 is in the background. |
+| `clipboard_set` | `device` | 開 | Replaces clipboard text, including an empty string to clear it. |
+| `device_ensure_accessibility` | `device` | 開 | Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance. |
+| `toast` | `device` | 開 | Shows a short Android toast on the phone. |
+| `shell_exec` | `shell` | 關 | Runs an Android shell command in the host workspace. The shell group is off by default; root also requires the separate allow root switch and a shell.root host grant. Reports exit code, timeout, stdout, stderr, and truncation. maxOutputBytes bounds stdout and stderr together. |
 
 ******
 
@@ -84,6 +132,11 @@ P4 開發預覽: 37 個工具, 預設啟用 33 個, 提供 AutoJs6 抽屜開關�
 5. 首次連線時在手機上確認配對要求. 使用完畢後可從抽屜, 設定頁或通知中停止服務.
 
 > MCP 伺服器抽屜開關提供安裝, 啟用, 授權與相容性引導, 與通知停止操作同步, 重新連線時保留外掛程式設定, 抽屜及外掛程式中心透過權限檢查開啟同一設定頁. AutoJs6 開啟時恢復先前啟用的伺服器, 但遵循宿主離線期間的使用者停止操作, 不隨裝置開機自啟.
+
+<p align="center">
+  <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/docs/images/readme/drawer-zh.png?raw=true" alt="AutoJs6 抽屜中的 MCP Server 開關" width="300" />
+  <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/docs/images/readme/settings-zh.png?raw=true" alt="MCP Server 設定頁" width="300" />
+</p>
 
 ******
 

@@ -8,9 +8,9 @@
   "p_introduction_what": "MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Protocol]({{ mcp_spec_url }}) 伺服器. 電腦上的 AI 代理 (例如 Claude Code, Cursor 或 MCP Inspector) 透過 USB 或 Wi-Fi 連接手機, 借助工具執行腳本, 讀取日誌, 檢視無障礙節點樹, 點擊與輸入, 擷取螢幕, 以及操作檔案與應用程式.",
   "p_introduction_how": "伺服器在外掛自己的程序中運行, 透過單一的 Streamable HTTP 端點對外提供服務. AutoJs6 透過 Binder 向外掛下發能力代理, 每次工具呼叫都由主程式以其既有的權限, 引擎和無障礙服務執行; 外掛不會複製主程式的任何功能.",
   "h3_status": "目前狀態",
-  "p_status": "P4 開發預覽: 37 個工具, 預設啟用 33 個, 提供 AutoJs6 抽屜開關與外掛程式設定頁. 需要配套的 P4 AutoJs6 組建. [ROADMAP.md]({{ roadmap_url }}).",
-  "h3_features": "規劃功能",
-  "p_features_intro": "路線圖分階段交付以下能力",
+  "p_status": "版本 {{ version_name }}: 37 個工具 (預設啟用 33 個), MCP 資源與提示, AutoJs6 抽屜開關與外掛程式設定頁. 需要 AutoJs6 {{ required_host_version_name }} (組建 {{ required_host_version_code }}) 或更高版本; 可選的 autojs6://docs/ 資源還需要 AutoJs6 離線文件外掛以及帶轉讀方法的宿主. 進度與證據記錄在 [ROADMAP.md]({{ roadmap_url }}).",
+  "h3_features": "功能",
+  "p_features_intro": "外掛程式提供以下能力",
   "features": [
     "手機設定頁提供服務狀態, USB 轉發, 連接埠與區域網絡存取, 權杖顯示/複製/輪換, 配對撤銷, 工具群組與 root 權限, 開發者模式, 可複製的 Claude Code / Cursor / Codex / 通用 HTTP 設定及發行歷史, 並跟隨 AutoJs6 外觀. 網絡設定會重新啟動執行中的監聽器, 權杖與權限變更立即生效. 敏感資訊視窗禁止截圖.",
     "腳本執行: 在 AutoJs6 內執行文字或檔案形式的 JavaScript, 列出與停止引擎, 讀取最近的主控台輸出.",
@@ -18,9 +18,19 @@
     "截圖分組 (P3.3): screen_capture 傳回 MCP 圖片, 支援裁剪, scale 或 maxWidth, JPEG / PNG / WebP 與品質參數. 預設 JPEG 品質 70, 最長邊 1280 px. base64 超過 4 MiB 時降低品質或尺寸重試, 中繼資料說明調整情況. screen_state 傳回亮屏狀態, 尺寸, 方向和密度. 工具目錄現有 37 項. MediaProjection 回退需要 2026-09-13 或之後建置的 AutoJs6 主程式及手機端授權, 主程式工作階段重用該授權.",
     "工作目錄工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用從 1 開始的行列號的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二進制讀取使用 base64, 原始資料最多 1 MiB. 寫入亦受宿主請求預算約束 (通常為包含 JSON 轉義的 96 KiB). 檔案刪除和 Shell 預設關閉; root 另需 allowShellRoot 開關與宿主 shell.root 授權. 這些能力需要匹配的 P3.4 宿主構建.",
     "MCP 資源 (P3.5) 提供唯讀工作目錄檔案, 可瀏覽的宿主範例, 安裝 AutoJs6 離線文件外掛後的離線文件, 裝置資訊和最近主控台輸出, 遵守配對與分組開關. 文字和二進制讀取報告截斷狀態. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指引, 其他手機語言回退英語.",
-    "連接方式: 透過 `adb forward` 的 USB 連接, 須明確開啟的區域網絡連接, 電腦端 stdio 橋接程式, 以及可選的公網隧道與 OAuth 2.1.",
+    "連接方式: 透過 `adb forward` 的 USB 連接, 須明確開啟的區域網絡連接, 以及面向無 HTTP 傳輸用戶端的電腦端 stdio 橋接程式.",
     "安全: 可輪換的 Bearer 權杖, 手機端首次配對確認, 按分組的工具開關; 伺服器預設只監聽回環介面."
   ],
+  "h3_tools": "工具清單",
+  "p_tools_intro": "下表由外掛程式的工具目錄快照 (`app/src/test/resources/tool-catalog.snapshot.json`) 產生; 描述為用戶端收到的英文原文, 每個分組都可在設定頁關閉",
+  "tools_table_headers": [
+    "工具",
+    "分組",
+    "預設",
+    "描述"
+  ],
+  "text_on": "開",
+  "text_off": "關",
   "h3_usage": "使用方法",
   "usage_steps": [
     "在安裝了 AutoJs6 組建 {{ required_host_version_code }} ({{ required_host_version_name }}) 或更高版本的裝置上, 從 [Releases]({{ repo_url }}/releases) 下載並安裝外掛 APK.",
@@ -30,6 +40,9 @@
     "首次連線時在手機上確認配對要求. 使用完畢後可從抽屜, 設定頁或通知中停止服務."
   ],
   "p_usage_note": "MCP 伺服器抽屜開關提供安裝, 啟用, 授權與相容性引導, 與通知停止操作同步, 重新連線時保留外掛程式設定, 抽屜及外掛程式中心透過權限檢查開啟同一設定頁. AutoJs6 開啟時恢復先前啟用的伺服器, 但遵循宿主離線期間的使用者停止操作, 不隨裝置開機自啟.",
+  "text_screenshot_drawer": "AutoJs6 抽屜中的 MCP Server 開關",
+  "text_screenshot_settings": "MCP Server 設定頁",
+  "screenshot_language": "zh",
   "h3_quick_start": "用戶端設定",
   "p_quick_start_intro": "Claude Code 只需一條命令即可註冊伺服器; 其他用戶端在各自的 MCP 設定中使用相同的 URL 與請求標頭",
   "p_quick_start_note": "在 AutoJs6 抽屜中開啟 MCP 伺服器. 長按項目標題或點選外掛程式中心的設定入口, 進入設定頁並複製電腦用戶端所需設定. 首次連線時在手機上確認配對要求. 使用完畢後可從抽屜, 設定頁或通知中停止服務.",
