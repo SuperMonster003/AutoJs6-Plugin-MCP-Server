@@ -233,6 +233,7 @@ _2026/09/15_
 - `개선` compileSdk 를 37 (Android 17) 로 올리며, targetSdk 는 대상 버전에 의존하는 동작을 검증할 때까지 36 으로 유지
 - `개선` MCP 적합성 (P6): 두 기기에서 공식 @modelcontextprotocol/conformance 스위트 0.1.16 을 상태 유지 /mcp 경로에 대해 실행했습니다. 32 개 서버 시나리오 중 9 개 통과 (initialize, ping, tools/list, 텍스트와 오류 도구 결과, resources/list, prompts/list, 동시 SSE 스트림, DNS rebinding 보호); 18 개는 스위트에 딸린 참조 픽스처 (test_* 도구, 프롬프트, test:// 리소스. 이 서버는 알 수 없는 도구 결과, -32602 또는 isError 로 응답합니다) 를 호출하고, 5 개는 이 서버가 선언하지 않는 기능 (logging, completions, 리소스 구독) 이 필요합니다. 루프백 Origin 헤더는 스위트가 기대하는 대로 이제 모든 모드에서 허용됩니다. CORS 헤더와 프리플라이트 응답은 여전히 개발자 모드로 제한됩니다. 2026-07-28 무상태 모델에는 라우트가 없습니다 (Roadmap D9). 자세한 내용은 docs/dev/p6-conformance.md.
 - `개선` 보안 감사 (P6): 체크리스트 7 개 항목 (토큰 저장, 로그 비식별화, 내보낸 구성 요소, 평문 범위, 로컬 네트워크 기본 꺼짐, 페어링 취소, 도구 그룹 기본 꺼짐) 을 코드와 두 기기에서 검증하여 docs/dev/p6-security-audit.md 에 기록했고, README 보안 절이 이 경계를 설명합니다. 평문 HTTP 는 앱 전체 usesCleartextTraffic 플래그 대신 네트워크 보안 구성으로 루프백 주소에 한정됩니다. 플러그인은 클라이언트 연결을 열지 않으며 리스너에는 이 플래그가 필요 없습니다.
+- `개선` 성능 기준선 (P6): API 24 에뮬레이터, Sony 휴대폰 (API 33), Xiaomi Pad (API 35) 에서 ui_dump 50 / 200 / 400 노드, screen_capture 세 가지 크기, script_run 왕복, 동시 요청 4 건을 측정하여 임계값 없는 참고치로 docs/dev/p6-performance-baseline.md 에 기록했습니다. 플러그인만 응답하는 호출은 에뮬레이터와 휴대폰에서 약 20 ms, ui_dump 는 노드당 약 0.05 ms 증가하며, 접근성 스크린샷 경로는 100 ms 이내에 응답하지만 API 24 의 MediaProjection 경로는 캡처당 약 1.35 s 가 걸리고, 동시 요청 4 건은 호스트의 동시 호출 상한 4 안에서 단일 왕복의 1.0-1.8 배로 완료됩니다.
 
 #### v1.0.0
 
