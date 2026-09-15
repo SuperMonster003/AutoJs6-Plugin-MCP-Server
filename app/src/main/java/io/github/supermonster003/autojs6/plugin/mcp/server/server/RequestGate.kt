@@ -74,6 +74,7 @@ object RequestGate {
     /** Mirrors `McpServerContract.MAX_REQUEST_BODY_BYTES` (roadmap A.7). */
     const val MAX_REQUEST_BODY_BYTES = 1024L * 1024
 
+    const val STATUS_BAD_REQUEST = 400
     const val STATUS_FORBIDDEN = 403
     const val STATUS_PAYLOAD_TOO_LARGE = 413
 
@@ -108,4 +109,8 @@ object RequestGate {
     /** The `413` answer for a declared or streamed body above [maxBodyBytes]. */
     fun rejectBodyTooLarge(maxBodyBytes: Long): GateDecision.Reject =
         GateDecision.Reject(STATUS_PAYLOAD_TOO_LARGE, JSON_RPC_INVALID_REQUEST, "Request body exceeds $maxBodyBytes bytes")
+
+    /** The `400` answer for a body that fails a structural check (roadmap P6). */
+    fun rejectBody(message: String): GateDecision.Reject =
+        GateDecision.Reject(STATUS_BAD_REQUEST, JSON_RPC_INVALID_REQUEST, message)
 }

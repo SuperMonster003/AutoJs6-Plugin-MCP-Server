@@ -401,7 +401,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 目标: 敌意输入, 资源上限, 进程生命周期与规范一致性都有自动化测试与真机证据; 性能有基线不设阈值.
 
-- [ ] (插件) 敌意输入: 超长 / 嵌套 JSON, 非法 UTF-8, 未知方法, 错误头组合, 重复请求 id, 超大 base64, 并发 64 连接; 全部有界失败且服务器不崩溃 (instrumentation 用 Ktor 客户端压测).
+- [x] (插件) 敌意输入: 超长 / 嵌套 JSON, 非法 UTF-8, 未知方法, 错误头组合, 重复请求 id, 超大 base64, 并发 64 连接; 全部有界失败且服务器不崩溃 (instrumentation 用 Ktor 客户端压测). (SOURCE: 网关新增 JSON 嵌套深度 (64 层) 与请求体内重复 id 检查, 挂载层新增会话内在途 id 去重与无会话 GET 的 400 / 404; JVM `RequestBodyChecksTest` 4 + `McpTransportHardeningTest` 7; 真机 `McpServerAdversarialTest` 于 API 28 / 31 / 33 / 35 (instrumentation 沿用既有 `HttpURLConnection` 64 线程压测而非 Ktor 客户端); 证据 docs/dev/p6-hostile-input.md.)
 - [ ] (插件) 速率限制: 每客户端每秒请求数与每分钟截图数上限 (`rate-limited` 错误, 含 `retryAfterMs`); 与宿主 grant 的速率双重生效.
 - [ ] (插件 + 宿主) 生命周期矩阵: 宿主被杀 / 插件被杀 / 两者同时 / 用户在系统设置强制停止插件 / 令牌轮换中 / 配对进行中 各一次, 期望状态与恢复路径写入 `docs/dev/lifecycle-matrix.md` 并逐项真机验证.
 - [ ] (插件) 电量与常驻: 空闲时 CPU 近零 (Ktor 无轮询), 通知常驻; 提供 "空闲 N 分钟自动停止" 可选项 (默认关闭); 记录 1 小时空闲的电量增量.
