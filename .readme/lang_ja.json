@@ -79,7 +79,7 @@
   "p_build_release": "リリース APK をビルドする",
   "p_build_digest": "リリース成果物を収集し, ファイル名にバージョンと CRC32 ダイジェストを追加する",
   "p_build_docs_check": "多言語ドキュメントのソースと生成物が同期していることを検証する (CI でも実施)",
-  "p_build_requirements": "ビルドには JDK 21 以降と Android SDK 36 が必要です. Gradle とプラグインのバージョンは `version.properties` と `io.github.supermonster003.autojs6-platform-versions` で一元管理されます.",
+  "p_build_requirements": "ビルドには JDK 21 以降と Android SDK 37 が必要です. Gradle とプラグインのバージョンは `version.properties` と `io.github.supermonster003.autojs6-platform-versions` で一元管理されます.",
   "h3_resource_layout": "ローカライズとドキュメント生成",
   "p_resource_layout": "`.readme/` と `.changelog/` の言語 JSON ファイルが README, プラグインセンターの説明, 変更履歴の唯一のソースです. 常にこれらの JSON ソースを編集して `py .python/generate_markdown.py` を再実行してください. 生成された README, `plugin_instruction.md`, 変更履歴は手で編集しません. `py .python/generate_markdown.py --check` を実行するとすべての生成物を検証できます.",
   "h3_license": "ライセンス",

@@ -79,7 +79,7 @@
   "p_build_release": "Собрать выпускной APK",
   "p_build_digest": "Собрать выпускной артефакт и добавить версию и контрольную сумму CRC32 к имени файла",
   "p_build_docs_check": "Проверить, что источники многоязычной документации и сгенерированные артефакты синхронизированы (также проверяется в CI)",
-  "p_build_requirements": "Для сборки требуются JDK 21 или новее и Android SDK 36; версии Gradle и плагинов централизованно управляются через `version.properties` и `io.github.supermonster003.autojs6-platform-versions`.",
+  "p_build_requirements": "Для сборки требуются JDK 21 или новее и Android SDK 37; версии Gradle и плагинов централизованно управляются через `version.properties` и `io.github.supermonster003.autojs6-platform-versions`.",
   "h3_resource_layout": "Локализация и генерация документации",
   "p_resource_layout": "Языковые JSON-файлы в `.readme/` и `.changelog/` являются единственным источником README, инструкций центра плагинов и журнала изменений. Всегда редактируйте эти JSON-источники и перезапускайте `py .python/generate_markdown.py`; сгенерированные README, `plugin_instruction.md` и журнал изменений никогда не правятся вручную. Запустите `py .python/generate_markdown.py --check`, чтобы проверить все сгенерированные артефакты.",
   "h3_license": "Лицензия",

@@ -5,6 +5,12 @@
   "changelog_label_improvement": "優化",
   "changelog_label_dependency": "依賴",
   "$data": {
+    "v1.0.1": {
+      "released_date": "2026/09/15",
+      "improvement": [
+        "將 compileSdk 提升到 37 (Android 17), targetSdk 保持 36, 待依賴目標版本的行為驗證後再提升"
+      ]
+    },
     "v1.0.0": {
       "released_date": "2026/09/15",
       "hint": [

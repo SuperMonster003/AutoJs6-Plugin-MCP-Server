@@ -79,7 +79,7 @@
   "p_build_release": "릴리스 APK 빌드",
   "p_build_digest": "릴리스 산출물을 수집하고 파일 이름에 버전과 CRC32 다이제스트를 추가",
   "p_build_docs_check": "다국어 문서 소스와 생성된 산출물이 동기화되어 있는지 검증 (CI에서도 적용)",
-  "p_build_requirements": "빌드에는 JDK 21 이상과 Android SDK 36이 필요합니다. Gradle과 플러그인 버전은 `version.properties`와 `io.github.supermonster003.autojs6-platform-versions`로 중앙에서 관리됩니다.",
+  "p_build_requirements": "빌드에는 JDK 21 이상과 Android SDK 37이 필요합니다. Gradle과 플러그인 버전은 `version.properties`와 `io.github.supermonster003.autojs6-platform-versions`로 중앙에서 관리됩니다.",
   "h3_resource_layout": "현지화와 문서 생성",
   "p_resource_layout": "`.readme/`와 `.changelog/`의 언어 JSON 파일이 README, 플러그인 센터 안내, 변경 기록의 유일한 소스입니다. 항상 이 JSON 소스를 편집하고 `py .python/generate_markdown.py`를 다시 실행하세요. 생성된 README, `plugin_instruction.md`, 변경 기록 산출물은 절대 손으로 편집하지 않습니다. `py .python/generate_markdown.py --check`를 실행하면 모든 생성 산출물을 검증할 수 있습니다.",
   "h3_license": "라이선스",

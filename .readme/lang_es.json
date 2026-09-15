@@ -79,7 +79,7 @@
   "p_build_release": "Compilar el APK de release",
   "p_build_digest": "Recopilar el artefacto de release y añadir la versión y el resumen CRC32 a su nombre de archivo",
   "p_build_docs_check": "Verificar que las fuentes de documentación multilingüe y los artefactos generados están sincronizados (también lo exige la CI)",
-  "p_build_requirements": "La compilación requiere JDK 21 o posterior y Android SDK 36; las versiones de Gradle y de los plugins se gestionan de forma centralizada mediante `version.properties` e `io.github.supermonster003.autojs6-platform-versions`.",
+  "p_build_requirements": "La compilación requiere JDK 21 o posterior y Android SDK 37; las versiones de Gradle y de los plugins se gestionan de forma centralizada mediante `version.properties` e `io.github.supermonster003.autojs6-platform-versions`.",
   "h3_resource_layout": "Localización y generación de documentación",
   "p_resource_layout": "Los archivos JSON de idioma en `.readme/` y `.changelog/` son la única fuente del README, las instrucciones del centro de plugins y el registro de cambios. Edite siempre esas fuentes JSON y vuelva a ejecutar `py .python/generate_markdown.py`; los artefactos generados de README, `plugin_instruction.md` y registro de cambios nunca se editan a mano. Ejecute `py .python/generate_markdown.py --check` para verificar todos los artefactos generados.",
   "h3_license": "Licencia",
