@@ -402,7 +402,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 目标: 敌意输入, 资源上限, 进程生命周期与规范一致性都有自动化测试与真机证据; 性能有基线不设阈值.
 
 - [x] (插件) 敌意输入: 超长 / 嵌套 JSON, 非法 UTF-8, 未知方法, 错误头组合, 重复请求 id, 超大 base64, 并发 64 连接; 全部有界失败且服务器不崩溃 (instrumentation 用 Ktor 客户端压测). (SOURCE: 网关新增 JSON 嵌套深度 (64 层) 与请求体内重复 id 检查, 挂载层新增会话内在途 id 去重与无会话 GET 的 400 / 404; JVM `RequestBodyChecksTest` 4 + `McpTransportHardeningTest` 7; 真机 `McpServerAdversarialTest` 于 API 28 / 31 / 33 / 35 (instrumentation 沿用既有 `HttpURLConnection` 64 线程压测而非 Ktor 客户端); 证据 docs/dev/p6-hostile-input.md.)
-- [ ] (插件) 速率限制: 每客户端每秒请求数与每分钟截图数上限 (`rate-limited` 错误, 含 `retryAfterMs`); 与宿主 grant 的速率双重生效.
+- [x] (插件) 速率限制: 每客户端每秒请求数与每分钟截图数上限 (`rate-limited` 错误, 含 `retryAfterMs`); 与宿主 grant 的速率双重生效. (SOURCE: `RateLimiter` 滑动窗口 20 请求 / s 与 30 次 screen_capture / min, 超限请求 HTTP 429 + Retry-After + JSON-RPC -32004 `RATE_LIMITED` (data.retryAfterMs), 超限截图为带 retryAfterMs 的 `RATE_LIMITED` 工具结果; JVM `RateLimiterTest` 5 + `RateLimitInterceptorTest` 3; 真机洪泛 API 28 / 31 / 33 得到 429 并恢复, API 35 平板仅 16.5 请求 / s 达不到上限 (assumption 跳过); 证据 docs/dev/p6-rate-limits.md.)
 - [ ] (插件 + 宿主) 生命周期矩阵: 宿主被杀 / 插件被杀 / 两者同时 / 用户在系统设置强制停止插件 / 令牌轮换中 / 配对进行中 各一次, 期望状态与恢复路径写入 `docs/dev/lifecycle-matrix.md` 并逐项真机验证.
 - [ ] (插件) 电量与常驻: 空闲时 CPU 近零 (Ktor 无轮询), 通知常驻; 提供 "空闲 N 分钟自动停止" 可选项 (默认关闭); 记录 1 小时空闲的电量增量.
 - [ ] (测试) MCP 一致性: 用官方 conformance 套件 (kotlin-sdk 0.15.0 自带的 conformance 测试或 `modelcontextprotocol/conformance`) 对有状态与无状态两条路径各跑一轮, 记录未通过项与原因.
@@ -820,3 +820,11 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 未做: Claude Desktop 本机未安装, 桥接 README 的 claude_desktop_config.json 片段未实测; npm 发布需维护者账号 (tgz 已在桥接仓库 build/ 目录生成, git 忽略), 插件 README 已按发布后的安装命令书写; Node 18 / 20 / 22 未运行 (engines >= 18, 以 24.15 测试).
 - 验证: 桥接 npm test 23/23, npm pack --dry-run 与 npm audit --omit=dev 通过; 插件 JVM 测试全部通过, 10 语言 / 36 产物生成检查通过, git diff --check 通过.
 - 下次会话建议起点: P6 (先读 ROADMAP 的 P6 目标与附录 C 待决事项); 维护者侧: 创建 GitHub 仓库 AutoJs6-MCP-Bridge 并 npm publish 0.1.0, 之后在插件 README 的兼容矩阵中补 Claude Desktop 实测.
+
+### 2026-09-15: P6 敌意输入与速率限制
+
+- 完成: 请求网关在解析前拒绝嵌套超过 64 层的 JSON (逐字节扫描, 跳过字符串) 与请求体内重复的请求 id (400 + JSON-RPC -32600), 解析结果放入 call 属性供配对门与工具门复用; SSE 挂载层记录每个会话的在途请求 id, 复用在途 id 的 POST 直接 400 (SDK 传输按 id 映射流, 原本后到的 POST 会顶掉映射使先到的 POST 永远无应答), 无会话或未知会话的 GET 在 SSE 路由提交前返回 400 / 404. 新增 `RateLimiter` (每客户端滑动窗口: 20 请求 / s, 30 次 screen_capture / min, 最多跟踪 256 客户端, 5 min 空闲遗忘) 与 `installRateLimit` 拦截器 (Bearer 之后, 配对门之前; 键为配对身份 + 远端地址, 伪造 Mcp-Session-Id 不能开新窗口): 超限请求 HTTP 429 + Retry-After + JSON-RPC -32004 RATE_LIMITED (data.retryAfterMs / limit / windowMs), 超限截图以带 retryAfterMs 的 RATE_LIMITED 工具结果应答; `ToolFailure` 增加 retryAfterMs 字段, screen_capture 描述注明上限. changelog 10 语言 fix + feature 各一条. 证据: docs/dev/p6-hostile-input.md, docs/dev/p6-rate-limits.md.
+- 真机 (`McpServerAdversarialTest`, API 28 / 31 / 33 / 35): 1 MiB+ 请求体 413, 10 万层嵌套 400, 重复 id 400, 非法 UTF-8 400 (-32700), 截断 JSON 400, 未知方法 -32601, 畸形 tools/call 200 错误文档, 仅 application/json 的 Accept 406, text/plain 415, 未知协议版本 400, 无会话 GET / DELETE 400, 未知会话 404, 64 万字符 base64 到未知工具 200 isError, 108 万字符 413; 同 id 并发 POST 一个 200 一个 400 且 id 随后可复用; 64 并发会话 (各自 initialize / initialized / tools/list / device_ping) 全部成功: API 28 3825 ms, API 31 1235 ms, API 33 864 ms, API 35 9746 ms; 40 次 tools/list 洪泛 (8 线程, 唯一 id): API 28 524 ms 18 x 200 + 22 x 429 (retryAfterMs 530), API 31 603 ms 18 + 22 (549), API 33 128 ms 18 + 22 (879), 等待后恢复 200; API 35 平板 2429 ms 全部 200 (16.5 请求 / s 达不到上限, 测试以 assumption 跳过). 每个用例之后监听端口仍开且新 initialize 正常.
+- 观察: 在途 id 去重之前, 复用同一 id 的洪泛在每台设备都耗时约 30 s (先到的 POST 被顶掉, 直到客户端 30 s 读超时), 修复后同样的洪泛 128-603 ms; Ktor 与 HttpURLConnection 客户端默认发送 Accept: */*, 传输接受, 406 需显式不含 text/event-stream 的 Accept; 小米平板 API 35 每请求明显慢于 Sony (约 15 请求 / s), 记入性能基线观察; 截图窗口未在真机验证 (31 次真实截图需要宿主取帧同意), 由 JVM 测试覆盖.
+- 验证: JVM 全部通过 (新增 19 项), lintDebug, debug / androidTest 构建, 10 语言 / 36 产物生成检查, git diff --check 通过.
+- 下次会话建议起点: P6 第 3 项生命周期矩阵 (docs/dev/lifecycle-matrix.md, 宿主 / 插件被杀等六种情形逐项真机验证), 之后电量与常驻 (空闲自动停止选项), 安全审计清单 (README "安全" 章节), 性能基线.

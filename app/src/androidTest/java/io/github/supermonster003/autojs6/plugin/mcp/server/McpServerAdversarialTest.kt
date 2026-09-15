@@ -10,12 +10,14 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.server.AddressClass
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.McpHttpServer
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.PairedClient
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.PairingGate
+import io.github.supermonster003.autojs6.plugin.mcp.server.server.RateLimits
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.RequestBodyChecks
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.RequestGate
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.PairedClientStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.TokenStore
 import org.json.JSONObject
 import org.junit.After
+import org.junit.Assume
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -163,6 +165,41 @@ class McpServerAdversarialTest {
         } finally {
             pool.shutdownNow()
         }
+        assertStillAlive()
+    }
+
+    @Test
+    fun aRequestFloodIsRateLimitedWithRetryAfterAndRecovers() {
+        val sessionId = openSession()
+        val limit = RateLimits.REQUESTS_PER_SECOND
+        // Eight threads so that the flood lands inside one window even on a slow device.
+        val pool = Executors.newFixedThreadPool(8)
+        val started = System.currentTimeMillis()
+        val responses = try {
+            (1..(limit * 2)).map { id -> pool.submit<Response> { post(toolsList(100 + id), sessionId) } }.map { it.get(60, TimeUnit.SECONDS) }
+        } finally {
+            pool.shutdownNow()
+        }
+        val elapsed = System.currentTimeMillis() - started
+        val statuses = responses.groupingBy { it.status }.eachCount()
+        Log.i(TAG, "flood of ${limit * 2} tools/list on 8 threads in $elapsed ms: statuses=$statuses")
+        assertTrue("only 200 and 429 in the flood ($elapsed ms): $statuses", statuses.keys.all { it == 200 || it == 429 })
+        val refused = responses.firstOrNull { it.status == 429 }
+        val achievedPerSecond = (limit * 2) * 1_000.0 / elapsed.coerceAtLeast(1)
+        // A device that cannot even reach the limit (the Xiaomi Pad API 35 manages about 15 requests
+        // per second here) proves nothing about the window; the JVM tests cover the limiter itself.
+        Assume.assumeTrue("the device reached only ${"%.1f".format(achievedPerSecond)} requests per second, below the limit of $limit; window not testable here: $statuses", refused != null || achievedPerSecond >= limit)
+        assertNotNull("the flood of ${limit * 2} requests in $elapsed ms (${"%.1f".format(achievedPerSecond)} per second) must hit the per-second window: $statuses", refused)
+        val error = refused!!.json().getJSONObject("error")
+        assertEquals("RATE_LIMITED", error.getJSONObject("data").getString("code"))
+        val retryAfterMs = responses.filter { it.status == 429 }.maxOf { it.json().getJSONObject("error").getJSONObject("data").getLong("retryAfterMs") }
+        assertTrue("retryAfterMs $retryAfterMs is within the window", retryAfterMs in 1..1_000)
+        Log.i(TAG, "first 429: Retry-After=${refused.header("Retry-After")} retryAfterMs(max)=$retryAfterMs body=${refused.body.take(200)}")
+        assertEquals("1", refused.header("Retry-After"))
+        assertTrue("the request id is echoed", refused.json().getInt("id") in 101..(100 + limit * 2))
+
+        Thread.sleep(retryAfterMs + 150)
+        assertEquals("the window moved on", 200, post(TOOLS_LIST, sessionId).status)
         assertStillAlive()
     }
 

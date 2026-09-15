@@ -50,7 +50,7 @@ class McpTransportHardeningTest {
     }
 
     private fun ApplicationTestBuilder.mount(server: Server = mcpServer()) {
-        application { mcpServerModule(server, policy = { GatePolicy.loopback() }) }
+        application { mcpServerModule(server, policy = { GatePolicy.loopback() }, rateLimiter = RateLimiter(RateLimits(requestsPerWindow = 1_000))) }
     }
 
     @Test
