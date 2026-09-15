@@ -33,8 +33,9 @@ import kotlinx.io.readByteArray
  * `DELETE` session close are the SDK's behaviour; the SDK's own DNS rebinding validator is off
  * because [policy] changes at runtime (LAN addresses) and the gate covers every route. A null
  * [tokenProvider], [pairingGate], or [toolGate] leaves that layer out, which only the JVM tests
- * and the default `device_ping`-only listener use. The tool gate (roadmap P2.3) runs last, after
- * the client is admitted, so unpaired clients learn nothing about the catalog. The mount
+ * and the default `device_ping`-only listener use. The rate limiter (roadmap P6) runs after the
+ * bearer check so that only authenticated traffic is counted. The tool gate (roadmap P2.3)
+ * runs last, after the client is admitted, so unpaired clients learn nothing about the catalog. The mount
  * itself is [mcpStreamableSse] (roadmap P3.1): the SDK's `mcpStreamableHttp` answers in JSON
  * and drops the notifications that belong to a request, so responses stream as server-sent
  * events instead.
@@ -45,10 +46,12 @@ fun Application.mcpServerModule(
     tokenProvider: (() -> String?)? = null,
     pairingGate: PairingGate? = null,
     toolGate: ToolGate? = null,
+    rateLimiter: RateLimiter? = null,
     path: String = McpServerPlugin.ENDPOINT_PATH,
 ) {
     installRequestGate(policy)
     if (tokenProvider != null) installBearerAuth(tokenProvider)
+    if (rateLimiter != null) installRateLimit(server, rateLimiter)
     if (pairingGate != null) installPairingGate(server, pairingGate)
     if (toolGate != null) installToolGate(toolGate)
     mcpStreamableSse(path) { server }

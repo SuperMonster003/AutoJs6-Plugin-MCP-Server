@@ -594,7 +594,8 @@ object ToolCatalog {
         description = "Capture the phone screen as an MCP image with dimensions, size, duration and capture source. " +
                 "Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. " +
                 "Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. " +
-                "Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments.",
+                "Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. " +
+                "At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs.",
         group = ToolGroup.SCREEN,
         inputSchema = JsonSchemas.objectSchema(linkedMapOf(
             Screen.SCALE to buildJsonObject {
