@@ -102,6 +102,18 @@ Activa MCP Server en el panel de AutoJs6. Mantén pulsado su título o abre Ajus
 
 ******
 
+### Rutas de conexión
+
+******
+
+USB: `adb forward tcp:9637 tcp:9637` asigna el puerto del teléfono al PC; con varios dispositivos añade `-s <serial>` (consúltalo con `adb devices`), y los emuladores funcionan igual. Si el puerto está ocupado en cualquiera de los lados, cámbialo en la página de ajustes y reenvía el nuevo. La tarjeta de conexión ofrece el comando de reenvío listo para copiar.
+
+Red local: activa "Permitir conexiones de red local" en la página de ajustes. La página muestra entonces las direcciones actuales del teléfono (siguen los cambios de Wi-Fi) y recuerda que el cliente debe estar en la misma red; las redes de invitados, el aislamiento del punto de acceso y el cortafuegos del PC son los bloqueos habituales. Las solicitudes de emparejamiento desde la red local se marcan como tales y una notificación diaria lo recuerda mientras el servidor siga accesible desde la red; el recordatorio puede desactivarse.
+
+Ambas rutas usan el mismo token y el mismo emparejamiento en el teléfono. Un puente stdio para clientes sin soporte HTTP está planificado por separado.
+
+******
+
 ### Permisos y seguridad
 
 ******
@@ -178,6 +190,7 @@ _2026/09/15_
 - `Función` Las respuestas del endpoint MCP se transmiten como eventos enviados por el servidor (no se usa el modo de respuesta JSON del SDK), de modo que una notificacion que pertenece a una solicitud, como el latido de progreso de un script en ejecucion, llega al cliente en la respuesta de esa solicitud
 - `Función` Grupo UI anadido (roadmap P3.2): `ui_dump` devuelve la ventana activa como un arbol compacto de nodos con referencias `#n` (`format` text / json / xml, `maxNodes` hasta 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` sondean un selector, `ui_current_window` y `ui_explain_selector` informan de la ventana y de por que falla un selector, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` actuan sobre un `nodeRef` (relocalizado por su huella, `NODE_REF_STALE` si desaparecio) o un `selector`, `ui_press_key` pulsa back / home / recents / notifications / quick_settings / power_dialog / lock_screen, y el grupo `ui_gesture` (desactivado por defecto) anade `ui_swipe`, `ui_gesture` y la forma por coordenadas de las herramientas de clic (`TOOL_DISABLED` mientras el grupo esta desactivado); la instantanea del catalogo de herramientas crece a 20 herramientas; los gestos por coordenadas necesitan un host AutoJs6 compilado el 2026-09-11 o despues (un host anterior responde al azar "the system cancelled ...")
 - `Función` Grupo de capturas (P3.3): screen_capture devuelve imágenes MCP con recorte, scale o maxWidth, JPEG / PNG / WebP y control de calidad. Valores predeterminados: JPEG, calidad 70 y lado mayor de 1280 px. Si base64 supera 4 MiB, se reintenta con menor calidad o tamaño y los metadatos indican el ajuste. screen_state informa del estado, tamaño, orientación y densidad. El catálogo incluye 22 herramientas. La alternativa MediaProjection requiere AutoJs6 compilado el 2026-09-13 o después y autorización en el teléfono, reutilizada por la sesión del host.
+- `Función` Ruta por red local (P5.1): con el acceso desde la red local activado, la página de ajustes muestra las direcciones actuales del teléfono (se actualizan al cambiar la Wi-Fi) con avisos sobre la misma red y el cortafuegos; una solicitud de emparejamiento desde la red local se marca en el diálogo y en la notificación; un recordatorio diario indica que el servidor sigue accesible desde la red local y puede desactivarse sin reiniciar el oyente. El README documenta las rutas USB y de red local.
 - `Corrección` El rebuild del IDE ya no busca un APK para las pruebas unitarias JVM. Las tareas de verificación de APK generan automáticamente sus entradas y funcionan después de un clean.
 - `Corrección` Las proporciones del icono del centro de complementos variaban entre los modos claro y oscuro; el modo nocturno también usa el icono adaptable, con las capas ajustadas para conservar el dibujo completo y los márgenes de ic_launcher_round.png, cambiando solo el color de fondo
 - `Corrección` La navegación con Tab en la página de ajustes omitía el botón atrás de la barra de herramientas; ahora el ciclo de Tab cubre el botón atrás y todos los controles, incluido Android 7. Las pruebas en dispositivo comprueban las etiquetas del lector de pantalla y el uso con teclado.

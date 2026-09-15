@@ -378,9 +378,9 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 ### P5.1 USB 与局域网
 
-- [ ] (文档) USB 路径文档: `adb forward tcp:9637 tcp:9637` (多设备时 `-s <serial>`), 端口占用时改端口, 模拟器同样适用; 插件设置页的端点卡直接给出命令.
-- [ ] (插件) 局域网路径: 开启时显示当前 IPv4 (Wi-Fi 变化时刷新), 提示同网段与防火墙; 连接来源为局域网时配对对话框显著标注; 局域网模式下每 24 h 提醒一次 "仍在监听局域网" 的通知 (可关闭).
-- [ ] (测试) DEVICE + CLIENT_E2E: 同一台 PC 分别经 USB 与 Wi-Fi 连接同一部手机完成 `ui_dump` + `screen_capture`; 记录延迟 (`ui_dump` 200 节点, `screen_capture` 1280 px JPEG) 作为性能基线.
+- [x] (文档) USB 路径文档: `adb forward tcp:9637 tcp:9637` (多设备时 `-s <serial>`), 端口占用时改端口, 模拟器同样适用; 插件设置页的端点卡直接给出命令.
+- [x] (插件) 局域网路径: 开启时显示当前 IPv4 (Wi-Fi 变化时刷新), 提示同网段与防火墙; 连接来源为局域网时配对对话框显著标注; 局域网模式下每 24 h 提醒一次 "仍在监听局域网" 的通知 (可关闭).
+- [x] (测试) DEVICE + CLIENT_E2E: 同一台 PC 分别经 USB 与 Wi-Fi 连接同一部手机完成 `ui_dump` + `screen_capture`; 记录延迟 (`ui_dump` 200 节点, `screen_capture` 1280 px JPEG) 作为性能基线.
 
 ### P5.2 客户端兼容矩阵
 
@@ -794,3 +794,11 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 观察: 三台设备 (AVD 24, Sony 31, Xiaomi 33) 新安装插件后抽屉保持 "未安装插件" 直到宿主重启, 宿主抽屉状态应在包变化时刷新 (宿主待办); Sony API 28 的对话框窗口与 Sony API 28 / 31 的通知栏对 uiautomator 返回空树, 证据脚本改用 dumpsys window 框架加截图定位按钮; MIUI / HyperOS 通知权限按钮为 "始终允许"; 多用户设备安装需 --user 0; TalkBack 手势与键位无法经 adb 注入驱动, 仅留开启状态截图与 UiAutomation 节点审计.
 - 验证: 插件 JVM 202/202, debug / androidTest 构建通过, lintDebug 0 errors / 8 warnings, 10 语言 / 36 产物生成检查通过. 无运行时依赖或公共契约变化, 本轮未重复 release / R8 构建. VERSION_BUILD 按本次提交后的 Git 可达提交数校正.
 - 下次会话建议起点: P5 连接路径和客户端兼容矩阵 (含 Cursor 粘贴验收), 并处理宿主抽屉在插件包变化后的状态刷新.
+
+### 2026-09-15: P5.1 USB 与局域网路径
+
+- 完成: 设置页网络卡在开启局域网后列出手机当前局域网地址 (Wi-Fi 变化时刷新; 监听停止时直接读接口), 提示同网段与防火墙, 新增 "监听局域网期间每日提醒" 开关 (仅局域网开启时可用; 仅改动 lan_reminder 不重启监听, ServerConfig.sameListener); 局域网来源的配对对话框与通知使用专门标题并前置警告; 前台服务在局域网监听期间每 24 h 发一次可关闭的提醒通知 (独立通道, 含停止动作). LanAddressWatcher 只统计非点对点且支持组播的接口, VPN 隧道与蜂窝数据地址不再出现在地址列表与 Host 白名单 (本轮真机发现, 修复前 tun0 与蜂窝地址被当作局域网地址). README 新增 "连接路径" 章节 (10 语言).
+- 真机: Sony API 33 (Wi-Fi 5 GHz, RSSI -40 dBm) 与 PC 同一 /24: 设置页开启局域网 (确认对话框), 地址 / 提示 / 提醒开关截图; 提醒开关关开不重启监听 (logcat 无 restarting, USB 与局域网探测均 401); Wi-Fi 关闭显示 "尚无局域网地址", 重连后恢复; 同一 PC 分别经 adb forward 与 Wi-Fi 配对 (Wi-Fi 配对对话框与通知均带局域网标注). 延迟基线 (5 次, 中位数): ui_dump 200 节点 USB 61 ms / Wi-Fi 393 ms, screen_capture 548x1280 JPEG USB 367 ms / Wi-Fi 480 ms; 同期 PC 到手机 ICMP 往返 65-209 ms, 手机 Wi-Fi 省电主导局域网延迟. 证据: docs/dev/p5-connection-paths.md.
+- 观察: 该机宿主无障碍服务未开启时 ui_dump 返回 A11Y_SERVICE_NOT_RUNNING, device_ensure_accessibility (宿主持有 WRITE_SECURE_SETTINGS) 276 ms 内开启; 24 h 提醒通知本身未等待观察, 策略由 JVM 测试覆盖.
+- 验证: JVM 206/206, lintDebug 0 errors / 8 warnings, debug / androidTest 构建通过, 10 语言 / 36 产物生成检查通过.
+- 下次会话建议起点: P5.2 客户端兼容矩阵 (已安装的客户端逐一实测, 未安装的如实记录) 与 README "接入" / "常见问题" 章节.
