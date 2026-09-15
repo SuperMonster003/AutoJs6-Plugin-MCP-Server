@@ -63,9 +63,11 @@ class RequestGateTest {
     }
 
     @Test
-    fun browserOriginsNeedDeveloperModeAndALoopbackOrigin() {
+    fun loopbackOriginsAreAcceptedEverywhereAndCorsNeedsDeveloperMode() {
         val origin = "http://localhost:6274"
-        assertEquals("Origin not allowed", reject(RequestGate.evaluate(request(origin = origin), loopback)).message)
+        // The conformance suite's localhost-host-valid-accepted check: a loopback Origin passes, without CORS headers.
+        assertEquals(GateDecision.Allow(corsOrigin = null), RequestGate.evaluate(request(origin = origin), loopback))
+        assertEquals("Origin not allowed", reject(RequestGate.evaluate(request(origin = "http://evil.example"), loopback)).message)
         val developer = GatePolicy.loopback(developerMode = true)
         assertEquals(GateDecision.Allow(corsOrigin = origin), RequestGate.evaluate(request(origin = origin), developer))
         assertEquals(GateDecision.Allow(corsOrigin = "http://127.0.0.1:6274"), RequestGate.evaluate(request(origin = " http://127.0.0.1:6274 "), developer))
@@ -81,7 +83,10 @@ class RequestGateTest {
         assertEquals(GateDecision.Preflight(origin), RequestGate.evaluate(request(method = "OPTIONS", origin = origin, contentLength = null), developer))
         assertEquals(GateDecision.Preflight(origin), RequestGate.evaluate(request(method = "options", origin = origin, contentLength = null), developer))
         assertEquals(GateDecision.Allow(), RequestGate.evaluate(request(method = "OPTIONS", contentLength = null), developer))
-        reject(RequestGate.evaluate(request(method = "OPTIONS", origin = origin, contentLength = null), loopback))
+        assertEquals(
+            "Cross-origin access needs developer mode",
+            reject(RequestGate.evaluate(request(method = "OPTIONS", origin = origin, contentLength = null), loopback)).message,
+        )
     }
 
     @Test

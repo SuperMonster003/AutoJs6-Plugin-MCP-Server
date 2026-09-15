@@ -9,6 +9,7 @@
 ###### 2026/09/15
 
 * `改善` compileSdk を 37 (Android 17) に引き上げ, targetSdk はターゲット依存の動作を検証するまで 36 のまま
+* `改善` MCP 適合性 (P6): 2 台の端末で公式の @modelcontextprotocol/conformance スイート 0.1.16 をステートフルな /mcp パスに対して実行しました. 32 のサーバーシナリオのうち 9 が合格 (initialize, ping, tools/list, テキストとエラーのツール結果, resources/list, prompts/list, 並行 SSE ストリーム, DNS rebinding 保護); 18 はスイート付属の参照フィクスチャ (test_* ツール, プロンプト, test:// リソース. このサーバーは未知ツールの結果, -32602 または isError で応答します) を呼び, 5 はこのサーバーが宣言しない機能 (logging, completions, リソース購読) を必要とします. ループバックの Origin ヘッダーはスイートの期待どおりどのモードでも受け付けるようになりました. CORS ヘッダーとプリフライト応答は引き続き開発者モード限定です. 2026-07-28 のステートレスモデルにはルートがありません (Roadmap D9). 詳細は docs/dev/p6-conformance.md.
 
 # v1.0.0
 
