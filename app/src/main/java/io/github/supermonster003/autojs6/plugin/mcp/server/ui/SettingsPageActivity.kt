@@ -13,6 +13,7 @@ import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -23,6 +24,7 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.R
 abstract class SettingsPageActivity : Activity() {
     protected lateinit var appearance: HostAppearance
     protected lateinit var content: LinearLayout
+    private var backButton: ImageButton? = null
     protected val textColor get() = if (appearance.dark) Color.WHITE else 0xff202522.toInt()
     protected val secondary get() = if (appearance.dark) 0xffbac7c1.toInt() else 0xff4e5d55.toInt()
     protected val surface get() = if (appearance.dark) 0xff202923.toInt() else Color.WHITE
@@ -51,7 +53,12 @@ abstract class SettingsPageActivity : Activity() {
             navigationIcon = getDrawable(R.drawable.ic_settings_back)?.mutate()?.apply { setTint(foreground) }
             navigationContentDescription = getString(R.string.settings_back)
             setNavigationOnClickListener { finish() }
+            // The Material toolbar style blocks keyboard focus on touch screens and forms its own
+            // navigation cluster; one plain Tab cycle should reach the back button and the page.
+            touchscreenBlocksFocus = false
+            if (Build.VERSION.SDK_INT >= 26) isKeyboardNavigationCluster = false
         }
+        backButton = (0 until toolbar.childCount).map(toolbar::getChildAt).filterIsInstance<ImageButton>().firstOrNull()?.apply { id = View.generateViewId() }
         root.addView(toolbar, LinearLayout.LayoutParams(-1, -2))
         content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(8), dp(16), dp(24)) }
         root.addView(ScrollView(this).apply { isFillViewport = true; addView(content) }, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -81,6 +88,19 @@ abstract class SettingsPageActivity : Activity() {
             }
             insets
         }
+    }
+
+    override fun onPostCreate(savedInstanceState: Bundle?) {
+        super.onPostCreate(savedInstanceState)
+        // Close the Tab cycle explicitly: Android 7 sorts focusables by screen position, so content
+        // scrolled above the toolbar would otherwise win the wrap-around and hide the back button.
+        val back = backButton ?: return
+        val focusables = ArrayList<View>().also { content.addFocusables(it, View.FOCUS_FORWARD, View.FOCUSABLES_ALL) }
+        val first = focusables.firstOrNull() ?: return
+        val last = focusables.last()
+        if (first.id == View.NO_ID) first.id = View.generateViewId()
+        back.nextFocusForwardId = first.id
+        last.nextFocusForwardId = back.id
     }
 
     protected fun card(titleId: Int): LinearLayout = LinearLayout(this).apply {

@@ -6,7 +6,7 @@
   "changelog_label_dependency": "Dependency",
   "$data": {
     "v1.0.0": {
-      "released_date": "2026/09/13",
+      "released_date": "2026/09/15",
       "hint": [
         "P4 development preview: 37 tools, 33 enabled by default, with an AutoJs6 drawer switch and a plugin settings page. Requires the matching P4 AutoJs6 build. ROADMAP.md."
       ],
@@ -42,7 +42,8 @@
       ],
       "fix": [
         "IDE rebuild no longer looks for an APK for JVM unit tests. APK verification tasks automatically assemble their inputs and work from a clean build.",
-        "Plugin Center icon proportions differed between light and dark modes; night mode now also uses the adaptive icon, with layer sizing adjusted to preserve the complete ic_launcher_round.png artwork and margins while changing only the background color"
+        "Plugin Center icon proportions differed between light and dark modes; night mode now also uses the adaptive icon, with layer sizing adjusted to preserve the complete ic_launcher_round.png artwork and margins while changing only the background color",
+        "Keyboard Tab navigation on the settings page skipped the toolbar back button; the Tab cycle now covers the back button and every control, including on Android 7. Device tests check screen reader labels and keyboard operation."
       ]
     }
   }
