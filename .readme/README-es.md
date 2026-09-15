@@ -228,6 +228,7 @@ Los planes y el progreso del plugin se mantienen como una lista verificable en R
 _2026/09/15_
 
 - `Mejora` compileSdk sube a 37 (Android 17); targetSdk se mantiene en 36 hasta verificar el comportamiento que depende del objetivo
+- `Mejora` Conformidad MCP (P6): la suite oficial @modelcontextprotocol/conformance 0.1.16 se ejecutó en dos dispositivos contra la ruta /mcp con estado. 9 de sus 32 escenarios de servidor pasan (initialize, ping, tools/list, resultados de herramienta de texto y de error, resources/list, prompts/list, flujos SSE concurrentes, protección contra DNS rebinding); 18 llaman a los accesorios de referencia de la propia suite (herramientas test_*, prompts y recursos test://, que este servidor responde con un resultado de herramienta desconocida, -32602 o isError) y 5 necesitan capacidades que el servidor no declara (logging, completions, suscripciones a recursos). La cabecera Origin de bucle local ahora se acepta en todos los modos, como espera la suite; las cabeceras CORS y las respuestas preflight siguen limitadas al modo desarrollador. El modelo sin estado 2026-07-28 no tiene ruta (Roadmap D9). Detalles en docs/dev/p6-conformance.md.
 
 #### v1.0.0
 

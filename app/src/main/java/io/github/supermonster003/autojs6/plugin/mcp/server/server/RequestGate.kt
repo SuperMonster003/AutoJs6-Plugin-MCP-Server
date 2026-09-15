@@ -64,10 +64,12 @@ sealed class GateDecision {
  * DNS rebinding protection and request limits in front of the SDK transport (roadmap P2.1).
  *
  * Order of checks: the `Host` header must parse and be in the policy's list (a malicious page
- * cannot make a browser send an allowed name for a foreign address); an `Origin` header is only
- * accepted in developer mode and only for loopback origins, because MCP clients on the PC never
- * send one; a preflight for an accepted origin is answered here; declared bodies above the
- * ceiling are refused before the transport reads them.
+ * cannot make a browser send an allowed name for a foreign address); an `Origin` header must
+ * name a loopback origin (the conformance suite's `localhost-host-valid-accepted` check sends
+ * one; a page served from elsewhere is refused); CORS headers and the preflight answer exist
+ * only in developer mode, so by default a browser still cannot complete a cross-origin call
+ * (its preflight gets 403) and MCP clients on the PC, which send no `Origin`, are unaffected;
+ * declared bodies above the ceiling are refused before the transport reads them.
  */
 object RequestGate {
 
@@ -91,13 +93,14 @@ object RequestGate {
         val origin = request.origin
         if (origin != null) {
             val originHost = HostHeaders.originHostOf(origin)
-            if (!policy.developerMode || originHost == null || !HostHeaders.isLoopbackName(originHost)) {
+            if (originHost == null || !HostHeaders.isLoopbackName(originHost)) {
                 return GateDecision.Reject(STATUS_FORBIDDEN, JSON_RPC_INVALID_REQUEST, "Origin not allowed")
             }
-            corsOrigin = origin.trim()
+            if (policy.developerMode) corsOrigin = origin.trim()
         }
-        if (corsOrigin != null && request.method.equals("OPTIONS", ignoreCase = true)) {
-            return GateDecision.Preflight(corsOrigin)
+        if (origin != null && request.method.equals("OPTIONS", ignoreCase = true)) {
+            return corsOrigin?.let { GateDecision.Preflight(it) }
+                ?: GateDecision.Reject(STATUS_FORBIDDEN, JSON_RPC_INVALID_REQUEST, "Cross-origin access needs developer mode")
         }
         val contentLength = request.contentLength
         if (contentLength != null && contentLength > policy.maxBodyBytes) {

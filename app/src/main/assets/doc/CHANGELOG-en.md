@@ -9,6 +9,7 @@
 ###### 2026/09/15
 
 * `Improvement` Raise compileSdk to 37 (Android 17); targetSdk stays at 36 until the behavior that depends on the target is verified
+* `Improvement` MCP conformance (P6): the official @modelcontextprotocol/conformance suite 0.1.16 was run against the stateful /mcp path on two devices. 9 of its 32 server scenarios pass (initialize, ping, tools/list, text and error tool results, resources/list, prompts/list, concurrent SSE streams, DNS rebinding protection); 18 call the suite's own reference fixtures (test_* tools, prompts and test:// resources, which this server answers with an unknown-tool result, -32602 or isError) and 5 need capabilities the server does not declare (logging, completions, resource subscriptions). A loopback Origin header is now accepted in every mode, as the suite expects; CORS headers and preflight answers stay limited to developer mode. The stateless 2026-07-28 model has no route (Roadmap D9). Details in docs/dev/p6-conformance.md.
 
 # v1.0.0
 

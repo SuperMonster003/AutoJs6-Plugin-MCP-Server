@@ -9,6 +9,7 @@
 ###### 2026/09/15
 
 * `개선` compileSdk 를 37 (Android 17) 로 올리며, targetSdk 는 대상 버전에 의존하는 동작을 검증할 때까지 36 으로 유지
+* `개선` MCP 적합성 (P6): 두 기기에서 공식 @modelcontextprotocol/conformance 스위트 0.1.16 을 상태 유지 /mcp 경로에 대해 실행했습니다. 32 개 서버 시나리오 중 9 개 통과 (initialize, ping, tools/list, 텍스트와 오류 도구 결과, resources/list, prompts/list, 동시 SSE 스트림, DNS rebinding 보호); 18 개는 스위트에 딸린 참조 픽스처 (test_* 도구, 프롬프트, test:// 리소스. 이 서버는 알 수 없는 도구 결과, -32602 또는 isError 로 응답합니다) 를 호출하고, 5 개는 이 서버가 선언하지 않는 기능 (logging, completions, 리소스 구독) 이 필요합니다. 루프백 Origin 헤더는 스위트가 기대하는 대로 이제 모든 모드에서 허용됩니다. CORS 헤더와 프리플라이트 응답은 여전히 개발자 모드로 제한됩니다. 2026-07-28 무상태 모델에는 라우트가 없습니다 (Roadmap D9). 자세한 내용은 docs/dev/p6-conformance.md.
 
 # v1.0.0
 

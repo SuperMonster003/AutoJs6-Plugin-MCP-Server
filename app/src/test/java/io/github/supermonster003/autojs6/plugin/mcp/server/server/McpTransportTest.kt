@@ -35,6 +35,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -158,11 +159,14 @@ class McpTransportTest {
     }
 
     @Test
-    fun browserOriginsAreRefusedUnlessDeveloperModeAllowsTheLoopbackOrigin() = testApplication {
+    fun loopbackOriginsAreAcceptedButCorsNeedsDeveloperMode() = testApplication {
         mount()
         val origin = "http://localhost:6274"
         policy = GatePolicy.loopback()
-        assertEquals(HttpStatusCode.Forbidden, post(INITIALIZE, sessionId = null, origin = origin).status)
+        val plain = post(INITIALIZE, sessionId = null, origin = origin)
+        assertEquals(HttpStatusCode.OK, plain.status)
+        assertNull(plain.headers[HttpHeaders.AccessControlAllowOrigin])
+        assertEquals(HttpStatusCode.Forbidden, post(INITIALIZE, sessionId = null, origin = "http://evil.example").status)
         assertEquals(
             HttpStatusCode.Forbidden,
             client.options(PATH) {
