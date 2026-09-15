@@ -110,6 +110,21 @@ class PairingInterceptorTest {
     }
 
     @Test
+    fun aSessionIdOfAPreviousListenerIsAnsweredWithNotFoundAndRaisesNoPairingPrompt() = testApplication {
+        mount()
+        val stale = post(TOOLS_CALL, sessionId = "session-of-a-previous-listener-process")
+        assertEquals(HttpStatusCode.NotFound, stale.status)
+        assertEquals("Session not found", stale.bodyJson()["error"]!!.jsonObject["message"]!!.jsonPrimitive.content)
+        assertTrue("a stale session id must not open a pairing request", gate.pendingRequests().isEmpty())
+
+        val init = post(INITIALIZE, sessionId = null)
+        assertEquals(HttpStatusCode.OK, init.status)
+        val required = post(TOOLS_CALL, init.headers[SESSION_HEADER]).bodyJson()["error"]!!.jsonObject
+        assertEquals(McpErrors.PAIRING_REQUIRED, required["code"]!!.jsonPrimitive.int)
+        assertEquals("PairingInterceptorTest", gate.pendingRequests().single().client.name)
+    }
+
+    @Test
     fun clientsWithoutASessionAreNamedByTheirUserAgent() = testApplication {
         mount()
         val response = client.post(PATH) {
