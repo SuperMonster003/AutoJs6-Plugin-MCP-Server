@@ -486,7 +486,16 @@ class McpServerHostSessionTest {
         post(initializedNotification(), sessionId)
         val held = post(toolsCallRequest(ToolCatalog.FILES_LIST), sessionId)
         assertTrue(runtime.server.pairingGate!!.approve(held.json().getJSONObject("error").getJSONObject("data").getString("fingerprint")))
-        fun call(name: String, args: String = "{}"): JSONObject = post(toolsCallRequest(name, args), sessionId).json().getJSONObject("result")
+        fun call(name: String, args: String = "{}"): JSONObject {
+            var response = post(toolsCallRequest(name, args), sessionId)
+            if (response.status == 429) {
+                // A warm emulator issues the calls below faster than RateLimits.REQUESTS_PER_SECOND allows;
+                // honour the Retry-After of the listener once, as a client is expected to (roadmap P6).
+                Thread.sleep(response.header("retry-after")!!.toLong() * 1_000L)
+                response = post(toolsCallRequest(name, args), sessionId)
+            }
+            return response.json().getJSONObject("result")
+        }
         fun success(name: String, args: String = "{}"): JSONObject = call(name, args).also { assertFalse("$name: $it", it.optBoolean("isError")) }.getJSONObject("structuredContent")
         success(ToolCatalog.FILES_WRITE, """{"path":"./test.js","content":"a\nb","overwrite":false}""")
         val write = broker.requests.last()
