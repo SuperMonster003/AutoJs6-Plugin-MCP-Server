@@ -8,14 +8,16 @@ import java.net.URI
 
 /** Decodes URI path segments exactly once, before the shared workspace boundary check. */
 data class ResourceUri(val kind: Kind, val path: String = ".", val directory: Boolean = false) {
-    enum class Kind { WORKSPACE, SAMPLES, DEVICE, CONSOLE }
+    enum class Kind { WORKSPACE, SAMPLES, DOCS, DEVICE, CONSOLE }
 
     companion object {
         const val DEVICE = "autojs6://device/info"
         const val CONSOLE = "autojs6://console/tail"
         const val SAMPLES = "autojs6://samples/"
+        const val DOCS = "autojs6://docs/"
         const val WORKSPACE_TEMPLATE = "autojs6://workspace/{+path}"
         const val SAMPLES_TEMPLATE = "autojs6://samples/{+path}"
+        const val DOCS_TEMPLATE = "autojs6://docs/{+path}"
         const val MAX_URI_BYTES = WorkspacePath.MAX_BYTES * 3 + 64
 
         fun parse(value: String): ResourceUri {
@@ -28,6 +30,7 @@ data class ResourceUri(val kind: Kind, val path: String = ".", val directory: Bo
             val kind = when (uri.rawAuthority) {
                 "workspace" -> Kind.WORKSPACE
                 "samples" -> Kind.SAMPLES
+                "docs" -> Kind.DOCS
                 else -> throw McpException(RPCError.ErrorCode.RESOURCE_NOT_FOUND, "Unknown AutoJs6 resource")
             }
             val raw = uri.rawPath ?: invalid()
@@ -45,8 +48,13 @@ data class ResourceUri(val kind: Kind, val path: String = ".", val directory: Bo
             return ResourceUri(kind, WorkspacePath.normalize(path, allowRoot = false), directory)
         }
 
-        fun sample(path: String, directory: Boolean = false): String =
-            "autojs6://samples/" + path.split('/').joinToString("/") { encode(it) } + if (directory) "/" else ""
+        fun sample(path: String, directory: Boolean = false): String = SAMPLES + encodedPath(path, directory)
+
+        /** Offline documentation relayed by the host (D20); listed only while the Offline Docs plugin is available. */
+        fun doc(path: String, directory: Boolean = false): String = DOCS + encodedPath(path, directory)
+
+        private fun encodedPath(path: String, directory: Boolean): String =
+            path.split('/').joinToString("/") { encode(it) } + if (directory) "/" else ""
 
         private fun decode(raw: String): String {
             val out = ByteArrayOutputStream()

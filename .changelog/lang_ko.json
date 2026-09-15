@@ -7,6 +7,9 @@
   "$data": {
     "v1.0.1": {
       "released_date": "2026/09/15",
+      "feature": [
+        "선택적 오프라인 문서 리소스: AutoJs6 오프라인 문서 플러그인이 설치되어 있고 호스트가 app.listDocs / app.readDoc 로 중계하면 resources/list 에 autojs6://docs/ (하위 URI 를 담은 색인) 와 문서 페이지별 autojs6://docs/{+path} 리소스가 추가되고 resources/templates/list 에 docs 템플릿이 추가됩니다. 플러그인이 없거나 이 메서드가 없는 호스트에서는 아무것도 나열되지 않으며 _meta.docsCatalogStatus 가 이유를 알려 줍니다"
+      ],
       "improvement": [
         "compileSdk 를 37 (Android 17) 로 올리며, targetSdk 는 대상 버전에 의존하는 동작을 검증할 때까지 36 으로 유지",
         "MCP 적합성 (P6): 두 기기에서 공식 @modelcontextprotocol/conformance 스위트 0.1.16 을 상태 유지 /mcp 경로에 대해 실행했습니다. 32 개 서버 시나리오 중 9 개 통과 (initialize, ping, tools/list, 텍스트와 오류 도구 결과, resources/list, prompts/list, 동시 SSE 스트림, DNS rebinding 보호); 18 개는 스위트에 딸린 참조 픽스처 (test_* 도구, 프롬프트, test:// 리소스. 이 서버는 알 수 없는 도구 결과, -32602 또는 isError 로 응답합니다) 를 호출하고, 5 개는 이 서버가 선언하지 않는 기능 (logging, completions, 리소스 구독) 이 필요합니다. 루프백 Origin 헤더는 스위트가 기대하는 대로 이제 모든 모드에서 허용됩니다. CORS 헤더와 프리플라이트 응답은 여전히 개발자 모드로 제한됩니다. 2026-07-28 무상태 모델에는 라우트가 없습니다 (Roadmap D9). 자세한 내용은 docs/dev/p6-conformance.md.",

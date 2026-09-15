@@ -67,7 +67,7 @@ P4 개발 미리 보기: 도구 37개 중 33개가 기본 활성화되며 AutoJs
 - 접근성 UI: 노드 트리를 간결한 텍스트 형식으로 덤프하고, AutoJs6 선택자 문법으로 노드를 찾고, 클릭, 길게 누르기, 스크롤, 텍스트 설정, 뒤로와 홈 같은 전역 키를 누릅니다.
 - 스크린샷 그룹 (P3.3): screen_capture는 자르기, scale 또는 maxWidth, JPEG / PNG / WebP, 품질 설정을 지원하는 MCP 이미지를 반환합니다. 기본값은 JPEG 품질 70, 긴 변 1280 px입니다. base64가 4 MiB를 초과하면 품질이나 크기를 낮춰 재시도하고 메타데이터에 변경을 표시합니다. screen_state는 화면 켜짐 상태, 크기, 방향, 밀도를 반환합니다. 도구 목록은 37개입니다. MediaProjection 대체 경로에는 2026-09-13 이후 빌드한 AutoJs6와 휴대전화의 승인이 필요하며 호스트 세션에서 승인을 재사용합니다.
 - 작업 디렉터리 도구 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1부터 시작하는 행과 열을 받는 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. 바이너리 읽기는 base64이며 원본 데이터 최대 1 MiB입니다. 쓰기는 호스트 요청 한도도 따릅니다 (보통 JSON 이스케이프 포함 96 KiB). 삭제와 Shell은 기본 비활성화이며 root에는 allowShellRoot와 호스트 shell.root 권한이 추가로 필요합니다. 일치하는 P3.4 호스트 빌드가 필요합니다.
-- MCP 리소스 (P3.5)는 페어링 및 그룹 설정에 따라 읽기 전용 작업 파일, 호스트 예제 탐색, 기기 정보, 최근 콘솔 출력을 제공합니다. 텍스트 및 바이너리 읽기는 잘림 상태를 보고합니다. write_autojs6_script, automate_task, debug_selector는 영어와 중국어를 지원하며, 다른 기기 언어에서는 영어를 사용합니다.
+- MCP 리소스 (P3.5)는 페어링 및 그룹 설정에 따라 읽기 전용 작업 파일, 호스트 예제 탐색, AutoJs6 오프라인 문서 플러그인이 설치된 경우의 오프라인 문서, 기기 정보, 최근 콘솔 출력을 제공합니다. 텍스트 및 바이너리 읽기는 잘림 상태를 보고합니다. write_autojs6_script, automate_task, debug_selector는 영어와 중국어를 지원하며, 다른 기기 언어에서는 영어를 사용합니다.
 - 연결 경로: `adb forward`를 통한 USB, 명시적으로 켜야 하는 로컬 네트워크, PC 측 stdio 브리지, 그리고 OAuth 2.1을 갖춘 선택적 공개 터널.
 - 보안: 교체 가능한 Bearer 토큰, 휴대폰에서의 최초 페어링 확인, 그룹별 도구 스위치. 서버는 기본적으로 루프백 인터페이스에서만 수신합니다.
 
@@ -230,6 +230,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 _2026/09/15_
 
+- `기능` 선택적 오프라인 문서 리소스: AutoJs6 오프라인 문서 플러그인이 설치되어 있고 호스트가 app.listDocs / app.readDoc 로 중계하면 resources/list 에 autojs6://docs/ (하위 URI 를 담은 색인) 와 문서 페이지별 autojs6://docs/{+path} 리소스가 추가되고 resources/templates/list 에 docs 템플릿이 추가됩니다. 플러그인이 없거나 이 메서드가 없는 호스트에서는 아무것도 나열되지 않으며 _meta.docsCatalogStatus 가 이유를 알려 줍니다
 - `개선` compileSdk 를 37 (Android 17) 로 올리며, targetSdk 는 대상 버전에 의존하는 동작을 검증할 때까지 36 으로 유지
 - `개선` MCP 적합성 (P6): 두 기기에서 공식 @modelcontextprotocol/conformance 스위트 0.1.16 을 상태 유지 /mcp 경로에 대해 실행했습니다. 32 개 서버 시나리오 중 9 개 통과 (initialize, ping, tools/list, 텍스트와 오류 도구 결과, resources/list, prompts/list, 동시 SSE 스트림, DNS rebinding 보호); 18 개는 스위트에 딸린 참조 픽스처 (test_* 도구, 프롬프트, test:// 리소스. 이 서버는 알 수 없는 도구 결과, -32602 또는 isError 로 응답합니다) 를 호출하고, 5 개는 이 서버가 선언하지 않는 기능 (logging, completions, 리소스 구독) 이 필요합니다. 루프백 Origin 헤더는 스위트가 기대하는 대로 이제 모든 모드에서 허용됩니다. CORS 헤더와 프리플라이트 응답은 여전히 개발자 모드로 제한됩니다. 2026-07-28 무상태 모델에는 라우트가 없습니다 (Roadmap D9). 자세한 내용은 docs/dev/p6-conformance.md.
 - `개선` 보안 감사 (P6): 체크리스트 7 개 항목 (토큰 저장, 로그 비식별화, 내보낸 구성 요소, 평문 범위, 로컬 네트워크 기본 꺼짐, 페어링 취소, 도구 그룹 기본 꺼짐) 을 코드와 두 기기에서 검증하여 docs/dev/p6-security-audit.md 에 기록했고, README 보안 절이 이 경계를 설명합니다. 평문 HTTP 는 앱 전체 usesCleartextTraffic 플래그 대신 네트워크 보안 구성으로 루프백 주소에 한정됩니다. 플러그인은 클라이언트 연결을 열지 않으며 리스너에는 이 플래그가 필요 없습니다.
