@@ -177,10 +177,13 @@ Claude Desktop 及其他仅支持 stdio 的客户端: 用 `npm install -g autojs
 
 插件遵循明确的边界:
 
-- Binder 入口受 `org.autojs.permission.PLUGIN` 签名权限保护, 只有 AutoJs6 能够绑定.
-- INTERNET 权限仅用于插件自身的 HTTP 监听; 插件不发起任何出站请求, 也不收集数据.
-- 工具调用经由 AutoJs6 能力代理执行, 永远不会超出宿主自身的权限范围; Shell 命令与文件删除等危险分组默认关闭, 直到用户手动开启.
-- 已禁用备份, 令牌只保存在插件的私有存储中.
+- Binder 入口与设置页受 `org.autojs.permission.PLUGIN` 签名权限保护, 只有 AutoJs6 能够访问; 配对对话框, 其接收器与发行历史页均未导出. 只有承载监听器的前台服务接受 adb (`android.permission.DUMP`), 作为开发者的启停开关.
+- INTERNET 权限仅用于插件自身的 HTTP 监听器; 插件不发起任何出站请求, 也不收集数据. 通过网络安全配置, 明文 HTTP 仅允许指向回环地址.
+- 服务器默认只监听 127.0.0.1. 局域网访问保持关闭直到你手动开启; 开启后令牌, 配对确认, Host 允许列表与速率限制在局域网上仍然生效, 并有每日一次的通知提醒.
+- 访问令牌来自安全随机源, 以 Android Keystore 中的 AES-GCM 密钥封装后保存在插件私有且永不备份的存储中; 备份与设备迁移均已禁用. 设置页只显示令牌末 4 位, 完整令牌对话框禁止截屏, 复制到剪贴板时标记为敏感内容.
+- 日志从不包含令牌, 请求正文, 文件内容或截图; 插件只记录工具名, 客户端名与令牌指纹. 已在两台设备上于真实的文件与截图调用期间用 logcat 验证 (docs/dev/p6-security-audit.md).
+- 工具调用经由 AutoJs6 的能力代理执行, 永远不会超出宿主自身的权限范围; Shell 命令, 文件删除与手势保持关闭直到你启用对应分组, root Shell 还需要单独的开关与宿主授权.
+- 可在设置页逐个或一次性撤销配对; 被撤销的客户端在下次工具调用前必须重新在手机上确认. 轮换令牌会保留配对, 但仍使用旧令牌的客户端会立即失效.
 
 请只从官方 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) 页面或 AutoJs6 插件中心获取插件. 来源不明的安装包即使版本号相同, 也可能无法通过宿主校验或带来风险.
 
@@ -229,6 +232,7 @@ _2026/09/15_
 
 - `优化` 将 compileSdk 提升到 37 (Android 17), targetSdk 保持 36, 待依赖目标版本的行为验证后再提升
 - `优化` MCP 一致性 (P6): 在两台设备上以官方 @modelcontextprotocol/conformance 套件 0.1.16 测试有状态的 /mcp 路径. 32 个服务器场景中 9 个通过 (initialize, ping, tools/list, 文本与错误工具结果, resources/list, prompts/list, 并发 SSE 流, DNS rebinding 保护); 18 个调用套件自带的参考夹具 (test_* 工具, 提示与 test:// 资源, 本服务器以未知工具结果, -32602 或 isError 应答), 5 个依赖本服务器未声明的能力 (logging, completions, 资源订阅). 回环 Origin 头现在在任何模式下都被接受 (套件如此要求); CORS 头与预检应答仍仅限开发者模式. 2026-07-28 无状态模型没有路由 (Roadmap D9). 详见 docs/dev/p6-conformance.md.
+- `优化` 安全审计 (P6): 七项清单 (令牌存储, 日志脱敏, 导出组件, 明文范围, 局域网默认关闭, 配对撤销, 工具分组默认关闭) 已在代码与两台设备上逐项核对, 记录于 docs/dev/p6-security-audit.md, README 安全章节改为说明这些边界. 明文 HTTP 由网络安全配置限定为回环地址, 取代应用级 usesCleartextTraffic 标志; 插件不发起客户端连接, 监听器也不需要该标志.
 
 #### v1.0.0
 

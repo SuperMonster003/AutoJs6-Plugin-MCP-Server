@@ -177,10 +177,13 @@ Claude Desktop 及其他只支援 stdio 的客戶端: 用 `npm install -g autojs
 
 外掛遵循明確的邊界:
 
-- Binder 入口受 `org.autojs.permission.PLUGIN` 簽章權限保護, 只有 AutoJs6 能夠繫結.
-- INTERNET 權限僅用於外掛自身的 HTTP 監聽; 外掛不發起任何對外請求, 也不收集資料.
-- 工具呼叫經由 AutoJs6 能力代理執行, 永遠不會超出主程式自身的權限範圍; Shell 命令與檔案刪除等危險分組預設關閉, 直到使用者手動開啟.
-- 已停用備份, 權杖只儲存在外掛的私有儲存空間中.
+- Binder 入口與設定頁受 `org.autojs.permission.PLUGIN` 簽章權限保護, 只有 AutoJs6 能夠存取; 配對對話框, 其接收器與發行歷史頁均未匯出. 只有承載監聽器的前台服務接受 adb (`android.permission.DUMP`), 作為開發者的啟停開關.
+- INTERNET 權限僅用於外掛自身的 HTTP 監聽; 外掛不發起任何對外請求, 也不收集資料. 透過網路安全設定, 明文 HTTP 僅允許指向回環位址.
+- 伺服器預設只監聽 127.0.0.1. 區域網路存取保持關閉直到你手動開啟; 開啟後權杖, 配對確認, Host 允許清單與速率限制在區域網路上仍然生效, 並有每日一次的通知提醒.
+- 存取權杖來自安全隨機來源, 以 Android Keystore 中的 AES-GCM 金鑰封裝後保存在外掛私有且永不備份的儲存空間中; 備份與裝置轉移均已停用. 設定頁只顯示權杖末 4 位, 完整權杖對話框禁止截圖, 複製到剪貼簿時標記為敏感內容.
+- 日誌從不包含權杖, 請求內容, 檔案內容或截圖; 外掛只記錄工具名, 用戶端名與權杖指紋. 已在兩台裝置上於真實的檔案與截圖呼叫期間用 logcat 驗證 (docs/dev/p6-security-audit.md).
+- 工具呼叫經由 AutoJs6 能力代理執行, 永遠不會超出主程式自身的權限範圍; Shell 命令, 檔案刪除與手勢保持關閉直到你啟用對應分組, root Shell 還需要單獨的開關與主程式授權.
+- 可在設定頁逐個或一次性撤銷配對; 被撤銷的用戶端在下次工具呼叫前必須重新在手機上確認. 輪換權杖會保留配對, 但仍使用舊權杖的用戶端會立即失效.
 
 請只從官方 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) 頁面或 AutoJs6 外掛中心取得外掛. 來源不明的安裝套件即使版本號相同, 也可能無法通過主程式驗證或帶來風險.
 
@@ -229,6 +232,7 @@ _2026/09/15_
 
 - `優化` 將 compileSdk 提升到 37 (Android 17), targetSdk 保持 36, 待依賴目標版本的行為驗證後再提升
 - `優化` MCP 一致性 (P6): 在兩台裝置上以官方 @modelcontextprotocol/conformance 套件 0.1.16 測試有狀態的 /mcp 路徑. 32 個伺服器場景中 9 個通過 (initialize, ping, tools/list, 文字與錯誤工具結果, resources/list, prompts/list, 並行 SSE 串流, DNS rebinding 保護); 18 個呼叫套件自帶的參考夾具 (test_* 工具, 提示與 test:// 資源, 本伺服器以未知工具結果, -32602 或 isError 回應), 5 個依賴本伺服器未宣告的能力 (logging, completions, 資源訂閱). 回環 Origin 標頭現在在任何模式下都被接受 (套件如此要求); CORS 標頭與預檢回應仍僅限開發者模式. 2026-07-28 無狀態模型沒有路由 (Roadmap D9). 詳見 docs/dev/p6-conformance.md.
+- `優化` 安全審計 (P6): 七項清單 (權杖儲存, 日誌脫敏, 匯出元件, 明文範圍, 區域網路預設關閉, 配對撤銷, 工具分組預設關閉) 已在程式碼與兩台裝置上逐項核對, 記錄於 docs/dev/p6-security-audit.md, README 安全章節改為說明這些邊界. 明文 HTTP 由網路安全設定限定為回環位址, 取代應用程式層級的 usesCleartextTraffic 旗標; 外掛不發起用戶端連線, 監聽器也不需要該旗標.
 
 #### v1.0.0
 
