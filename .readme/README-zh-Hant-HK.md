@@ -110,7 +110,7 @@ USB: `adb forward tcp:9637 tcp:9637` 將手機連接埠對應到 PC; 多部裝�
 
 區域網絡: 在設定頁開啟 "允許區域網絡連線". 設定頁隨後列出手機目前地址 (隨 Wi-Fi 變化重新整理) 並提示客戶端需處於同一網絡; 訪客網絡, AP 隔離和 PC 防火牆是常見阻礙. 來自區域網絡的配對要求會被顯著標註; 伺服器持續可從網絡存取期間每日通知提醒, 提醒可關閉.
 
-兩條路徑使用相同的權杖和相同的手機側配對. 面向不支援 HTTP 的客戶端的 stdio 橋接程式另行規劃.
+兩條路徑使用相同的權杖和相同的手機側配對. 沒有 HTTP 傳輸的客戶端使用 "接入" 中介紹的 stdio 橋接程式.
 
 ******
 
@@ -153,7 +153,7 @@ npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport 
 
 Cline, VS Code Copilot Chat, Gemini CLI 等客戶端: 在各自的 MCP 設定中使用相同的 URL 與標頭; 設定頁提供帶 `"type": "http"` 的通用 JSON 片段.
 
-Claude Desktop 只能啟動 stdio 伺服器; 面向它的橋接程式已列入規劃 (見路線圖).
+Claude Desktop 及其他只支援 stdio 的客戶端: 用 `npm install -g autojs6-mcp-bridge` 安裝橋接程式, 將 `autojs6-mcp-bridge --serial <serial>` 註冊為 stdio 伺服器並把 `AUTOJS6_MCP_TOKEN` 放入其環境變數區塊 (Claude Desktop 與 Claude Code 的片段見[橋接程式 README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)). 橋接程式 0.1.0 對應外掛程式 1.0.0, 透傳客戶端的協定版本; 已用 Claude Code 2.1.257 經 stdio 驗證.
 
 ******
 

@@ -36,7 +36,7 @@
   "h3_connection_paths": "連線路徑",
   "p_connection_usb": "USB: `adb forward tcp:9637 tcp:9637` 將手機連接埠對應到 PC; 多部裝置時加上 `-s <serial>` (透過 `adb devices` 查看), 模擬器同樣適用. 任一側連接埠被佔用時, 在設定頁修改連接埠並轉發新連接埠. 連線卡片提供可直接複製的轉發命令.",
   "p_connection_lan": "區域網絡: 在設定頁開啟 \"允許區域網絡連線\". 設定頁隨後列出手機目前地址 (隨 Wi-Fi 變化重新整理) 並提示客戶端需處於同一網絡; 訪客網絡, AP 隔離和 PC 防火牆是常見阻礙. 來自區域網絡的配對要求會被顯著標註; 伺服器持續可從網絡存取期間每日通知提醒, 提醒可關閉.",
-  "p_connection_note": "兩條路徑使用相同的權杖和相同的手機側配對. 面向不支援 HTTP 的客戶端的 stdio 橋接程式另行規劃.",
+  "p_connection_note": "兩條路徑使用相同的權杖和相同的手機側配對. 沒有 HTTP 傳輸的客戶端使用 \"接入\" 中介紹的 stdio 橋接程式.",
   "h3_clients": "接入",
   "p_clients_intro": "設定頁會為下列每個客戶端複製帶真實權杖的現成設定; 此處的片段以 `<token>` 作為佔位. 所有客戶端都透過帶 Authorization 標頭的 Streamable HTTP 通訊, 新客戶端的首次呼叫需在手機上確認. 已實測: Claude Code, Codex CLI 與 MCP Inspector; 其餘客戶端使用相同的 URL 與標頭, 但維護者尚未測試",
   "p_client_claude_code": "Claude Code: 執行 \"客戶端設定\" 中的命令 (設定頁複製的版本已帶權杖); 隨後 `claude mcp list` 會將 `autojs6` 顯示為 Connected",
@@ -44,7 +44,7 @@
   "p_client_codex": "Codex CLI: 將權杖放入環境變數 `AUTOJS6_MCP_TOKEN` (設定頁可複製對應的 PowerShell 命令), 再把伺服器加入 `config.toml`, 或執行 `codex mcp add autojs6 --url <url> --bearer-token-env-var AUTOJS6_MCP_TOKEN`",
   "p_client_inspector": "MCP Inspector: CLI 模式無需額外設定, Web 介面透過自帶的 Node 代理存取手機. 僅當瀏覽器頁面直接連接端點時, 才需在設定頁開啟開發者模式",
   "p_client_generic": "Cline, VS Code Copilot Chat, Gemini CLI 等客戶端: 在各自的 MCP 設定中使用相同的 URL 與標頭; 設定頁提供帶 `\"type\": \"http\"` 的通用 JSON 片段",
-  "p_client_claude_desktop": "Claude Desktop 只能啟動 stdio 伺服器; 面向它的橋接程式已列入規劃 (見路線圖)",
+  "p_client_claude_desktop": "Claude Desktop 及其他只支援 stdio 的客戶端: 用 `npm install -g autojs6-mcp-bridge` 安裝橋接程式, 將 `autojs6-mcp-bridge --serial <serial>` 註冊為 stdio 伺服器並把 `AUTOJS6_MCP_TOKEN` 放入其環境變數區塊 (Claude Desktop 與 Claude Code 的片段見[橋接程式 README]({{ bridge_url }})). 橋接程式 0.1.0 對應外掛程式 1.0.0, 透傳客戶端的協定版本; 已用 Claude Code 2.1.257 經 stdio 驗證",
   "h3_faq": "常見問題",
   "faq_points": [
     "401 Unauthorized: 權杖缺失, 輸錯或已輪換. 從設定頁重新複製設定; 輪換權杖後每個客戶端都需要新值.",

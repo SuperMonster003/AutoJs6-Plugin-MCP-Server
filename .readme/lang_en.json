@@ -36,7 +36,7 @@
   "h3_connection_paths": "Connection Paths",
   "p_connection_usb": "USB: `adb forward tcp:9637 tcp:9637` maps the phone port to the PC; with several devices add `-s <serial>` (find it with `adb devices`), and emulators work the same way. If the port is taken on either side, change it on the settings page and forward the new one. The Connection card offers the exact forward command for copying.",
   "p_connection_lan": "Local network: turn on Allow local network connections on the settings page. The page then lists the current addresses of the phone (they follow Wi-Fi changes) and reminds you that the client must join the same network; guest networks, AP isolation and the PC firewall are the usual blockers. Pairing requests from the local network are marked as such, and a daily notification reminds you while the server stays reachable from the network; the reminder can be turned off.",
-  "p_connection_note": "Both paths keep the same token and the same phone-side pairing. A stdio bridge for clients without HTTP support is planned separately.",
+  "p_connection_note": "Both paths keep the same token and the same phone-side pairing. Clients without an HTTP transport use the stdio bridge described under Clients.",
   "h3_clients": "Clients",
   "p_clients_intro": "The settings page copies a ready configuration with the real token for each client below; the snippets here use `<token>` as a placeholder. Every client speaks Streamable HTTP with an Authorization header, and the first call of a new client is confirmed on the phone. Verified: Claude Code, Codex CLI and MCP Inspector; the other clients use the same URL and header but have not been tested by the maintainer yet",
   "p_client_claude_code": "Claude Code: run the command shown under Client Configuration (the settings page copies it with the token); `claude mcp list` then reports `autojs6` as Connected",
@@ -44,7 +44,7 @@
   "p_client_codex": "Codex CLI: put the token into the `AUTOJS6_MCP_TOKEN` environment variable (the settings page copies a PowerShell command for it) and add the server to `config.toml`, or run `codex mcp add autojs6 --url <url> --bearer-token-env-var AUTOJS6_MCP_TOKEN`",
   "p_client_inspector": "MCP Inspector: the CLI mode needs no extra setup, and the web UI reaches the phone through its own Node proxy. Turn on Developer mode on the settings page only when a browser page connects to the endpoint directly",
   "p_client_generic": "Cline, VS Code Copilot Chat, Gemini CLI and similar clients: use the same URL and header in their MCP configuration; the settings page offers a generic JSON snippet with `\"type\": \"http\"`",
-  "p_client_claude_desktop": "Claude Desktop launches stdio servers only; a bridge program for it is planned (see the roadmap)",
+  "p_client_claude_desktop": "Claude Desktop and other stdio-only clients: install the bridge with `npm install -g autojs6-mcp-bridge` and register `autojs6-mcp-bridge --serial <serial>` as a stdio server with `AUTOJS6_MCP_TOKEN` in its environment block (see the [bridge README]({{ bridge_url }}) for the Claude Desktop and Claude Code snippets). Bridge 0.1.0 pairs with plugin 1.0.0 and passes the client's protocol version through; it was verified with Claude Code 2.1.257 over stdio",
   "h3_faq": "FAQ",
   "faq_points": [
     "401 Unauthorized: the token is missing, mistyped or rotated. Copy the configuration again from the settings page; after Rotate token every client needs the new value.",
