@@ -52,15 +52,15 @@ MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]
 
 ******
 
-P4 개발 미리 보기: 도구 37개 중 33개가 기본 활성화되며 AutoJs6 서랍 스위치와 플러그인 설정 페이지를 제공합니다. 해당 P4 AutoJs6 빌드가 필요합니다. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+버전 1.0.1: 도구 37개 (기본 활성화 33개), MCP 리소스와 프롬프트, AutoJs6 서랍 스위치와 플러그인 설정 페이지. AutoJs6 6.8.0 (빌드 5279) 이상이 필요합니다. 선택적 autojs6://docs/ 리소스에는 AutoJs6 오프라인 문서 플러그인과 중계 메서드를 갖춘 호스트도 필요합니다. 진행 상황과 증거는 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) 에 기록합니다.
 
 ******
 
-### 예정된 기능
+### 기능
 
 ******
 
-로드맵은 다음 기능을 단계별로 제공합니다:
+플러그인은 다음 기능을 제공합니다:
 
 - 서버 상태, USB 전달, 포트와 LAN, 토큰 표시/복사/교체, 페어링 해제, 도구 그룹과 root 권한, 개발자 모드, Claude Code / Cursor / Codex / 일반 HTTP 설정 복사, 출시 기록을 제공하며 AutoJs6 테마를 따릅니다. 네트워크 변경은 리스너를 재시작하고 토큰과 권한은 즉시 적용됩니다. 비밀 정보 창은 스크린샷을 차단합니다.
 - 스크립트 실행: AutoJs6 안에서 텍스트 또는 파일의 JavaScript를 실행하고, 엔진을 나열하거나 중지하며, 최근 콘솔 출력을 읽습니다.
@@ -68,8 +68,56 @@ P4 개발 미리 보기: 도구 37개 중 33개가 기본 활성화되며 AutoJs
 - 스크린샷 그룹 (P3.3): screen_capture는 자르기, scale 또는 maxWidth, JPEG / PNG / WebP, 품질 설정을 지원하는 MCP 이미지를 반환합니다. 기본값은 JPEG 품질 70, 긴 변 1280 px입니다. base64가 4 MiB를 초과하면 품질이나 크기를 낮춰 재시도하고 메타데이터에 변경을 표시합니다. screen_state는 화면 켜짐 상태, 크기, 방향, 밀도를 반환합니다. 도구 목록은 37개입니다. MediaProjection 대체 경로에는 2026-09-13 이후 빌드한 AutoJs6와 휴대전화의 승인이 필요하며 호스트 세션에서 승인을 재사용합니다.
 - 작업 디렉터리 도구 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1부터 시작하는 행과 열을 받는 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. 바이너리 읽기는 base64이며 원본 데이터 최대 1 MiB입니다. 쓰기는 호스트 요청 한도도 따릅니다 (보통 JSON 이스케이프 포함 96 KiB). 삭제와 Shell은 기본 비활성화이며 root에는 allowShellRoot와 호스트 shell.root 권한이 추가로 필요합니다. 일치하는 P3.4 호스트 빌드가 필요합니다.
 - MCP 리소스 (P3.5)는 페어링 및 그룹 설정에 따라 읽기 전용 작업 파일, 호스트 예제 탐색, AutoJs6 오프라인 문서 플러그인이 설치된 경우의 오프라인 문서, 기기 정보, 최근 콘솔 출력을 제공합니다. 텍스트 및 바이너리 읽기는 잘림 상태를 보고합니다. write_autojs6_script, automate_task, debug_selector는 영어와 중국어를 지원하며, 다른 기기 언어에서는 영어를 사용합니다.
-- 연결 경로: `adb forward`를 통한 USB, 명시적으로 켜야 하는 로컬 네트워크, PC 측 stdio 브리지, 그리고 OAuth 2.1을 갖춘 선택적 공개 터널.
+- 연결 경로: `adb forward`를 통한 USB, 명시적으로 켜야 하는 로컬 네트워크, 그리고 HTTP 전송이 없는 클라이언트를 위한 PC 측 stdio 브리지.
 - 보안: 교체 가능한 Bearer 토큰, 휴대폰에서의 최초 페어링 확인, 그룹별 도구 스위치. 서버는 기본적으로 루프백 인터페이스에서만 수신합니다.
+
+******
+
+### 도구 목록
+
+******
+
+아래 표는 플러그인의 도구 카탈로그 스냅샷 (`app/src/test/resources/tool-catalog.snapshot.json`) 에서 생성됩니다. 설명은 클라이언트가 받는 영어 원문이며, 각 그룹은 설정 페이지에서 끌 수 있습니다:
+
+| 도구 | 그룹 | 기본값 | 설명 |
+|---|---|---|---|
+| `device_ping` | `device` | 켜짐 | Confirms that the AutoJs6 MCP Server plugin is reachable and returns its version, the device model, the Android API level, and the device time. |
+| `device_info` | `device` | 켜짐 | Returns the device build, screen, battery, memory, AutoJs6 host version and process, accessibility service state, screen state, locale, and time zone as AutoJs6 reports them (schema autojs6-bridge-device-info-v1). No hardware identifiers. |
+| `script_run` | `script` | 켜짐 | Runs JavaScript source in AutoJs6 (its Rhino engine with the full AutoJs6 API) and by default waits for it to finish. Use it for automation steps: toasts, UI actions, file work, app launches. The result carries executionId, status (finished, error, running), durationMs, the exception with its line when the script threw, and the newest console lines. A script still running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output. |
+| `script_run_file` | `script` | 켜짐 | Runs a script file that already exists on the device (AutoJs6 picks the engine from the suffix) and by default waits for it to finish. The result carries executionId, status (finished, error, running), durationMs, the exception with its line when the script threw, and the newest console lines. A script still running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output. |
+| `script_stop` | `script` | 켜짐 | Stops one running AutoJs6 script by the executionId that script_run, script_run_file, or script_list reported. |
+| `script_stop_all` | `script` | 켜짐 | Stops every script AutoJs6 is running, including ones started on the phone, and returns how many were stopped. |
+| `script_list` | `script` | 켜짐 | Lists the scripts AutoJs6 is running or starting, with executionId, name, path, working directory, state, and uptime. |
+| `console_tail` | `script` | 켜짐 | Returns the newest lines of the AutoJs6 console, which every script shares; optionally only entries after sinceId or at least a level. nextSinceId in the result continues from where this call ended. |
+| `ui_dump` | `ui` | 켜짐 | Dumps the accessibility node tree of the active window as compact text: one node per line with a #n reference, an indent per depth, the short class name, the state markers that apply (clickable, long_clickable, checkable, checked, scrollable, editable, focused, selected, !enabled, hidden), the text in quotes, desc=, id= (name part only), and the position (bounds [l,t][r,b] for a node with children, c=(x,y) for a leaf). Pass a #n reference as nodeRef to ui_click, ui_long_click, ui_set_text, or ui_scroll; references stay valid until the next ui_dump or for 60 s. Call it before acting and again after the screen changed. format json returns the nodes as objects with every flag; format xml returns the uiautomator-style export. |
+| `ui_find` | `ui` | 켜짐 | Finds the nodes of the active window that match every condition of the selector, optionally waiting up to timeoutMs for the first match, and returns up to limit of them with #n references, bounds, and center. An empty count is not an error; ui_explain_selector tells which condition fails. |
+| `ui_current_window` | `ui` | 켜짐 | Returns the package and activity in the foreground, whether the AutoJs6 accessibility service is available, and the accessibility windows with their type, title, bounds, and focus. |
+| `ui_explain_selector` | `ui` | 켜짐 | Explains why a selector matches or not: evaluates its conditions one by one over the active window and reports how many nodes pass each step cumulatively, the first failing condition, the matches, and the near misses. Use it when ui_find returns nothing. |
+| `ui_wait_for` | `ui` | 켜짐 | Waits until a node matching the selector appears (default) or disappears, polling the active window every 0.5 s for up to timeoutMs, and answers TIMEOUT when the state is not reached. Use it after an action that opens a screen or dismisses a dialog. |
+| `ui_click` | `ui` | 켜짐 | Clicks a node given by nodeRef (a #n reference from the last ui_dump), by selector (the first match in pre-order), or by x and y (a coordinate tap, allowed only while the ui_gesture group is enabled). The accessibility click climbs to the nearest clickable ancestor when the node itself is not clickable. Returns the node it acted on. Give nodeRef or selector, not both. |
+| `ui_long_click` | `ui` | 켜짐 | Long-presses a node given by nodeRef or selector (the accessibility long click climbs to the nearest node that accepts it), or by x and y as a 700 ms press at that point (allowed only while the ui_gesture group is enabled). Give nodeRef or selector, not both. |
+| `ui_set_text` | `ui` | 켜짐 | Sets the text of an editable node (an EditText, marked editable by ui_dump) given by nodeRef or selector; append adds to the current text instead of replacing it. Works without focus or the keyboard; ACTION_FAILED means the node is not editable or not enabled. Give nodeRef or selector, not both. |
+| `ui_scroll` | `ui` | 켜짐 | Scrolls a node given by nodeRef or selector, or the first scrollable node of the window when neither is given: forward, down, and right move towards the end, backward, up, and left towards the start; times repeats the step. performed counts the steps the node accepted, fewer than requested means it reached the end. Give nodeRef or selector, not both. |
+| `ui_press_key` | `ui` | 켜짐 | Presses a global key through the accessibility service: back, home, recents, notifications (opens the notification shade), quick_settings, power_dialog, or lock_screen (Android 9 or later). |
+| `ui_swipe` | `ui_gesture` | 꺼짐 | Swipes one finger from (x1, y1) to (x2, y2) in device pixels over durationMs; take the coordinates from ui_dump bounds or a screenshot. Part of the ui_gesture group, which is off by default. |
+| `ui_gesture` | `ui_gesture` | 꺼짐 | Performs a free-path one-finger gesture through the given points over durationMs (at most 10 s): the first point is the touch down, the last the lift. Part of the ui_gesture group, which is off by default. |
+| `screen_capture` | `screen` | 켜짐 | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
+| `screen_state` | `screen` | 켜짐 | Read whether the screen is on, its current width and height, orientation, rotation, and density. Does not request screen capture consent. |
+| `files_list` | `files` | 켜짐 | Lists workspace files with metadata. Results are bounded and report truncation. |
+| `files_stat` | `files` | 켜짐 | Returns existence, type, size, and modification time of a workspace path. |
+| `files_read` | `files` | 켜짐 | Reads up to 1 MiB. Use encoding base64 for binary data; encoding, bytes, totalBytes, and truncated identify the representation and limit. |
+| `files_write` | `files` | 켜짐 | Writes UTF-8 text and refreshes the host explorer. Content is limited to 1 MiB and the negotiated Binder request budget (normally 96 KiB including JSON escaping); oversized calls fail before writing. |
+| `files_mkdir` | `files` | 켜짐 | Creates a workspace directory and missing parents, then refreshes the host explorer. |
+| `files_rename` | `files` | 켜짐 | Moves a workspace file or directory to another workspace path and refreshes the host explorer. |
+| `files_delete` | `files_delete` | 꺼짐 | Deletes a workspace entry. The separate files_delete group is off by default. The workspace root cannot be deleted. |
+| `editor_open` | `files` | 켜짐 | Opens a workspace file in the AutoJs6 editor at a one-based line and column. Lines outside the file are ignored by the editor. |
+| `app_launch` | `device` | 켜짐 | Opens an installed Android application. Provide exactly one of packageName or appName. |
+| `app_list` | `device` | 켜짐 | Lists up to 1000 Android applications visible to AutoJs6, optionally matching a package name or label. Android package visibility restrictions apply. |
+| `clipboard_get` | `device` | 켜짐 | Reads clipboard text (up to 64 KiB). Android may restrict clipboard access while AutoJs6 is in the background. |
+| `clipboard_set` | `device` | 켜짐 | Replaces clipboard text, including an empty string to clear it. |
+| `device_ensure_accessibility` | `device` | 켜짐 | Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance. |
+| `toast` | `device` | 켜짐 | Shows a short Android toast on the phone. |
+| `shell_exec` | `shell` | 꺼짐 | Runs an Android shell command in the host workspace. The shell group is off by default; root also requires the separate allow root switch and a shell.root host grant. Reports exit code, timeout, stdout, stderr, and truncation. maxOutputBytes bounds stdout and stderr together. |
 
 ******
 
@@ -84,6 +132,11 @@ P4 개발 미리 보기: 도구 37개 중 33개가 기본 활성화되며 AutoJs
 5. 휴대전화에서 첫 페어링 요청을 승인하세요. 사용 후 서랍, 설정 또는 알림에서 서버를 중지하세요.
 
 > 설치, 활성화, 승인, 호환성 안내를 갖춘 MCP 서버 스위치, 알림 중지 동기화, 재연결 시 설정 유지, 서랍과 플러그인 센터에서 권한 확인 후 동일한 설정 페이지 열기를 제공합니다. AutoJs6를 열면 이전 활성 상태를 복원하되 호스트 부재 중 사용자가 중지했다면 유지합니다. 기기 부팅 시 자동 시작하지 않습니다.
+
+<p align="center">
+  <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/docs/images/readme/drawer-en.png?raw=true" alt="AutoJs6 서랍의 MCP Server 스위치" width="300" />
+  <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/docs/images/readme/settings-en.png?raw=true" alt="MCP Server 설정 페이지" width="300" />
+</p>
 
 ******
 

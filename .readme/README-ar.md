@@ -52,15 +52,15 @@
 
 ******
 
-معاينة P4: 37 أداة, منها 33 مفعلة افتراضيا, مع مفتاح في قائمة AutoJs6 وصفحة إعدادات للإضافة. تتطلب نسخة AutoJs6 المتوافقة مع P4. [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+الإصدار 1.0.1: 37 أداة (33 مفعلة افتراضيا), موارد وقوالب MCP, مفتاح في قائمة AutoJs6 وصفحة إعدادات للإضافة. يتطلب AutoJs6 6.8.0 (البناء 5279) أو أحدث; كما تحتاج موارد autojs6://docs/ الاختيارية إلى إضافة AutoJs6 Offline Docs ومضيف يملك طرق التمرير. يسجل التقدم والأدلة في [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
-### الميزات المخطط لها
+### الميزات
 
 ******
 
-تقدم خارطة الطريق القدرات التالية على مراحل:
+توفر الإضافة القدرات التالية:
 
 - إعدادات الهاتف لحالة الخادم وUSB والمنفذ والشبكة المحلية وعرض الرمز ونسخه وتغييره وإلغاء الاقتران ومجموعات الأدوات وصلاحيات root ووضع المطور وإعدادات Claude Code / Cursor / Codex / HTTP القابلة للنسخ وسجل الإصدارات مع مظهر AutoJs6. تغييرات الشبكة تعيد تشغيل المستمع, وتطبق الرموز والأذونات فورا. نوافذ الأسرار تمنع لقطات الشاشة.
 - تنفيذ البرامج النصية: تشغيل JavaScript من نص أو من ملف داخل AutoJs6, وعرض المحركات وإيقافها, وقراءة مخرجات وحدة التحكم الأخيرة.
@@ -68,8 +68,56 @@
 - مجموعة لقطات الشاشة (P3.3): تعيد screen_capture صور MCP مع القص وscale أو maxWidth وتنسيقات JPEG / PNG / WebP والتحكم في الجودة. الإعداد الافتراضي JPEG بجودة 70 وضلع أطول 1280 px. عند تجاوز base64 حجم 4 MiB تنخفض الجودة أو الأبعاد مع بيان التعديلات في البيانات الوصفية. تعرض screen_state حالة الشاشة والأبعاد والاتجاه والكثافة. يضم الدليل 37 أداة. يتطلب البديل MediaProjection إصدار AutoJs6 مبنيا في 2026-09-13 أو بعده وموافقة على الهاتف تعيد جلسة المضيف استخدامها.
 - أدوات مجلد العمل (P3.4): files_list / stat / read / write / mkdir / rename / delete, و editor_open بسطر وعمود يبدأ ترقيمهما من 1, و app_launch / list, و clipboard_get / set, و device_ensure_accessibility, و toast, و shell_exec. القراءة الثنائية تعيد base64 بحد أقصى 1 MiB للبيانات الأصلية. تخضع الكتابة أيضا لميزانية طلب المضيف (عادة 96 KiB بما فيها ترميز JSON). الحذف و Shell معطلان افتراضيا; يتطلب root أيضا allowShellRoot ومنح shell.root من المضيف. يلزم بناء المضيف المطابق لـ P3.4.
 - توفر موارد MCP (P3.5) ملفات العمل للقراءة فقط, وتصفح أمثلة المضيف, والتوثيق دون اتصال عند تثبيت مكون AutoJs6 Offline Docs الإضافي, ومعلومات الجهاز, ومخرجات وحدة التحكم الأخيرة, مع احترام الاقتران وإعدادات المجموعات. تتضمن قراءة النص والبيانات الثنائية معلومات الاقتطاع. توفر القوالب write_autojs6_script و automate_task و debug_selector إرشادات بالإنجليزية والصينية, مع استخدام الإنجليزية للغات الهاتف الأخرى.
-- مسارات الاتصال: USB عبر `adb forward`, والشبكة المحلية بتفعيل صريح, وجسر stdio على جانب الحاسوب, ونفق عام اختياري مع OAuth 2.1.
+- مسارات الاتصال: USB عبر `adb forward`, والشبكة المحلية بتفعيل صريح, وجسر stdio على جانب الحاسوب للعملاء الذين لا يملكون نقل HTTP.
 - الأمان: رمز bearer قابل للتدوير, وتأكيد الاقتران على الهاتف عند أول استخدام, ومفاتيح تبديل للأدوات حسب المجموعة; ولا يستمع الخادم افتراضيا إلا على واجهة الاسترجاع المحلي.
+
+******
+
+### الأدوات
+
+******
+
+الجدول أدناه مولد من لقطة كتالوج أدوات الإضافة (`app/src/test/resources/tool-catalog.snapshot.json`); الأوصاف هي النصوص الإنجليزية التي يتلقاها العملاء, ويمكن إيقاف كل مجموعة من صفحة الإعدادات:
+
+| الأداة | المجموعة | الافتراضي | الوصف |
+|---|---|---|---|
+| `device_ping` | `device` | مفعل | Confirms that the AutoJs6 MCP Server plugin is reachable and returns its version, the device model, the Android API level, and the device time. |
+| `device_info` | `device` | مفعل | Returns the device build, screen, battery, memory, AutoJs6 host version and process, accessibility service state, screen state, locale, and time zone as AutoJs6 reports them (schema autojs6-bridge-device-info-v1). No hardware identifiers. |
+| `script_run` | `script` | مفعل | Runs JavaScript source in AutoJs6 (its Rhino engine with the full AutoJs6 API) and by default waits for it to finish. Use it for automation steps: toasts, UI actions, file work, app launches. The result carries executionId, status (finished, error, running), durationMs, the exception with its line when the script threw, and the newest console lines. A script still running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output. |
+| `script_run_file` | `script` | مفعل | Runs a script file that already exists on the device (AutoJs6 picks the engine from the suffix) and by default waits for it to finish. The result carries executionId, status (finished, error, running), durationMs, the exception with its line when the script threw, and the newest console lines. A script still running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output. |
+| `script_stop` | `script` | مفعل | Stops one running AutoJs6 script by the executionId that script_run, script_run_file, or script_list reported. |
+| `script_stop_all` | `script` | مفعل | Stops every script AutoJs6 is running, including ones started on the phone, and returns how many were stopped. |
+| `script_list` | `script` | مفعل | Lists the scripts AutoJs6 is running or starting, with executionId, name, path, working directory, state, and uptime. |
+| `console_tail` | `script` | مفعل | Returns the newest lines of the AutoJs6 console, which every script shares; optionally only entries after sinceId or at least a level. nextSinceId in the result continues from where this call ended. |
+| `ui_dump` | `ui` | مفعل | Dumps the accessibility node tree of the active window as compact text: one node per line with a #n reference, an indent per depth, the short class name, the state markers that apply (clickable, long_clickable, checkable, checked, scrollable, editable, focused, selected, !enabled, hidden), the text in quotes, desc=, id= (name part only), and the position (bounds [l,t][r,b] for a node with children, c=(x,y) for a leaf). Pass a #n reference as nodeRef to ui_click, ui_long_click, ui_set_text, or ui_scroll; references stay valid until the next ui_dump or for 60 s. Call it before acting and again after the screen changed. format json returns the nodes as objects with every flag; format xml returns the uiautomator-style export. |
+| `ui_find` | `ui` | مفعل | Finds the nodes of the active window that match every condition of the selector, optionally waiting up to timeoutMs for the first match, and returns up to limit of them with #n references, bounds, and center. An empty count is not an error; ui_explain_selector tells which condition fails. |
+| `ui_current_window` | `ui` | مفعل | Returns the package and activity in the foreground, whether the AutoJs6 accessibility service is available, and the accessibility windows with their type, title, bounds, and focus. |
+| `ui_explain_selector` | `ui` | مفعل | Explains why a selector matches or not: evaluates its conditions one by one over the active window and reports how many nodes pass each step cumulatively, the first failing condition, the matches, and the near misses. Use it when ui_find returns nothing. |
+| `ui_wait_for` | `ui` | مفعل | Waits until a node matching the selector appears (default) or disappears, polling the active window every 0.5 s for up to timeoutMs, and answers TIMEOUT when the state is not reached. Use it after an action that opens a screen or dismisses a dialog. |
+| `ui_click` | `ui` | مفعل | Clicks a node given by nodeRef (a #n reference from the last ui_dump), by selector (the first match in pre-order), or by x and y (a coordinate tap, allowed only while the ui_gesture group is enabled). The accessibility click climbs to the nearest clickable ancestor when the node itself is not clickable. Returns the node it acted on. Give nodeRef or selector, not both. |
+| `ui_long_click` | `ui` | مفعل | Long-presses a node given by nodeRef or selector (the accessibility long click climbs to the nearest node that accepts it), or by x and y as a 700 ms press at that point (allowed only while the ui_gesture group is enabled). Give nodeRef or selector, not both. |
+| `ui_set_text` | `ui` | مفعل | Sets the text of an editable node (an EditText, marked editable by ui_dump) given by nodeRef or selector; append adds to the current text instead of replacing it. Works without focus or the keyboard; ACTION_FAILED means the node is not editable or not enabled. Give nodeRef or selector, not both. |
+| `ui_scroll` | `ui` | مفعل | Scrolls a node given by nodeRef or selector, or the first scrollable node of the window when neither is given: forward, down, and right move towards the end, backward, up, and left towards the start; times repeats the step. performed counts the steps the node accepted, fewer than requested means it reached the end. Give nodeRef or selector, not both. |
+| `ui_press_key` | `ui` | مفعل | Presses a global key through the accessibility service: back, home, recents, notifications (opens the notification shade), quick_settings, power_dialog, or lock_screen (Android 9 or later). |
+| `ui_swipe` | `ui_gesture` | معطل | Swipes one finger from (x1, y1) to (x2, y2) in device pixels over durationMs; take the coordinates from ui_dump bounds or a screenshot. Part of the ui_gesture group, which is off by default. |
+| `ui_gesture` | `ui_gesture` | معطل | Performs a free-path one-finger gesture through the given points over durationMs (at most 10 s): the first point is the touch down, the last the lift. Part of the ui_gesture group, which is off by default. |
+| `screen_capture` | `screen` | مفعل | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
+| `screen_state` | `screen` | مفعل | Read whether the screen is on, its current width and height, orientation, rotation, and density. Does not request screen capture consent. |
+| `files_list` | `files` | مفعل | Lists workspace files with metadata. Results are bounded and report truncation. |
+| `files_stat` | `files` | مفعل | Returns existence, type, size, and modification time of a workspace path. |
+| `files_read` | `files` | مفعل | Reads up to 1 MiB. Use encoding base64 for binary data; encoding, bytes, totalBytes, and truncated identify the representation and limit. |
+| `files_write` | `files` | مفعل | Writes UTF-8 text and refreshes the host explorer. Content is limited to 1 MiB and the negotiated Binder request budget (normally 96 KiB including JSON escaping); oversized calls fail before writing. |
+| `files_mkdir` | `files` | مفعل | Creates a workspace directory and missing parents, then refreshes the host explorer. |
+| `files_rename` | `files` | مفعل | Moves a workspace file or directory to another workspace path and refreshes the host explorer. |
+| `files_delete` | `files_delete` | معطل | Deletes a workspace entry. The separate files_delete group is off by default. The workspace root cannot be deleted. |
+| `editor_open` | `files` | مفعل | Opens a workspace file in the AutoJs6 editor at a one-based line and column. Lines outside the file are ignored by the editor. |
+| `app_launch` | `device` | مفعل | Opens an installed Android application. Provide exactly one of packageName or appName. |
+| `app_list` | `device` | مفعل | Lists up to 1000 Android applications visible to AutoJs6, optionally matching a package name or label. Android package visibility restrictions apply. |
+| `clipboard_get` | `device` | مفعل | Reads clipboard text (up to 64 KiB). Android may restrict clipboard access while AutoJs6 is in the background. |
+| `clipboard_set` | `device` | مفعل | Replaces clipboard text, including an empty string to clear it. |
+| `device_ensure_accessibility` | `device` | مفعل | Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance. |
+| `toast` | `device` | مفعل | Shows a short Android toast on the phone. |
+| `shell_exec` | `shell` | معطل | Runs an Android shell command in the host workspace. The shell group is off by default; root also requires the separate allow root switch and a shell.root host grant. Reports exit code, timeout, stdout, stderr, and truncation. maxOutputBytes bounds stdout and stderr together. |
 
 ******
 
@@ -84,6 +132,11 @@
 5. أكد طلب الاقتران الأول على الهاتف. أوقف الخادم من القائمة أو الإعدادات أو الإشعار عند الانتهاء.
 
 > مفتاح MCP Server مع إرشادات التثبيت والتنشيط والتفويض والتوافق, ومزامنة الإيقاف من الإشعار وحفظ الإعدادات عند إعادة الاتصال, وفتح الإعدادات بعد فحص الإذن من القائمة ومركز الإضافات. يستعيد الخادم المفعّل عند فتح AutoJs6 إلا إذا أوقفه المستخدم أثناء غياب المضيف, دون بدء عند إقلاع الجهاز.
+
+<p align="center">
+  <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/docs/images/readme/drawer-en.png?raw=true" alt="مفتاح MCP Server في قائمة AutoJs6" width="300" />
+  <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/docs/images/readme/settings-en.png?raw=true" alt="صفحة إعدادات MCP Server" width="300" />
+</p>
 
 ******
 

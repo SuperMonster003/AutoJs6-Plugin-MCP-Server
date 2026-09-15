@@ -419,7 +419,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 目标: 1.0.0 发布并进入官方插件索引; 宿主随版本发布契约与开关.
 
-- [ ] (文档) README 10 语言 (由 `.readme/*.json` 生成): 简介, 功能 (工具清单从 `ToolCatalog` 生成的表), 安装 (宿主版本要求), 快速接入 (USB / 局域网 / 桥接), 客户端矩阵, 安全, 常见问题, 发行历史, 许可证, 第三方声明; 截图真实有效.
+- [x] (文档) README 10 语言 (由 `.readme/*.json` 生成): 简介, 功能 (工具清单从 `ToolCatalog` 生成的表), 安装 (宿主版本要求), 快速接入 (USB / 局域网 / 桥接), 客户端矩阵, 安全, 常见问题, 发行历史, 许可证, 第三方声明; 截图真实有效. (SOURCE: 状态段改为 `版本 {{ version_name }}` 并写明宿主 6.8.0 / 5279 与可选 docs 资源的前提, `规划功能` 改为 `功能`, 连接方式条目去掉未交付的公网隧道 / OAuth 2.1 表述; 新增 `工具清单` 节, 由 `.python/generate_markdown.py` 从 `app/src/test/resources/tool-catalog.snapshot.json` (ToolCatalogTest 保持同步) 生成 37 行表 (工具 / 分组 / 默认 / 英文描述), 表头与开关文案 10 语言; 使用方法节嵌入真实截图 `docs/images/readme/{drawer,settings}-{en,zh}.png` (AVD API 33 英文, Sony XQ-DQ72 中文, 插件 49, 设置页截图不含令牌), 中文 README 用 zh 图, 其余用 en 图; 安装 / 快速接入 / 客户端矩阵 / 安全 / 常见问题 / 发行历史 / 许可证 / 第三方声明链接各节此前已存在并复核. MARKDOWN_OK 10 语言 36 产物, ApplicationTextPunctuationTest 通过.)
 - [ ] (文档) 插件中心说明 (`@raw/plugin_instruction`, 10 语言) 与 `plugin_description`.
 - [ ] (插件) `.changelog` 10 语言 `v1.0.0` 条目 (`feature` / `dependency`), 生成 `assets/doc/CHANGELOG-*.md`; `VERSION_NAME=1.0.0` 与文件名断言一致.
 - [ ] (宿主) 宿主 changelog 10 语言 (抽屉开关 `feature`), 宿主 `docs/dev/mcp-server-protocol-v1.md` 定稿; 若涉及脚本公开 API (本 Roadmap 默认不涉及) 才同步文档 / d.ts / Ace 仓库.
