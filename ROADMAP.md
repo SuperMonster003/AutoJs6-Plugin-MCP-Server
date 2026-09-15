@@ -391,7 +391,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 - [x] (PC) 独立仓库 `D:/idea-projects/AutoJs6-MCP-Bridge` (TypeScript, Node 18+), npm 包 `autojs6-mcp-bridge` (D19): 以 stdio 对接客户端, 以 Streamable HTTP 对接手机; 参数 / 环境变量: `--url`, `--token` / `AUTOJS6_MCP_TOKEN`, `--serial` (自动执行 `adb forward`, 退出时清理), `--protocol` (透传或降级); 令牌不出现在进程参数时优先环境变量; 错误信息可读.
 - [x] (PC) 单元测试 (协议透传, forward 生命周期, 错误映射), `npm pack` 产物体积与依赖审计, README (与插件 README 互链), 版本与插件解耦但两侧 README 记录兼容矩阵.
-- [ ] (发布) `autojs6-mcp-bridge@0.1.0` 发布到 npm 并从 registry 全新安装验收. (GitHub 公开仓库 `SuperMonster003/AutoJs6-MCP-Bridge` 与 `v0.1.0` 标签已创建并推送, 源码 `27b15c2`; 23 项测试, audit 0 漏洞, 实际 tgz 隔离安装与 publish dry-run 已通过; npm 登录已完成, 正式 publish 返回 `E403`, 原因为发布账号尚未启用 2FA, 待维护者在 npm 网站配置并完成发布认证. 证据: `docs/dev/p5-stdio-bridge.md`.)
+- [x] (发布) `autojs6-mcp-bridge@0.1.0` 发布到 npm 并从 registry 全新安装验收. (GitHub 公开仓库 `SuperMonster003/AutoJs6-MCP-Bridge` 与 `v0.1.0` 标签, 源码 `27b15c2`; npm 于 2026-09-15 21:26:10 (UTC+08:00) 发布成功, latest=0.1.0; 匿名读取 registry 元数据并下载 tgz, SHA-1 / integrity 与本地产物一致; 全新目录 / 缓存 / 无凭据配置安装成功, 17 个安装文件逐字节匹配发布包, CLI 版本与帮助正常, audit 0 漏洞. 证据: `docs/dev/p5-stdio-bridge.md`.)
 - [x] (测试) CLIENT_E2E: Claude Desktop 经桥接程序完成一次工具调用; Claude Code 以 stdio 方式接入作为 http 路径的备选. (Claude Code stdio 已在真机验证; Claude Desktop 本机未安装, 如实记录为未验证, 配置片段见桥接 README.)
 
 验收条件: 兼容矩阵至少 5 个客户端有真实结果; 桥接程序发布到 npm (或以 GitHub Release 附件形式) 并在 README 记录安装命令.
@@ -859,3 +859,10 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 阻碍: npm registry 返回 `E403`, 要求发布账号启用双因素认证; 只读取账号配置确认 2FA 尚未启用. 已提供 npm 官方设置步骤, 等待维护者完成 2FA 设置与随后的发布认证. 包仍未发布, P5 发布条目保持未勾选, 线上安装验收尚未执行. 宿主合并与 GitHub 建仓保持完成状态.
 - 验证准备: 桥接仓库已准备 git 忽略的 `build/verify_npm_release.py`, 发布成功后匿名核对 registry 的版本 / latest / SHA-1 / integrity, 下载线上 tgz 与本地产物逐字节比对, 再进行全新目录安装与 CLI 检查. 本次没有源码或依赖变化, 未重复之前通过的 23 项桥接测试或 Android 构建 / 真机验证.
 - 下次会话建议起点: 维护者完成 npm 2FA 后重试发布, 完成线上校验与全新安装, 更新本节证据并勾选 P5 发布条目, 之后继续 P6 第 4 项电量与常驻.
+
+### 2026-09-15: npm 0.1.0 发布完成
+
+- 完成: 维护者启用 npm 2FA 并完成本次发布的浏览器认证后, 已验证的 `autojs6-mcp-bridge-0.1.0.tgz` 发布成功, npm 时间为 `2026-09-15T13:26:10.980Z` (UTC+08:00 为 21:26:10.980). 包页面: `https://www.npmjs.com/package/autojs6-mcp-bridge/v/0.1.0`, latest 指向 0.1.0. GitHub master / v0.1.0 仍指向 `27b15c2`, 源码与发布包均无变更. P5 发布条目已勾选; 宿主生命周期分支合并与 Bridge GitHub 建仓也已完成.
+- 线上验收: 无凭据读取 npm registry 版本 / latest / SHA-1 / integrity, 匿名下载的 20443 bytes tgz 与本地发布包逐字节一致. 全新安装目录与缓存, 使用无凭据 npm 配置安装 `autojs6-mcp-bridge@0.1.0` 成功 (95 packages), 锁文件指向公共 registry, 17 个安装文件全部匹配发布包; 已安装命令 `--version` 返回 0.1.0, `--help` 正常, SDK 解析到 1.30.0, 全新安装的 `npm audit --omit=dev` 0 漏洞. 证据: `docs/dev/p5-stdio-bridge.md`; git 忽略的 `build/published-release-verification.json` 位于桥接仓库.
+- 仓库验证: 插件 10 语言 / 36 产物生成检查, 标点 JVM 测试与 `git diff --check` 通过. 本次发布使用此前 23 项测试已通过的相同源码与相同 tgz, 未重复 Android 构建 / 真机矩阵; Claude Desktop 与 Node 18 / 20 / 22 的实测仍保留原有未执行记录.
+- 下次会话建议起点: 继续 P6 第 4 项电量与常驻 (空闲自动停止选项与电量度量), 之后一致性套件, 安全审计与性能基线; 如需补齐客户端矩阵, 安装 Claude Desktop 后做其 stdio 桥接实测.
