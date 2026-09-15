@@ -63,7 +63,7 @@ fun Application.installPairingGate(server: Server, gate: PairingGate) {
     intercept(ApplicationCallPipeline.Plugins) {
         if (call.request.httpMethod != HttpMethod.Post) return@intercept
         val body = call.attributes.getOrNull(BUFFERED_BODY) ?: return@intercept
-        val calls = JsonRpcCalls.parse(String(body, Charsets.UTF_8)) ?: return@intercept
+        val calls = call.attributes.getOrNull(JSON_RPC_CALLS) ?: JsonRpcCalls.parse(String(body, Charsets.UTF_8)) ?: return@intercept
         if (calls.ids.isEmpty() || !calls.hasGated(gate)) return@intercept
         val identity = resolveIdentity(server, call.request.header(SESSION_HEADER), call.request.header(HttpHeaders.UserAgent), call.request.origin.remoteHost)
         val method = calls.methods.first(gate::isGated)
@@ -108,7 +108,7 @@ private const val SESSION_HEADER = "Mcp-Session-Id"
  * The `Mcp-Session-Id` of the HTTP transport is not the id the SDK keys its sessions by, so the
  * session is found through its transport; the client version is unset until `initialize` ran.
  */
-private fun resolveIdentity(server: Server, sessionId: String?, userAgent: String?, remoteHost: String?): ClientIdentity {
+internal fun resolveIdentity(server: Server, sessionId: String?, userAgent: String?, remoteHost: String?): ClientIdentity {
     val clientInfo = sessionId?.let { id ->
         runCatching {
             server.sessions.values.firstOrNull { (it.transport as? StreamableHttpServerTransport)?.sessionId == id }?.clientVersion

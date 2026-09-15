@@ -51,20 +51,37 @@ import kotlin.coroutines.CoroutineContext
  * from the POST before the dispatched handlers answer and ties its stream bookkeeping to the
  * call's lifetime, so the route stays in the call until the transport closes the session and
  * the body is written out (an engine may return from `respond` before that).
+ *
+ * The transport keys the response streams of a session by request id, so a second POST that
+ * reuses an id still in flight would take over the mapping and leave the first POST without an
+ * answer (its stream would stay open until the client gives up). Such a POST is refused with
+ * `400` before it reaches the transport (roadmap P6); ids are free again once their POST's
+ * body was written out.
  */
 internal fun Application.mcpStreamableSse(path: String, block: () -> Server) {
     pluginOrNull(SSE) ?: install(SSE)
     val transports = Transports()
+    val inFlight = InFlightIds()
     val configuration = StreamableHttpServerTransport.Configuration(enableJsonResponse = false)
     routing {
         route(path) {
             // Ktor's SSE route commits the response headers before its handler runs, so the session
-            // id of a resumed standalone stream is echoed ahead of that (as the SDK mount does).
+            // id of a resumed standalone stream is echoed ahead of that (as the SDK mount does), and
+            // a GET without a live session is refused here with 400 / 404 instead of an empty
+            // 200 event stream (roadmap P6).
             intercept(ApplicationCallPipeline.Plugins) {
                 if (call.request.httpMethod == HttpMethod.Get) {
                     val sessionId = call.request.header(SESSION_ID_HEADER)
-                    if (sessionId != null && transports.containsKey(sessionId)) {
-                        call.response.header(SESSION_ID_HEADER, sessionId)
+                    when {
+                        sessionId.isNullOrEmpty() -> {
+                            call.rejectRpc(HttpStatusCode.BadRequest, "Bad Request: No valid session ID provided")
+                            finish()
+                        }
+                        !transports.containsKey(sessionId) -> {
+                            call.rejectRpc(HttpStatusCode.NotFound, "Session not found")
+                            finish()
+                        }
+                        else -> call.response.header(SESSION_ID_HEADER, sessionId)
                     }
                 }
             }
@@ -73,21 +90,32 @@ internal fun Application.mcpStreamableSse(path: String, block: () -> Server) {
                 transport.handleRequest(this, call)
             }
             post {
-                val transport = transportFor(transports, configuration, block) ?: return@post
-                coroutineScope {
-                    val stream = PostResponseStream(call, coroutineContext)
-                    val handling = launch {
-                        try {
-                            transport.handleRequest(stream, call)
-                        } finally {
-                            stream.finish()
+                val transport = transportFor(transports, configuration, inFlight, block) ?: return@post
+                val sessionId = transport.sessionId
+                val ids = if (sessionId == null) emptyList() else call.attributes.getOrNull(JSON_RPC_CALLS)?.ids?.filterNotNull()?.map { it.toString() }.orEmpty()
+                val claimed = if (sessionId == null) null else inFlight.claim(sessionId, ids)
+                if (claimed == false) {
+                    call.rejectRpc(HttpStatusCode.BadRequest, MESSAGE_ID_IN_FLIGHT)
+                    return@post
+                }
+                try {
+                    coroutineScope {
+                        val stream = PostResponseStream(call, coroutineContext)
+                        val handling = launch {
+                            try {
+                                transport.handleRequest(stream, call)
+                            } finally {
+                                stream.finish()
+                            }
                         }
+                        if (stream.awaitStarted()) {
+                            call.respondBytesWriter { stream.writeTo(this) }
+                            stream.awaitWritten()
+                        }
+                        handling.join()
                     }
-                    if (stream.awaitStarted()) {
-                        call.respondBytesWriter { stream.writeTo(this) }
-                        stream.awaitWritten()
-                    }
-                    handling.join()
+                } finally {
+                    if (sessionId != null) inFlight.release(sessionId, ids)
                 }
             }
             delete {
@@ -100,6 +128,36 @@ internal fun Application.mcpStreamableSse(path: String, block: () -> Server) {
 
 /** The live transports by session id (the SDK's own registry of them is internal). */
 private typealias Transports = ConcurrentHashMap<String, StreamableHttpServerTransport>
+
+/** The message of the `400` for a request id that is still in flight on the session. */
+internal const val MESSAGE_ID_IN_FLIGHT = "Bad Request: a request with this id is still in flight on this session"
+
+/** The request ids each session is still answering (roadmap P6). */
+private class InFlightIds {
+
+    private val ids = ConcurrentHashMap<String, MutableSet<String>>()
+
+    /** True when every id of [requestIds] was free and is now claimed; false (and nothing claimed) otherwise. */
+    fun claim(sessionId: String, requestIds: List<String>): Boolean {
+        if (requestIds.isEmpty()) return true
+        val set = ids.getOrPut(sessionId) { ConcurrentHashMap.newKeySet() }
+        synchronized(set) {
+            if (requestIds.any { it in set }) return false
+            set.addAll(requestIds)
+        }
+        return true
+    }
+
+    fun release(sessionId: String, requestIds: List<String>) {
+        if (requestIds.isEmpty()) return
+        val set = ids[sessionId] ?: return
+        synchronized(set) { set.removeAll(requestIds.toSet()) }
+    }
+
+    fun forget(sessionId: String) {
+        ids.remove(sessionId)
+    }
+}
 
 /** The transport of the `Mcp-Session-Id` header, or null after a 400 / 404 was sent. */
 private suspend fun existingTransport(call: ApplicationCall, transports: Transports): StreamableHttpServerTransport? {
@@ -118,15 +176,24 @@ private suspend fun existingTransport(call: ApplicationCall, transports: Transpo
 private suspend fun RoutingContext.transportFor(
     transports: Transports,
     configuration: StreamableHttpServerTransport.Configuration,
+    inFlight: InFlightIds,
     block: () -> Server,
 ): StreamableHttpServerTransport? {
     val sessionId = call.request.header(SESSION_ID_HEADER)
     if (sessionId != null) return transports[sessionId] ?: existingTransport(call, transports)
     val transport = StreamableHttpServerTransport(configuration)
     transport.setOnSessionInitialized { id -> transports[id] = transport }
-    transport.setOnSessionClosed { id -> transports.remove(id, transport) }
+    transport.setOnSessionClosed { id ->
+        transports.remove(id, transport)
+        inFlight.forget(id)
+    }
     val server = block()
-    server.onClose { transport.sessionId?.let { transports.remove(it, transport) } }
+    server.onClose {
+        transport.sessionId?.let {
+            transports.remove(it, transport)
+            inFlight.forget(it)
+        }
+    }
     server.createSession(transport)
     return transport
 }
