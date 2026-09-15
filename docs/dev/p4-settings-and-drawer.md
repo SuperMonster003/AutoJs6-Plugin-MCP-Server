@@ -1,10 +1,9 @@
 # P4 settings and host drawer evidence
 
-Date: 2026-09-13. Plugin: 1.0.0 / build 25. Paired host: 6.8.0 / build 5280,
-branch `feat/mcp-p4`, commit `e1aa3f813`. The host work is isolated from existing SDK 37 edits in
-the original host worktree. That worktree received further SDK 37 commits during
-this session; P4 has not been merged into its master branch. The paired API
-source revision is recorded in
+Date: 2026-09-13, follow-up 2026-09-15. Plugin: 1.0.0 / build 25 (follow-up:
+build 28 sources). Paired host: 6.8.0 / build 5280, branch `feat/mcp-p4`, commit
+`e1aa3f813`, merged into the host `master` as `9c3ba2e52` on 2026-09-15 (see the
+follow-up section). The paired API source revision is recorded in
 `THIRD_PARTY_NOTICES.md`.
 
 ## Delivered behavior
@@ -177,15 +176,160 @@ not evidence for the phone clipboard-to-client paste workflow.
 
 ## Remaining acceptance
 
-P4's implementation is available for testing. Its complete acceptance is not
-yet claimed: all four installation / compatibility guides still need a full
-real-device screenshot matrix, including a genuinely incompatible build;
-OEM fresh-install activation, TalkBack / keyboard navigation, and the complete
-process-death matrix remain to be verified. The new snippets still require
-unmodified paste-and-connect checks in Claude Code and Cursor. Cursor was not
-available through the current command-line environment. These checks remain
-unchecked in `ROADMAP.md`; P5 client compatibility work must retain them.
+Updated 2026-09-15. The four installation / compatibility guides, the host-level
+plugin-disabled guide, drawer / notification synchronization, keyboard
+navigation, screen-reader labels, process death recovery and the Claude Code
+paste-and-connect check are verified below. Still open: a Cursor paste check
+(Cursor is not installed in the current command-line environment, so only the
+JSON snapshot test covers that format), a gesture-driven TalkBack traversal
+(see the TalkBack notes below), and the notification Stop action on the two Sony
+devices whose notification shade publishes no accessibility hierarchy to
+`uiautomator`. These remain listed for P5 client compatibility work.
 
 No host release build was repeated: this phase changes the host's UI and
 optional pure contract keys, and introduces no host runtime dependency. The
 plugin's release / R8 build was executed. No publication or push was performed.
+
+## 2026-09-15 acceptance follow-up
+
+Plugin 1.0.0 / build 28 sources plus the keyboard fix below; host 6.8.0 /
+build 5280 built from the merge commit `9c3ba2e52`.
+
+### Host integration
+
+`feat/mcp-p4` (`e1aa3f813`) was merged into the host `master` as `9c3ba2e52`
+("merge: integrate the MCP Server P4.1 drawer control with the SDK 37
+mainline"). Conflicts were limited to the ten changelog JSON files (both entry
+sets kept, generated README / CHANGELOG regenerated with the host generator)
+and `DrawerFragment.kt`, where the MCP Server item stays next to the JSON socket
+server item ahead of the new local network permission item. The merged host
+passed its MCP JVM tests (19/19: grant 9, config 7, UI policy 3) and the debug /
+androidTest assembly (5m 34s). The merged host debug build was installed on all
+six devices below. Host master later received unrelated SDK 37 commits from
+other sessions; they are not part of this evidence.
+
+### Keyboard navigation and screen-reader labels
+
+`McpServerSettingsAccessibilityTest` (3 tests) was added to the plugin
+instrumentation suite:
+
+- Every visible clickable / editable view carries a text or content
+  description; card titles are accessibility headings (API 28+); and, through
+  `UiAutomation`, every actionable node in the published accessibility tree has
+  a name. This is what a screen reader receives.
+- Tab reaches every enabled control and the toolbar back button; Enter opens
+  the About dialog from a focused button and toggles a focused tool-group switch,
+  with the change persisted for the listener process and shown again.
+- Copying the Claude Code snippet places the generated command on the
+  clipboard, marked sensitive on API 33+ (`EXTRA_IS_SENSITIVE`); the clip is
+  cleared afterwards unless the opt-in `mcpClipboardEvidence` argument asks the
+  test to leave the text in the app cache for the paste check below.
+
+One defect was found and fixed: the Material toolbar style blocks keyboard focus
+on touch screens and forms its own keyboard navigation cluster, so Tab never
+reached the back button; on Android 7 the focus order is sorted by screen
+position, so scrolled content also won the wrap-around. `SettingsPageActivity`
+now clears `touchscreenBlocksFocus` and the cluster flag and links the last
+content focusable back to the toolbar button. The class passed 3/3 on API 24
+(AVD), 28, 31, 33, 33 and 35.
+
+### Real-device drawer state matrix
+
+The evidence script (git-ignored `build/tools/p4_states.py`) drives the host
+drawer through `uiautomator` dumps: baseline, switch on, notification Stop,
+switch off, `pm uninstall -k --user 0` (not installed guide), fresh install
+(activation guide, accepted), `pm disable-user` (application disabled guide),
+a throwaway build whose manifest requires host build 999999 (incompatible
+guide), and the restored build. Every guide dialog and the drawer subtitle
+after it were captured; the listener was probed through a per-device adb
+forward (401 without a token = listening).
+
+| Device | API | Four guides + restored | Notification Stop -> drawer off | Notes |
+| --- | --- | --- | --- | --- |
+| AVD x86, SwiftShader | 24 | Passed | Passed | Host restart needed before the drawer saw the fresh install |
+| Sony G8441 | 28 | Passed | Not verified (shade hierarchy empty) | Dialog windows publish an empty `uiautomator` hierarchy; buttons located from the screenshot and the window frame. Host-level plugin-disabled guide ("Enable plugin") observed and accepted |
+| Sony XQ-AT72 | 31 | Passed | Not verified (shade hierarchy empty) | Multi-user device: installs need `--user 0`; host restart needed before the drawer saw the fresh install |
+| Sony XQ-DQ72 | 33 | Passed | Passed | Notification permission requested from the settings page first |
+| Xiaomi 22120RN86C | 33 | Passed | Passed | MIUI permission dialog labels the grant "Allow all the time"; host restart needed after the fresh install |
+| Xiaomi 23046RP50C | 35 | Passed | Passed | HyperOS permission dialog "始终允许" |
+
+Three devices kept "Plugin not installed" in the drawer after a fresh install
+until the host process was restarted (the two Sony API 33 / Xiaomi API 35
+devices refreshed without it). This is recorded as a host follow-up: the drawer
+state should refresh on package changes without a host restart.
+
+Screenshots (English UI, Xiaomi API 33 unless noted):
+
+| Scenario | Image |
+| --- | --- |
+| Not installed guide | [Plugin Center guidance](images/p4/dialog-not-installed-api33.png) |
+| Fresh install, activation guide | [Activate](images/p4/dialog-activation-api33.png) |
+| Application disabled guide | [System settings guidance](images/p4/dialog-app-disabled-api33.png) |
+| Incompatible build guide | [Required host build](images/p4/dialog-incompatible-api33.png) |
+| Incompatible build, drawer subtitle | [Drawer state](images/p4/drawer-incompatible-api33.png) |
+| Host-level plugin disabled guide, API 28 | [Enable plugin](images/p4/dialog-plugin-disabled-api28.png) |
+
+### Notification, process death and settings recovery
+
+- Sony API 33, Xiaomi API 33 / 35 and the AVD: the Stop action in the
+  foreground notification stopped the listener, the drawer switch returned to
+  off with the stopped subtitle, and the notification disappeared; switching on
+  and off from the drawer showed and removed the notification.
+- Xiaomi API 35 process death matrix: `kill -9` of the `:mcp_server` process
+  through `run-as` was followed by a new listener process while the drawer kept
+  showing the endpoint and the probe kept answering 401; `am force-stop` of the
+  host left the listener running with `statusHostAvailable = false` in
+  `status.json`, and the reopened host showed the endpoint again with the same
+  listener process; after `am kill` of the plugin's UI process, the settings
+  page reopened with the identical text content. On Sony API 33 the same host
+  kill and settings recovery passed; there the `run-as kill` signal returned
+  success without ending the process, so listener-death recovery is evidenced on
+  API 35 only.
+
+| Scenario | Image |
+| --- | --- |
+| Listener process killed, drawer still connected (API 35) | [Drawer](images/p4/drawer-after-listener-kill-api35.png) |
+| Settings page after its process was killed (API 33) | [Settings](images/p4/settings-after-process-death-api33.png) |
+
+### TalkBack
+
+TalkBack was enabled through `settings put secure` with the settings page in
+front on Sony API 33 and Xiaomi API 35; the accessibility focus frame rendered
+on the toolbar navigation button, and the previous accessibility services were
+restored afterwards. Gesture-driven traversal could not be scripted: touch
+events injected by `adb shell input` bypass TalkBack touch exploration on the
+Sony device (they click the control) and are ignored as gestures on the Xiaomi
+device, whose first TalkBack start also opens the TalkBack tutorial; injected
+Alt+arrow key combinations are not honored as TalkBack keymap commands. The
+screen-reader content check therefore rests on the `UiAutomation` tree audit in
+`McpServerSettingsAccessibilityTest`, which is the same node information
+TalkBack announces.
+
+| Scenario | Image |
+| --- | --- |
+| TalkBack enabled on the settings page, API 33 | [Focus frame on the back button](images/p4/settings-talkback-api33.png) |
+
+### Claude Code paste-and-connect
+
+Sony API 33, Claude Code 2.1.257 (the ACP-bundled CLI), the maintainer's gateway
+environment, an isolated temporary `CLAUDE_CONFIG_DIR`, and `adb forward
+tcp:9637 tcp:9637`:
+
+1. The settings page copied the Claude Code command (instrumentation with
+   `mcpClipboardEvidence`); the text was pulled from the app cache and deleted
+   there.
+2. The text was executed unchanged in Git Bash: `claude mcp add` reported the
+   HTTP server with a redacted Authorization header.
+3. `claude mcp list` reported `autojs6: http://127.0.0.1:9637/mcp (HTTP) - Connected`.
+4. `claude -p` with `--allowedTools mcp__autojs6__device_info` triggered the
+   pairing prompt on the phone (dialog in one run, notification action in
+   another); after Allow, the model session finished in 4 turns / 33 s with
+   `is_error = false` and answered "Model: Sony XQ-DQ72, Android API level: 33"
+   from the tool result. The paired client `claude-code` appeared in
+   `paired_clients.json`.
+5. The temporary configuration, the adb forward and the pairing record were
+   removed; the listener was stopped from the drawer. The evidence log redacts
+   the token and gateway credential.
+
+Cursor remains unverified because it is not installed here; its JSON format is
+covered by the snapshot test only.

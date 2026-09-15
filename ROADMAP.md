@@ -365,10 +365,10 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 - [x] (宿主) 插件中心条目的 "设置" 入口指向同一设置页; `PluginCenterItem` 显示运行状态 (可选). (JVM: McpServerUiPolicyTest; DEVICE: API 24 激活 / 抽屉启动 / 长按设置 / 插件中心设置 / 通知停止, API 24 + 35 真实 Binder 往返; 配套宿主 feat/mcp-p4, 见 docs/dev/p4-settings-and-drawer.md.)
 - [x] (插件) `McpServerSettingsActivity` (Three-Stone-AI 的 `AppSettingsActivity` 样式, 跟随宿主主题 / 夜间 / 语言快照): 状态卡 (运行 / 已停止 / 宿主不可用, 端点列表含 `adb forward` 命令), 端口, 监听范围 (仅本机 / 局域网, 局域网开启时二次确认), 令牌 (显示 / 复制 / 轮换), 已配对客户端 (列表 / 撤销 / 全部撤销), 工具组开关 (含 root 子开关), 开发者模式 (CORS for Inspector, 详细日志), 客户端配置片段 (Claude Code 命令, Cursor `mcp.json`, Codex `config.toml`, 通用 JSON; 一键复制; 二维码可选), 发行历史 (`ReleaseHistoryActivity` 读 `assets/doc/CHANGELOG-{tag}.md`), 关于. (JVM: ClientConfigSnippetTest / ReleaseHistoryTest; DEVICE: McpServerSettingsTest, API 24 / 28 / 31 / 33 / 35, 见 P4 证据文档; 客户端粘贴验收另列待完成.)
 - [x] (插件) 配置变更热应用: 端口 / 监听范围变更时重启监听并回调状态; 令牌轮换即时生效; 工具组开关触发 `notifications/tools/list_changed` (有状态) 与下次 `tools/list` 的 `ttlMs` 归零. (DEVICE: McpServerSettingsTest 验证跨进程端口切换, 旧令牌 401 / 新令牌 200, 配对保留与撤销, list_changed / ttlMs = 0, 停止后编辑不启动.)
-- [ ] (插件) 无障碍标签, 键盘导航, RTL, 大字体, 夜间模式, 进程恢复 (设置页在进程被杀后重建不丢状态). (已验证: API 24 / 35 页面显示与 Activity 重建; API 35 阿拉伯语 RTL + 夜间 + fontScale 1.5, 2/2. 键盘 / TalkBack 与完整进程死亡恢复仍待验收.)
-- [ ] (测试) JVM: 配置片段生成器快照测试 (三种客户端 + 通用), 状态文案映射; DEVICE: 抽屉开关四态各一次截图证据; 设置页在 API 24 与 API 35 上的显示. (JVM 快照与状态策略已通过; API 24 / 35 页面截图已留存. 真机四态截图矩阵尚未补齐, 保留未勾选.)
+- [x] (插件) 无障碍标签, 键盘导航, RTL, 大字体, 夜间模式, 进程恢复 (设置页在进程被杀后重建不丢状态). (已验证: API 24 / 35 页面显示与 Activity 重建; API 35 阿拉伯语 RTL + 夜间 + fontScale 1.5, 2/2; McpServerSettingsAccessibilityTest 在 API 24 / 28 / 31 / 33 / 33 / 35 各 3/3 (可见控件与无障碍节点均有名称, 卡片标题为 heading, Tab 遍历到全部控件与返回键, Enter 打开对话框与切换工具组, 剪贴板敏感标记), 修复工具栏返回键不在 Tab 循环的问题; 进程死亡矩阵 (监听进程 kill / 宿主 force-stop / 设置页进程 kill 后重建) 在 API 35 全部通过, API 33 通过宿主与设置页部分; TalkBack 仅验证开启后焦点框与 UiAutomation 节点命名, 手势与键位无法经 adb 注入驱动, 见 docs/dev/p4-settings-and-drawer.md.)
+- [x] (测试) JVM: 配置片段生成器快照测试 (三种客户端 + 通用), 状态文案映射; DEVICE: 抽屉开关四态各一次截图证据; 设置页在 API 24 与 API 35 上的显示. (JVM 快照与状态策略已通过; API 24 / 35 页面截图已留存; 四态引导与恢复在 AVD API 24 和真机 API 28 / 31 / 33 / 33 / 35 各通过一轮, API 28 另出现宿主层 "启用插件" 第五种引导; 通知 "停止" 双向同步在 API 24 / 33 / 33 / 35 通过, 两台 Sony API 28 / 31 因通知栏对 uiautomator 无可用无障碍树未验证; 截图见 docs/dev/images/p4.)
 
-验收条件: 从未安装到可用的四态引导在真机上逐一验证; 抽屉开关与通知 "停止" 双向同步; 配置片段粘贴到 Claude Code / Cursor 后无需修改即可连接.
+验收条件: 从未安装到可用的四态引导在真机上逐一验证; 抽屉开关与通知 "停止" 双向同步; 配置片段粘贴到 Claude Code / Cursor 后无需修改即可连接. (2026-09-15: 前两项已在真机验证; 手机复制的 Claude Code 命令原样执行后 mcp list 显示 Connected, 配对后 device_info 调用成功; Cursor 未安装, 仅有 JSON 快照测试, 该项转入 P5.)
 
 ---
 
@@ -785,3 +785,12 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 设备验收: QV770340J7 (XQ-DQ72, Android 13 / API 33) 上图标与插件契约共 7/7 通过. 宿主插件中心实屏核对亮暗模式的图形, 留白与背景色, 调试器确认两种模式均为 AdaptiveIconDrawable. 安装修复版 1.0.0 (28), 保留应用数据, 恢复宿主原来的手动亮色模式; 调试会话与临时断点已清理. 本地证据位于 app/build/reports/icon-night-mode/.
 - 构建与文档: Debug APK / androidTest APK 构建通过, 最终 JVM 202/202, lintDebug 为 0 errors / 8 warnings, 10 语言 / 36 生成产物检查通过. 无运行时依赖或公共契约变化, 本轮未重复 Release / R8 构建与完整 MCP 客户端矩阵. VERSION_BUILD 按本次提交后的 Git 可达提交数校正.
 - 下次会话建议起点: 继续 P4 集成与验收, 随后 P5 连接路径和客户端兼容矩阵.
+
+### 2026-09-15: P4 集成与验收补齐
+
+- 完成: 宿主 feat/mcp-p4 (e1aa3f813) 合并进宿主 master (9c3ba2e52), 冲突仅在 10 语言 changelog JSON 与 DrawerFragment, 保留双方条目并重新生成文档; 合并后宿主 MCP JVM 19/19, debug / androidTest 构建通过, 装到 6 台设备. 新增 McpServerSettingsAccessibilityTest (标签与标题, Tab 遍历与 Enter 操作, 剪贴板敏感标记); 修复 Material 工具栏阻止触屏键盘焦点并自成导航簇导致返回键不在 Tab 循环, 以及 Android 7 焦点按位置排序的回绕问题; 六设备各 3/3.
+- 真机矩阵: 未安装 / 需要激活 / 应用已停用 / 版本不兼容四态引导与恢复在 AVD API 24 和 API 28 / 31 / 33 / 33 / 35 真机各通过一轮 (API 28 另出现宿主层 "启用插件" 引导); 通知 "停止" 双向同步在 API 24 / 33 / 33 / 35 通过; 进程死亡矩阵在 API 35 全部通过 (监听进程被 kill 后自动重建且抽屉保持端点, 宿主 force-stop 后监听保持并在重开后恢复显示, 设置页进程被 kill 后重建内容一致), API 33 通过宿主与设置页部分 (该机 run-as kill 返回成功但进程未退出).
+- 客户端: Sony API 33 设置页复制的 Claude Code 命令原样在 Git Bash 执行 (隔离 CLAUDE_CONFIG_DIR, adb forward 9637), claude mcp list 显示 Connected; claude -p 调用 device_info 触发手机配对提示 (对话框与通知动作两种路径均验证), 允许后 4 轮 / 33 s 返回型号与 API 级别; 临时配置, adb forward 与配对记录已清理, 证据日志不含令牌. Cursor 未安装, 未验证.
+- 观察: 三台设备 (AVD 24, Sony 31, Xiaomi 33) 新安装插件后抽屉保持 "未安装插件" 直到宿主重启, 宿主抽屉状态应在包变化时刷新 (宿主待办); Sony API 28 的对话框窗口与 Sony API 28 / 31 的通知栏对 uiautomator 返回空树, 证据脚本改用 dumpsys window 框架加截图定位按钮; MIUI / HyperOS 通知权限按钮为 "始终允许"; 多用户设备安装需 --user 0; TalkBack 手势与键位无法经 adb 注入驱动, 仅留开启状态截图与 UiAutomation 节点审计.
+- 验证: 插件 JVM 202/202, debug / androidTest 构建通过, lintDebug 0 errors / 8 warnings, 10 语言 / 36 产物生成检查通过. 无运行时依赖或公共契约变化, 本轮未重复 release / R8 构建. VERSION_BUILD 按本次提交后的 Git 可达提交数校正.
+- 下次会话建议起点: P5 连接路径和客户端兼容矩阵 (含 Cursor 粘贴验收), 并处理宿主抽屉在插件包变化后的状态刷新.
