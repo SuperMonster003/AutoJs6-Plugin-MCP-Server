@@ -384,8 +384,8 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 ### P5.2 客户端兼容矩阵
 
-- [ ] (测试) 逐一实测并记录 (客户端, 版本, 传输, 鉴权方式, 结果, 已知问题, 规避): Claude Code (http + header; 若遇到 "头部未在部分路径发送" 的已知 bug, 记录版本并以 stdio 桥接规避), Cursor (`mcp.json` url + headers), Codex CLI (`config.toml` 的 streamable HTTP + bearer 环境变量), MCP Inspector (开发者模式 CORS), VS Code Copilot / Cline / Gemini CLI (至少一个), Claude Desktop (仅 stdio 桥接; 远程连接器留 P8).
-- [ ] (文档) README "接入" 章节: 每个客户端一段, 配置片段与设置页一致; "常见问题": 401 / 配对超时 / 宿主不可用 / 无障碍未启用 / 端口占用 / 局域网不可达.
+- [x] (测试) 逐一实测并记录 (客户端, 版本, 传输, 鉴权方式, 结果, 已知问题, 规避): Claude Code (http + header; 若遇到 "头部未在部分路径发送" 的已知 bug, 记录版本并以 stdio 桥接规避), Cursor (`mcp.json` url + headers), Codex CLI (`config.toml` 的 streamable HTTP + bearer 环境变量), MCP Inspector (开发者模式 CORS), VS Code Copilot / Cline / Gemini CLI (至少一个), Claude Desktop (仅 stdio 桥接; 远程连接器留 P8).
+- [x] (文档) README "接入" 章节: 每个客户端一段, 配置片段与设置页一致; "常见问题": 401 / 配对超时 / 宿主不可用 / 无障碍未启用 / 端口占用 / 局域网不可达.
 
 ### P5.3 PC 端 stdio 桥接程序
 
@@ -802,3 +802,12 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 观察: 该机宿主无障碍服务未开启时 ui_dump 返回 A11Y_SERVICE_NOT_RUNNING, device_ensure_accessibility (宿主持有 WRITE_SECURE_SETTINGS) 276 ms 内开启; 24 h 提醒通知本身未等待观察, 策略由 JVM 测试覆盖.
 - 验证: JVM 206/206, lintDebug 0 errors / 8 warnings, debug / androidTest 构建通过, 10 语言 / 36 产物生成检查通过.
 - 下次会话建议起点: P5.2 客户端兼容矩阵 (已安装的客户端逐一实测, 未安装的如实记录) 与 README "接入" / "常见问题" 章节.
+
+### 2026-09-15: P5.2 客户端兼容矩阵
+
+- 完成: README 新增 "接入" (Claude Code, Cursor JSON, Codex TOML + 环境变量, MCP Inspector CLI 命令, 通用 JSON, Claude Desktop 待桥接) 与 "常见问题" (401, 配对超时, HOST_UNAVAILABLE, 无障碍未启用, port_in_use, 局域网不可达) 章节, 10 语言; 生成器新增 faq_points 列表键. 矩阵与证据: docs/dev/p5-client-matrix.md.
+- 实测 (Sony API 33, adb forward): Codex CLI 0.154.0-alpha.6.2 经 codex mcp add --url + bearer_token_env_var (令牌不落配置文件), codex exec 两次 mcp_tool_call (先 PAIRING_REQUIRED, 允许后成功) 49 s 内回答型号与 API 级别; MCP Inspector CLI 2.6.0 tools/list 33 个工具, tools/call device_info 先 PAIRING_REQUIRED 后成功; Claude Code 2.1.257 沿用 P4 证据. Cursor, VS Code Copilot / Cline, Gemini CLI, Claude Desktop 本机未安装, 如实记录为未验证.
+- 修复: Inspector --strict 报告 script_run / script_run_file 的 arguments 值模式使用数组形式 type, 部分客户端会拒绝或弱化; JsonSchemas.primitiveMap 改为单类型 anyOf, 新增 JVM 测试保证所有工具模式不含数组形式 type.
+- 观察: Inspector CLI 的 --catalog 不能与临时 URL 同用; Codex 在临时 CODEX_HOME 下提示无法创建 PATH 别名 (无害); 配对截图含来电通知与个人文件名, 未入库.
+- 验证: JVM 全部通过, 10 语言 / 36 产物生成检查通过, debug 构建通过; 重新安装后 Inspector --strict 0 warnings.
+- 下次会话建议起点: P5.3 stdio 桥接程序 (独立仓库 AutoJs6-MCP-Bridge), 完成后补 Claude Desktop 行与 Claude Code stdio 备选.

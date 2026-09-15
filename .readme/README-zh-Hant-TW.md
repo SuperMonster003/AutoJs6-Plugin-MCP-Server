@@ -114,6 +114,62 @@ USB: `adb forward tcp:9637 tcp:9637` 將手機連接埠對應到 PC; 多台裝�
 
 ******
 
+### 接入
+
+******
+
+設定頁會為下列每個用戶端複製帶真實權杖的現成設定; 此處的片段以 `<token>` 作為占位. 所有用戶端都透過帶 Authorization 標頭的 Streamable HTTP 通訊, 新用戶端的首次呼叫需在手機上確認. 已實測: Claude Code, Codex CLI 與 MCP Inspector; 其餘用戶端使用相同的 URL 與標頭, 但維護者尚未測試.
+
+Claude Code: 執行 "用戶端設定" 中的命令 (設定頁複製的版本已帶權杖); 隨後 `claude mcp list` 會將 `autojs6` 顯示為 Connected.
+
+Cursor: 將下面的條目加入 `mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "autojs6": {
+      "url": "http://127.0.0.1:9637/mcp",
+      "headers": {
+        "Authorization": "Bearer <token>"
+      }
+    }
+  }
+}
+```
+
+Codex CLI: 將權杖放入環境變數 `AUTOJS6_MCP_TOKEN` (設定頁可複製對應的 PowerShell 命令), 再把伺服器加入 `config.toml`, 或執行 `codex mcp add autojs6 --url <url> --bearer-token-env-var AUTOJS6_MCP_TOKEN`:
+
+```toml
+[mcp_servers.autojs6]
+url = "http://127.0.0.1:9637/mcp"
+bearer_token_env_var = "AUTOJS6_MCP_TOKEN"
+```
+
+MCP Inspector: CLI 模式無需額外設定, Web 介面透過自帶的 Node 代理存取手機. 僅當瀏覽器頁面直接連線端點時, 才需在設定頁開啟開發者模式:
+
+```shell
+npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport http --header "Authorization: Bearer <token>" --method tools/list
+```
+
+Cline, VS Code Copilot Chat, Gemini CLI 等用戶端: 在各自的 MCP 設定中使用相同的 URL 與標頭; 設定頁提供帶 `"type": "http"` 的通用 JSON 片段.
+
+Claude Desktop 只能啟動 stdio 伺服器; 面向它的橋接程式已列入規劃 (見路線圖).
+
+******
+
+### 常見問題
+
+******
+
+- 401 Unauthorized: 權杖缺失, 輸錯或已輪換. 從設定頁重新複製設定; 輪換權杖後每個用戶端都需要新值.
+- 配對逾時: 新用戶端的首次呼叫會等待約一分鐘, 直到手機上點選允許. 解鎖手機, 接受對話方塊或通知動作, 然後重複呼叫. 拒絕會進入短暫冷卻, 之後下一次呼叫會再次詢問.
+- HOST_UNAVAILABLE: AutoJs6 未執行或外掛工作階段已關閉. 開啟 AutoJs6, 保持抽屜開關開啟, 並在設定頁查看連線狀態.
+- 無障礙未啟用: `ui_*` 工具與截圖需要 AutoJs6 無障礙服務. 呼叫 `device_ensure_accessibility`, 或在系統無障礙設定中啟用該服務.
+- 連接埠被占用: 抽屜會回報 `port_in_use`. 在設定頁修改連接埠, 並用 adb 轉送新連接埠.
+- 區域網路不可達: 開啟區域網路存取, 使用設定頁列出的位址, 讓 PC 與手機處於同一網路且無訪客隔離, 並在 PC 防火牆放行該連接埠. 手機 Wi-Fi 省電會使每次呼叫增加幾百毫秒.
+
+******
+
 ### 權限與安全
 
 ******
@@ -194,6 +250,7 @@ _2026/09/15_
 - `修復` IDE rebuild 不再為 JVM 單元測試尋找 APK. APK 驗證工作會自動組建所需產物, 可直接從 clean 後執行.
 - `修復` 外掛程式中心明暗模式下圖示比例不一致及自適應圖示留白不足的問題; 夜間同樣使用自適應圖示, 調整圖層尺寸以保留 ic_launcher_round.png 的完整圖形和留白, 僅切換背景色
 - `修復` 設定頁的鍵盤 Tab 導覽會略過工具列返回按鈕; 現在 Tab 循環涵蓋返回按鈕和全部控制項 (含 Android 7). 裝置測試檢查螢幕閱讀器標籤與鍵盤操作.
+- `修復` script_run 與 script_run_file 的 arguments 對應以 JSON Schema 陣列宣告值型別, 部分 MCP 用戶端會拒絕或弱化; 現改為單型別 anyOf 分支. README 新增 "接入" 與 "常見問題" 章節及實測用戶端矩陣.
 - `優化` 建置階段阻止意外引入原生相依套件, 並輸出 JSON 校驗報告
 - `相依性` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 與 Ktor 3.5.1 CIO 引擎
 - `相依性` 附加 Ktor 3.5.1 `ktor-server-test-host` 用於 JVM 傳輸測試 (僅測試範圍)

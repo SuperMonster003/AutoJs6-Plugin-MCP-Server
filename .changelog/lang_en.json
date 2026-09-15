@@ -44,7 +44,8 @@
       "fix": [
         "IDE rebuild no longer looks for an APK for JVM unit tests. APK verification tasks automatically assemble their inputs and work from a clean build.",
         "Plugin Center icon proportions differed between light and dark modes; night mode now also uses the adaptive icon, with layer sizing adjusted to preserve the complete ic_launcher_round.png artwork and margins while changing only the background color",
-        "Keyboard Tab navigation on the settings page skipped the toolbar back button; the Tab cycle now covers the back button and every control, including on Android 7. Device tests check screen reader labels and keyboard operation."
+        "Keyboard Tab navigation on the settings page skipped the toolbar back button; the Tab cycle now covers the back button and every control, including on Android 7. Device tests check screen reader labels and keyboard operation.",
+        "The arguments map of script_run and script_run_file declared its value type as a JSON Schema array, which some MCP clients reject or weaken; the schema now uses single-type anyOf branches. README gains Clients and FAQ sections with the tested client matrix."
       ]
     }
   }

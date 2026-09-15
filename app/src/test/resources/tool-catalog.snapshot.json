@@ -88,11 +88,19 @@
           "type": "object",
           "description": "Values exposed to the script through engines.myEngine().execArgv",
           "additionalProperties": {
-            "type": [
-              "string",
-              "number",
-              "boolean",
-              "null"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
             ]
           }
         },
@@ -164,11 +172,19 @@
           "type": "object",
           "description": "Values exposed to the script through engines.myEngine().execArgv",
           "additionalProperties": {
-            "type": [
-              "string",
-              "number",
-              "boolean",
-              "null"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
             ]
           }
         },

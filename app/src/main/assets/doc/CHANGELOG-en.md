@@ -32,6 +32,7 @@
 * `Fix` IDE rebuild no longer looks for an APK for JVM unit tests. APK verification tasks automatically assemble their inputs and work from a clean build.
 * `Fix` Plugin Center icon proportions differed between light and dark modes; night mode now also uses the adaptive icon, with layer sizing adjusted to preserve the complete ic_launcher_round.png artwork and margins while changing only the background color
 * `Fix` Keyboard Tab navigation on the settings page skipped the toolbar back button; the Tab cycle now covers the back button and every control, including on Android 7. Device tests check screen reader labels and keyboard operation.
+* `Fix` The arguments map of script_run and script_run_file declared its value type as a JSON Schema array, which some MCP clients reject or weaken; the schema now uses single-type anyOf branches. README gains Clients and FAQ sections with the tested client matrix.
 * `Improvement` Build verification rejects accidental native dependencies and produces a JSON report
 * `Dependency` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) on the Ktor 3.5.1 CIO engine
 * `Dependency` Ktor 3.5.1 `ktor-server-test-host` added for the JVM transport tests (test scope only)

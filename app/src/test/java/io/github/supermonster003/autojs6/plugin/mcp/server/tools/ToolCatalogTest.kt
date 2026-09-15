@@ -28,6 +28,22 @@ class ToolCatalogTest {
     }
 
     @Test
+    fun `no input schema uses an array-valued type`() {
+        // MCP Inspector 2.6.0 flags array-valued `type` as a portability problem: some clients read it as one string.
+        fun walk(name: String, element: kotlinx.serialization.json.JsonElement) {
+            when (element) {
+                is JsonObject -> {
+                    assertFalse("$name has an array-valued type", element["type"] is JsonArray)
+                    element.forEach { (key, child) -> walk("$name.$key", child) }
+                }
+                is JsonArray -> element.forEachIndexed { index, child -> walk("$name[$index]", child) }
+                else -> Unit
+            }
+        }
+        ToolCatalog.all.forEach { spec -> walk(spec.name, spec.inputSchema) }
+    }
+
+    @Test
     fun `every input schema is a closed object whose required names exist`() {
         ToolCatalog.all.forEach { spec ->
             val schema = spec.inputSchema

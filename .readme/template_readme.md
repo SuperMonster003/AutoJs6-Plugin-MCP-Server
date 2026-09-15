@@ -94,6 +94,57 @@ claude mcp add --transport http autojs6 http://127.0.0.1:{{ mcp_default_port }}{
 
 ******
 
+### {{ h3_clients }}
+
+******
+
+{{ p_clients_intro }}.
+
+{{ p_client_claude_code }}.
+
+{{ p_client_cursor }}:
+
+```json
+{
+  "mcpServers": {
+    "autojs6": {
+      "url": "http://127.0.0.1:{{ mcp_default_port }}{{ mcp_endpoint_path }}",
+      "headers": {
+        "Authorization": "Bearer <token>"
+      }
+    }
+  }
+}
+```
+
+{{ p_client_codex }}:
+
+```toml
+[mcp_servers.autojs6]
+url = "http://127.0.0.1:{{ mcp_default_port }}{{ mcp_endpoint_path }}"
+bearer_token_env_var = "AUTOJS6_MCP_TOKEN"
+```
+
+{{ p_client_inspector }}:
+
+```shell
+npx @modelcontextprotocol/inspector --cli http://127.0.0.1:{{ mcp_default_port }}{{ mcp_endpoint_path }} --transport http --header "Authorization: Bearer <token>" --method tools/list
+```
+
+{{ p_client_generic }}.
+
+{{ p_client_claude_desktop }}.
+
+******
+
+### {{ h3_faq }}
+
+******
+
+{{ placeholder_faq_points }}
+
+******
+
 ### {{ h3_security }}
 
 ******

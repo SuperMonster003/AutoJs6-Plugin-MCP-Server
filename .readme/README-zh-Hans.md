@@ -114,6 +114,62 @@ USB: `adb forward tcp:9637 tcp:9637` 将手机端口映射到 PC; 多台设备�
 
 ******
 
+### 接入
+
+******
+
+设置页会为下列每个客户端复制带真实令牌的现成配置; 此处的片段以 `<token>` 作为占位. 所有客户端都通过带 Authorization 头的 Streamable HTTP 通信, 新客户端的首次调用需在手机上确认. 已实测: Claude Code, Codex CLI 与 MCP Inspector; 其余客户端使用相同的 URL 与头部, 但维护者尚未测试.
+
+Claude Code: 执行 "客户端配置" 中的命令 (设置页复制的版本已带令牌); 随后 `claude mcp list` 会将 `autojs6` 显示为 Connected.
+
+Cursor: 将下面的条目加入 `mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "autojs6": {
+      "url": "http://127.0.0.1:9637/mcp",
+      "headers": {
+        "Authorization": "Bearer <token>"
+      }
+    }
+  }
+}
+```
+
+Codex CLI: 将令牌放入环境变量 `AUTOJS6_MCP_TOKEN` (设置页可复制对应的 PowerShell 命令), 再把服务器加入 `config.toml`, 或执行 `codex mcp add autojs6 --url <url> --bearer-token-env-var AUTOJS6_MCP_TOKEN`:
+
+```toml
+[mcp_servers.autojs6]
+url = "http://127.0.0.1:9637/mcp"
+bearer_token_env_var = "AUTOJS6_MCP_TOKEN"
+```
+
+MCP Inspector: CLI 模式无需额外设置, Web 界面通过自带的 Node 代理访问手机. 仅当浏览器页面直接连接端点时, 才需在设置页开启开发者模式:
+
+```shell
+npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport http --header "Authorization: Bearer <token>" --method tools/list
+```
+
+Cline, VS Code Copilot Chat, Gemini CLI 等客户端: 在各自的 MCP 配置中使用相同的 URL 与头部; 设置页提供带 `"type": "http"` 的通用 JSON 片段.
+
+Claude Desktop 仅能启动 stdio 服务器; 面向它的桥接程序已列入规划 (见路线图).
+
+******
+
+### 常见问题
+
+******
+
+- 401 Unauthorized: 令牌缺失, 输错或已轮换. 从设置页重新复制配置; 轮换令牌后每个客户端都需要新值.
+- 配对超时: 新客户端的首次调用会等待约一分钟, 直到手机上点击允许. 解锁手机, 接受对话框或通知动作, 然后重复调用. 拒绝会进入短暂冷却, 之后下一次调用会再次询问.
+- HOST_UNAVAILABLE: AutoJs6 未运行或插件会话已关闭. 打开 AutoJs6, 保持抽屉开关开启, 并在设置页查看连接状态.
+- 无障碍未启用: `ui_*` 工具与截屏需要 AutoJs6 无障碍服务. 调用 `device_ensure_accessibility`, 或在系统无障碍设置中启用该服务.
+- 端口占用: 抽屉会报告 `port_in_use`. 在设置页修改端口, 并用 adb 转发新端口.
+- 局域网不可达: 开启局域网访问, 使用设置页列出的地址, 让 PC 与手机处于同一网络且无访客隔离, 并在 PC 防火墙放行该端口. 手机 Wi-Fi 省电会使每次调用增加几百毫秒.
+
+******
+
 ### 权限与安全
 
 ******
@@ -194,6 +250,7 @@ _2026/09/15_
 - `修复` IDE rebuild 不再为 JVM 单元测试查找 APK. APK 校验任务会自动组装所需产物, 可直接从 clean 后执行.
 - `修复` 插件中心亮暗模式下图标比例不一致及自适应图标留白不足的问题; 夜间同样使用自适应图标, 调整图层尺寸以保留 ic_launcher_round.png 的完整图形和留白, 仅切换背景色
 - `修复` 设置页的键盘 Tab 导航会跳过工具栏返回按钮; 现在 Tab 循环覆盖返回按钮和全部控件 (含 Android 7). 设备测试检查读屏标签与键盘操作.
+- `修复` script_run 与 script_run_file 的 arguments 映射以 JSON Schema 数组声明值类型, 部分 MCP 客户端会拒绝或弱化; 现改为单类型 anyOf 分支. README 新增 "接入" 与 "常见问题" 章节及实测客户端矩阵.
 - `优化` 构建阶段阻止意外引入原生依赖, 并输出 JSON 校验报告
 - `依赖` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 与 Ktor 3.5.1 CIO 引擎
 - `依赖` 附加 Ktor 3.5.1 `ktor-server-test-host` 用于 JVM 传输测试 (仅测试范围)
