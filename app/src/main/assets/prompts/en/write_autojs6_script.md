@@ -1,6 +1,6 @@
 Write a runnable AutoJs6 JavaScript script for the supplied goal.
 
-Read autojs6://samples/ first, follow the directory URIs, and read one relevant built-in sample with resources/read. Samples belong to the installed host and can differ between builds. Inspect the resource's truncated flag; do not execute or copy an incomplete script. Use autojs6://workspace/<encoded-relative-path> for existing workspace files.
+Read autojs6://samples/ first, follow the directory URIs, and read one relevant built-in sample with resources/read. Samples belong to the installed host and can differ between builds. Inspect the resource's truncated flag; do not execute or copy an incomplete script. Use autojs6://workspace/<encoded-relative-path> for existing workspace files. If autojs6://docs/ is listed, the host has the AutoJs6 Offline Docs plugin: read the page of the module you rely on, for example autojs6://docs/app.html, to confirm API names and options. Pages are large, so read only the ones you need; when autojs6://docs/ is absent, rely on the samples and the conventions below.
 
 AutoJs6 conventions:
 - Use the host's JavaScript APIs, including toast("message") and console.log("message"). Node.js require packages, browser document, and desktop filesystem paths are not implied by an AutoJs6 script.

@@ -7,6 +7,9 @@
   "$data": {
     "v1.0.1": {
       "released_date": "2026/09/15",
+      "feature": [
+        "可選的離線文件資源: 安裝 AutoJs6 離線文件外掛且宿主透過 app.listDocs / app.readDoc 轉讀時, resources/list 增加 autojs6://docs/ (帶子 URI 的索引) 與每個文件頁面對應的 autojs6://docs/{+path} 資源, resources/templates/list 增加 docs 範本; 未安裝外掛或宿主不含這兩個方法時不列出任何條目, 並由 _meta.docsCatalogStatus 說明原因"
+      ],
       "improvement": [
         "將 compileSdk 提升到 37 (Android 17), targetSdk 保持 36, 待依賴目標版本的行為驗證後再提升",
         "MCP 一致性 (P6): 在兩台裝置上以官方 @modelcontextprotocol/conformance 套件 0.1.16 測試有狀態的 /mcp 路徑. 32 個伺服器場景中 9 個通過 (initialize, ping, tools/list, 文字與錯誤工具結果, resources/list, prompts/list, 並行 SSE 串流, DNS rebinding 保護); 18 個呼叫套件自帶的參考夾具 (test_* 工具, 提示與 test:// 資源, 本伺服器以未知工具結果, -32602 或 isError 回應), 5 個依賴本伺服器未宣告的能力 (logging, completions, 資源訂閱). 回環 Origin 標頭現在在任何模式下都被接受 (套件如此要求); CORS 標頭與預檢回應仍僅限開發者模式. 2026-07-28 無狀態模型沒有路由 (Roadmap D9). 詳見 docs/dev/p6-conformance.md.",

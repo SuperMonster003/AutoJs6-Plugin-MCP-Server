@@ -26,7 +26,7 @@ class ResourceCatalog(
                 }
                 session.setRequestHandler<ListResourceTemplatesRequest>(Method.Defined.ResourcesTemplatesList) { request, _ ->
                     if (request.params?.cursor != null) invalidCursor()
-                    templates()
+                    templates(clientNameOf(session.sessionId))
                 }
                 session.setRequestHandler<ReadResourceRequest>(Method.Defined.ResourcesRead) { request, _ ->
                     read(request.params.uri, clientNameOf(session.sessionId))
@@ -35,26 +35,32 @@ class ResourceCatalog(
         }
     }
 
-    fun templates(): ListResourceTemplatesResult = ListResourceTemplatesResult(
-        resourceTemplates = if (permissions().isEnabled(ToolGroup.FILES)) listOf(
-            ResourceTemplate(ResourceUri.WORKSPACE_TEMPLATE, "workspace", "Read a workspace file. Encode each path segment; nested paths retain their slashes. Text and binary data are limited to 1 MiB."),
-            ResourceTemplate(ResourceUri.SAMPLES_TEMPLATE, "samples", "Read a built-in host sample. A trailing slash lists a sample directory. Read autojs6://samples/ to discover paths."),
-        ) else emptyList(),
-        meta = CACHE_META,
-    )
+    /** The docs template is optional (D20): it appears only while the host reports an eligible Offline Docs plugin. */
+    suspend fun templates(clientName: String? = null): ListResourceTemplatesResult = guarded {
+        val templates = if (permissions().isEnabled(ToolGroup.FILES)) buildList {
+            add(ResourceTemplate(ResourceUri.WORKSPACE_TEMPLATE, "workspace", "Read a workspace file. Encode each path segment; nested paths retain their slashes. Text and binary data are limited to 1 MiB."))
+            add(ResourceTemplate(ResourceUri.SAMPLES_TEMPLATE, "samples", "Read a built-in host sample. A trailing slash lists a sample directory. Read autojs6://samples/ to discover paths."))
+            if (docsAvailable(callerFor(clientName))) {
+                add(ResourceTemplate(ResourceUri.DOCS_TEMPLATE, "docs", "Read a page of the offline AutoJs6 documentation provided by the installed Offline Docs plugin. A trailing slash lists a directory. Read autojs6://docs/ to discover pages."))
+            }
+        } else emptyList()
+        ListResourceTemplatesResult(resourceTemplates = templates, meta = CACHE_META)
+    }
 
     suspend fun list(cursor: String? = null, clientName: String? = null): ListResourcesResult = guarded {
         if (cursor != null && !CURSOR.matches(cursor)) invalidCursor()
         val policy = permissions()
         var sampleStatus = "disabled"
         var truncated = false
+        var docsStatus = "disabled"
+        var docsTruncated = false
         val resources = buildList {
             if (policy.isEnabled(ToolGroup.DEVICE)) add(Resource(ResourceUri.DEVICE, "device_info", "Current host device information", "application/json"))
             if (policy.isEnabled(ToolGroup.SCRIPT)) add(Resource(ResourceUri.CONSOLE, "console_tail", "The latest 100 host console entries", "application/json"))
             if (policy.isEnabled(ToolGroup.FILES)) {
                 add(Resource(ResourceUri.SAMPLES, "samples", "Index of the host's built-in samples", "application/json"))
                 try {
-                    val index = sampleDirectory(".", true, callerFor(clientName))
+                    val index = hostDirectory("listSamples", ".", true, callerFor(clientName))
                     sampleStatus = if (index["available"]?.jsonPrimitive?.booleanOrNull == true) "available" else "unavailable"
                     truncated = index["truncated"]?.jsonPrimitive?.booleanOrNull == true
                     index["entries"]?.jsonArray.orEmpty().forEach { entry ->
@@ -66,6 +72,28 @@ class ResourceCatalog(
                     }
                 } catch (e: ToolFailureException) {
                     sampleStatus = e.failure.code
+                }
+                // Offline documentation is optional (D20): nothing is listed unless the host relays an eligible plugin.
+                try {
+                    val index = hostDirectory("listDocs", ".", true, callerFor(clientName))
+                    if (index["available"]?.jsonPrimitive?.booleanOrNull == true) {
+                        docsStatus = "available"
+                        docsTruncated = index["truncated"]?.jsonPrimitive?.booleanOrNull == true
+                        add(Resource(ResourceUri.DOCS, "docs", "Index of the offline AutoJs6 documentation (Offline Docs plugin)", "application/json"))
+                        index["entries"]?.jsonArray.orEmpty().forEach { entry ->
+                            val item = entry.jsonObject
+                            if (item["type"]?.jsonPrimitive?.content == "file") {
+                                val path = WorkspacePath.normalize(item["path"]!!.jsonPrimitive.content, false)
+                                val mime = representation(path).first
+                                // Pages only; stylesheets, scripts, images and fonts stay reachable through the index.
+                                if (mime == "text/html") add(Resource(ResourceUri.doc(path), path, "Offline AutoJs6 documentation page", mime))
+                            }
+                        }
+                    } else {
+                        docsStatus = index["status"]?.jsonPrimitive?.takeIf { it.isString }?.content ?: "unavailable"
+                    }
+                } catch (e: ToolFailureException) {
+                    docsStatus = e.failure.code
                 }
             }
         }
@@ -83,13 +111,15 @@ class ResourceCatalog(
                 CACHE_META.forEach { (key, value) -> put(key, value) }
                 put("sampleCatalogStatus", sampleStatus)
                 put("sampleCatalogTruncated", truncated)
+                put("docsCatalogStatus", docsStatus)
+                put("docsCatalogTruncated", docsTruncated)
             })
     }
 
     suspend fun read(uri: String, clientName: String? = null): ReadResourceResult = guarded {
         val resource = ResourceUri.parse(uri)
         val group = when (resource.kind) {
-            ResourceUri.Kind.WORKSPACE, ResourceUri.Kind.SAMPLES -> ToolGroup.FILES
+            ResourceUri.Kind.WORKSPACE, ResourceUri.Kind.SAMPLES, ResourceUri.Kind.DOCS -> ToolGroup.FILES
             ResourceUri.Kind.DEVICE -> ToolGroup.DEVICE
             ResourceUri.Kind.CONSOLE -> ToolGroup.SCRIPT
         }
@@ -101,15 +131,8 @@ class ResourceCatalog(
             ResourceUri.Kind.CONSOLE -> TextResourceContents(
                 ScriptTools.shapeTail(caller.callOrThrow("console", "tail", ScriptTools.tailArgs(buildJsonObject { put("lines", 100) }),
                     TIMEOUT_MS, listOf("console"))).toString(), uri, "application/json")
-            ResourceUri.Kind.SAMPLES if resource.directory -> {
-                val index = sampleDirectory(resource.path, false, caller)
-                val entries = index["entries"]?.jsonArray.orEmpty().map { entry ->
-                    val item = entry.jsonObject
-                    val path = WorkspacePath.normalize(item["path"]!!.jsonPrimitive.content, false)
-                    JsonObject(item + ("uri" to JsonPrimitive(ResourceUri.sample(path, item["type"]?.jsonPrimitive?.content == "directory"))))
-                }
-                TextResourceContents(JsonObject(index.filterKeys { it != "schema" && it != "root" } + ("entries" to JsonArray(entries))).toString(), uri, "application/json")
-            }
+            ResourceUri.Kind.SAMPLES if resource.directory -> directoryContents("listSamples", resource, uri, caller, ResourceUri::sample)
+            ResourceUri.Kind.DOCS if resource.directory -> directoryContents("listDocs", resource, uri, caller, ResourceUri::doc)
             else -> {
                 val (mime, encoding) = representation(resource.path)
                 val result = if (resource.kind == ResourceUri.Kind.WORKSPACE) {
@@ -117,7 +140,7 @@ class ResourceCatalog(
                         put("path", resource.path); put("encoding", encoding); put("maxBytes", MAX_BYTES)
                     })
                     FileTools().planFor(ToolCatalog.filesRead, args)!!.run(caller).structured
-                } else caller.callOrThrow("app", "readSample", buildJsonArray {
+                } else caller.callOrThrow("app", if (resource.kind == ResourceUri.Kind.DOCS) "readDoc" else "readSample", buildJsonArray {
                     add(resource.path); add(buildJsonObject { put("encoding", encoding); put("maxBytes", MAX_BYTES) })
                 }, TIMEOUT_MS, listOf("app.query")).jsonObject
                 val content = result["content"]?.jsonPrimitive?.takeIf { it.isString }?.content
@@ -131,10 +154,29 @@ class ResourceCatalog(
         ReadResourceResult(listOf(contents), CACHE_META)
     }
 
-    private suspend fun sampleDirectory(path: String, recursive: Boolean, caller: BridgeCaller): JsonObject =
-        caller.callOrThrow("app", "listSamples", buildJsonArray {
-            add(path); add(buildJsonObject { put("recursive", recursive); put("maxEntries", MAX_SAMPLE_ENTRIES) })
+    /** A host directory index with the child URIs of [uriOf] and without the host's schema and asset root. */
+    private suspend fun directoryContents(
+        method: String, resource: ResourceUri, uri: String, caller: BridgeCaller, uriOf: (String, Boolean) -> String,
+    ): TextResourceContents {
+        val index = hostDirectory(method, resource.path, false, caller)
+        val entries = index["entries"]?.jsonArray.orEmpty().map { entry ->
+            val item = entry.jsonObject
+            val path = WorkspacePath.normalize(item["path"]!!.jsonPrimitive.content, false)
+            JsonObject(item + ("uri" to JsonPrimitive(uriOf(path, item["type"]?.jsonPrimitive?.content == "directory"))))
+        }
+        return TextResourceContents(JsonObject(index.filterKeys { it != "schema" && it != "root" } + ("entries" to JsonArray(entries))).toString(), uri, "application/json")
+    }
+
+    private suspend fun hostDirectory(method: String, path: String, recursive: Boolean, caller: BridgeCaller, maxEntries: Int = MAX_SAMPLE_ENTRIES): JsonObject =
+        caller.callOrThrow("app", method, buildJsonArray {
+            add(path); add(buildJsonObject { put("recursive", recursive); put("maxEntries", maxEntries) })
         }, TIMEOUT_MS, listOf("app.query")).jsonObject
+
+    private suspend fun docsAvailable(caller: BridgeCaller): Boolean = try {
+        hostDirectory("listDocs", ".", false, caller, maxEntries = 1)["available"]?.jsonPrimitive?.booleanOrNull == true
+    } catch (_: ToolFailureException) {
+        false
+    }
 
     private fun requireEnabled(group: ToolGroup) {
         if (!permissions().isEnabled(group)) throw ToolFailureException(ToolFailure.toolDisabled("resource", group.id))

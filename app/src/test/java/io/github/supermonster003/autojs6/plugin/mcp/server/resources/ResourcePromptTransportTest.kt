@@ -65,7 +65,8 @@ class ResourcePromptTransportTest {
         val held = rpc("resources/read", """{"uri":"autojs6://workspace/nested/test.js"}""")["error"]!!.jsonObject
         assertEquals(McpErrors.PAIRING_REQUIRED, held["code"]!!.jsonPrimitive.int)
         assertEquals(McpErrors.PAIRING_REQUIRED, rpc("prompts/get", """{"name":"write_autojs6_script"}""")["error"]!!.jsonObject["code"]!!.jsonPrimitive.int)
-        assertEquals(listOf("app.listSamples"), methods)
+        // resources/list scans samples and docs; resources/templates/list probes the optional docs provider once.
+        assertEquals(listOf("app.listSamples", "app.listDocs", "app.listDocs"), methods)
         assertTrue(gate.approve(held["data"]!!.jsonObject["fingerprint"]!!.jsonPrimitive.content))
         val text = rpc("resources/read", """{"uri":"autojs6://workspace/nested/test.js"}""")["result"]!!.jsonObject["contents"]!!.jsonArray.single().jsonObject
         assertEquals("console.log(1);", text["text"]!!.jsonPrimitive.content)
@@ -74,7 +75,7 @@ class ResourcePromptTransportTest {
         assertTrue(prompt["messages"]!!.jsonArray.first().jsonObject["content"]!!.jsonObject["text"]!!.jsonPrimitive.content.contains("prompts/zh/"))
         assertEquals(-32602, rpc("prompts/get", """{"name":"automate_task"}""")["error"]!!.jsonObject["code"]!!.jsonPrimitive.int)
         assertEquals(-32602, rpc("resources/read", """{"uri":"autojs6://workspace/%2e%2e/a"}""")["error"]!!.jsonObject["code"]!!.jsonPrimitive.int)
-        assertEquals(-32002, rpc("resources/read", """{"uri":"autojs6://docs/a"}""")["error"]!!.jsonObject["code"]!!.jsonPrimitive.int)
+        assertEquals(-32002, rpc("resources/read", """{"uri":"autojs6://manual/a"}""")["error"]!!.jsonObject["code"]!!.jsonPrimitive.int)
         policy = policy.with(ToolGroup.FILES, false)
         assertTrue(rpc("resources/templates/list")["result"]!!.jsonObject["resourceTemplates"]!!.jsonArray.isEmpty())
         val disabled = rpc("resources/read", """{"uri":"autojs6://workspace/a.js"}""")["error"]!!.jsonObject

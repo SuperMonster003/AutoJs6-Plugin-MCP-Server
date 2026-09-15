@@ -67,7 +67,7 @@ P4 開發預覽: 37 個工具, 預設啟用 33 個, 提供 AutoJs6 抽屜開關�
 - 無障礙介面: 以精簡文字格式匯出節點樹, 用 AutoJs6 選擇器語法尋找節點, 點擊, 長按, 捲動, 設定文字, 以及觸發返回和主畫面等全域按鍵.
 - 螢幕擷取群組 (P3.3): screen_capture 傳回 MCP 圖片, 支援裁切, scale 或 maxWidth, JPEG / PNG / WebP 與品質參數. 預設 JPEG 品質 70, 最長邊 1280 px. base64 超過 4 MiB 時降低品質或尺寸重試, 中繼資料說明調整情況. screen_state 傳回亮屏狀態, 尺寸, 方向和密度. 工具目錄現有 37 項. MediaProjection 備援需要 2026-09-13 或之後建置的 AutoJs6 主程式及手機端授權, 主程式工作階段重用該授權.
 - 工作目錄工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用從 1 開始的行列號的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二進位讀取使用 base64, 原始資料最多 1 MiB. 寫入亦受宿主請求預算約束 (通常為包含 JSON 跳脫的 96 KiB). 檔案刪除和 Shell 預設關閉; root 另需 allowShellRoot 開關與宿主 shell.root 授權. 這些能力需要相符的 P3.4 宿主建置.
-- MCP 資源 (P3.5) 提供唯讀工作目錄檔案, 可瀏覽的宿主範例, 裝置資訊和最近主控台輸出, 遵守配對與分組開關. 文字和二進位讀取報告截斷狀態. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指引, 其他手機語言回退英語.
+- MCP 資源 (P3.5) 提供唯讀工作目錄檔案, 可瀏覽的宿主範例, 安裝 AutoJs6 離線文件外掛後的離線文件, 裝置資訊和最近主控台輸出, 遵守配對與分組開關. 文字和二進位讀取報告截斷狀態. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指引, 其他手機語言回退英語.
 - 連線方式: 透過 `adb forward` 的 USB 連線, 須明確開啟的區域網路連線, 電腦端 stdio 橋接程式, 以及可選的公網通道與 OAuth 2.1.
 - 安全: 可輪換的 Bearer 權杖, 手機端首次配對確認, 依分組的工具開關; 伺服器預設只監聽回送介面.
 
@@ -230,6 +230,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 _2026/09/15_
 
+- `新增` 可選的離線文件資源: 安裝 AutoJs6 離線文件外掛且宿主透過 app.listDocs / app.readDoc 轉讀時, resources/list 增加 autojs6://docs/ (帶子 URI 的索引) 與每個文件頁面對應的 autojs6://docs/{+path} 資源, resources/templates/list 增加 docs 範本; 未安裝外掛或宿主不含這兩個方法時不列出任何條目, 並由 _meta.docsCatalogStatus 說明原因
 - `優化` 將 compileSdk 提升到 37 (Android 17), targetSdk 保持 36, 待依賴目標版本的行為驗證後再提升
 - `優化` MCP 一致性 (P6): 在兩台裝置上以官方 @modelcontextprotocol/conformance 套件 0.1.16 測試有狀態的 /mcp 路徑. 32 個伺服器場景中 9 個通過 (initialize, ping, tools/list, 文字與錯誤工具結果, resources/list, prompts/list, 並行 SSE 串流, DNS rebinding 保護); 18 個呼叫套件自帶的參考夾具 (test_* 工具, 提示與 test:// 資源, 本伺服器以未知工具結果, -32602 或 isError 回應), 5 個依賴本伺服器未宣告的能力 (logging, completions, 資源訂閱). 回環 Origin 標頭現在在任何模式下都被接受 (套件如此要求); CORS 標頭與預檢回應仍僅限開發者模式. 2026-07-28 無狀態模型沒有路由 (Roadmap D9). 詳見 docs/dev/p6-conformance.md.
 - `優化` 安全審計 (P6): 七項清單 (權杖儲存, 日誌脫敏, 匯出元件, 明文範圍, 區域網路預設關閉, 配對撤銷, 工具分組預設關閉) 已在程式碼與兩台裝置上逐項核對, 記錄於 docs/dev/p6-security-audit.md, README 安全章節改為說明這些邊界. 明文 HTTP 由網路安全設定限定為回送位址, 取代應用程式層級的 usesCleartextTraffic 旗標; 外掛不發起用戶端連線, 監聽器也不需要該旗標.
