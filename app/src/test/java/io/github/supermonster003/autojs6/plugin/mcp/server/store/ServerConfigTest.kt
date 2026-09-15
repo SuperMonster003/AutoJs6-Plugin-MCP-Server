@@ -16,6 +16,7 @@ class ServerConfigTest {
         assertEquals("127.0.0.1", config.bindAddress)
         assertFalse(config.developerMode)
         assertTrue(config.extraAllowedHosts.isEmpty())
+        assertTrue(config.lanReminder)
         assertTrue(config.problems().isEmpty())
     }
 
@@ -26,6 +27,7 @@ class ServerConfigTest {
             bindScope = BindScope.LAN,
             developerMode = true,
             extraAllowedHosts = listOf("phone.local", "[fe80::1]"),
+            lanReminder = false,
         )
         assertEquals("0.0.0.0", config.bindAddress)
         assertEquals(config, ServerConfig.fromMap(config.toMap()))
@@ -35,9 +37,20 @@ class ServerConfigTest {
                 "bind_scope" to "lan",
                 "developer_mode" to "true",
                 "extra_allowed_hosts" to "phone.local,[fe80::1]",
+                "lan_reminder" to "false",
             ),
             config.toMap(),
         )
+    }
+
+    @Test
+    fun theReminderSwitchDoesNotChangeTheListener() {
+        val lan = ServerConfig(bindScope = BindScope.LAN)
+        assertTrue(lan.sameListener(lan.copy(lanReminder = false)))
+        assertFalse(lan.sameListener(lan.copy(port = 18080)))
+        assertFalse(lan.sameListener(lan.copy(bindScope = BindScope.LOOPBACK)))
+        assertFalse(lan.sameListener(lan.copy(developerMode = true)))
+        assertFalse(lan.sameListener(lan.copy(extraAllowedHosts = listOf("phone.local"))))
     }
 
     @Test
@@ -48,12 +61,14 @@ class ServerConfigTest {
                 ServerConfig.KEY_BIND_SCOPE to "wan",
                 ServerConfig.KEY_DEVELOPER_MODE to "maybe",
                 ServerConfig.KEY_EXTRA_ALLOWED_HOSTS to "bad host, ,GOOD.example:9637,good.example",
+                ServerConfig.KEY_LAN_REMINDER to "sometimes",
             ),
         )
         assertEquals(McpServerPlugin.DEFAULT_PORT, config.port)
         assertEquals(BindScope.LOOPBACK, config.bindScope)
         assertFalse(config.developerMode)
         assertEquals(listOf("good.example"), config.extraAllowedHosts)
+        assertTrue(config.lanReminder)
         assertEquals(ServerConfig(), ServerConfig.fromMap(emptyMap()))
         assertEquals(ServerConfig(), ServerConfig.fromMap(ServerConfig.KEYS.associateWith { null }))
     }

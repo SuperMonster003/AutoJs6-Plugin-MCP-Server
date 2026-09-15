@@ -26,16 +26,22 @@ enum class BindScope(val id: String, val bindAddress: String) {
  * [extraAllowedHosts] are additional `Host` header names accepted in LAN mode, such as an mDNS
  * name; the current IPv4 addresses are added at runtime. [developerMode] lets the MCP Inspector's
  * browser page (a loopback origin) reach the endpoint through CORS; it is off by default.
+ * [lanReminder] keeps the daily "still listening on the local network" notification (roadmap
+ * P5.1); it only matters in LAN scope and never affects the listener itself.
  */
 data class ServerConfig(
     val port: Int = McpServerPlugin.DEFAULT_PORT,
     val bindScope: BindScope = BindScope.LOOPBACK,
     val developerMode: Boolean = false,
     val extraAllowedHosts: List<String> = emptyList(),
+    val lanReminder: Boolean = true,
 ) {
 
     val bindAddress: String
         get() = bindScope.bindAddress
+
+    /** True when [other] would run the same listener: every field except the reminder switch matches. */
+    fun sameListener(other: ServerConfig): Boolean = copy(lanReminder = other.lanReminder) == other
 
     /** Reasons this configuration cannot be applied; empty when it is usable. */
     fun problems(): List<String> = buildList {
@@ -63,6 +69,7 @@ data class ServerConfig(
         KEY_BIND_SCOPE to bindScope.id,
         KEY_DEVELOPER_MODE to developerMode.toString(),
         KEY_EXTRA_ALLOWED_HOSTS to extraAllowedHosts.joinToString(","),
+        KEY_LAN_REMINDER to lanReminder.toString(),
     )
 
     companion object {
@@ -75,8 +82,9 @@ data class ServerConfig(
         const val KEY_BIND_SCOPE = "bind_scope"
         const val KEY_DEVELOPER_MODE = "developer_mode"
         const val KEY_EXTRA_ALLOWED_HOSTS = "extra_allowed_hosts"
+        const val KEY_LAN_REMINDER = "lan_reminder"
 
-        val KEYS: List<String> = listOf(KEY_PORT, KEY_BIND_SCOPE, KEY_DEVELOPER_MODE, KEY_EXTRA_ALLOWED_HOSTS)
+        val KEYS: List<String> = listOf(KEY_PORT, KEY_BIND_SCOPE, KEY_DEVELOPER_MODE, KEY_EXTRA_ALLOWED_HOSTS, KEY_LAN_REMINDER)
 
         fun isValidPort(port: Int): Boolean = port in MIN_PORT..MAX_PORT
 
@@ -100,7 +108,8 @@ data class ServerConfig(
                 .mapNotNull { normalizeHost(it) }
                 .distinct()
                 .take(MAX_EXTRA_ALLOWED_HOSTS)
-            return ServerConfig(port, bindScope, developerMode, extraAllowedHosts)
+            val lanReminder = values[KEY_LAN_REMINDER]?.trim()?.lowercase()?.toBooleanStrictOrNull() ?: defaults.lanReminder
+            return ServerConfig(port, bindScope, developerMode, extraAllowedHosts, lanReminder)
         }
     }
 }

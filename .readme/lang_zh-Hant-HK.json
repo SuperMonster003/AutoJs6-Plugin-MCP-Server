@@ -33,6 +33,10 @@
   "h3_quick_start": "用戶端設定",
   "p_quick_start_intro": "Claude Code 只需一條命令即可註冊伺服器; 其他用戶端在各自的 MCP 設定中使用相同的 URL 與請求標頭",
   "p_quick_start_note": "在 AutoJs6 抽屜中開啟 MCP 伺服器. 長按項目標題或點選外掛程式中心的設定入口, 進入設定頁並複製電腦用戶端所需設定. 首次連線時在手機上確認配對要求. 使用完畢後可從抽屜, 設定頁或通知中停止服務.",
+  "h3_connection_paths": "連線路徑",
+  "p_connection_usb": "USB: `adb forward tcp:9637 tcp:9637` 將手機連接埠對應到 PC; 多部裝置時加上 `-s <serial>` (透過 `adb devices` 查看), 模擬器同樣適用. 任一側連接埠被佔用時, 在設定頁修改連接埠並轉發新連接埠. 連線卡片提供可直接複製的轉發命令.",
+  "p_connection_lan": "區域網絡: 在設定頁開啟 \"允許區域網絡連線\". 設定頁隨後列出手機目前地址 (隨 Wi-Fi 變化重新整理) 並提示客戶端需處於同一網絡; 訪客網絡, AP 隔離和 PC 防火牆是常見阻礙. 來自區域網絡的配對要求會被顯著標註; 伺服器持續可從網絡存取期間每日通知提醒, 提醒可關閉.",
+  "p_connection_note": "兩條路徑使用相同的權杖和相同的手機側配對. 面向不支援 HTTP 的客戶端的 stdio 橋接程式另行規劃.",
   "h3_security": "權限與安全",
   "p_security_intro": "外掛遵循明確的邊界:",
   "security_points": [

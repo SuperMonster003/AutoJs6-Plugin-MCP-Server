@@ -59,10 +59,14 @@ class LanAddressWatcher(context: Context, private val onChanged: () -> Unit) {
 
     companion object {
 
-        /** Non-loopback, non-link-local IPv4 addresses of the interfaces that are up. */
+        /**
+         * Non-loopback, non-link-local IPv4 addresses of the local network interfaces that are up.
+         * Point-to-point links (VPN tunnels) and interfaces without multicast (cellular data) are
+         * not local networks: their addresses are neither listed nor added to the Host allow list.
+         */
         fun currentAddresses(): Set<String> = runCatching {
             NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
-                .filter { runCatching { it.isUp && !it.isLoopback }.getOrDefault(false) }
+                .filter { runCatching { it.isUp && !it.isLoopback && !it.isPointToPoint && it.supportsMulticast() }.getOrDefault(false) }
                 .flatMap { it.inetAddresses.toList() }
                 .filterIsInstance<Inet4Address>()
                 .filter { !it.isLoopbackAddress && !it.isLinkLocalAddress && !it.isAnyLocalAddress }

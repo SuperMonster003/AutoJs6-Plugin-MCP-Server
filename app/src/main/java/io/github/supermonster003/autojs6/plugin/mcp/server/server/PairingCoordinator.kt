@@ -121,11 +121,13 @@ class PairingCoordinator(context: Context, private val tokenTail: () -> String) 
             @Suppress("DEPRECATION")
             Notification.Builder(context).setPriority(Notification.PRIORITY_HIGH)
         }
+        val lan = client.addressClass == AddressClass.LAN
+        val text = context.getString(R.string.pairing_notification_text, client.name, addressText, tail)
         val notification = builder
             .setSmallIcon(R.drawable.ic_stat_mcp_server)
-            .setContentTitle(context.getString(R.string.pairing_notification_title))
-            .setContentText(context.getString(R.string.pairing_notification_text, client.name, addressText, tail))
-            .setStyle(Notification.BigTextStyle().bigText(context.getString(R.string.pairing_notification_text, client.name, addressText, tail)))
+            .setContentTitle(context.getString(if (lan) R.string.pairing_notification_title_lan else R.string.pairing_notification_title))
+            .setContentText(text)
+            .setStyle(Notification.BigTextStyle().bigText(if (lan) context.getString(R.string.pairing_lan_warning) + "\n" + text else text))
             .setCategory(Notification.CATEGORY_STATUS)
             .setAutoCancel(true)
             .setContentIntent(
