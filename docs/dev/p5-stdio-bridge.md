@@ -81,9 +81,11 @@ The release candidate was verified again with Node.js 24.13.0 and npm 11.6.2:
 - Installing the actual tarball in an isolated prefix succeeded; its installed
   command printed `0.1.0` for `--version` and the expected `--help` output.
 - `npm publish` with `--dry-run`, `--access public` and `--tag latest` passed.
-  The real publish attempt returned `ENEEDAUTH`; the environment has no npm
-  login. Web login was requested but was not completed; the waiting login
-  process was closed. **npm 0.1.0 has not been published.**
+  The first real publish attempt returned `ENEEDAUTH`. After the maintainer
+  logged in, `npm whoami` succeeded, but publishing the same verified tarball
+  returned `E403`: npm requires two-factor authentication for publishing, and
+  the account had not enabled it. No package was uploaded.
+  **npm 0.1.0 has not been published.**
 
 Prepared artifact: `build/autojs6-mcp-bridge-0.1.0.tgz` in the bridge
 repository (git-ignored). Its hashes are:
@@ -93,8 +95,11 @@ SHA-1: d7545277949e3e03dde7ff202f73f1006b79fcb7
 Integrity: sha512-R9Ysw0nu6siQsh0oYf7m5E+nQddGRvBhvIPHoPKM57HP52DnbjW5zb3SpwZkF4QYwKfgEu7g3bp/b9gEK+oSRQ==
 ```
 
-After the maintainer logs into npm on this machine, publish this verified
-tarball from the bridge repository:
+The maintainer must first enable 2FA through the npm account settings and
+complete any subsequent browser authentication challenge. This is a registry
+requirement, documented in
+[Configuring two-factor authentication](https://docs.npmjs.com/configuring-two-factor-authentication/).
+Then publish this verified tarball from the bridge repository:
 
 ```shell
 npm publish ./build/autojs6-mcp-bridge-0.1.0.tgz --access public --tag latest --registry=https://registry.npmjs.org/
@@ -164,7 +169,7 @@ copied into the repository.
   the bridge README follows its documented stdio server format and was not
   exercised.
 - GitHub source and tag publication are complete, but npm publication still
-  requires the maintainer's login as recorded above. The plugin README already
+  requires the maintainer's 2FA setup as recorded above. The plugin README already
   names `npm install -g autojs6-mcp-bridge` as the install command.
 - Node.js 18, 20 and 22 were not run; the package declares `engines.node
   >=18` and uses only APIs available since Node 18 (`fetch` through the SDK,
