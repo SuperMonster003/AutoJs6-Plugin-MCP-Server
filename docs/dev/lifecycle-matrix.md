@@ -9,6 +9,29 @@ with `--user 0`), Xiaomi Pad 23046RP50C (API 35, `968e9f18`). Sony G8441 (API
 the whole session (two third-party accessibility services are enabled there),
 so the drawer could not be operated from adb.
 
+## Merge into host master
+
+On 2026-09-15, host `master` merged `mcp-p6-lifecycle` with merge commit
+`7c31269cc` (parents `541d15ffb` and `89347f22b`). The merge had no conflicts.
+All ten changelog sources retain the later master changes and append exactly
+the lifecycle fix from the branch; regenerating the host README and changelog
+files produced no further changes.
+
+Validation on the merged tree:
+
+- `:app:testAppDebugUnitTest` filtered to the MCP package and
+  `PluginCenterMcpServerRegistrationTest`: 21 tests, no failures or skips.
+- `:app:assembleAppDebug`: passed with AutoJs6 6.8.0 (5280).
+- `:app:connectedAppDebugAndroidTest` filtered to
+  `McpServerPluginRoundTripTest` on Sony XQ-DQ72 (API 33): 1 test, no failures
+  or skips; the real Binder session reached running with the host attached,
+  then stopped and closed cleanly.
+- `git diff --check`: passed. The branch is an ancestor of `master`, and the
+  host working tree is clean after the merge commit.
+
+The full lifecycle matrix below is the earlier branch validation; it was not
+repeated for this conflict-free merge.
+
 ## Method
 
 `build/tools/p6_lifecycle.py <serial>` (git-ignored evidence tooling, on top
