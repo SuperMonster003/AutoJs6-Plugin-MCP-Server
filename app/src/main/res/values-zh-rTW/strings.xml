@@ -16,6 +16,7 @@
     <string name="server_action_stop">停止</string>
     <string name="server_host_connected">AutoJs6 已連線</string>
     <string name="server_host_disconnected">等待 AutoJs6 連線</string>
+    <string name="server_idle_stopped">MCP Server 在 %1$d 分鐘無請求後已自動停止. 需要時在 AutoJs6 中重新開啟開關.</string>
     <string name="server_lan_channel_name">區域網路提醒</string>
     <string name="server_lan_reminder_text">%1$s 已在區域網路中可存取一天. 如不再需要, 請停止伺服器.</string>
     <string name="server_lan_reminder_title">MCP 伺服器仍在監聽區域網路</string>
@@ -28,6 +29,8 @@
     <string name="settings_about">關於</string>
     <string name="settings_about_text">MCP Server %1$s (%2$d)\n透過 AutoJs6 執行裝置自動化\nSuperMonster003\nMozilla Public License 2.0</string>
     <string name="settings_back">返回</string>
+    <string name="settings_background_restricted">此應用程式的電池用量已被限制, 熄屏後 Android 可能停止伺服器. 請在系統電池設定中為 MCP Server 選擇 \"無限制\".</string>
+    <string name="settings_battery_settings">電池設定</string>
     <string name="settings_choose_endpoint">選擇連線位址</string>
     <string name="settings_claude_hint">在已安裝 Claude Code 的電腦上, 使用 PowerShell 或 Bash 執行此指令.</string>
     <string name="settings_client_claude">Claude Code 指令</string>
@@ -58,6 +61,12 @@
     <string name="settings_group_shell">Shell 指令</string>
     <string name="settings_group_ui">無障礙介面操作</string>
     <string name="settings_host_unavailable">請安裝並啟用 AutoJs6 以啟動伺服器.</string>
+    <string name="settings_idle_stop">閒置時自動停止</string>
+    <string name="settings_idle_stop_choice">%1$d 分鐘</string>
+    <string name="settings_idle_stop_choice_off">關閉</string>
+    <string name="settings_idle_stop_hint">預設關閉. 用戶端在所選時間內沒有發出請求時停止伺服器; 僅保持連線而不發請求的用戶端不會阻止停止. 配對和權杖保留.</string>
+    <string name="settings_idle_stop_off">閒置時自動停止: 關閉</string>
+    <string name="settings_idle_stop_value">閒置時自動停止: %1$d 分鐘無請求後</string>
     <string name="settings_lan">允許區域網路連線</string>
     <string name="settings_lan_addresses">目前區域網路位址:\n%1$s</string>
     <string name="settings_lan_hint">用戶端需與手機處於同一網路; 訪客網路與 AP 隔離會阻止連線. 連線逾時時請檢查路由器和電腦防火牆.</string>
@@ -88,6 +97,7 @@
     <string name="settings_save_failed">無法儲存或讀取設定. 請重試.</string>
     <string name="settings_shell_root">允許 root Shell</string>
     <string name="settings_show_token">顯示 / 複製權杖</string>
+    <string name="settings_stopped_idle">已因閒置自動停止</string>
     <string name="settings_stopping">正在停止</string>
     <string name="settings_title">MCP Server 設定</string>
     <string name="settings_token">存取權杖</string>

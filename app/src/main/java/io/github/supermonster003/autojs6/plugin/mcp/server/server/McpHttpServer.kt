@@ -35,7 +35,8 @@ import kotlinx.coroutines.CoroutineExceptionHandler
  * has not confirmed are held back by the [PairingGate] (roadmap P2.2). The tools come from
  * [toolInstaller] (the catalog registry in production, `device_ping` alone by default) and calls
  * to switched-off tools are answered by [toolGate] before they reach the SDK (roadmap P2.3).
- * Each listener owns a [RateLimiter] with the default [RateLimits] (roadmap P6).
+ * Each listener owns a [RateLimiter] with the default [RateLimits] and an [IdleStopMonitor]
+ * that the runtime reads for the idle auto-stop option (roadmap P6).
  */
 class McpHttpServer(
     context: Context,
@@ -69,6 +70,11 @@ class McpHttpServer(
     /** The pairing state machine of the running listener; null while stopped. */
     @Volatile
     var pairingGate: PairingGate? = null
+        private set
+
+    /** The activity record of the running listener for the idle auto-stop; null while stopped. */
+    @Volatile
+    var idleMonitor: IdleStopMonitor? = null
         private set
 
     @Volatile
@@ -139,6 +145,7 @@ class McpHttpServer(
         val gate = PairingGate(pairedClients, listener = coordinator)
         coordinator.attach(gate)
         val limiter = RateLimiter()
+        val monitor = IdleStopMonitor { SystemClock.elapsedRealtime() }
         val token = tokenStore.current()
         Log.i(TAG, "Bearer token fingerprint ${BearerTokens.fingerprint(token)}, ${pairedClients.all().size} paired client(s)")
         val bindStartedAt = SystemClock.elapsedRealtime()
@@ -157,6 +164,7 @@ class McpHttpServer(
                     pairingGate = gate,
                     toolGate = toolGate,
                     rateLimiter = limiter,
+                    activity = monitor,
                 )
             }
         }
@@ -185,6 +193,7 @@ class McpHttpServer(
         pairingCoordinator = coordinator
         pairingGate = gate
         rateLimiter = limiter
+        idleMonitor = monitor
         PairingCoordinator.instance = coordinator
         startedAt = System.currentTimeMillis()
         endpoints = endpointUrls(config, watcher?.addresses.orEmpty())
@@ -208,6 +217,7 @@ class McpHttpServer(
         pairingCoordinator = null
         pairingGate = null
         rateLimiter = null
+        idleMonitor = null
         running.stop(STOP_GRACE_MILLIS, STOP_TIMEOUT_MILLIS)
         policy = GatePolicy.loopback()
         Log.i(TAG, "MCP endpoint stopped")

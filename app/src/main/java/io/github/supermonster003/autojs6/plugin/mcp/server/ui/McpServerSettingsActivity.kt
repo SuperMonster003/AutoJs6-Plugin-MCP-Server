@@ -31,9 +31,11 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.McpServerPlugin
 import io.github.supermonster003.autojs6.plugin.mcp.server.mcpServerPluginRuntimeInfo
 import io.github.supermonster003.autojs6.plugin.mcp.server.R
 import io.github.supermonster003.autojs6.plugin.mcp.server.host.SessionStatus
+import io.github.supermonster003.autojs6.plugin.mcp.server.server.BackgroundRestriction
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.LanAddressWatcher
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.McpHttpServer
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.PairedClient
+import io.github.supermonster003.autojs6.plugin.mcp.server.server.ServerStatus
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.*
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.*
 import org.autojs.plugin.mcp.server.api.McpServerContract as C
@@ -65,6 +67,9 @@ class McpServerSettingsActivity : SettingsPageActivity() {
     private lateinit var endpointText: TextView
     private lateinit var portButton: Button
     private lateinit var stopButton: Button
+    private lateinit var idleStopButton: Button
+    private lateinit var restrictedHint: TextView
+    private lateinit var batteryButton: Button
     private lateinit var tokenText: TextView
     private lateinit var lan: Switch
     private lateinit var lanAddressText: TextView
@@ -90,6 +95,10 @@ class McpServerSettingsActivity : SettingsPageActivity() {
             label(getString(R.string.settings_connection_hint), box).setTextColor(secondary)
             button(R.string.settings_copy_adb, box) { if (ready) copy(ClientConfigSnippet.adbForward(config.port), false) }
             stopButton = button(R.string.server_action_stop, box) { work { McpSettingsReceiver.send(this, McpSettingsReceiver.STOP) } }
+            idleStopButton = button(R.string.settings_idle_stop_off, box, ::chooseIdleStop)
+            label(getString(R.string.settings_idle_stop_hint), box).setTextColor(secondary)
+            restrictedHint = label(getString(R.string.settings_background_restricted), box).apply { visibility = View.GONE }
+            batteryButton = button(R.string.settings_battery_settings, box, ::batterySettings).apply { visibility = View.GONE }
             button(R.string.settings_open_host, box, ::openHost)
             button(R.string.settings_notifications, box, ::notifications)
         }
@@ -194,7 +203,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
                 val config = configStore.load()
                 // While the listener is down the LAN addresses come from the interfaces directly.
                 val lanUrls = if (config.bindScope == BindScope.LAN) McpHttpServer.endpointUrls(config, LanAddressWatcher.currentAddresses()).drop(1) else emptyList()
-                Snapshot(config, statuses.load(), groups.load(), clients.all(), tokens.tail(), lanUrls)
+                Snapshot(config, statuses.load(), groups.load(), clients.all(), tokens.tail(), lanUrls, BackgroundRestriction.isRestricted(this))
             }
             main.post {
                 reading = false
@@ -205,7 +214,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
 
     private data class Snapshot(
         val config: ServerConfig, val status: SessionStatus, val groups: ToolPermissions, val clients: List<PairedClient>, val tokenTail: String,
-        val lanUrls: List<String>,
+        val lanUrls: List<String>, val restricted: Boolean,
     )
 
     private fun render(snapshot: Snapshot) {
@@ -216,10 +225,14 @@ class McpServerSettingsActivity : SettingsPageActivity() {
                 C.STATE_STARTING -> R.string.server_state_starting
                 C.STATE_STOPPING -> R.string.settings_stopping
                 C.STATE_FAILED -> R.string.settings_failed
+                C.STATE_STOPPED -> if (status.lastErrorCode == ServerStatus.REASON_IDLE_TIMEOUT) R.string.settings_stopped_idle else R.string.server_state_stopped
                 else -> R.string.server_state_stopped
             })
             endpointText.text = status.endpoints.joinToString("\n").ifEmpty { "http://127.0.0.1:${config.port}/mcp" }
             stopButton.isEnabled = status.state in setOf(C.STATE_RUNNING, C.STATE_STARTING)
+            idleStopButton.text = if (config.idleStopMinutes > 0) getString(R.string.settings_idle_stop_value, config.idleStopMinutes) else getString(R.string.settings_idle_stop_off)
+            restrictedHint.visibility = if (snapshot.restricted) View.VISIBLE else View.GONE
+            batteryButton.visibility = restrictedHint.visibility
             portButton.text = getString(R.string.settings_port_value, config.port)
             val lanOn = config.bindScope == BindScope.LAN
             lan.isChecked = lanOn
@@ -260,6 +273,24 @@ class McpServerSettingsActivity : SettingsPageActivity() {
                 } }
                 popup.show()
             }
+    }
+
+    private fun chooseIdleStop() {
+        if (!ready) return
+        val labels = IDLE_STOP_CHOICES.map { minutes ->
+            if (minutes == 0) getString(R.string.settings_idle_stop_choice_off) else getString(R.string.settings_idle_stop_choice, minutes)
+        }.toTypedArray()
+        dialog = AlertDialog.Builder(this).setTitle(R.string.settings_idle_stop)
+            .setSingleChoiceItems(labels, IDLE_STOP_CHOICES.indexOf(config.idleStopMinutes)) { popup, which ->
+                saveConfig { it.copy(idleStopMinutes = IDLE_STOP_CHOICES[which]) }
+                popup.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null).show()
+    }
+
+    private fun batterySettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+        runCatching { startActivity(intent) }.onFailure { toast(R.string.settings_save_failed) }
     }
 
     private fun toggle(titleId: Int, parent: LinearLayout, change: (Boolean) -> Unit): Switch = Switch(this).apply {
@@ -355,6 +386,9 @@ class McpServerSettingsActivity : SettingsPageActivity() {
     private fun toast(id: Int) = Toast.makeText(this, id, Toast.LENGTH_SHORT).show()
 
     companion object {
+        /** Minutes offered by the idle auto-stop dialog; 0 is off (the default). */
+        internal val IDLE_STOP_CHOICES = listOf(0, 5, 15, 30, 60, 120)
+
         private fun groupTitle(group: ToolGroup): Int = when (group) {
             ToolGroup.SCRIPT -> R.string.settings_group_script
             ToolGroup.UI -> R.string.settings_group_ui

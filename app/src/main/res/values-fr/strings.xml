@@ -16,6 +16,7 @@
     <string name="server_action_stop">Arrêter</string>
     <string name="server_host_connected">AutoJs6 connecté</string>
     <string name="server_host_disconnected">En attente d\'AutoJs6</string>
+    <string name="server_idle_stopped">MCP Server s\'est arrêté après %1$d min sans requête. Réactivez l\'interrupteur dans AutoJs6 quand vous en aurez besoin.</string>
     <string name="server_lan_channel_name">Rappels réseau local</string>
     <string name="server_lan_reminder_text">%1$s est accessible depuis le réseau local depuis un jour. Arrêtez le serveur si vous n\'en avez plus besoin.</string>
     <string name="server_lan_reminder_title">MCP Server écoute toujours sur le réseau local</string>
@@ -28,6 +29,8 @@
     <string name="settings_about">À propos</string>
     <string name="settings_about_text">MCP Server %1$s (%2$d)\nAutomatisation de l\'appareil avec AutoJs6\nSuperMonster003\nMozilla Public License 2.0</string>
     <string name="settings_back">Retour</string>
+    <string name="settings_background_restricted">L\'utilisation de la batterie par cette application est limitée. Android peut arrêter le serveur écran éteint. Choisissez \"Sans restriction\" pour MCP Server dans les paramètres de batterie du système.</string>
+    <string name="settings_battery_settings">Paramètres de batterie</string>
     <string name="settings_choose_endpoint">Choisir une adresse de connexion</string>
     <string name="settings_claude_hint">Exécutez cette commande dans PowerShell ou Bash sur l\'ordinateur où Claude Code est installé.</string>
     <string name="settings_client_claude">Commande Claude Code</string>
@@ -58,6 +61,12 @@
     <string name="settings_group_shell">Commandes Shell</string>
     <string name="settings_group_ui">Interface d\'accessibilité</string>
     <string name="settings_host_unavailable">Installez et activez AutoJs6 pour démarrer le serveur.</string>
+    <string name="settings_idle_stop">Arrêt automatique en cas d\'inactivité</string>
+    <string name="settings_idle_stop_choice">%1$d minutes</string>
+    <string name="settings_idle_stop_choice_off">Désactivé</string>
+    <string name="settings_idle_stop_hint">Désactivé par défaut. Arrête le serveur après la durée choisie sans requête des clients ; un client connecté qui n\'envoie rien n\'empêche pas l\'arrêt. L\'appairage et le jeton sont conservés.</string>
+    <string name="settings_idle_stop_off">Arrêt automatique en cas d\'inactivité : désactivé</string>
+    <string name="settings_idle_stop_value">Arrêt automatique en cas d\'inactivité : après %1$d min sans requête</string>
     <string name="settings_lan">Autoriser les connexions du réseau local</string>
     <string name="settings_lan_addresses">Adresses actuelles du réseau local:\n%1$s</string>
     <string name="settings_lan_hint">Les clients doivent être sur le même réseau que le téléphone; les réseaux invités et l\'isolation du point d\'accès les bloquent. Si la connexion expire, vérifiez le routeur et le pare-feu de l\'ordinateur.</string>
@@ -88,6 +97,7 @@
     <string name="settings_save_failed">Impossible de lire ou enregistrer les paramètres. Réessayez.</string>
     <string name="settings_shell_root">Autoriser Shell avec root</string>
     <string name="settings_show_token">Afficher / copier le jeton</string>
+    <string name="settings_stopped_idle">Arrêté automatiquement pour inactivité</string>
     <string name="settings_stopping">Arrêt en cours</string>
     <string name="settings_title">Paramètres de MCP Server</string>
     <string name="settings_token">Jeton d\'accès</string>

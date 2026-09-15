@@ -49,6 +49,8 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * The notification shows the endpoint, whether AutoJs6 is attached, and the paired client count,
  * with a Stop action; when notifications are blocked a toast names the endpoint once instead.
+ * An idle auto-stop (roadmap P6) leaves one auto-cancelling notification behind that says why
+ * the endpoint is gone.
  * `adb shell dumpsys activity service <pkg>/.McpServerService` prints the status, the paired
  * clients, and the host session, and in developer mode also the bearer token: until the settings
  * page (P4.2) exists, the adb control plane is the only way to read it. Nothing printed there
@@ -165,6 +167,9 @@ class McpServerService : Service() {
         foreground = false
         disarmLanReminder()
         stopForeground(STOP_FOREGROUND_REMOVE)
+        // A refresh the stop sequence posted just before can still be queued in the system and
+        // would outlive the foreground removal as a plain notification (seen on MIUI); cancel it.
+        notifications().cancel(NOTIFICATION_ID)
         if (!stopSelfResult(lastStartId)) {
             // A newer start command is being handled; stay in the foreground for it.
             finishing = false
@@ -178,6 +183,12 @@ class McpServerService : Service() {
         mainHandler.post {
             if (!foreground) return@post
             val snapshot = runtime.statusSnapshot()
+            if (snapshot.state == ServerStatus.STATE_STOPPING || snapshot.state == ServerStatus.STATE_STOPPED) {
+                // The runtime finishes this service after a stop (or restarts the listener at once
+                // on a configuration change); a "stopped" rendering would only race the removal.
+                syncLanReminder(snapshot)
+                return@post
+            }
             notifications().notify(NOTIFICATION_ID, buildNotification(snapshot, starting = false))
             if (snapshot.state == ServerStatus.STATE_RUNNING && !toastShown && !notifications().areNotificationsEnabled()) {
                 toastShown = true
@@ -250,10 +261,24 @@ class McpServerService : Service() {
         foreground = true
     }
 
-    private fun buildNotification(snapshot: SessionStatus, starting: Boolean): Notification {
-        val manager = notifications()
-        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            manager.createNotificationChannel(
+    /** One auto-cancelling notification saying the listener stopped itself after [minutes] idle minutes; safe from any thread. */
+    fun notifyIdleStop(minutes: Int) {
+        val text = getString(R.string.server_idle_stopped, minutes)
+        notifications().notify(IDLE_STOP_NOTIFICATION_ID, serviceChannelBuilder()
+            .setSmallIcon(R.drawable.ic_stat_mcp_server)
+            .setContentIntent(settingsPendingIntent())
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(text)
+            .setStyle(Notification.BigTextStyle().bigText(text))
+            .setCategory(Notification.CATEGORY_STATUS)
+            .setAutoCancel(true)
+            .build())
+    }
+
+    /** A builder on the service channel (created on demand from API 26 on). */
+    private fun serviceChannelBuilder(): Notification.Builder =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notifications().createNotificationChannel(
                 NotificationChannel(CHANNEL_ID, getString(R.string.app_name), NotificationManager.IMPORTANCE_LOW),
             )
             Notification.Builder(this, CHANNEL_ID)
@@ -261,6 +286,9 @@ class McpServerService : Service() {
             @Suppress("DEPRECATION")
             Notification.Builder(this)
         }
+
+    private fun buildNotification(snapshot: SessionStatus, starting: Boolean): Notification {
+        val builder = serviceChannelBuilder()
         val text = when {
             snapshot.state == ServerStatus.STATE_RUNNING -> getString(R.string.server_listening, snapshot.endpoints.firstOrNull().orEmpty())
             snapshot.state == ServerStatus.STATE_FAILED -> getString(R.string.server_state_failed, "${snapshot.lastErrorCode}: ${snapshot.lastError}")
@@ -316,8 +344,11 @@ class McpServerService : Service() {
 
         private const val CHANNEL_ID = "mcp_server"
         private const val LAN_CHANNEL_ID = "mcp_server_lan"
-        private const val NOTIFICATION_ID = 0x4D43
+        internal const val NOTIFICATION_ID = 0x4D43
         private const val LAN_REMINDER_ID = 0x4D44
+
+        /** The idle auto-stop notice (roadmap P6); a separate id so the foreground notification's removal leaves it. */
+        internal const val IDLE_STOP_NOTIFICATION_ID = 0x4D45
         private const val TAG = "McpServerService"
 
         fun startIntent(context: Context, port: Int? = null, developerMode: Boolean? = null): Intent =

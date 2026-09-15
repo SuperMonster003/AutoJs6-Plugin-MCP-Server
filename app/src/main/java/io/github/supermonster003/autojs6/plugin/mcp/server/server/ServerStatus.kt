@@ -26,6 +26,12 @@ data class ServerStatus(
         const val STATE_STOPPING = "stopping"
         const val STATE_FAILED = "failed"
 
+        /**
+         * Plugin-only stop reason (not a `McpServerContract.REASON_*` code): the listener stopped
+         * itself after the configured idle minutes (roadmap P6). The host treats it as a plain stop.
+         */
+        const val REASON_IDLE_TIMEOUT = "idle_timeout"
+
         fun stopped(): ServerStatus = ServerStatus(STATE_STOPPED)
 
         fun starting(): ServerStatus = ServerStatus(STATE_STARTING)
