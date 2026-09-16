@@ -943,6 +943,17 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 真机: 两台既有开发版经插件中心从官方索引更新为公开版, 未用 adb install 替代安装流程. Sony API 33 已完成 Inspector 2.6.0 的 device_info / script_run, 令牌鉴权 / 配对 / 伪造 Host 拒绝, 杀宿主返回 HOST_UNAVAILABLE, 重开宿主恢复, 通知停止与抽屉开关归位. Xiaomi API 35 同组检查全部通过, 配对经通知允许动作确认; 实际通知停止使端口不可达且抽屉开关归位. 平板原 Wi-Fi 关闭且现有 VPN DNS 不可用, 下载临时经仅允许 GitHub 域名的本机 CONNECT 转发, HTTPS 仍端到端校验; 下载后代理与 adb reverse 已移除.
 - 未完成与下次起点: Claude Code 2.1.270 未取得可用登录配置, 已请求维护者提供既有配置入口, 未以自写客户端替代其模型调用证据, P7 第 6 项保持未勾选. 取得配置后补两台公开 APK 的 Claude Code device_info / script_run; 随后按本次约定由下次会话做第 8 项回填 (当前结论 / 附录 D / 维护者记忆 / 宿主 a11y Roadmap) 与安装含 app.listDocs / app.readDoc 宿主后的真机 docs 证据. 本次未做 ColorOS 新装 / 重启验收.
 
+### 2026-09-16: API 24 instrumentation 请求 ID 与启动等待竞态
+
+- 来源: master `d4c3796` 的 [Build integrity 35049332405](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/actions/runs/35049332405) 仅 API 24 x86 失败, `McpServerHostSessionTest.screenToolsReturnImagesThroughDescriptorsAndHonorTheGroupSwitch` 第 467 行读取 `screen_state.result` 报 `No value for result`. 下载该次 CI 原始 debug / androidTest APK, 在 API 24 x86 私有只读模拟器连续运行宿主会话测试类, 前两轮 8/8, 第三轮在同类第 135 行复现相同异常; 只保留 HTTP 状态与错误分类的观测捕获到 400 与 `Bad Request: a request with this id is still in flight on this session`. 单独截图用例 20 轮通过, 未声称逐点复现 CI 第 467 行.
+- 修复: `McpServerHostSessionTest` 与 `McpServerSpikeTest` 的正常 JSON-RPC 请求统一分配递增 ID, 含配对轮询, 工具列表, 工具调用, 进度请求, 资源与提示; 通知不带 ID. 宿主会话测试读取成功结果前断言 HTTP 200, 无 JSON-RPC error, 响应 ID 对应请求且 result 为对象; 失败诊断只附方法, ID, HTTP 状态与有限长度的协议错误, 不输出鉴权头, 请求参数或结果载荷. 保留工作目录用例原有的单次 Retry-After 重试, 重试使用新 ID; 故意复用 ID 的对抗测试保留.
+- 回归中发现并处理: API 24 全量测试的 `McpServerIdleStopTest` 第 66 行偶发读到 `userStopped = true`. `McpServerRuntime.start` 先开放端口再清除持久化用户停止标记, 原测试只等待端口后立即断言; 就绪条件改为同时等待端口可连接与用户停止标记已清除, 仍受原 20 s 上限约束. 产品实现, 依赖, 公共契约, README 与多语言 changelog 无本次变更.
+- 隔离验证: 从 `d4c3796` 创建临时 worktree, 仅带入上述三个测试文件, 无签名密钥或会话开始已有的 Android 17 权限改动. 以 Temurin 21.0.12.1+1 平台选择构建, 日志的 IDE / Gradle 平台信息只出现一次; JVM 235/235, debug / androidTest APK 构建通过, lint 0 错误 / 13 个既有警告. Windows 自动换行转换导致临时检出的目录快照首次比较失败, 确认内容等同 Git 对象后仅在临时 worktree 恢复原始 LF 字节, 重跑 JVM 全量通过.
+- 设备证据: API 24 x86 `AVD_API_24` 的宿主会话测试连续 10 轮, 80/80, 合计 111.447 s. 最终通过 `ANDROID_SERIAL=emulator-5580,emulator-5582` 限定本次私有模拟器执行 `:app:connectedDebugAndroidTest`: API 24 共 36 项, 31 通过 / 5 条件跳过 / 0 失败, 103.438 s; API 33 x86_64 `AVD_API_33` 共 36 项, 35 通过 / 1 条件跳过 / 0 失败, 102.199 s. API 24 跳过 4 项 adaptive / round 图标检查与可选 killListenerProcess, API 33 仅跳过后者. 原始通过报告与复现记录保留在忽略的 `build/ci-35049332405/`.
+- 环境与局限: API 33 初轮有 System UI ANR 对话框遮挡设置页焦点, 清除对话框并关闭动画后仍曾出现一次 Tab 遍历未覆盖全部控件; 最终相同设置页代码与断言的全量回归通过, 不据此宣称已消除其它 UI 时序问题. 本机未安装 API 35 镜像, 较新 API 回归采用 API 33; 本次只改测试, 未重跑 release / digest, 宿主测试或真实设备验收, 未推送或触发远端 CI.
+- 工作区与下次起点: 会话开始的 61 项未提交内容逐文件 SHA-256 校验保持不变, 包括原有 `VERSION_BUILD=61`; HEAD 提交数仍为 60. 按 AGENTS 第 3.3 节保留这些用户改动并停止自动提交, 本次三个测试文件与本会话记录留在工作区. 待已有改动处理后按逻辑提交并校正提交计数, 推送后复核 API 24 / 35 CI; P7 原待办保持不变.
+- 清理: 两台私有模拟器与临时 worktree 登记已移除. Git 删除目录遇到 Windows 长路径限制, 后续永久删除被工具自动审批以 `blocked by policy` 拒绝; 残留内容已可逆归档到忽略的 `build/worktree-cleanup/mcp-ci-api24-35049332405/`, 未永久删除.
+
 ### 2026-09-16: Android 17 本地网络授权入口统一
 
 - 完成: 本地网络权限由插件中心的手动启用流程引导, 宿主按插件 UID 复核实际授权; 拒绝或取消时开关保持关闭, 自动消费方静默跳过缺少权限的插件. 独立入口保留在插件设置页, 仅 Android 17 及以上显示, 单独授权不会启用插件. MCP 原生设置页的权限按钮复用受 PLUGIN 签名权限保护的透明授权 Activity, 不提供启动器入口或内容页面, 不再持久化已请求标记.

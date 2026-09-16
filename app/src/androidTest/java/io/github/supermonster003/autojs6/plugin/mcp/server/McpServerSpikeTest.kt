@@ -53,6 +53,8 @@ class McpServerSpikeTest {
 
     private lateinit var token: String
 
+    private var lastRequestId = 0
+
     @Before
     fun startServer() {
         PairedClientStore(context).clear()
@@ -287,17 +289,19 @@ class McpServerSpikeTest {
         fun json(): JSONObject = JSONObject(body)
     }
 
-    private fun initializeRequest(): String = """
-        {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"$PROTOCOL_VERSION",
-        "capabilities":{},"clientInfo":{"name":"$CLIENT_NAME","version":"1"}}}
-    """.trimIndent()
+    // Pairing polls are new requests too; reusing an id can race the preceding POST's cleanup.
+    private fun rpcRequest(method: String, params: String = "{}"): String =
+        """{"jsonrpc":"2.0","id":${++lastRequestId},"method":"$method","params":$params}"""
+
+    private fun initializeRequest(): String = rpcRequest("initialize", """{"protocolVersion":"$PROTOCOL_VERSION",
+        "capabilities":{},"clientInfo":{"name":"$CLIENT_NAME","version":"1"}}""")
 
     private fun initializedNotification(): String = """{"jsonrpc":"2.0","method":"notifications/initialized"}"""
 
-    private fun toolsListRequest(): String = """{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}"""
+    private fun toolsListRequest(): String = rpcRequest("tools/list")
 
     private fun toolsCallRequest(name: String): String =
-        """{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"$name","arguments":{}}}"""
+        rpcRequest("tools/call", """{"name":"$name","arguments":{}}""")
 
     private companion object {
         const val TAG = "McpServerSpikeTest"
