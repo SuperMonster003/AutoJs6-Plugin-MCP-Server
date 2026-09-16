@@ -124,11 +124,53 @@ installation permission and plugin developer mode, and the tablet's Wi-Fi settin
 were restored to their original disabled states. Temporary P7 client pairings and
 ADB forwards were removed. Inspector client pairings were retained.
 
-Claude Code 2.1.270 is present, but no usable login was available in the checked
-local configurations. A request for the maintainer's existing configured login
-remains unanswered. No Claude Code model-driven tool call on the published APK
-is claimed. Consequently the full P2 client acceptance gate, and P7 item 6, remain
-open until that client evidence is added.
+### Claude Code acceptance completed
+
+The maintainer supplied the `Claude via AIGoCode [Fabel 5.1 (C)]` profile in
+`acp.json`. Claude Code 2.1.270 used that profile's environment and model
+`claude-fable-5-1[1m]` in isolated CLI sessions, with Streamable HTTP and a Bearer
+header through USB forwarding. This tests the CLI using the specified ACP gateway
+configuration; it does not claim a separate JetBrains ACP chat-interface test.
+The configuration file's hash remained unchanged. Credentials were passed only
+to the child process environment and were not recorded in the evidence.
+
+Both installed APKs were checked against the published SHA-256 before calling
+the model. Only `mcp__autojs6__device_info` and `mcp__autojs6__script_run` were
+allowed, with built-in tools disabled. The acceptance script was
+`toast('hi'); console.log('p7-claude-release-57-<serial>');`.
+
+| Device | Actual Claude tool results | Successful CLI session |
+| --- | --- | --- |
+| Sony XQ-DQ72, API 33 | `device_info` returned the expected model; `script_run` returned `finished` and the console marker | 5 turns, 15089 ms |
+| Xiaomi Pad 23046RP50C, API 35 | `device_info` returned the expected model; `script_run` returned `finished` and the console marker | 3 turns, 10393 ms |
+
+Both first-time clients received `PAIRING_REQUIRED`, and a phone Allow action
+confirmed pairing. Sony succeeded in the same model session after two gated
+calls. Xiaomi's first session exhausted its retries before the UI confirmation
+completed; the second session, after confirmation, completed both tools. Success
+was checked against the CLI's actual tool-use and tool-result events, including
+the script's structured `finished` status and console marker, rather than the
+model's final prose alone.
+
+Sony had been updated to a development 1.0.2 / 60 APK after the earlier Plugin
+Center installation. That APK was saved, the exact published 1.0.1 / 57 APK was
+temporarily restored without clearing app data, and the saved development APK
+was restored after acceptance. Its restored SHA-256 was
+`489560d91ed6e841e5fa28ed4adcdafbee2dea45fc2eab979b56d35c39157c63`.
+The earlier Plugin Center installation evidence is unchanged; this additional
+temporary APK switch is specific to the Claude acceptance run. Xiaomi remains
+on the published 1.0.1 / 57 APK.
+
+Temporary Claude client pairings, isolated CLI configuration directories and
+ADB forwards were removed. Developer mode and the stopped-listener state were
+restored. The sanitized verdicts are kept locally as
+`build/p7/claude-release-QV770340J7.json` and
+`build/p7/claude-release-968e9f18.json`.
+
+Together with the Inspector and lifecycle results above, this completes the
+two-device P2 client acceptance for the published artifact. P7 item 6 is complete.
+P7 item 8 and real-device documentation-resource evidence remain for the next
+session as requested.
 
 Local, ignored evidence is under `build/p7/`: the manifest, downloaded and
 device-read APKs, client verdict JSON, and CI reports. Build logs are
