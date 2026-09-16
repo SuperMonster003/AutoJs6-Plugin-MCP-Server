@@ -6,7 +6,7 @@
 
 # v1.0.1
 
-###### 2026/09/15
+###### 2026/09/16
 
 * `Feature` Optional offline documentation resources: when the AutoJs6 Offline Docs plugin is installed and the host relays it through app.listDocs / app.readDoc, resources/list adds autojs6://docs/ (an index with child URIs) and one autojs6://docs/{+path} resource per documentation page, and resources/templates/list adds the docs template; without the plugin, or on a host without these methods, nothing is listed and _meta.docsCatalogStatus tells why
 * `Improvement` Raise compileSdk to 37 (Android 17); targetSdk stays at 36 until the behavior that depends on the target is verified
@@ -16,7 +16,7 @@
 
 # v1.0.0
 
-###### 2026/09/15
+###### 2026/09/16
 
 * `Hint` P4 development preview: 37 tools, 33 enabled by default, with an AutoJs6 drawer switch and a plugin settings page. Requires the matching P4 AutoJs6 build. ROADMAP.md.
 * `Feature` Phone settings for server status, USB forwarding, port and LAN access, token display/copy/rotation, pairing revocation, tool groups and root permission, developer mode, copyable Claude Code / Cursor / Codex / generic HTTP configurations, release history, and appearance following AutoJs6. Network settings apply by restarting an active listener; token and permission changes take effect immediately. Secret dialogs block screenshots.

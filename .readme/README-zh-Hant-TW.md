@@ -281,7 +281,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 #### v1.0.1
 
-_2026/09/15_
+_2026/09/16_
 
 - `新增` 可選的離線文件資源: 安裝 AutoJs6 離線文件外掛且宿主透過 app.listDocs / app.readDoc 轉讀時, resources/list 增加 autojs6://docs/ (帶子 URI 的索引) 與每個文件頁面對應的 autojs6://docs/{+path} 資源, resources/templates/list 增加 docs 範本; 未安裝外掛或宿主不含這兩個方法時不列出任何條目, 並由 _meta.docsCatalogStatus 說明原因
 - `優化` 將 compileSdk 提升到 37 (Android 17), targetSdk 保持 36, 待依賴目標版本的行為驗證後再提升
@@ -291,7 +291,7 @@ _2026/09/15_
 
 #### v1.0.0
 
-_2026/09/15_
+_2026/09/16_
 
 - `提示` P4 開發預覽: 37 個工具, 預設啟用 33 個, 提供 AutoJs6 抽屜開關與外掛程式設定頁. 需要配套的 P4 AutoJs6 組建. ROADMAP.md.
 - `新增` 手機設定頁提供服務狀態, USB 轉發, 連接埠與區域網路存取, 權杖顯示/複製/輪換, 配對撤銷, 工具群組與 root 權限, 開發者模式, 可複製的 Claude Code / Cursor / Codex / 通用 HTTP 設定及發行歷史, 並跟隨 AutoJs6 外觀. 網路設定會重新啟動執行中的監聽器, 權杖與權限變更立即生效. 敏感資訊視窗禁止截圖.
