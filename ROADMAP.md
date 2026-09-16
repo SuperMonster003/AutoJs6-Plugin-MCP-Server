@@ -942,3 +942,9 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 工作区: 会话开始已有 targetSdk 37 / VERSION_NAME 1.0.2 改动, 在 v1.0.1 发布后恢复并独立提交为 `e56e7ef`, README 十语言补充本地网络权限用途. JVM 235/235, debug / androidTest 构建与 lint 通过 (0 错误 / 13 警告), API 33 LocalNetworkPermissionTest 1/1. 该开发提交 CI 的 API 24 工作目录工具测试一次报 No value for result, 失败任务原提交重跑通过; API 35 与构建任务首次通过. Android 17 真机权限行为尚未在本次验证, 1.0.2 未发布.
 - 真机: 两台既有开发版经插件中心从官方索引更新为公开版, 未用 adb install 替代安装流程. Sony API 33 已完成 Inspector 2.6.0 的 device_info / script_run, 令牌鉴权 / 配对 / 伪造 Host 拒绝, 杀宿主返回 HOST_UNAVAILABLE, 重开宿主恢复, 通知停止与抽屉开关归位. Xiaomi API 35 同组检查全部通过, 配对经通知允许动作确认; 实际通知停止使端口不可达且抽屉开关归位. 平板原 Wi-Fi 关闭且现有 VPN DNS 不可用, 下载临时经仅允许 GitHub 域名的本机 CONNECT 转发, HTTPS 仍端到端校验; 下载后代理与 adb reverse 已移除.
 - 未完成与下次起点: Claude Code 2.1.270 未取得可用登录配置, 已请求维护者提供既有配置入口, 未以自写客户端替代其模型调用证据, P7 第 6 项保持未勾选. 取得配置后补两台公开 APK 的 Claude Code device_info / script_run; 随后按本次约定由下次会话做第 8 项回填 (当前结论 / 附录 D / 维护者记忆 / 宿主 a11y Roadmap) 与安装含 app.listDocs / app.readDoc 宿主后的真机 docs 证据. 本次未做 ColorOS 新装 / 重启验收.
+
+### 2026-09-16: Android 17 本地网络授权入口统一
+
+- 完成: 本地网络权限由插件中心的手动启用流程引导, 宿主按插件 UID 复核实际授权; 拒绝或取消时开关保持关闭, 自动消费方静默跳过缺少权限的插件. 独立入口保留在插件设置页, 仅 Android 17 及以上显示, 单独授权不会启用插件. MCP 原生设置页的权限按钮复用受 PLUGIN 签名权限保护的透明授权 Activity, 不提供启动器入口或内容页面, 不再持久化已请求标记.
+- 验证: JVM 235/235, debug / androidTest 构建与 lint 通过, lint 0 错误; Markdown 十语言生成与检查通过. API 37 x86_64 模拟器完成取消 / 拒绝保持关闭, 授权后继续本次开启, 设置单独授权仍关闭; API 33 正常开启且设置页隐藏授权入口. 宿主设备回归同时覆盖两个插件中心入口的实际授权结果返回.
+- 证据: 宿主仓库 `docs/dev/evidence/plugin-local-network-permission-20260916.md`; 原始记录位于宿主忽略目录 `build/verification/plugin-lan-center-20260916/`. 本轮未执行真机或 ColorOS 新装验证.

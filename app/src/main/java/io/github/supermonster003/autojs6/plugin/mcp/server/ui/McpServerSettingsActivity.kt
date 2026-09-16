@@ -29,6 +29,7 @@ import android.widget.TextView
 import android.widget.Toast
 import io.github.supermonster003.autojs6.plugin.mcp.server.McpServerPlugin
 import io.github.supermonster003.autojs6.plugin.mcp.server.LocalNetworkAccess
+import io.github.supermonster003.autojs6.plugin.mcp.server.LocalNetworkPermissionActivity
 import io.github.supermonster003.autojs6.plugin.mcp.server.mcpServerPluginRuntimeInfo
 import io.github.supermonster003.autojs6.plugin.mcp.server.R
 import io.github.supermonster003.autojs6.plugin.mcp.server.host.SessionStatus
@@ -394,12 +395,10 @@ class McpServerSettingsActivity : SettingsPageActivity() {
 
     private fun localNetworkPermission() {
         if (Build.VERSION.SDK_INT < 37) return
-        val requested = getPreferences(MODE_PRIVATE).getBoolean("local_network_requested", false)
-        if (LocalNetworkAccess.isGranted(this) || (requested && !shouldShowRequestPermissionRationale(LocalNetworkAccess.PERMISSION))) {
+        if (LocalNetworkAccess.isGranted(this)) {
             startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
         } else {
-            getPreferences(MODE_PRIVATE).edit().putBoolean("local_network_requested", true).apply()
-            requestPermissions(arrayOf(LocalNetworkAccess.PERMISSION), 37)
+            startActivity(Intent(this, LocalNetworkPermissionActivity::class.java))
         }
     }
 

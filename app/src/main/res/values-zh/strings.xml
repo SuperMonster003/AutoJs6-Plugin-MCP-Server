@@ -2,8 +2,8 @@
 <resources>
     <string name="local_network_allow">允许附近的设备</string>
     <string name="local_network_denied">未允许</string>
-    <string name="local_network_explanation">在 Android 17 或更高版本上, 请为此插件允许附近的设备权限, 以连接局域网设备. AutoJs6 的授权不会授予此插件权限. 公网和回环连接不需要此权限.</string>
-    <string name="local_network_failure_hint">如果此操作使用局域网, 请从 AutoJs6 插件中心打开此插件, 并允许附近的设备权限. AutoJs6 的授权不会授予此插件权限.</string>
+    <string name="local_network_explanation">在 Android 17 及以上, 在 AutoJs6 插件中心开启此插件前需允许访问附近的设备. 也可在此插件的设置页面中管理本地网络权限. 未获授权时插件保持关闭, 自动启动将静默跳过. 此权限属于插件自身, 与 AutoJs6 的授权相互独立.</string>
+    <string name="local_network_failure_hint">请在 AutoJs6 插件中心打开此插件的设置页面, 授予本地网络权限.</string>
     <string name="local_network_granted">已允许</string>
     <string name="local_network_not_required">此 Android 版本不需要单独授权.</string>
     <string name="local_network_settings">打开应用设置</string>

@@ -2,8 +2,8 @@
 <resources>
     <string name="local_network_allow">付近のデバイスを許可</string>
     <string name="local_network_denied">未許可</string>
-    <string name="local_network_explanation">Android 17 以降では, このプラグインの付近のデバイス権限を許可するとローカルネットワークのデバイスに接続できます. AutoJs6 の許可はプラグインに引き継がれません. インターネットとループバック接続にはこの権限は不要です.</string>
-    <string name="local_network_failure_hint">この操作でローカルネットワークを使用する場合は, AutoJs6 のプラグインセンターからこのプラグインを開き, 付近のデバイスを許可してください. AutoJs6 の許可は引き継がれません.</string>
+    <string name="local_network_explanation">Android 17 以降では, AutoJs6 プラグインセンターで有効にする前に, このプラグインに付近のデバイスへのアクセスを許可してください. プラグインの設定ページでもローカルネットワーク権限を管理できます. 未許可の場合は無効のままとなり, 自動起動は通知せずにスキップされます. この権限はプラグインに属し, AutoJs6 の権限とは独立しています.</string>
+    <string name="local_network_failure_hint">AutoJs6 プラグインセンターでこのプラグインの設定を開き, ローカルネットワークへのアクセスを許可してください.</string>
     <string name="local_network_granted">許可済み</string>
     <string name="local_network_not_required">この Android バージョンでは個別の許可は不要です.</string>
     <string name="local_network_settings">アプリの設定を開く</string>

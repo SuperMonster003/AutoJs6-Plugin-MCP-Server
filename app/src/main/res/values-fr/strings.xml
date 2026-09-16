@@ -2,8 +2,8 @@
 <resources>
     <string name="local_network_allow">Autoriser les appareils à proximité</string>
     <string name="local_network_denied">Non autorisé</string>
-    <string name="local_network_explanation">Sur Android 17 ou version ultérieure, autorisez les appareils à proximité pour ce plugin afin de contacter les appareils du réseau local. Les autorisations AutoJs6 ne sont pas partagées avec ce plugin. Internet public et les connexions en boucle locale ne nécessitent pas cette autorisation.</string>
-    <string name="local_network_failure_hint">Si cette opération utilise le réseau local, ouvrez ce plugin depuis le centre de plugins AutoJs6 et autorisez les appareils à proximité. Les autorisations AutoJs6 ne sont pas partagées avec ce plugin.</string>
+    <string name="local_network_explanation">Sous Android 17 ou version ultérieure, autorisez les appareils à proximité avant de permettre ce plugin dans le centre de plugins AutoJs6. Cette autorisation se gère aussi dans les paramètres du plugin. Sans autorisation, le plugin reste désactivé et le démarrage automatique est ignoré sans message. Cette autorisation appartient au plugin et est indépendante de celle de AutoJs6.</string>
+    <string name="local_network_failure_hint">Ouvrez les paramètres de ce plugin dans le centre de plugins AutoJs6 et autorisez le réseau local.</string>
     <string name="local_network_granted">Autorisé</string>
     <string name="local_network_not_required">Cette version Android ne nécessite aucune autorisation distincte.</string>
     <string name="local_network_settings">Ouvrir les paramètres</string>

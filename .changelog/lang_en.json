@@ -8,6 +8,7 @@
     "v1.0.2": {
       "released_date": "2026/09/16",
       "improvement": [
+        "Android 17 local network authorization moves to plugin-center enablement and plugin settings, with no launcher permission page; missing permission keeps the plugin disabled and automatic startup silent",
         "Target Android 17 (SDK 37) with separate local network permission controls and recovery guidance"
       ]
     },

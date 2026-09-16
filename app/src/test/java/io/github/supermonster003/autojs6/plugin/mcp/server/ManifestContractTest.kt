@@ -44,8 +44,14 @@ class ManifestContractTest {
         assertEquals("@string/plugin_author", metaData["org.autojs.plugin.info.AUTHOR"])
 
         val activities = application.children("activity")
-        assertEquals(listOf(".WakeActivity", ".ui.McpServerSettingsActivity", ".ui.ReleaseHistoryActivity", ".ui.PairingConfirmActivity"), activities.map { it.androidAttribute("name") })
-        val wake = activities.first()
+        assertEquals(listOf(".LocalNetworkPermissionActivity", ".WakeActivity", ".ui.McpServerSettingsActivity", ".ui.ReleaseHistoryActivity", ".ui.PairingConfirmActivity"), activities.map { it.androidAttribute("name") })
+        val permission = activities.single { it.androidAttribute("name") == ".LocalNetworkPermissionActivity" }
+        assertEquals("true", permission.androidAttribute("exported"))
+        assertEquals("true", permission.androidAttribute("excludeFromRecents"))
+        assertEquals(PLUGIN_PERMISSION, permission.androidAttribute("permission"))
+        assertEquals("@android:style/Theme.Translucent.NoTitleBar", permission.androidAttribute("theme"))
+        assertTrue(permission.children("intent-filter").isEmpty())
+        val wake = activities.single { it.androidAttribute("name") == ".WakeActivity" }
         assertEquals("true", wake.androidAttribute("exported"))
         assertEquals("true", wake.androidAttribute("excludeFromRecents"))
         assertEquals("true", wake.androidAttribute("finishOnTaskLaunch"))
