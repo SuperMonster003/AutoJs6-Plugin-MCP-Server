@@ -6,7 +6,7 @@
   "changelog_label_dependency": "تبعية",
   "$data": {
     "v1.0.1": {
-      "released_date": "2026/09/15",
+      "released_date": "2026/09/16",
       "feature": [
         "موارد التوثيق دون اتصال الاختيارية: عند تثبيت مكون AutoJs6 Offline Docs الإضافي وقيام المضيف بتمريره عبر app.listDocs / app.readDoc, يضيف resources/list المورد autojs6://docs/ (فهرس يحوي عناوين URI الفرعية) وموردا autojs6://docs/{+path} لكل صفحة توثيق, ويضيف resources/templates/list قالب docs; وبدون المكون الإضافي أو على مضيف لا يملك هاتين الطريقتين لا يدرج أي عنصر ويوضح _meta.docsCatalogStatus السبب"
       ],
@@ -18,7 +18,7 @@
       ]
     },
     "v1.0.0": {
-      "released_date": "2026/09/15",
+      "released_date": "2026/09/16",
       "hint": [
         "معاينة P4: 37 أداة, منها 33 مفعلة افتراضيا, مع مفتاح في قائمة AutoJs6 وصفحة إعدادات للإضافة. تتطلب نسخة AutoJs6 المتوافقة مع P4. ROADMAP.md."
       ],

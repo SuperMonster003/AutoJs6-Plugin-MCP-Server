@@ -6,7 +6,7 @@
   "changelog_label_dependency": "Dépendance",
   "$data": {
     "v1.0.1": {
-      "released_date": "2026/09/15",
+      "released_date": "2026/09/16",
       "feature": [
         "Ressources de documentation hors ligne optionnelles: lorsque le plugin AutoJs6 Offline Docs est installé et que l'hôte le relaie via app.listDocs / app.readDoc, resources/list ajoute autojs6://docs/ (un index avec les URI enfants) et une ressource autojs6://docs/{+path} par page de documentation, et resources/templates/list ajoute le modèle docs; sans le plugin, ou sur un hôte dépourvu de ces méthodes, rien n'est listé et _meta.docsCatalogStatus en donne la raison"
       ],
@@ -18,7 +18,7 @@
       ]
     },
     "v1.0.0": {
-      "released_date": "2026/09/15",
+      "released_date": "2026/09/16",
       "hint": [
         "Aperçu P4: 37 outils, dont 33 activés par défaut, avec un bouton dans le volet AutoJs6 et une page de paramètres du plugin. Nécessite la version AutoJs6 P4 correspondante. ROADMAP.md."
       ],

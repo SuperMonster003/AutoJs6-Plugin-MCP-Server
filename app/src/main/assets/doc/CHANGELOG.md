@@ -6,7 +6,7 @@
 
 # v1.0.1
 
-###### 2026/09/15
+###### 2026/09/16
 
 * `新增` 可选的离线文档资源: 安装 AutoJs6 离线文档插件且宿主通过 app.listDocs / app.readDoc 转读时, resources/list 增加 autojs6://docs/ (带子 URI 的索引) 与每个文档页面对应的 autojs6://docs/{+path} 资源, resources/templates/list 增加 docs 模板; 未安装插件或宿主不含这两个方法时不列出任何条目, 并由 _meta.docsCatalogStatus 说明原因
 * `优化` 将 compileSdk 提升到 37 (Android 17), targetSdk 保持 36, 待依赖目标版本的行为验证后再提升
@@ -16,7 +16,7 @@
 
 # v1.0.0
 
-###### 2026/09/15
+###### 2026/09/16
 
 * `提示` P4 开发预览: 37 个工具, 默认启用 33 个, 提供 AutoJs6 抽屉开关和插件设置页. 需要配套的 P4 AutoJs6 构建. ROADMAP.md.
 * `新增` 手机设置页提供服务状态, USB 转发, 端口和局域网访问, 令牌显示/复制/轮换, 配对撤销, 工具分组和 root 权限, 开发者模式, 可复制的 Claude Code / Cursor / Codex / 通用 HTTP 配置及发行历史, 并跟随 AutoJs6 外观. 网络设置会重启运行中的监听器, 令牌和权限变更立即生效. 敏感信息窗口禁止截图.

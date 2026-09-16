@@ -281,7 +281,7 @@ Los planes y el progreso del plugin se mantienen como una lista verificable en R
 
 #### v1.0.1
 
-_2026/09/15_
+_2026/09/16_
 
 - `Función` Recursos opcionales de documentación sin conexión: cuando el plugin AutoJs6 Offline Docs está instalado y el anfitrión lo retransmite mediante app.listDocs / app.readDoc, resources/list añade autojs6://docs/ (un índice con URI hijos) y un recurso autojs6://docs/{+path} por página de documentación, y resources/templates/list añade la plantilla docs; sin el plugin, o en un anfitrión sin estos métodos, no se lista nada y _meta.docsCatalogStatus indica el motivo
 - `Mejora` compileSdk sube a 37 (Android 17); targetSdk se mantiene en 36 hasta verificar el comportamiento que depende del objetivo
@@ -291,7 +291,7 @@ _2026/09/15_
 
 #### v1.0.0
 
-_2026/09/15_
+_2026/09/16_
 
 - `Aviso` Vista previa P4: 37 herramientas, 33 activadas por defecto, con un interruptor en AutoJs6 y una página de ajustes del complemento. Requiere la compilación AutoJs6 de P4 correspondiente. ROADMAP.md.
 - `Función` Ajustes del teléfono para estado del servidor, USB, puerto y red local, token, revocación de vínculos, grupos y root, modo de desarrollador, configuraciones copiables de Claude Code / Cursor / Codex / HTTP e historial de versiones, siguiendo el aspecto de AutoJs6. Los cambios de red reinician el servidor activo; tokens y permisos se aplican inmediatamente. Los diálogos secretos bloquean capturas.
