@@ -5,6 +5,12 @@
   "changelog_label_improvement": "優化",
   "changelog_label_dependency": "相依性",
   "$data": {
+    "v1.0.2": {
+      "released_date": "2026/09/16",
+      "improvement": [
+        "支援 Android 17 (SDK 37), 提供外掛獨立的本機網路權限控制及復原指引"
+      ]
+    },
     "v1.0.1": {
       "released_date": "2026/09/16",
       "feature": [

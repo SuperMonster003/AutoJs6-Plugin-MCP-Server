@@ -52,7 +52,7 @@ The server runs inside the plugin's own process and is reached through a single 
 
 ******
 
-Version 1.0.1: 37 tools (33 enabled by default), MCP resources and prompts, an AutoJs6 drawer switch and a plugin settings page. Requires AutoJs6 6.8.0 (build 5279) or later; the optional autojs6://docs/ resources also need the AutoJs6 Offline Docs plugin and a host with its relay methods. Progress and evidence are tracked in [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Version 1.0.2: 37 tools (33 enabled by default), MCP resources and prompts, an AutoJs6 drawer switch and a plugin settings page. Requires AutoJs6 6.8.0 (build 5279) or later; the optional autojs6://docs/ resources also need the AutoJs6 Offline Docs plugin and a host with its relay methods. Progress and evidence are tracked in [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -161,7 +161,7 @@ Turn on MCP Server in the AutoJs6 drawer. Long-press its title to open settings,
 
 USB: `adb forward tcp:9637 tcp:9637` maps the phone port to the PC; with several devices add `-s <serial>` (find it with `adb devices`), and emulators work the same way. If the port is taken on either side, change it on the settings page and forward the new one. The Connection card offers the exact forward command for copying.
 
-Local network: turn on Allow local network connections on the settings page. The page then lists the current addresses of the phone (they follow Wi-Fi changes) and reminds you that the client must join the same network; guest networks, AP isolation and the PC firewall are the usual blockers. Pairing requests from the local network are marked as such, and a daily notification reminds you while the server stays reachable from the network; the reminder can be turned off.
+Local network: turn on Allow local network connections on the settings page. The page then lists the current addresses of the phone (they follow Wi-Fi changes) and reminds you that the client must join the same network; guest networks, AP isolation and the PC firewall are the usual blockers. Pairing requests from the local network are marked as such, and a daily notification reminds you while the server stays reachable from the network; the reminder can be turned off. On Android 17 or later, allow Nearby devices for this plugin to connect to devices on your local network. AutoJs6 permission does not grant access to this plugin. Public internet and loopback connections do not require this permission. If this operation uses the local network, open this plugin from the AutoJs6 plugin center and allow Nearby devices. AutoJs6 permission does not grant access to this plugin.
 
 Both paths keep the same token and the same phone-side pairing. Clients without an HTTP transport use the stdio bridge described under Clients.
 
@@ -233,6 +233,7 @@ The plugin follows explicit boundaries:
 - The Binder entry points and the settings page are protected by the `org.autojs.permission.PLUGIN` signature permission, so only AutoJs6 can reach them; the pairing dialog, its receiver and the release history page are not exported. Only the foreground service that hosts the listener accepts adb (`android.permission.DUMP`), which is the developer's start / stop switch.
 - The INTERNET permission serves only the plugin's own HTTP listener; the plugin makes no outbound requests and collects no data. Cleartext HTTP is permitted only towards loopback addresses through the network security configuration.
 - The server listens on 127.0.0.1 by default. Local network access stays off until you turn it on; the token, the pairing confirmation, the Host allow list and the rate limits still apply on the local network, and a daily notification reminds you while it is on.
+- On Android 17 or later, allow Nearby devices for this plugin to connect to devices on your local network. AutoJs6 permission does not grant access to this plugin. Public internet and loopback connections do not require this permission.
 - The access token comes from a secure random source, is wrapped with an AES-GCM key from the Android Keystore and lives in the plugin's private, never-backed-up storage; backups and device transfers are disabled. The settings page shows only its last 4 characters, the full-token dialogs block screenshots, and copies are marked sensitive for the clipboard.
 - Logs never contain the token, request bodies, file contents or screenshots; the plugin logs tool names, client names and token fingerprints only. This was verified with logcat on two devices during real file and screenshot calls (docs/dev/p6-security-audit.md).
 - Tool calls run through the AutoJs6 capability broker and never exceed what the host itself is allowed to do; shell commands, file deletion and gestures stay off until you enable their groups, and a root shell additionally needs its own switch and a host grant.
@@ -278,6 +279,12 @@ The plugin's plans and progress are maintained as a checkable list in ROADMAP.md
 ### Release History
 
 ******
+
+#### v1.0.2
+
+_2026/09/16_
+
+- `Improvement` Target Android 17 (SDK 37) with separate local network permission controls and recovery guidance
 
 #### v1.0.1
 

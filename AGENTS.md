@@ -138,7 +138,7 @@ AutoJs6-Plugin-MCP-Server/
 - `McpServerPluginInfoService` 与 `McpServerPluginService` MUST `exported=true`, 受 PLUGIN 权限保护, 声明 `requiresHostVersion` meta-data (与 `McpServerPlugin.REQUIRED_HOST_VERSION` 一致); 后者固定运行在 `:mcp_server` 进程, HTTP 监听与前台服务都放在该进程.
 - 所有对外组件逐项审查 `android:exported`; 除契约入口外不得导出其他组件. 独立设置页 (P4) 若需被宿主打开, 使用 PLUGIN 权限保护的显式 action.
 - `android:usesCleartextTraffic="true"` 只服务于插件自己的回环 / 局域网 HTTP 监听, Manifest 注释 MUST 保留该说明; 插件不得发起任何出站明文请求.
-- 权限清单只包含 PLUGIN, INTERNET, ACCESS_NETWORK_STATE, FOREGROUND_SERVICE, FOREGROUND_SERVICE_SPECIAL_USE, POST_NOTIFICATIONS; 新增权限必须在 README 安全章节与 changelog 说明理由.
+- 权限清单只包含 PLUGIN, INTERNET, ACCESS_LOCAL_NETWORK, ACCESS_NETWORK_STATE, FOREGROUND_SERVICE, FOREGROUND_SERVICE_SPECIAL_USE, POST_NOTIFICATIONS; ACCESS_LOCAL_NETWORK 仅在 Android 17+ 的局域网模式请求, 回环监听无需该授权. 新增权限必须在 README 安全章节与 changelog 说明理由.
 - 在 ColorOS 等会保持新装应用停止状态的设备上 SHOULD 做真实激活验收; 未执行时在路线图如实记录 `未执行真实设备激活验证`.
 
 ## 7. PluginInfo 与能力协商

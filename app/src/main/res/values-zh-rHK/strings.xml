@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="local_network_allow">允許附近裝置</string>
+    <string name="local_network_denied">未允許</string>
+    <string name="local_network_explanation">在 Android 17 或更高版本上, 請為此插件允許附近裝置權限, 以連接區域網絡裝置. AutoJs6 的授權不會授予此插件權限. 公開互聯網及回環連線不需要此權限.</string>
+    <string name="local_network_failure_hint">如果此操作使用區域網絡, 請從 AutoJs6 插件中心開啟此插件, 並允許附近裝置權限. AutoJs6 的授權不會授予此插件權限.</string>
+    <string name="local_network_granted">已允許</string>
+    <string name="local_network_not_required">此 Android 版本不需要單獨授權.</string>
+    <string name="local_network_settings">開啟應用程式設定</string>
+    <string name="local_network_title">本地網絡存取</string>
     <string name="pairing_address_lan">區域網絡</string>
     <string name="pairing_address_loopback">經 USB (adb) 連接的這部電腦</string>
     <string name="pairing_allow">允許</string>
