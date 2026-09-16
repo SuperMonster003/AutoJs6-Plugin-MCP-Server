@@ -62,8 +62,10 @@ class McpServerIdleStopTest {
     @Test
     fun aListenerWithoutRequestsStopsItselfAfterTheConfiguredMinutes() {
         sendService(McpServerService.startIntent(context, port))
-        await("listener started", 20) { listening(port) }
-        assertFalse(ServerLifecycleStore(context).userStopped)
+        // The socket becomes reachable before runtime.start persists the cleared user-stop flag.
+        await("listener started and user stop cleared", 20) {
+            listening(port) && !ServerLifecycleStore(context).userStopped
+        }
         // One authenticated request, so the countdown provably runs from real client traffic.
         assertEquals(200, initialize())
         val startedAt = System.nanoTime()
