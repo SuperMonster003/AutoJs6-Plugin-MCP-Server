@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Улучшение",
   "changelog_label_dependency": "Зависимость",
   "$data": {
+    "v1.0.2": {
+      "released_date": "2026/09/16",
+      "improvement": [
+        "Поддержка Android 17 (SDK 37), отдельное управление разрешением локальной сети плагина и инструкции по восстановлению доступа"
+      ]
+    },
     "v1.0.1": {
       "released_date": "2026/09/16",
       "feature": [

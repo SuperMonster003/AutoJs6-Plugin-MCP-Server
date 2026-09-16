@@ -4,6 +4,8 @@ import android.content.Context
 import android.os.SystemClock
 import android.util.Log
 import io.github.supermonster003.autojs6.plugin.mcp.server.DevicePingTool
+import io.github.supermonster003.autojs6.plugin.mcp.server.LocalNetworkAccess
+import io.github.supermonster003.autojs6.plugin.mcp.server.R
 import io.github.supermonster003.autojs6.plugin.mcp.server.McpServerPlugin
 import io.github.supermonster003.autojs6.plugin.mcp.server.McpServerPluginRuntimeInfo
 import io.github.supermonster003.autojs6.plugin.mcp.server.mcpServerPluginRuntimeInfo
@@ -129,6 +131,10 @@ class McpHttpServer(
     /** Starts the listener for [config]; a call while running is a no-op that returns the current status. */
     fun start(config: ServerConfig): ServerStatus = synchronized(lock) {
         if (engine != null) return status
+        if (config.bindScope == BindScope.LAN && !LocalNetworkAccess.isGranted(context)) {
+            return publish(ServerStatus.failed("local_network_permission_required",
+                context.getString(R.string.local_network_failure_hint)))
+        }
         val problems = config.problems()
         if (problems.isNotEmpty()) {
             return publish(ServerStatus.failed(ERROR_INVALID_CONFIG, problems.joinToString("; ")))

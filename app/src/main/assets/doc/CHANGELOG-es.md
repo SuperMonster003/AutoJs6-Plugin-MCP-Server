@@ -4,6 +4,12 @@
 
 ******
 
+# v1.0.2
+
+###### 2026/09/16
+
+* `Mejora` Compatibilidad con Android 17 (SDK 37), controles de permiso de red local propios del plugin y ayuda para recuperar el acceso
+
 # v1.0.1
 
 ###### 2026/09/16

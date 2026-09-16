@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Amélioration",
   "changelog_label_dependency": "Dépendance",
   "$data": {
+    "v1.0.2": {
+      "released_date": "2026/09/16",
+      "improvement": [
+        "Cibler Android 17 (SDK 37) avec des autorisations réseau local propres au plugin et une aide à la récupération"
+      ]
+    },
     "v1.0.1": {
       "released_date": "2026/09/16",
       "feature": [

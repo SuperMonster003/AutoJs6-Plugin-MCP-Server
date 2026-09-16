@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Mejora",
   "changelog_label_dependency": "Dependencia",
   "$data": {
+    "v1.0.2": {
+      "released_date": "2026/09/16",
+      "improvement": [
+        "Compatibilidad con Android 17 (SDK 37), controles de permiso de red local propios del plugin y ayuda para recuperar el acceso"
+      ]
+    },
     "v1.0.1": {
       "released_date": "2026/09/16",
       "feature": [

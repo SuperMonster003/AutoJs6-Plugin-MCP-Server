@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="local_network_allow">Разрешить устройства поблизости</string>
+    <string name="local_network_denied">Не разрешено</string>
+    <string name="local_network_explanation">На Android 17 и новее разрешите этому плагину доступ к устройствам поблизости для подключения к локальной сети. Разрешение AutoJs6 не распространяется на плагин. Общедоступный интернет и петлевые соединения не требуют этого разрешения.</string>
+    <string name="local_network_failure_hint">Если операция использует локальную сеть, откройте этот плагин из центра плагинов AutoJs6 и разрешите устройства поблизости. Разрешение AutoJs6 не распространяется на плагин.</string>
+    <string name="local_network_granted">Разрешено</string>
+    <string name="local_network_not_required">Эта версия Android не требует отдельного разрешения.</string>
+    <string name="local_network_settings">Открыть настройки приложения</string>
+    <string name="local_network_title">Доступ к локальной сети</string>
     <string name="pairing_address_lan">локальная сеть</string>
     <string name="pairing_address_loopback">этот компьютер по USB (adb)</string>
     <string name="pairing_allow">Разрешить</string>

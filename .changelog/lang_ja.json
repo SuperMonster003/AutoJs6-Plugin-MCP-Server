@@ -5,6 +5,12 @@
   "changelog_label_improvement": "改善",
   "changelog_label_dependency": "依存関係",
   "$data": {
+    "v1.0.2": {
+      "released_date": "2026/09/16",
+      "improvement": [
+        "Android 17 (SDK 37) に対応し, プラグイン独立のローカルネットワーク権限設定と復旧案内を提供"
+      ]
+    },
     "v1.0.1": {
       "released_date": "2026/09/16",
       "feature": [
