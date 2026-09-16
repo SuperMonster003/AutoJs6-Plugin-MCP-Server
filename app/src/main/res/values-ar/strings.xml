@@ -2,8 +2,8 @@
 <resources>
     <string name="local_network_allow">السماح بالأجهزة القريبة</string>
     <string name="local_network_denied">غير مسموح</string>
-    <string name="local_network_explanation">في Android 17 أو أحدث, اسمح بالأجهزة القريبة لهذا الملحق للاتصال بأجهزة الشبكة المحلية. إذن AutoJs6 لا يمنح الإذن لهذا الملحق. لا تحتاج اتصالات الإنترنت العامة والاسترجاع المحلي إلى هذا الإذن.</string>
-    <string name="local_network_failure_hint">إذا كانت العملية تستخدم الشبكة المحلية, فافتح هذا الملحق من مركز ملحقات AutoJs6 واسمح بالأجهزة القريبة. إذن AutoJs6 لا يمنح الإذن لهذا الملحق.</string>
+    <string name="local_network_explanation">على Android 17 أو أحدث, اسمح بالأجهزة القريبة قبل تفعيل هذا الملحق في مركز ملحقات AutoJs6. يمكنك أيضا إدارة إذن الشبكة المحلية من صفحة إعدادات الملحق. دون الإذن يبقى الملحق معطلا ويتم تخطي التشغيل التلقائي بصمت. يخص الإذن هذا الملحق وهو مستقل عن إذن AutoJs6.</string>
+    <string name="local_network_failure_hint">افتح إعدادات هذا الملحق في مركز ملحقات AutoJs6 واسمح بالوصول إلى الشبكة المحلية.</string>
     <string name="local_network_granted">مسموح</string>
     <string name="local_network_not_required">لا يحتاج إصدار Android هذا إلى إذن منفصل.</string>
     <string name="local_network_settings">فتح إعدادات التطبيق</string>

@@ -2,8 +2,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="local_network_allow">Allow nearby devices</string>
     <string name="local_network_denied">Not allowed</string>
-    <string name="local_network_explanation">On Android 17 or later, allow Nearby devices for this plugin to connect to devices on your local network. AutoJs6 permission does not grant access to this plugin. Public internet and loopback connections do not require this permission.</string>
-    <string name="local_network_failure_hint">If this operation uses the local network, open this plugin from the AutoJs6 plugin center and allow Nearby devices. AutoJs6 permission does not grant access to this plugin.</string>
+    <string name="local_network_explanation">On Android 17 or later, allow Nearby devices before enabling this plugin in the AutoJs6 plugin center. You can also manage this permission from the Settings page for this plugin. Without permission, the plugin stays disabled and automatic startup is skipped silently. The grant belongs to this plugin, independently of AutoJs6.</string>
+    <string name="local_network_failure_hint">Open this plugin in the AutoJs6 plugin center, choose Settings, then allow local network access.</string>
     <string name="local_network_granted">Allowed</string>
     <string name="local_network_not_required">No separate permission is required on this Android version.</string>
     <string name="local_network_settings">Open app settings</string>

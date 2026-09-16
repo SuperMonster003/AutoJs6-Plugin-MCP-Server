@@ -2,8 +2,8 @@
 <resources>
     <string name="local_network_allow">근처 기기 허용</string>
     <string name="local_network_denied">허용되지 않음</string>
-    <string name="local_network_explanation">Android 17 이상에서는 이 플러그인의 근처 기기 권한을 허용해야 로컬 네트워크 기기에 연결할 수 있습니다. AutoJs6 권한은 이 플러그인에 적용되지 않습니다. 공용 인터넷 및 루프백 연결에는 이 권한이 필요하지 않습니다.</string>
-    <string name="local_network_failure_hint">이 작업이 로컬 네트워크를 사용한다면 AutoJs6 플러그인 센터에서 이 플러그인을 열고 근처 기기를 허용하세요. AutoJs6 권한은 이 플러그인에 적용되지 않습니다.</string>
+    <string name="local_network_explanation">Android 17 이상에서는 AutoJs6 플러그인 센터에서 이 플러그인을 켜기 전에 주변 기기 권한을 허용하세요. 이 플러그인의 설정 페이지에서도 로컬 네트워크 권한을 관리할 수 있습니다. 권한이 없으면 플러그인이 꺼진 상태로 유지되고 자동 시작은 알림 없이 건너뜁니다. 이 권한은 플러그인에 속하며 AutoJs6 권한과 별개입니다.</string>
+    <string name="local_network_failure_hint">AutoJs6 플러그인 센터에서 이 플러그인의 설정을 열고 로컬 네트워크 접근을 허용하세요.</string>
     <string name="local_network_granted">허용됨</string>
     <string name="local_network_not_required">이 Android 버전에서는 별도 권한이 필요하지 않습니다.</string>
     <string name="local_network_settings">앱 설정 열기</string>
