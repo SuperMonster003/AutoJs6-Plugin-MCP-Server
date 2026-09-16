@@ -67,7 +67,10 @@ class McpServerIdleStopTest {
         // One authenticated request, so the countdown provably runs from real client traffic.
         assertEquals(200, initialize())
         val startedAt = System.nanoTime()
-        await("idle stop", 110) { !listening(port) }
+        // A brief socket timeout on a busy emulator is not evidence that the server stopped.
+        await("idle stop", 110) {
+            ServerStatusStore(context).load().state == McpServerContract.STATE_STOPPED && !listening(port)
+        }
         val elapsedSeconds = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startedAt)
         assertTrue("stopped $elapsedSeconds s after the last request, expected about 60", elapsedSeconds in 50..110)
         await("shared stopped status", 10) { ServerStatusStore(context).load().state == McpServerContract.STATE_STOPPED }
