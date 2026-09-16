@@ -61,6 +61,8 @@ class McpServerHostSessionTest {
     private lateinit var runtime: McpServerRuntime
     private lateinit var token: String
 
+    private var lastRequestId = 0
+
     @Before
     fun setUp() {
         PairedClientStore(context).clear()
@@ -104,7 +106,7 @@ class McpServerHostSessionTest {
         post(initializedNotification(), sessionId)
         val names = toolNames(post(toolsListRequest(), sessionId))
         assertEquals(ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name }, names)
-        val listed = post(toolsListRequest(), sessionId).json().getJSONObject("result").getJSONArray("tools")
+        val listed = post(toolsListRequest(), sessionId).result().getJSONArray("tools")
         val scriptRun = (0 until listed.length()).map { listed.getJSONObject(it) }.first { it.getString("name") == ToolCatalog.SCRIPT_RUN }
         assertEquals("object", scriptRun.getJSONObject("inputSchema").getString("type"))
         assertEquals("source", scriptRun.getJSONObject("inputSchema").getJSONArray("required").getString(0))
@@ -119,7 +121,7 @@ class McpServerHostSessionTest {
         awaitCondition("client_paired event") { callback.events.any { it.getString(McpServerContract.KEY_EVENT_TYPE) == McpServerContract.EVENT_CLIENT_PAIRED } }
         assertTrue(callback.events.any { it.getString(McpServerContract.KEY_EVENT_TYPE) == McpServerContract.EVENT_PAIRING_REQUESTED && it.getString(McpServerContract.KEY_EVENT_CLIENT_NAME) == CLIENT_NAME })
 
-        val info = post(toolsCallRequest(ToolCatalog.DEVICE_INFO), sessionId).json().getJSONObject("result")
+        val info = post(toolsCallRequest(ToolCatalog.DEVICE_INFO), sessionId).result()
         assertFalse(info.optBoolean("isError"))
         val infoText = JSONObject(info.getJSONArray("content").getJSONObject(0).getString("text"))
         assertEquals("autojs6-bridge-device-info-v1", infoText.getString("schema"))
@@ -132,7 +134,7 @@ class McpServerHostSessionTest {
         Log.i(TAG, "device_info through the broker: ${infoText.getJSONObject("host")}")
 
         val run = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN, """{"source":"toast('hi')","name":"demo","timeoutMs":5000,"maxConsoleLines":1}"""), sessionId)
-            .json().getJSONObject("result")
+            .result()
         assertFalse(run.toString(), run.optBoolean("isError"))
         val runResult = run.getJSONObject("structuredContent")
         assertEquals("finished", runResult.getString("status"))
@@ -159,7 +161,7 @@ class McpServerHostSessionTest {
         // A slow run with a progress token: the 2 s heartbeat travels on the request's own response
         // stream (related request id) and carries the newest console line of the fake host.
         val progress = post(
-            """{"jsonrpc":"2.0","id":31,"method":"tools/call","params":{"name":"${ToolCatalog.SCRIPT_RUN}","arguments":{"source":"slow script","timeoutMs":5000},"_meta":{"progressToken":"hb1"}}}""",
+            rpcRequest("tools/call", """{"name":"${ToolCatalog.SCRIPT_RUN}","arguments":{"source":"slow script","timeoutMs":5000},"_meta":{"progressToken":"hb1"}}"""),
             sessionId,
         )
         val heartbeats = progress.events.map { JSONObject(it) }.filter { it.optString("method") == "notifications/progress" }
@@ -170,19 +172,19 @@ class McpServerHostSessionTest {
         val heartbeatMessage = heartbeat.getString("message")
         assertTrue(heartbeatMessage, heartbeatMessage.startsWith("waiting for AutoJs6 (") && heartbeatMessage.endsWith("; last output: e1"))
         assertTrue(heartbeat.getDouble("total") >= 5000.0)
-        assertEquals("finished", progress.json().getJSONObject("result").getJSONObject("structuredContent").getString("status"))
+        assertEquals("finished", progress.result().getJSONObject("structuredContent").getString("status"))
 
-        val failed = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN, """{"source":"fail please"}"""), sessionId).json().getJSONObject("result")
+        val failed = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN, """{"source":"fail please"}"""), sessionId).result()
         assertTrue(failed.getBoolean("isError"))
         val failedText = failed.getJSONArray("content").getJSONObject(0).getString("text")
         assertTrue(failedText, failedText.startsWith("HOST_ERROR: ScriptError: fail please"))
         assertEquals("HOST_ERROR", failed.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
 
-        val invalid = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN, """{"source":"x","timeoutMs":5}"""), sessionId).json().getJSONObject("result")
+        val invalid = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN, """{"source":"x","timeoutMs":5}"""), sessionId).result()
         assertTrue(invalid.getBoolean("isError"))
         assertTrue(invalid.getJSONArray("content").getJSONObject(0).getString("text").startsWith("INVALID_ARGUMENTS: script_run: timeoutMs must be at least 1000"))
 
-        val thrown = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN, """{"source":"throw new Error('boom')","timeoutMs":5000}"""), sessionId).json().getJSONObject("result")
+        val thrown = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN, """{"source":"throw new Error('boom')","timeoutMs":5000}"""), sessionId).result()
         assertFalse(thrown.toString(), thrown.optBoolean("isError"))
         val thrownResult = thrown.getJSONObject("structuredContent")
         assertEquals("error", thrownResult.getString("status"))
@@ -190,7 +192,7 @@ class McpServerHostSessionTest {
         assertEquals(2, thrownResult.getJSONObject("exception").getInt("line"))
         assertTrue(thrownResult.getJSONObject("exception").getString("message").startsWith("Error: boom"))
 
-        val runFile = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN_FILE, """{"path":"demo/run.js","timeoutMs":5000,"waitForCompletion":false}"""), sessionId).json().getJSONObject("result")
+        val runFile = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN_FILE, """{"path":"demo/run.js","timeoutMs":5000,"waitForCompletion":false}"""), sessionId).result()
         assertFalse(runFile.toString(), runFile.optBoolean("isError"))
         val runFileResult = runFile.getJSONObject("structuredContent")
         assertEquals("running", runFileResult.getString("status"))
@@ -202,14 +204,14 @@ class McpServerHostSessionTest {
         assertEquals("demo/run.js", fileRequest.getJSONArray("args").getString(0))
         assertEquals(0L, fileRequest.getJSONArray("args").getJSONObject(1).getLong("waitMs"))
 
-        val scripts = post(toolsCallRequest(ToolCatalog.SCRIPT_LIST), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        val scripts = post(toolsCallRequest(ToolCatalog.SCRIPT_LIST), sessionId).result().getJSONObject("structuredContent")
         assertEquals(1, scripts.getInt("count"))
         assertEquals(7, scripts.getJSONArray("executions").getJSONObject(0).getInt("executionId"))
         assertEquals("run.js", scripts.getJSONArray("executions").getJSONObject(0).getString("name"))
         assertEquals("list", broker.requests.last().getString("method"))
         assertEquals(0, broker.requests.last().getJSONArray("args").length())
 
-        val tail = post(toolsCallRequest(ToolCatalog.CONSOLE_TAIL, """{"lines":2,"level":"warn"}"""), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        val tail = post(toolsCallRequest(ToolCatalog.CONSOLE_TAIL, """{"lines":2,"level":"warn"}"""), sessionId).result().getJSONObject("structuredContent")
         assertEquals(2, tail.getInt("count"))
         assertEquals(2, tail.getJSONArray("entries").length())
         assertEquals(9, tail.getInt("nextSinceId"))
@@ -221,13 +223,13 @@ class McpServerHostSessionTest {
         assertEquals("warn", tailRequest.getJSONArray("args").getJSONObject(0).getString("level"))
         assertEquals(listOf("console"), tailRequest.getJSONArray("permissions").toStringList())
 
-        val stopped7 = post(toolsCallRequest(ToolCatalog.SCRIPT_STOP, """{"executionId":7}"""), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        val stopped7 = post(toolsCallRequest(ToolCatalog.SCRIPT_STOP, """{"executionId":7}"""), sessionId).result().getJSONObject("structuredContent")
         assertEquals(7, stopped7.getInt("executionId"))
         assertTrue(stopped7.getBoolean("stopped"))
         assertEquals("finished", stopped7.getString("state"))
         assertEquals(7, broker.requests.last().getJSONArray("args").getInt(0))
 
-        val stoppedAll = post(toolsCallRequest(ToolCatalog.SCRIPT_STOP_ALL), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        val stoppedAll = post(toolsCallRequest(ToolCatalog.SCRIPT_STOP_ALL), sessionId).result().getJSONObject("structuredContent")
         assertEquals(2, stoppedAll.getInt("stopped"))
         assertEquals("host", broker.requests.last().getJSONArray("args").getJSONObject(0).getString("scope"))
         Log.i(TAG, "script tools through the broker: run (finished / error), run_file, list, tail, stop, stop_all answered")
@@ -239,7 +241,7 @@ class McpServerHostSessionTest {
 
         ToolPermissionStore(context).save(ToolPermissions.DEFAULT.with(ToolGroup.SCRIPT, false))
         assertEquals(ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.SCRIPT, false)).map { it.name }, toolNames(post(toolsListRequest(), sessionId)))
-        val disabled = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN, """{"source":"x"}"""), sessionId).json().getJSONObject("result")
+        val disabled = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN, """{"source":"x"}"""), sessionId).result()
         assertTrue(disabled.getBoolean("isError"))
         assertTrue(disabled.getJSONArray("content").getJSONObject(0).getString("text").startsWith("TOOL_DISABLED: tool script_run is switched off by the script group"))
         ToolPermissionStore(context).save(ToolPermissions.DEFAULT)
@@ -269,7 +271,7 @@ class McpServerHostSessionTest {
         assertTrue(runtime.server.pairingGate!!.approve(held.json().getJSONObject("error").getJSONObject("data").getString("fingerprint")))
 
         // ui_dump: the host JSON nodes become the compact text and the #n references of snapshot s1.
-        val dump = post(toolsCallRequest(ToolCatalog.UI_DUMP, """{"maxNodes":50}"""), sessionId).json().getJSONObject("result")
+        val dump = post(toolsCallRequest(ToolCatalog.UI_DUMP, """{"maxNodes":50}"""), sessionId).result()
         assertFalse(dump.toString(), dump.optBoolean("isError"))
         val dumpText = dump.getJSONArray("content").getJSONObject(0).getString("text")
         assertEquals("window: com.android.settings/.Settings  bounds=[0,0][1080,2400]  nodes=3", dumpText.lines()[0])
@@ -289,7 +291,7 @@ class McpServerHostSessionTest {
         Log.i(TAG, "ui_dump through the broker:\n$dumpText")
 
         // ui_click by nodeRef: relocation by fingerprint (the node drifted 10 px), then the exact selector.
-        val click = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"nodeRef":"#n3"}"""), sessionId).json().getJSONObject("result")
+        val click = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"nodeRef":"#n3"}"""), sessionId).result()
         assertFalse(click.toString(), click.optBoolean("isError"))
         val clickResult = click.getJSONObject("structuredContent")
         assertEquals("click", clickResult.getString("action"))
@@ -309,13 +311,13 @@ class McpServerHostSessionTest {
         assertEquals(210, exact.getJSONObject("boundsContains").getInt("top"))
         Log.i(TAG, "ui_click #n3: relocation $relocationSelector -> exact $exact")
 
-        val stale = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"nodeRef":"#n9"}"""), sessionId).json().getJSONObject("result")
+        val stale = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"nodeRef":"#n9"}"""), sessionId).result()
         assertTrue(stale.getBoolean("isError"))
         val staleText = stale.getJSONArray("content").getJSONObject(0).getString("text")
         assertTrue(staleText, staleText.startsWith("NODE_REF_STALE: #n9 is not in the current snapshot s1"))
         assertEquals("NODE_REF_STALE", stale.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
 
-        val setText = post(toolsCallRequest(ToolCatalog.UI_SET_TEXT, """{"selector":{"id":"search"},"text":" more","append":true}"""), sessionId).json().getJSONObject("result")
+        val setText = post(toolsCallRequest(ToolCatalog.UI_SET_TEXT, """{"selector":{"id":"search"},"text":" more","append":true}"""), sessionId).result()
         assertFalse(setText.toString(), setText.optBoolean("isError"))
         assertEquals("old more", setText.getJSONObject("structuredContent").getString("text"))
         assertEquals("selector", setText.getJSONObject("structuredContent").getString("via"))
@@ -324,43 +326,43 @@ class McpServerHostSessionTest {
         assertEquals("old more", setTextRequest.getJSONArray("args").getString(1))
         assertTrue(setTextRequest.getJSONArray("args").getJSONObject(0).getString("idMatches").contains("search"))
 
-        val scroll = post(toolsCallRequest(ToolCatalog.UI_SCROLL, """{"direction":"down","times":3}"""), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        val scroll = post(toolsCallRequest(ToolCatalog.UI_SCROLL, """{"direction":"down","times":3}"""), sessionId).result().getJSONObject("structuredContent")
         assertEquals(1, scroll.getInt("performed"))
         assertEquals(3, scroll.getInt("requested"))
         assertTrue(scroll.getBoolean("atEnd"))
         assertEquals("scrollable", scroll.getString("via"))
         assertEquals(2, broker.requests.count { it.getString("method") == "scrollForward" })
 
-        val key = post(toolsCallRequest(ToolCatalog.UI_PRESS_KEY, """{"key":"notifications"}"""), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        val key = post(toolsCallRequest(ToolCatalog.UI_PRESS_KEY, """{"key":"notifications"}"""), sessionId).result().getJSONObject("structuredContent")
         assertTrue(key.getBoolean("performed"))
         assertEquals("keys", broker.requests.last().getString("module"))
         assertEquals("notifications", broker.requests.last().getString("method"))
         assertEquals(listOf("keys"), broker.requests.last().getJSONArray("permissions").toStringList())
 
-        val window = post(toolsCallRequest(ToolCatalog.UI_CURRENT_WINDOW), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        val window = post(toolsCallRequest(ToolCatalog.UI_CURRENT_WINDOW), sessionId).result().getJSONObject("structuredContent")
         assertEquals("com.android.settings", window.getString("packageName"))
         assertFalse(window.has("schema"))
         assertEquals(listOf("app.query", "accessibility"), broker.requests.last().getJSONArray("permissions").toStringList())
 
         // Decision D22: the coordinate form and the ui_gesture tools follow the ui_gesture switch.
-        val coordinates = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"x":10,"y":20}"""), sessionId).json().getJSONObject("result")
+        val coordinates = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"x":10,"y":20}"""), sessionId).result()
         assertTrue(coordinates.getBoolean("isError"))
         assertTrue(coordinates.getJSONArray("content").getJSONObject(0).getString("text").startsWith("TOOL_DISABLED: ui_click with x and y is a coordinate gesture"))
-        val swipeOff = post(toolsCallRequest(ToolCatalog.UI_SWIPE, """{"x1":1,"y1":2,"x2":3,"y2":4}"""), sessionId).json().getJSONObject("result")
+        val swipeOff = post(toolsCallRequest(ToolCatalog.UI_SWIPE, """{"x1":1,"y1":2,"x2":3,"y2":4}"""), sessionId).result()
         assertTrue(swipeOff.getJSONArray("content").getJSONObject(0).getString("text").startsWith("TOOL_DISABLED: tool ui_swipe is switched off by the ui_gesture group"))
         assertFalse(toolNames(post(toolsListRequest(), sessionId)).contains(ToolCatalog.UI_SWIPE))
         val requestsBeforeGate = broker.requests.size
 
         ToolPermissionStore(context).save(ToolPermissions.DEFAULT.with(ToolGroup.UI_GESTURE, true))
         assertEquals(ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.UI_GESTURE, true)).map { it.name }, toolNames(post(toolsListRequest(), sessionId)))
-        val tap = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"x":10,"y":20}"""), sessionId).json().getJSONObject("result")
+        val tap = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"x":10,"y":20}"""), sessionId).result()
         assertFalse(tap.toString(), tap.optBoolean("isError"))
         assertEquals("coordinates", tap.getJSONObject("structuredContent").getString("via"))
         val tapRequest = broker.requests.last()
         assertEquals("swipe", tapRequest.getString("method"))
         assertEquals(listOf(10, 20, 10, 20, 100), (0 until 5).map { tapRequest.getJSONArray("args").getInt(it) })
         assertEquals(listOf("accessibility", "accessibility.gesture"), tapRequest.getJSONArray("permissions").toStringList())
-        val swipe = post(toolsCallRequest(ToolCatalog.UI_SWIPE, """{"x1":100,"y1":1500,"x2":100,"y2":500}"""), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        val swipe = post(toolsCallRequest(ToolCatalog.UI_SWIPE, """{"x1":100,"y1":1500,"x2":100,"y2":500}"""), sessionId).result().getJSONObject("structuredContent")
         assertTrue(swipe.getBoolean("performed"))
         assertEquals(300, swipe.getInt("durationMs"))
         assertEquals(100, broker.requests.last().getJSONArray("args").getInt(0))
@@ -418,11 +420,11 @@ class McpServerHostSessionTest {
         val fingerprint = held.json().getJSONObject("error").getJSONObject("data").getString("fingerprint")
         assertTrue(runtime.server.pairingGate!!.approve(fingerprint))
 
-        val ping = post(toolsCallRequest(ToolCatalog.DEVICE_PING), sessionId).json().getJSONObject("result")
+        val ping = post(toolsCallRequest(ToolCatalog.DEVICE_PING), sessionId).result()
         assertFalse(ping.optBoolean("isError"))
         assertEquals(context.mcpServerPluginRuntimeInfo().versionName, ping.getJSONObject("structuredContent").getString("versionName"))
 
-        val info = post(toolsCallRequest(ToolCatalog.DEVICE_INFO), sessionId).json().getJSONObject("result")
+        val info = post(toolsCallRequest(ToolCatalog.DEVICE_INFO), sessionId).result()
         assertTrue(info.getBoolean("isError"))
         val text = info.getJSONArray("content").getJSONObject(0).getString("text")
         assertTrue(text, text.startsWith("HOST_UNAVAILABLE: AutoJs6 is not connected to the MCP server"))
@@ -443,7 +445,7 @@ class McpServerHostSessionTest {
         assertTrue(runtime.server.pairingGate!!.approve(held.json().getJSONObject("error").getJSONObject("data").getString("fingerprint")))
         repeat(3) { index ->
             broker.screenFallback = index > 0
-            val result = post(toolsCallRequest(ToolCatalog.SCREEN_CAPTURE), sessionId).json().getJSONObject("result")
+            val result = post(toolsCallRequest(ToolCatalog.SCREEN_CAPTURE), sessionId).result()
             assertFalse(result.toString(), result.optBoolean("isError"))
             val meta = result.getJSONObject("structuredContent")
             assertEquals(if (index == 0) "accessibility" else "media_projection", meta.getString("source"))
@@ -464,15 +466,15 @@ class McpServerHostSessionTest {
         assertEquals(576, capture.getJSONArray("args").getJSONObject(0).getInt("maxWidth"))
         assertEquals(listOf("image", "screen_capture"), capture.getJSONArray("permissions").toStringList())
         assertEquals(15_000L, capture.getLong("timeoutMs"))
-        val state = post(toolsCallRequest(ToolCatalog.SCREEN_STATE), sessionId).json().getJSONObject("result").getJSONObject("structuredContent")
+        val state = post(toolsCallRequest(ToolCatalog.SCREEN_STATE), sessionId).result().getJSONObject("structuredContent")
         assertTrue(state.getBoolean("screenOn"))
         assertEquals(1080, state.getInt("width"))
         broker.denyCapture = true
-        val denied = post(toolsCallRequest(ToolCatalog.SCREEN_CAPTURE), sessionId).json().getJSONObject("result")
+        val denied = post(toolsCallRequest(ToolCatalog.SCREEN_CAPTURE), sessionId).result()
         assertEquals("CAPABILITY_DENIED", denied.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
         assertTrue(denied.toString().contains("approve AutoJs6"))
         ToolPermissionStore(context).save(ToolPermissions.DEFAULT.with(ToolGroup.SCREEN, false))
-        val disabled = post(toolsCallRequest(ToolCatalog.SCREEN_CAPTURE), sessionId).json().getJSONObject("result")
+        val disabled = post(toolsCallRequest(ToolCatalog.SCREEN_CAPTURE), sessionId).result()
         assertEquals("TOOL_DISABLED", disabled.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
         session.close()
     }
@@ -494,7 +496,7 @@ class McpServerHostSessionTest {
                 Thread.sleep(response.header("retry-after")!!.toLong() * 1_000L)
                 response = post(toolsCallRequest(name, args), sessionId)
             }
-            return response.json().getJSONObject("result")
+            return response.result()
         }
         fun success(name: String, args: String = "{}"): JSONObject = call(name, args).also { assertFalse("$name: $it", it.optBoolean("isError")) }.getJSONObject("structuredContent")
         success(ToolCatalog.FILES_WRITE, """{"path":"./test.js","content":"a\nb","overwrite":false}""")
@@ -545,27 +547,26 @@ class McpServerHostSessionTest {
         awaitStatus(session) { it.getString(McpServerContract.KEY_STATUS_STATE) == McpServerContract.STATE_RUNNING }
         val sessionId = post(initializeRequest(), sessionId = null).header("mcp-session-id")
         post(initializedNotification(), sessionId)
-        fun rpc(method: String, params: String = "{}"): JSONObject =
-            post("""{"jsonrpc":"2.0","id":71,"method":"$method","params":$params}""", sessionId).json()
-        val listed = rpc("resources/list").getJSONObject("result")
+        fun rpc(method: String, params: String = "{}"): Response = post(rpcRequest(method, params), sessionId)
+        val listed = rpc("resources/list").result()
         assertEquals(0, listed.getJSONObject("_meta").getInt("ttlMs"))
         assertEquals(4, listed.getJSONArray("resources").length())
-        assertEquals(2, rpc("resources/templates/list").getJSONObject("result").getJSONArray("resourceTemplates").length())
-        assertEquals(3, rpc("prompts/list").getJSONObject("result").getJSONArray("prompts").length())
-        val held = rpc("resources/read", """{"uri":"autojs6://samples/Examples/hello.js"}""").getJSONObject("error")
+        assertEquals(2, rpc("resources/templates/list").result().getJSONArray("resourceTemplates").length())
+        assertEquals(3, rpc("prompts/list").result().getJSONArray("prompts").length())
+        val held = rpc("resources/read", """{"uri":"autojs6://samples/Examples/hello.js"}""").json().getJSONObject("error")
         assertEquals("PAIRING_REQUIRED", held.getJSONObject("data").getString("code"))
         assertTrue(runtime.server.pairingGate!!.approve(held.getJSONObject("data").getString("fingerprint")))
-        val sample = rpc("resources/read", """{"uri":"autojs6://samples/Examples/hello.js"}""").getJSONObject("result")
+        val sample = rpc("resources/read", """{"uri":"autojs6://samples/Examples/hello.js"}""").result()
         assertEquals("console.log('sample');", sample.getJSONArray("contents").getJSONObject(0).getString("text"))
         assertEquals("readSample", broker.requests.last().getString("method"))
-        val binary = rpc("resources/read", """{"uri":"autojs6://workspace/large.bin"}""").getJSONObject("result")
+        val binary = rpc("resources/read", """{"uri":"autojs6://workspace/large.bin"}""").result()
         assertEquals(1024 * 1024, android.util.Base64.decode(binary.getJSONArray("contents").getJSONObject(0).getString("blob"), android.util.Base64.DEFAULT).size)
-        val prompt = rpc("prompts/get", """{"name":"write_autojs6_script","arguments":{"goal":"Log a message","language":"zh"}}""").getJSONObject("result")
+        val prompt = rpc("prompts/get", """{"name":"write_autojs6_script","arguments":{"goal":"Log a message","language":"zh"}}""").result()
         assertTrue(prompt.getJSONArray("messages").getJSONObject(0).getJSONObject("content").getString("text").contains("ui_dump"))
-        assertEquals(-32602, rpc("resources/read", """{"uri":"autojs6://workspace/%2e%2e/escape"}""").getJSONObject("error").getInt("code"))
+        assertEquals(-32602, rpc("resources/read", """{"uri":"autojs6://workspace/%2e%2e/escape"}""").json().getJSONObject("error").getInt("code"))
         ToolPermissionStore(context).save(ToolPermissions.DEFAULT.with(ToolGroup.FILES, false))
-        assertEquals(0, rpc("resources/templates/list").getJSONObject("result").getJSONArray("resourceTemplates").length())
-        assertEquals("TOOL_DISABLED", rpc("resources/read", """{"uri":"autojs6://samples/Examples/hello.js"}""").getJSONObject("error").getJSONObject("data").getString("code"))
+        assertEquals(0, rpc("resources/templates/list").result().getJSONArray("resourceTemplates").length())
+        assertEquals("TOOL_DISABLED", rpc("resources/read", """{"uri":"autojs6://samples/Examples/hello.js"}""").json().getJSONObject("error").getJSONObject("data").getString("code"))
         session.close()
     }
 
@@ -832,13 +833,14 @@ class McpServerHostSessionTest {
     }
 
     private fun toolNames(response: Response): List<String> {
-        val tools = response.json().getJSONObject("result").getJSONArray("tools")
+        val tools = response.result().getJSONArray("tools")
         return (0 until tools.length()).map { tools.getJSONObject(it).getString("name") }
     }
 
     private fun JSONArray.toStringList(): List<String> = (0 until length()).map { getString(it) }
 
     private fun post(body: String, sessionId: String?): Response {
+        val request = JSONObject(body)
         val connection = URL(McpHttpServer.endpointUrl(PORT)).openConnection() as HttpURLConnection
         connection.requestMethod = "POST"
         connection.connectTimeout = 5_000
@@ -858,7 +860,7 @@ class McpServerHostSessionTest {
             if (contentType.startsWith("text/event-stream")) reader.readSseData() else listOf(reader.readText())
         }.orEmpty()
         connection.disconnect()
-        return Response(status, headers, events.lastOrNull().orEmpty(), events)
+        return Response(status, headers, events.lastOrNull().orEmpty(), events, request.getString("method"), request.opt("id"))
     }
 
     /** Every `data:` payload of the response stream; the last one is the JSON-RPC response. */
@@ -870,22 +872,45 @@ class McpServerHostSessionTest {
         }
     }
 
-    private class Response(val status: Int, val headers: Map<String, String>, val body: String, val events: List<String> = emptyList()) {
+    private class Response(
+        val status: Int,
+        val headers: Map<String, String>,
+        val body: String,
+        val events: List<String>,
+        private val requestMethod: String,
+        private val requestId: Any?,
+    ) {
         fun header(name: String): String? = headers[name.lowercase()]
-        fun json(): JSONObject = JSONObject(body)
+
+        fun json(): JSONObject = runCatching { JSONObject(body) }.getOrElse {
+            throw AssertionError("$requestMethod id=$requestId: HTTP $status did not return a JSON object")
+        }
+
+        fun result(): JSONObject {
+            val document = json()
+            val error = document.optJSONObject("error")
+            // Keep unexpected errors actionable without printing headers, arguments or result payloads.
+            val diagnostic = "$requestMethod id=$requestId: HTTP $status, error=${error?.optInt("code")}, message=${error?.optString("message")?.take(240)}"
+            assertEquals(diagnostic, 200, status)
+            assertFalse(diagnostic, document.has("error"))
+            assertEquals("$requestMethod response id", requestId, document.opt("id"))
+            return document.optJSONObject("result") ?: throw AssertionError("$diagnostic, missing object result")
+        }
     }
 
-    private fun initializeRequest(): String = """
-        {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"$PROTOCOL_VERSION",
-        "capabilities":{},"clientInfo":{"name":"$CLIENT_NAME","version":"1"}}}
-    """.trimIndent()
+    // MCP request ids must be unique within a session, including calls sent after an earlier response.
+    private fun rpcRequest(method: String, params: String = "{}"): String =
+        """{"jsonrpc":"2.0","id":${++lastRequestId},"method":"$method","params":$params}"""
+
+    private fun initializeRequest(): String = rpcRequest("initialize", """{"protocolVersion":"$PROTOCOL_VERSION",
+        "capabilities":{},"clientInfo":{"name":"$CLIENT_NAME","version":"1"}}""")
 
     private fun initializedNotification(): String = """{"jsonrpc":"2.0","method":"notifications/initialized"}"""
 
-    private fun toolsListRequest(): String = """{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}"""
+    private fun toolsListRequest(): String = rpcRequest("tools/list")
 
     private fun toolsCallRequest(name: String, arguments: String = "{}"): String =
-        """{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"$name","arguments":$arguments}}"""
+        rpcRequest("tools/call", """{"name":"$name","arguments":$arguments}""")
 
     private companion object {
         const val TAG = "McpServerHostSessionTest"
