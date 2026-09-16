@@ -4,6 +4,12 @@
 
 ******
 
+# v1.0.2
+
+###### 2026/09/16
+
+* `Improvement` Target Android 17 (SDK 37) with separate local network permission controls and recovery guidance
+
 # v1.0.1
 
 ###### 2026/09/16

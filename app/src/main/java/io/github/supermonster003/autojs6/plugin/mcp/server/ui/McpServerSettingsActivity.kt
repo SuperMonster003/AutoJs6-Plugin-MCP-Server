@@ -28,6 +28,7 @@ import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import io.github.supermonster003.autojs6.plugin.mcp.server.McpServerPlugin
+import io.github.supermonster003.autojs6.plugin.mcp.server.LocalNetworkAccess
 import io.github.supermonster003.autojs6.plugin.mcp.server.mcpServerPluginRuntimeInfo
 import io.github.supermonster003.autojs6.plugin.mcp.server.R
 import io.github.supermonster003.autojs6.plugin.mcp.server.host.SessionStatus
@@ -103,10 +104,18 @@ class McpServerSettingsActivity : SettingsPageActivity() {
             button(R.string.settings_notifications, box, ::notifications)
         }
         card(R.string.settings_network).also { box ->
+            if (Build.VERSION.SDK_INT >= 37) {
+                label(getString(R.string.local_network_explanation), box).setTextColor(secondary)
+                button(R.string.local_network_allow, box, ::localNetworkPermission)
+            }
             portButton = button(R.string.settings_port, box, ::editPort)
             lan = toggle(R.string.settings_lan, box) { enabled ->
                 if (enabled) confirm(R.string.settings_lan, R.string.settings_lan_warning) {
-                    saveConfig { it.copy(bindScope = BindScope.LAN) }
+                    if (LocalNetworkAccess.isGranted(this)) saveConfig { it.copy(bindScope = BindScope.LAN) }
+                    else {
+                        lan.isChecked = false
+                        localNetworkPermission()
+                    }
                 } else saveConfig { it.copy(bindScope = BindScope.LOOPBACK) }
             }
             lanAddressText = label("", box).apply { setTextIsSelectable(true); visibility = View.GONE }
@@ -380,6 +389,17 @@ class McpServerSettingsActivity : SettingsPageActivity() {
             val intent = if (Build.VERSION.SDK_INT >= 26) Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
             else Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
             runCatching { startActivity(intent) }.onFailure { toast(R.string.settings_save_failed) }
+        }
+    }
+
+    private fun localNetworkPermission() {
+        if (Build.VERSION.SDK_INT < 37) return
+        val requested = getPreferences(MODE_PRIVATE).getBoolean("local_network_requested", false)
+        if (LocalNetworkAccess.isGranted(this) || (requested && !shouldShowRequestPermissionRationale(LocalNetworkAccess.PERMISSION))) {
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+        } else {
+            getPreferences(MODE_PRIVATE).edit().putBoolean("local_network_requested", true).apply()
+            requestPermissions(arrayOf(LocalNetworkAccess.PERMISSION), 37)
         }
     }
 
