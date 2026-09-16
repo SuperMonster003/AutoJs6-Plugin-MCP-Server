@@ -2,8 +2,8 @@
 <resources>
     <string name="local_network_allow">允許附近裝置</string>
     <string name="local_network_denied">未允許</string>
-    <string name="local_network_explanation">在 Android 17 或更新版本上, 請為此外掛允許附近裝置權限, 以連線至區域網路裝置. AutoJs6 的授權不會授予此外掛權限. 公開網際網路及回送連線不需要此權限.</string>
-    <string name="local_network_failure_hint">如果此操作使用區域網路, 請從 AutoJs6 外掛中心開啟此外掛, 並允許附近裝置權限. AutoJs6 的授權不會授予此外掛權限.</string>
+    <string name="local_network_explanation">在 Android 17 以上, 在 AutoJs6 外掛程式中心啟用此外掛程式前須允許存取附近的裝置. 也可在此外掛程式的設定頁面管理區域網路權限. 未獲授權時外掛程式保持關閉, 自動啟動將靜默略過. 此權限屬於外掛程式本身, 與 AutoJs6 的授權相互獨立.</string>
+    <string name="local_network_failure_hint">請在 AutoJs6 外掛程式中心開啟此外掛程式的設定頁面, 授予區域網路權限.</string>
     <string name="local_network_granted">已允許</string>
     <string name="local_network_not_required">此 Android 版本不需要個別授權.</string>
     <string name="local_network_settings">開啟應用程式設定</string>

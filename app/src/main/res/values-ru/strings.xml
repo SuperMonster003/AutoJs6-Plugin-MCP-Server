@@ -2,8 +2,8 @@
 <resources>
     <string name="local_network_allow">Разрешить устройства поблизости</string>
     <string name="local_network_denied">Не разрешено</string>
-    <string name="local_network_explanation">На Android 17 и новее разрешите этому плагину доступ к устройствам поблизости для подключения к локальной сети. Разрешение AutoJs6 не распространяется на плагин. Общедоступный интернет и петлевые соединения не требуют этого разрешения.</string>
-    <string name="local_network_failure_hint">Если операция использует локальную сеть, откройте этот плагин из центра плагинов AutoJs6 и разрешите устройства поблизости. Разрешение AutoJs6 не распространяется на плагин.</string>
+    <string name="local_network_explanation">На Android 17 и новее разрешите доступ к устройствам поблизости перед включением этого плагина в центре плагинов AutoJs6. Разрешением локальной сети также можно управлять на странице настроек плагина. Без разрешения плагин остается выключенным, а автозапуск пропускается без уведомления. Разрешение принадлежит плагину и не зависит от разрешения AutoJs6.</string>
+    <string name="local_network_failure_hint">Откройте настройки этого плагина в центре плагинов AutoJs6 и разрешите доступ к локальной сети.</string>
     <string name="local_network_granted">Разрешено</string>
     <string name="local_network_not_required">Эта версия Android не требует отдельного разрешения.</string>
     <string name="local_network_settings">Открыть настройки приложения</string>

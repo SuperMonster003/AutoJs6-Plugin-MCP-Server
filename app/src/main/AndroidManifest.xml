@@ -50,6 +50,13 @@
             android:value="@string/plugin_author" />
 
         <activity
+            android:name=".LocalNetworkPermissionActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:permission="org.autojs.permission.PLUGIN"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <activity
             android:name=".WakeActivity"
             android:excludeFromRecents="true"
             android:exported="true"
