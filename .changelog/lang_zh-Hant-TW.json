@@ -6,7 +6,7 @@
   "changelog_label_dependency": "相依性",
   "$data": {
     "v1.0.1": {
-      "released_date": "2026/09/15",
+      "released_date": "2026/09/16",
       "feature": [
         "可選的離線文件資源: 安裝 AutoJs6 離線文件外掛且宿主透過 app.listDocs / app.readDoc 轉讀時, resources/list 增加 autojs6://docs/ (帶子 URI 的索引) 與每個文件頁面對應的 autojs6://docs/{+path} 資源, resources/templates/list 增加 docs 範本; 未安裝外掛或宿主不含這兩個方法時不列出任何條目, 並由 _meta.docsCatalogStatus 說明原因"
       ],
@@ -18,7 +18,7 @@
       ]
     },
     "v1.0.0": {
-      "released_date": "2026/09/15",
+      "released_date": "2026/09/16",
       "hint": [
         "P4 開發預覽: 37 個工具, 預設啟用 33 個, 提供 AutoJs6 抽屜開關與外掛程式設定頁. 需要配套的 P4 AutoJs6 組建. ROADMAP.md."
       ],

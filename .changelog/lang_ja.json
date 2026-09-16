@@ -6,7 +6,7 @@
   "changelog_label_dependency": "依存関係",
   "$data": {
     "v1.0.1": {
-      "released_date": "2026/09/15",
+      "released_date": "2026/09/16",
       "feature": [
         "オプションのオフラインドキュメントリソース: AutoJs6 オフラインドキュメントプラグインがインストールされ, ホストが app.listDocs / app.readDoc で中継する場合, resources/list に autojs6://docs/ (子 URI を含むインデックス) とドキュメントページごとの autojs6://docs/{+path} リソースが加わり, resources/templates/list に docs テンプレートが加わります. プラグインがない場合やこれらのメソッドを持たないホストでは何も列挙されず, _meta.docsCatalogStatus が理由を示します"
       ],
@@ -18,7 +18,7 @@
       ]
     },
     "v1.0.0": {
-      "released_date": "2026/09/15",
+      "released_date": "2026/09/16",
       "hint": [
         "P4 開発プレビュー: 37 ツール中 33 が既定で有効です. AutoJs6 のドロワースイッチとプラグイン設定画面を提供します. 対応する P4 AutoJs6 ビルドが必要です. ROADMAP.md."
       ],

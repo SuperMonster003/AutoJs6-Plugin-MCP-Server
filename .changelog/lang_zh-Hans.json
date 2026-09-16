@@ -6,7 +6,7 @@
   "changelog_label_dependency": "依赖",
   "$data": {
     "v1.0.1": {
-      "released_date": "2026/09/15",
+      "released_date": "2026/09/16",
       "feature": [
         "可选的离线文档资源: 安装 AutoJs6 离线文档插件且宿主通过 app.listDocs / app.readDoc 转读时, resources/list 增加 autojs6://docs/ (带子 URI 的索引) 与每个文档页面对应的 autojs6://docs/{+path} 资源, resources/templates/list 增加 docs 模板; 未安装插件或宿主不含这两个方法时不列出任何条目, 并由 _meta.docsCatalogStatus 说明原因"
       ],
@@ -18,7 +18,7 @@
       ]
     },
     "v1.0.0": {
-      "released_date": "2026/09/15",
+      "released_date": "2026/09/16",
       "hint": [
         "P4 开发预览: 37 个工具, 默认启用 33 个, 提供 AutoJs6 抽屉开关和插件设置页. 需要配套的 P4 AutoJs6 构建. ROADMAP.md."
       ],
