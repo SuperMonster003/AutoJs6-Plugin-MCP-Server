@@ -282,8 +282,9 @@ Los planes y el progreso del plugin se mantienen como una lista verificable en R
 
 #### v1.0.2
 
-_2026/09/16_
+_2026/09/17_
 
+- `Corrección` Los botones, pistas y controles de los interruptores, campos de texto, opciones únicas y botones de diálogos siguen el color del tema del anfitrión con mejor contraste en modos claro y oscuro
 - `Mejora` Autorización de red local de Android 17 integrada en la activación y los ajustes del plugin, sin página de permisos en el lanzador; sin permiso, el plugin permanece desactivado y se omite el inicio automático sin avisos
 - `Mejora` Compatibilidad con Android 17 (SDK 37), controles de permiso de red local propios del plugin y ayuda para recuperar el acceso
 
