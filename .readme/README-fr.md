@@ -282,8 +282,9 @@ Les plans et l'avancement du plugin sont tenus sous forme de liste cochable dans
 
 #### v1.0.2
 
-_2026/09/16_
+_2026/09/17_
 
+- `Correctif` Les boutons, pistes et curseurs des interrupteurs, champs, choix uniques et boutons des dialogues suivent la couleur du thème hôte avec un meilleur contraste en modes clair et sombre
 - `Amélioration` Autorisation du réseau local sous Android 17 intégrée au parcours activation et aux paramètres du plugin, sans page du lanceur; sans autorisation, le plugin reste désactivé et le démarrage automatique est silencieux
 - `Amélioration` Cibler Android 17 (SDK 37) avec des autorisations réseau local propres au plugin et une aide à la récupération
 

@@ -6,8 +6,9 @@
 
 # v1.0.2
 
-###### 2026/09/16
+###### 2026/09/17
 
+* `Fix` Settings buttons, switch tracks and thumbs, text inputs, radio choices and dialog buttons follow the host theme color with improved contrast in light and dark modes
 * `Improvement` Android 17 local network authorization moves to plugin-center enablement and plugin settings, with no launcher permission page; missing permission keeps the plugin disabled and automatic startup silent
 * `Improvement` Target Android 17 (SDK 37) with separate local network permission controls and recovery guidance
 

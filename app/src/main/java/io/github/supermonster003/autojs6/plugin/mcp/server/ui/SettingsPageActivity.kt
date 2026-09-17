@@ -1,18 +1,25 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server.ui
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.RippleDrawable
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import android.widget.AbsListView
 import android.widget.Button
+import android.widget.CheckedTextView
+import android.widget.EditText
+import android.widget.Switch
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -26,8 +33,17 @@ abstract class SettingsPageActivity : Activity() {
     protected lateinit var content: LinearLayout
     private var backButton: ImageButton? = null
     protected val textColor get() = if (appearance.dark) Color.WHITE else 0xff202522.toInt()
-    protected val secondary get() = if (appearance.dark) 0xffbac7c1.toInt() else 0xff4e5d55.toInt()
-    protected val surface get() = if (appearance.dark) 0xff202923.toInt() else Color.WHITE
+    protected val secondary get() = if (appearance.dark) 0xffbdbdbd.toInt() else 0xff575757.toInt()
+    protected val surface get() = if (appearance.dark) 0xff242424.toInt() else Color.WHITE
+    private val pageBackground get() = blend(if (appearance.dark) 0xff141414.toInt() else 0xfff5f5f5.toInt(), appearance.primary, .04f)
+    protected val controlColor get(): Int {
+        val base = appearance.accent or (0xff shl 24)
+        val target = if (appearance.dark) Color.WHITE else Color.BLACK
+        return (0..20).asSequence().map { blend(base, target, it / 20f) }
+            .firstOrNull { contrast(it, surface) >= 4.5 } ?: target
+    }
+    private val controlStates get() = arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf(android.R.attr.state_checked), intArrayOf())
+    private val selectionTint get() = ColorStateList(controlStates, intArrayOf(blend(surface, secondary, .3f), controlColor, secondary))
 
     override fun attachBaseContext(newBase: Context) {
         appearance = HostAppearance.read(newBase)
@@ -43,7 +59,7 @@ abstract class SettingsPageActivity : Activity() {
         title = titleText
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(if (appearance.dark) 0xff131a16.toInt() else 0xfff2f6f3.toInt())
+            setBackgroundColor(pageBackground)
         }
         val toolbar = Toolbar(this).apply {
             title = titleText
@@ -66,7 +82,7 @@ abstract class SettingsPageActivity : Activity() {
         @Suppress("DEPRECATION")
         window.statusBarColor = appearance.primary
         @Suppress("DEPRECATION")
-        window.navigationBarColor = if (appearance.dark || Build.VERSION.SDK_INT < 26) 0xff131a16.toInt() else 0xfff2f6f3.toInt()
+        window.navigationBarColor = if (Build.VERSION.SDK_INT < 26) 0xff141414.toInt() else pageBackground
         val lightStatus = if (Build.VERSION.SDK_INT >= 35) !appearance.dark else Color.luminance(appearance.primary) > .179
         if (Build.VERSION.SDK_INT >= 30) {
             val flags = (if (lightStatus) WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS else 0) or
@@ -110,6 +126,7 @@ abstract class SettingsPageActivity : Activity() {
         content.addView(this, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
         label(getString(titleId), this, 19f).apply {
             setTypeface(typeface, Typeface.BOLD)
+            setTextColor(controlColor)
             if (Build.VERSION.SDK_INT >= 28) isAccessibilityHeading = true
         }
     }
@@ -123,10 +140,62 @@ abstract class SettingsPageActivity : Activity() {
 
     protected fun button(titleId: Int, parent: LinearLayout, action: () -> Unit): Button = Button(this).apply {
         setText(titleId); isAllCaps = false; minHeight = dp(48)
-        setTextColor(ColorStateList(arrayOf(intArrayOf(android.R.attr.state_enabled), intArrayOf()), intArrayOf(textColor, secondary)))
-        backgroundTintList = ColorStateList.valueOf(if (appearance.dark) 0xff304238.toInt() else 0xffe7f0eb.toInt())
+        setTextColor(ColorStateList(arrayOf(intArrayOf(android.R.attr.state_enabled), intArrayOf()), intArrayOf(controlColor, secondary)))
+        backgroundTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_enabled), intArrayOf()),
+            intArrayOf(blend(surface, appearance.primary, .14f), blend(surface, secondary, .06f)))
+        (background as? RippleDrawable)?.setColor(ColorStateList.valueOf(blend(surface, controlColor, .25f)))
         setOnClickListener { action() }
         parent.addView(this, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
+    }
+
+    protected fun tintSwitch(view: Switch) {
+        view.thumbTintList = selectionTint
+        view.trackTintList = ColorStateList(controlStates, intArrayOf(blend(surface, secondary, .12f),
+            blend(surface, controlColor, .4f), blend(surface, secondary, .25f)))
+    }
+
+    protected fun AlertDialog.Builder.showThemed(): AlertDialog = create().also { it.show(); applyDialogTheme(it) }
+
+    protected fun applyDialogTheme(dialog: AlertDialog) {
+        listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL).forEach { id ->
+            dialog.getButton(id)?.setTextColor(controlColor)
+        }
+        val decor = dialog.window?.decorView ?: return
+        fun tint(view: View) {
+            when (view) {
+                is CheckedTextView -> view.checkMarkTintList = selectionTint
+                is EditText -> {
+                    view.setTextColor(textColor)
+                    view.setHintTextColor(secondary)
+                    view.highlightColor = (controlColor and 0x00ffffff) or 0x55000000
+                    view.backgroundTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(controlColor, secondary))
+                    if (Build.VERSION.SDK_INT >= 29) {
+                        view.textCursorDrawable = view.textCursorDrawable?.mutate()?.apply { setTint(controlColor) }
+                        view.textSelectHandle?.mutate()?.setTint(controlColor)
+                        view.textSelectHandleLeft?.mutate()?.setTint(controlColor)
+                        view.textSelectHandleRight?.mutate()?.setTint(controlColor)
+                    }
+                }
+            }
+            if (view is ViewGroup) (0 until view.childCount).forEach { tint(view.getChildAt(it)) }
+        }
+        decor.post { tint(decor) }
+        dialog.listView?.setOnScrollListener(object : AbsListView.OnScrollListener {
+            override fun onScrollStateChanged(view: AbsListView?, state: Int) = Unit
+            override fun onScroll(view: AbsListView?, first: Int, count: Int, total: Int) { view?.let(::tint) }
+        })
+    }
+
+    private fun blend(background: Int, foreground: Int, amount: Float): Int = Color.rgb(
+        (Color.red(background) * (1 - amount) + Color.red(foreground) * amount).toInt(),
+        (Color.green(background) * (1 - amount) + Color.green(foreground) * amount).toInt(),
+        (Color.blue(background) * (1 - amount) + Color.blue(foreground) * amount).toInt(),
+    )
+
+    private fun contrast(first: Int, second: Int): Double {
+        val a = Color.luminance(first) + .05
+        val b = Color.luminance(second) + .05
+        return maxOf(a, b) / minOf(a, b)
     }
 
     protected fun dp(value: Int): Int = (value * resources.displayMetrics.density + .5f).toInt()

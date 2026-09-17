@@ -8,7 +8,6 @@ import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -175,7 +174,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
                 val info = mcpServerPluginRuntimeInfo()
                 dialog = AlertDialog.Builder(this).setTitle(R.string.settings_about)
                     .setMessage(getString(R.string.settings_about_text, info.versionName, info.versionCode))
-                    .setPositiveButton(android.R.string.ok, null).show()
+                    .setPositiveButton(android.R.string.ok, null).showThemed()
             }
         }
         showClients(emptyList(), force = true)
@@ -282,6 +281,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
                     else { saveConfig { it.copy(port = port) }; popup.dismiss() }
                 } }
                 popup.show()
+                applyDialogTheme(popup)
             }
     }
 
@@ -295,7 +295,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
                 saveConfig { it.copy(idleStopMinutes = IDLE_STOP_CHOICES[which]) }
                 popup.dismiss()
             }
-            .setNegativeButton(android.R.string.cancel, null).show()
+            .setNegativeButton(android.R.string.cancel, null).showThemed()
     }
 
     private fun batterySettings() {
@@ -306,7 +306,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
     private fun toggle(titleId: Int, parent: LinearLayout, change: (Boolean) -> Unit): Switch = Switch(this).apply {
         setText(titleId); textSize = 16f; setTextColor(textColor); minHeight = dp(56)
         setPadding(0, dp(8), 0, dp(8))
-        thumbTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()), intArrayOf(appearance.accent, secondary))
+        tintSwitch(this)
         parent.addView(this, LinearLayout.LayoutParams(-1, -2))
         setOnCheckedChangeListener { _, enabled ->
             if (!rendering && ready) {
@@ -342,7 +342,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
         } }
         if (endpoints.size == 1) show(endpoints.single())
         else dialog = AlertDialog.Builder(this).setTitle(R.string.settings_choose_endpoint)
-            .setItems(endpoints.toTypedArray()) { _, which -> show(endpoints[which]) }.setNegativeButton(android.R.string.cancel, null).show()
+            .setItems(endpoints.toTypedArray()) { _, which -> show(endpoints[which]) }.setNegativeButton(android.R.string.cancel, null).showThemed()
     }
 
     private fun showSecret(title: String, text: String, environment: String? = null, hint: String? = null) {
@@ -361,6 +361,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
             popup.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
             popup.setOnDismissListener { secret.text = "" }
             popup.show()
+            applyDialogTheme(popup)
         }
     }
 
@@ -375,7 +376,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
 
     private fun confirm(title: String, message: String, action: () -> Unit) {
         dialog = AlertDialog.Builder(this).setTitle(title).setMessage(message).setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(android.R.string.ok) { _, _ -> action() }.show()
+            .setPositiveButton(android.R.string.ok) { _, _ -> action() }.showThemed()
     }
 
     private fun openHost() {
