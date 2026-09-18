@@ -973,3 +973,13 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 完成: 独立设置页和历史页使用宿主主题的按钮, 分组标题, 开关轨道与选中状态; 浅色和深色背景改为中性色, 控件前景按对比度调整. 设置弹窗同步按钮, 单选标记, 输入框下划线, 光标和选区颜色. 宿主抽屉停止状态不再显示副标题, 对应变更在宿主仓库.
 - 验证: JVM 235/235, debug / androidTest 构建与 lintDebug 通过, lint 0 errors / 11 warnings. Sony XQ-DQ72 API 33 和独立只读 AVD_API_33 x86_64 实例各通过 5 项设置与无障碍测试; 模拟器另通过深色主题设置验证 1 项. 检查浅色 / 深色设置页和历史页截图, 使用宿主浅黄色主题 #FFDEAD 验证颜色对比度与禁用状态. 测试覆盖端口校验, 设置恢复, 受保护窗口, Tab 遍历和控件标签.
 - 证据: 本仓库忽略目录 build/verification/theme/ 保留构建, 设备测试日志与截图; 十语言 changelog 和生成文档已更新并通过 --check. 插件版本保持 1.0.2, 构建号按本次提交后的可达提交数设为 65. 本次无公共契约或依赖变更, 未推送, 未执行发布.
+
+### 2026-09-18: adb 安装后的 MCP 启用状态一致性
+
+- [x] 宿主默认策略补齐 MCP 默认关闭, 插件中心, McpServerPluginInspector 与 McpServerPluginHost 的 Binder 选择统一读取 PluginDefaultEnabledPolicy. 已保存的 true / false 继续优先, 初次发现不写入启用记录; 插件实现与公共契约未变.
+- 复现: 独立只读 AVD_API_33 x86_64 实例, adb 安装 MCP 1.0.2 / 65, 宿主 6.8.0 / 5281. 新增设备回归测试在修复前 APK 上实际得到 center=true, enabledState=READY, runtime=PLUGIN_DISABLED; 2 项中仅缺少启用记录的用例失败. 新增 JVM 默认策略用例也先失败.
+- 验证: 修复后宿主插件中心与 MCP JVM 测试 89/89, debug / androidTest 构建通过. 同设备通过缺省记录, 快照与完整发现, 显式 true -> false -> true, 重新创建插件中心模型的 2 项回归, 加真实宿主 Binder 开启 / 运行 / 停止 / 关闭的 1 项回归, 合计 3/3, 2.218 s. 宿主十语言 changelog 与 22 份生成文档已更新并验证再次生成无漂移.
+- 证据: 宿主仓库 docs/dev/evidence/mcp-enablement-20260918.md, 原始日志在宿主忽略目录 build/verification/mcp-enablement-20260918/. 未执行真实设备激活验证, 未执行 ColorOS 或 release 验证; 无插件运行时代码或依赖改动. IDE 调试器只开放本插件项目, 拒绝宿主路径, 因此运行时证据来自 instrumentation.
+- 检查限制: 宿主全量 lint 的联网尝试等待 Google Maven HTTPS, 离线重试超过 15 分钟仍在 JoinEffectDetector / Analysis.eval 全项目数据流分析, 未得到本轮报告, 已停止本次 Gradle 客户端并单独执行 APK 构建. 不以 2026-09-14 的历史报告冒充通过, 未削弱 lint 规则. 本插件 Markdown 检查与 ApplicationTextPunctuationTest 通过.
+- 工作区: 宿主仍有本次范围外的 docs/dev/apk-size-reduction-roadmap.md 改动, 按 AGENTS 第 3.3 节停止自动提交. 本次修复与证据保留在工作区, 不混入用户内容; 插件 VERSION_BUILD=65 与当前提交数一致.
+- 下次起点: P7 原有回填与 docs 资源待办保持不变. 本次仅修正宿主的启用默认值, 不改变插件版本或最低宿主契约要求.
