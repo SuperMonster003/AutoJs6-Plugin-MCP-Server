@@ -6,9 +6,10 @@
 
 # v1.0.2
 
-###### 2026/09/17
+###### 2026/09/19
 
 * `Corrección` Los botones, pistas y controles de los interruptores, campos de texto, opciones únicas y botones de diálogos siguen el color del tema del anfitrión con mejor contraste en modos claro y oscuro
+* `Corrección` Advertencias de lectura de SDK XML v4 con AGP 9.1 y comprobaciones de alineación nativa de APK activadas por error al ensamblar pruebas unitarias JVM, mediante los plugins de compilación compartidos 1.8.3
 * `Mejora` Autorización de red local de Android 17 integrada en la activación y los ajustes del plugin, sin página de permisos en el lanzador; sin permiso, el plugin permanece desactivado y se omite el inicio automático sin avisos
 * `Mejora` Compatibilidad con Android 17 (SDK 37), controles de permiso de red local propios del plugin y ayuda para recuperar el acceso
 
