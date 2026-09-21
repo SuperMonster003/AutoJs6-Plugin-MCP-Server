@@ -284,59 +284,59 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 _2026/09/19_
 
-- `修复` 独立设置页的按钮, 开关轨道与滑块, 输入框, 单选项和弹窗按钮完整跟随宿主主题色, 并改善浅色与深色模式下的对比度
-- `修复` AGP 9.1 构建时的 SDK XML v4 解析警告及 JVM 单元测试组装任务误触发 APK 原生库对齐检查的问题 (共享构建插件 1.8.3)
-- `优化` Android 17 本地网络授权统一移至插件中心启用流程和插件设置, 不再提供启动器授权页面; 未获授权时保持关闭并静默跳过自动启动
+- `修复` 独立设置页部分控件未跟随宿主主题色及亮暗模式下对比度不足的问题
+- `修复` AGP 9.1 构建时的 SDK XML v4 解析警告, 以及 JVM 单元测试误触发 APK 原生库对齐检查的问题 (共享构建插件 1.8.3)
+- `优化` Android 17 本地网络授权移至插件中心启用流程及插件设置, 移除启动器授权页面 (未授权时保持关闭并跳过自动启动)
 - `优化` 适配 Android 17 (SDK 37), 提供插件独立的本地网络权限控制及恢复引导
 
 #### v1.0.1
 
 _2026/09/16_
 
-- `新增` 可选的离线文档资源: 安装 AutoJs6 离线文档插件且宿主通过 app.listDocs / app.readDoc 转读时, resources/list 增加 autojs6://docs/ (带子 URI 的索引) 与每个文档页面对应的 autojs6://docs/{+path} 资源, resources/templates/list 增加 docs 模板; 未安装插件或宿主不含这两个方法时不列出任何条目, 并由 _meta.docsCatalogStatus 说明原因
-- `优化` 将 compileSdk 提升到 37 (Android 17), targetSdk 保持 36, 待依赖目标版本的行为验证后再提升
-- `优化` MCP 一致性 (P6): 在两台设备上以官方 @modelcontextprotocol/conformance 套件 0.1.16 测试有状态的 /mcp 路径. 32 个服务器场景中 9 个通过 (initialize, ping, tools/list, 文本与错误工具结果, resources/list, prompts/list, 并发 SSE 流, DNS rebinding 保护); 18 个调用套件自带的参考夹具 (test_* 工具, 提示与 test:// 资源, 本服务器以未知工具结果, -32602 或 isError 应答), 5 个依赖本服务器未声明的能力 (logging, completions, 资源订阅). 回环 Origin 头现在在任何模式下都被接受 (套件如此要求); CORS 头与预检应答仍仅限开发者模式. 2026-07-28 无状态模型没有路由 (Roadmap D9). 详见 docs/dev/p6-conformance.md.
-- `优化` 安全审计 (P6): 七项清单 (令牌存储, 日志脱敏, 导出组件, 明文范围, 局域网默认关闭, 配对撤销, 工具分组默认关闭) 已在代码与两台设备上逐项核对, 记录于 docs/dev/p6-security-audit.md, README 安全章节改为说明这些边界. 明文 HTTP 由网络安全配置限定为回环地址, 取代应用级 usesCleartextTraffic 标志; 插件不发起客户端连接, 监听器也不需要该标志.
-- `优化` 性能基线 (P6): 在 API 24 模拟器, Sony 手机 (API 33) 与小米平板 (API 35) 上测量 ui_dump 50 / 200 / 400 节点, screen_capture 三档尺寸, script_run 往返与 4 路并发请求, 记录于 docs/dev/p6-performance-baseline.md, 仅作参考不设阈值. 仅由插件应答的调用在模拟器与手机上约 20 ms, ui_dump 每节点约增加 0.05 ms, 无障碍截图路径 100 ms 内应答而 API 24 的 MediaProjection 路径每次约 1.35 s, 4 路并发请求在宿主 4 路并发上限内以单次往返的 1.0-1.8 倍完成.
+- `新增` MCP 资源支持浏览及读取 AutoJs6 离线文档, 提供文档索引与页面资源 (需要安装 Offline Docs 插件, 且宿主支持 app.listDocs/app.readDoc)
+- `优化` compileSdk 升级至 37 (Android 17), targetSdk 保持 36
+- `优化` 有状态 MCP 端点接受回环 Origin, CORS 及预检仍仅在开发者模式下开放 (一致性验证范围参阅 docs/dev/p6-conformance.md)
+- `优化` 明文 HTTP 的客户端网络配置收窄至回环地址, 并补充令牌, 配对及工具权限说明 (参阅 docs/dev/p6-security-audit.md)
+- `优化` 补充 UI 查询, 截图, 脚本执行及并发请求的性能基线, 区分无障碍截图与 MediaProjection 路径 (参阅 docs/dev/p6-performance-baseline.md, 结果仅供参考)
 
 #### v1.0.0
 
 _2026/09/16_
 
-- `提示` P4 开发预览: 37 个工具, 默认启用 33 个, 提供 AutoJs6 抽屉开关和插件设置页. 需要配套的 P4 AutoJs6 构建. ROADMAP.md.
-- `新增` 手机设置页提供服务状态, USB 转发, 端口和局域网访问, 令牌显示/复制/轮换, 配对撤销, 工具分组和 root 权限, 开发者模式, 可复制的 Claude Code / Cursor / Codex / 通用 HTTP 配置及发行历史, 并跟随 AutoJs6 外观. 网络设置会重启运行中的监听器, 令牌和权限变更立即生效. 敏感信息窗口禁止截图.
-- `新增` MCP 资源 (P3.5) 提供只读工作目录文件, 可浏览的宿主示例, 设备信息和最近控制台输出, 遵守配对与分组开关. 文本和二进制读取报告截断状态. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指导, 其他手机语言回退英语.
-- `新增` 工作目录工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用从 1 开始的行列号的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二进制读取使用 base64, 原始数据最多 1 MiB. 写入还受宿主请求预算约束 (通常为包含 JSON 转义的 96 KiB). 文件删除和 Shell 默认关闭; root 另需 allowShellRoot 开关与宿主 shell.root 授权. 这些能力需要匹配的 P3.4 宿主构建.
-- `新增` 插件标识 `mcp-server`, 含 INFO 服务, Wake Activity 以及供宿主发现的 `org.autojs.plugin.MCP_SERVER` 服务骨架
+- `提示` 开发预览版本, 提供 37 个工具 (默认启用 33 个), 需要配套支持抽屉开关及插件设置的 AutoJs6 构建 (参阅 ROADMAP.md P4)
+- `新增` 插件设置页, 支持服务状态, USB 转发, 端口, 局域网访问, 令牌, 配对及工具权限管理, 可复制客户端配置并跟随宿主外观 (网络设置变更会重启服务, 敏感信息窗口禁止截图)
+- `新增` MCP 资源提供只读工作目录, 宿主示例, 设备信息及控制台输出, 支持配对及分组权限控制; 脚本编写, 任务自动化及选择器调试提示支持中英文
+- `新增` 工作目录文件管理, 编辑器定位, 应用启动, 剪贴板, 无障碍启用及 Shell 工具 (二进制读取上限 1 MiB, 写入受宿主请求预算限制, 文件删除及 Shell 默认关闭, Root 另需插件开关与宿主授权)
+- `新增` MCP Server 插件发现及激活入口, 用于向 AutoJs6 提供服务信息
 - `新增` 10 种语言的 README, 插件中心说明与更新日志
-- `新增` 位于 `http://127.0.0.1:9637/mcp` 的 Streamable HTTP 端点及 `device_ping` 工具, 由可经 adb 或宿主启停的前台服务承载 (开发预览)
-- `新增` `/mcp` 端点的传输加固: 绑定地址与端口来自服务器配置存储, 请求体上限 1 MiB, 空闲连接 60 秒后关闭, 端口被占用或绑定被拒绝时以 `port_in_use` / `bind_failed` 状态附带提示结束而非崩溃
-- `新增` SDK 传输前置的 DNS rebinding 保护: 回环模式只接受 `localhost` / `127.0.0.1` / `[::1]` 作为 `Host`, 局域网模式加入设备当前 IPv4 地址与可选的额外主机名并在网络变化时刷新; 浏览器来源一律拒绝, 仅 "开发者模式" 开关经 CORS 放行 Inspector 的回环来源
-- `新增` 服务器标识 `autojs6-mcp-server` 携带插件版本, 并声明 tools (`listChanged`), resources 与 prompts 能力; `tools/list` 保持注册顺序以便客户端缓存
-- `新增` 每个 `/mcp` 请求的 Bearer 令牌鉴权: 首次启动时生成 32 字节令牌, 以 Android Keystore 的 AES-GCM 密钥包裹后存放在插件私有且不参与备份的存储中; `Authorization` 头缺失或错误时经常量时间比较后以 `401` + `WWW-Authenticate: Bearer` 与 JSON-RPC `-32001` 错误拒绝; 令牌不写入日志
-- `新增` 传输前置的首次配对: 未配对客户端可以 `initialize` 并列出 tools, resources 与 prompts, 但首次 `tools/call`, `resources/read`, `resources/subscribe` 或 `prompts/get` 返回 `PAIRING_REQUIRED` (`-32002`), 直到 60 秒内在手机上确认; 拒绝或超时后 30 秒内返回 `PAIRING_DENIED` (`-32003`); 客户端按 `clientInfo` 名称 (缺失时用 `User-Agent`) 加地址类别 (回环 / 局域网) 识别, 因此令牌轮换不影响已有配对, 最多可配对 32 个客户端
-- `新增` 手机上的配对确认走双通道: 带允许 / 拒绝动作的高优先级通知, 以及屏幕解锁时弹出的对话框; 服务器配置, 令牌与已配对客户端保存在原子替换的文件中, 服务器进程与设置页共享且不会读到过期缓存
-- `新增` 带分组开关的工具目录 (决策 D6): `device_ping` (插件本地), `device_info` (AutoJs6 `device.info`) 与 `script_run` (AutoJs6 `engines.execScript`: 运行 JavaScript, 最多等待 `timeoutMs` 直到脚本结束, 返回结果与最新的控制台行, 运行期间发送进度通知); 每个工具声明封闭的 JSON Schema (`additionalProperties: false`), 参数在到达 AutoJs6 之前完成校验; 分组开关 `script` / `ui` / `ui_gesture` / `screen` / `files` / `files_delete` / `device` / `shell` 存放于 `tool_groups.json`, 关闭的分组自下一次请求起从 `tools/list` 消失, 其工具回答 `TOOL_DISABLED`
-- `新增` 宿主桥接: `org.autojs.plugin.MCP_SERVER` 服务实现真实的 `IMcpServerPlugin` Binder (`getInfo` / `getCapabilities` 报告契约版本 1, 工具分组, MCP 协议版本与 SDK 版本; `openServer` 只接受已安装且同签名的 AutoJs6, 返回带 `getStatus` / `updateConfig` / `stop` / `close` 的 `IMcpServerSession`); 工具调用经宿主能力代理传递, 带单调递增的请求 id, 每次调用的超时, 4 路并发上限, 宿主错误类别映射为 `HOST_UNAVAILABLE` / `A11Y_SERVICE_NOT_RUNNING` / `CAPABILITY_DENIED` / `LIMIT_EXCEEDED` / `RATE_LIMITED` / `TIMEOUT` / `HOST_ERROR`; AutoJs6 退出时监听器继续运行, 依赖宿主的工具回答 `HOST_UNAVAILABLE` 直到宿主重新连接; 状态与事件 (`pairing_requested`, `client_paired`, `tool_call`, `warning`) 经回调送达宿主
-- `新增` 前台服务通知显示端点, AutoJs6 连接状态与已配对客户端数, 并提供停止动作; 通知被禁用时以 toast 提示端点; `dumpsys activity service` 额外打印宿主会话, 工具分组开关与已注册工具
-- `新增` 补全脚本分组: `script_run_file` 运行设备上的脚本文件, `script_stop` / `script_stop_all` 停止一个或全部 AutoJs6 执行, `script_list` 列出运行中的执行, `console_tail` 返回最新的控制台行并带 `nextSinceId` 游标与级别过滤; `script_run` 与 `script_run_file` 现在返回 `executionId`, `status` (`finished` / `error` / `running`), `durationMs`, 含行号的异常与最新的控制台行, 等待期间每 2 s 发送一条携带最新控制台行的进度通知
-- `新增` MCP 端点的响应改为以服务器发送事件 (SSE) 流式返回 (不再使用 SDK 的 JSON 响应模式), 属于某个请求的通知 (如运行中脚本的进度心跳) 会随该请求自身的响应送达客户端
-- `新增` 新增 UI 分组 (roadmap P3.2): `ui_dump` 以带 `#n` 引用的紧凑节点树返回当前窗口 (`format` 为 text / json / xml, `maxNodes` 最多 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` 轮询选择器, `ui_current_window` 与 `ui_explain_selector` 报告窗口与选择器失败的原因, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` 作用于 `nodeRef` (按指纹重定位, 节点消失时返回 `NODE_REF_STALE`) 或 `selector`, `ui_press_key` 按下 back / home / recents / notifications / quick_settings / power_dialog / lock_screen, 默认关闭的 `ui_gesture` 分组增加 `ui_swipe`, `ui_gesture` 与点击工具的坐标形式 (分组关闭时返回 `TOOL_DISABLED`); 工具目录快照增至 20 个工具; 坐标手势需要 2026-09-11 或之后构建的 AutoJs6 宿主 (更早的宿主会随机以 "the system cancelled ..." 应答)
-- `新增` 截图分组 (P3.3): screen_capture 返回 MCP 图片, 支持裁剪, scale 或 maxWidth, JPEG / PNG / WebP 与质量参数. 默认 JPEG 质量 70, 最长边 1280 px. base64 超过 4 MiB 时降低质量或尺寸重试, 元数据说明调整情况. screen_state 返回亮屏状态, 尺寸, 方向和密度. 工具目录现有 22 项. MediaProjection 回退需要 2026-09-13 或之后构建的 AutoJs6 宿主及手机端授权, 宿主会话复用该授权.
-- `新增` 局域网路径 (P5.1): 开启局域网访问后, 设置页列出手机当前地址 (Wi-Fi 变化时刷新) 并提示同网段与防火墙; 来自局域网的配对请求在对话框和通知中显著标注; 每日提醒服务器仍可从局域网访问, 可关闭且不重启监听. README 记录 USB 与局域网路径.
-- `新增` 每客户端速率限制 (P6): 每客户端每秒最多 20 个请求, 每分钟最多 30 次 screen_capture. 超限请求返回 HTTP 429, 带 Retry-After 头和含 retryAfterMs 的 JSON-RPC RATE_LIMITED 错误; 超限截图以带 retryAfterMs 的 RATE_LIMITED 工具结果应答, 便于模型等待. 宿主 grant 的无障碍查询速率在此之上仍然生效.
-- `新增` 空闲自动停止与电量 (P6): 设置页新增 "空闲时自动停止" (默认关闭; 5 / 15 / 30 / 60 / 120 分钟). 监听器在所选时间内没有客户端请求时自行停止, 记录插件内部的 idle_timeout 原因, 留下一条可自动消失的通知, 且不算作用户停止; 处理中的请求 (正在运行的工具调用) 不算空闲, 而仅保持连接却不发请求的客户端不会让服务器继续运行. 当 Android 限制了本应用的电池用量 (HyperOS 与 MIUI 默认对侧载应用如此, 息屏并使用电池约一分钟后会停止前台服务) 时, 设置页显示警告和 "电池设置" 按钮, AutoJs6 收到一条 warning 事件. 空闲 CPU 时间与一小时空闲的 batterystats 估算记录于 docs/dev/p6-battery-and-residency.md.
-- `修复` IDE rebuild 不再为 JVM 单元测试查找 APK. APK 校验任务会自动组装所需产物, 可直接从 clean 后执行.
-- `修复` 插件中心亮暗模式下图标比例不一致及自适应图标留白不足的问题; 夜间同样使用自适应图标, 调整图层尺寸以保留 ic_launcher_round.png 的完整图形和留白, 仅切换背景色
-- `修复` 设置页的键盘 Tab 导航会跳过工具栏返回按钮; 现在 Tab 循环覆盖返回按钮和全部控件 (含 Android 7). 设备测试检查读屏标签与键盘操作.
-- `修复` script_run 与 script_run_file 的 arguments 映射以 JSON Schema 数组声明值类型, 部分 MCP 客户端会拒绝或弱化; 现改为单类型 anyOf 分支. README 新增 "接入" 与 "常见问题" 章节及实测客户端矩阵.
-- `修复` 敌意请求体在任何解析器递归之前就被拒绝: 嵌套超过 64 层的 JSON, 重复请求 id 的请求体, 以及同一会话上仍在途的请求 id (原本会让先到的请求得不到应答) 都返回 400 与 JSON-RPC 错误; 没有有效会话的 GET 流返回 400 / 404 而非空事件流. JVM 测试与设备测试 (API 28 / 31 / 33 / 35) 覆盖超长, 超深, 非法 UTF-8, 未知方法, 头部组合, 超大 base64 与 64 并发会话.
-- `修复` 生命周期矩阵 (P6): 带有上一个监听进程会话 id 的请求 (监听进程被杀, 或因令牌轮换而重启之后) 交由传输层回 404, 让客户端重新 initialize, 而不再以请求的 User-Agent 为已配对的客户端发起多余的配对提示; 监听进程死亡后残留在通知栏的配对通知在下一个监听器启动时清除. 宿主被杀, 监听进程被杀, 两者同时被杀, 在系统设置中强制停止, 活动会话中的令牌轮换, 以及跨越宿主被杀与监听进程被杀的待确认配对, 各自的期望状态与恢复路径记录于 docs/dev/lifecycle-matrix.md 并在真机上验证.
+- `新增` 位于 `http://127.0.0.1:9637/mcp` 的 Streamable HTTP 端点及 device_ping 工具, 由可经 adb 或宿主启停的前台服务承载 (开发预览)
+- `新增` MCP 端点支持配置监听地址及端口, 请求体上限为 1 MiB, 空闲连接 60 s 后关闭, 端口占用或绑定失败时返回具体原因
+- `新增` MCP 端点增加 DNS 重绑定保护, 回环模式仅接受本机地址, 局域网模式按当前设备地址及额外主机名校验 (浏览器访问仅在开发者模式下向 Inspector 的回环来源开放)
+- `新增` 服务器标识 `autojs6-mcp-server` 携带插件版本, 并声明 tools (listChanged), resources 与 prompts 能力; `tools/list` 保持注册顺序以便客户端缓存
+- `新增` MCP 请求支持 Bearer 令牌认证, 首次启动自动生成令牌并经 Android Keystore 加密保存, 排除备份及日志记录, 认证失败时返回 HTTP 401
+- `新增` 客户端首次调用工具或读取资源前需在手机上确认配对, 确认有效期为 60 s, 最多保存 32 个客户端, 令牌轮换保留已有配对 (未配对时仍可初始化及浏览目录)
+- `新增` 配对请求支持通知及解锁后的对话框确认, 服务配置, 令牌与配对列表在设置页和服务进程间实时同步
+- `新增` 工具目录支持按脚本, UI, 手势, 截图, 文件, 设备及 Shell 分组启停, 调用前校验参数, 关闭的工具从目录隐藏并返回 TOOL_DISABLED
+- `新增` 宿主桥接支持工具调用, 超时及错误回传, 最多 4 路并发 (仅接受同签名 AutoJs6, 宿主退出后服务继续运行, 依赖宿主的工具返回 HOST_UNAVAILABLE)
+- `新增` 前台服务通知显示端点, 宿主连接状态及配对数量, 支持停止服务, 通知被禁用时通过提示消息显示端点
+- `新增` 脚本工具支持运行文件, 列出及停止执行, 读取带游标和级别筛选的控制台日志, 返回执行 ID, 状态, 耗时及异常行号, 等待期间定期报告进度
+- `新增` MCP 响应支持 SSE 流式返回, 脚本进度等通知随对应请求送达客户端
+- `新增` UI 工具支持节点树, 选择器查询及等待, 控件操作, 系统按键和手势, 节点树最多 400 项, 手势分组默认关闭 (坐标手势需要 2026-09-11 或之后构建的 AutoJs6)
+- `新增` 截图工具支持裁剪, 缩放及 JPEG/PNG/WebP, 默认 JPEG 质量 70, 最长边 1280 px, 数据超过 4 MiB 时自动压缩 (MediaProjection 回退需要 2026-09-13 或之后构建的宿主及设备授权)
+- `新增` 局域网访问支持显示当前设备地址, 标注局域网配对请求及每日访问提醒, 网络变化时更新地址 (提醒可独立关闭)
+- `新增` 每个客户端限制为每秒 20 个请求及每分钟 30 次截图, 超限时返回 RATE_LIMITED 及建议等待时间 (仍受宿主的无障碍查询频率限制)
+- `新增` 设置页增加 "空闲时自动停止" 选项, 支持 5/15/30/60/120 分钟且默认关闭, 执行中的请求不计为空闲; 系统限制后台电量时显示提醒及电池设置入口
+- `修复` IDE 重新构建时为 JVM 单元测试错误查找 APK 的问题, APK 校验任务可在清理后自动组装所需产物
+- `修复` 插件中心亮暗模式下图标比例不一致及自适应图标留白不足的问题
+- `修复` 设置页通过 Tab 导航时跳过工具栏返回按钮的问题 (含 Android 7)
+- `修复` script_run/script_run_file 的 arguments 类型声明被部分 MCP 客户端拒绝的问题, 改为使用单类型 anyOf 分支
+- `修复` 重复请求 ID 导致调用无响应及无效会话返回空事件流的问题, 同时拒绝超过 64 层嵌套的 JSON 请求
+- `修复` 服务重启后旧会话触发重复配对及残留配对通知的问题, 旧会话返回 HTTP 404 并由客户端重新初始化
 - `优化` 构建阶段阻止意外引入原生依赖, 并输出 JSON 校验报告
-- `依赖` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 与 Ktor 3.5.1 CIO 引擎
-- `依赖` 附加 Ktor 3.5.1 `ktor-server-test-host` 用于 JVM 传输测试 (仅测试范围)
-- `依赖` 附加 `mcp-server-api.aar` (AutoJs6 模块 `plugin-api/mcp-server-api`, 宿主构建 6.8.0 / 5279, MPL 2.0) 作为 AutoJs6 与插件之间的 Binder 契约, 并在 `locks/host-api-aars.lock` 中锁定哈希
-- `依赖` 更新来自 P4 宿主构建的 common-plugin-api 和 mcp-server-api 配套 AAR: 可选设置扩展 v1, AIDL transaction 顺序不变, SHA-256 锁定, 保留 SDK 36 消费兼容性.
+- `依赖` 附加 MCP Kotlin SDK 版本 0.15.0 及 Ktor CIO 版本 3.5.1
+- `依赖` 附加 Ktor Test Host 版本 3.5.1 (仅用于 JVM 测试)
+- `依赖` 附加 mcp-server-api 本地模块, 用于宿主与插件间的服务契约 (来源: AutoJs6 6.8.0/5279, MPL 2.0, 锁定文件哈希)
+- `依赖` 升级 common-plugin-api 及 mcp-server-api 本地模块, 支持可选设置扩展并保持 SDK 36 消费兼容性
 
 ##### 更多发行历史
 
