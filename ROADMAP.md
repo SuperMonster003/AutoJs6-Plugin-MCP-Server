@@ -1,5 +1,7 @@
 # AutoJs6 MCP Server 插件 Roadmap
 
+关联迁移记录 (2026-09-22, AI Agent 路线图 D33): 宿主正在引入共享 `plugin-api/host-capability-api` 和 MCP 契约 v2. 本仓库当前 AAR 与运行时仍为 v1, 本轮不迁移, 不作为 AI Agent 1.0.0 前置. 后续独立会话须从同一宿主构建同步 `common-plugin-api.aar` / `host-capability-api.aar` / `mcp-server-api.aar` 及 SHA-256 锁, 实现 `openServerV2` 与共享代理消费, 再声明契约 2; 保留原 v1 行为并验证版本分流与 Binder 往返. 共享节点 compact / nodeRef 的迁移待宿主 AI Agent P1.4 落地后另行记录, 当前不宣称该实现已交付.
+
 本文是 `AutoJs6-Plugin-MCP-Server` (手机作为 MCP 服务器, 供 PC 端 AI 代理控制设备) 的可执行状态表.
 以 2026-09-07 的宿主本地代码快照 (`AutoJs6 master@5166d088b`, `VERSION_NAME=6.8.0`, `VERSION_BUILD=5278`),
 MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平台版本插件 `1.7.4` 为起点,
