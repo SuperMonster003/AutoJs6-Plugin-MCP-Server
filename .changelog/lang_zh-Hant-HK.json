@@ -5,6 +5,12 @@
   "changelog_label_improvement": "優化",
   "changelog_label_dependency": "依賴",
   "$data": {
+    "v1.0.3": {
+      "released_date": "2026/10/04",
+      "improvement": [
+        "外掛程式中心圖示採用統一工作台調整後的尺寸, 位置, 明暗圖稿與圓形底色, 保留可重建原稿和參數"
+      ]
+    },
     "v1.0.2": {
       "released_date": "2026/09/19",
       "improvement": [

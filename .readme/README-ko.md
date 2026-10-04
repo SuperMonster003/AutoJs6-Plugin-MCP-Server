@@ -52,7 +52,7 @@ MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]
 
 ******
 
-버전 1.0.2: 도구 37개 (기본 활성화 33개), MCP 리소스와 프롬프트, AutoJs6 서랍 스위치와 플러그인 설정 페이지. AutoJs6 6.8.0 (빌드 5279) 이상이 필요합니다. 선택적 autojs6://docs/ 리소스에는 AutoJs6 오프라인 문서 플러그인과 중계 메서드를 갖춘 호스트도 필요합니다. 진행 상황과 증거는 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) 에 기록합니다.
+버전 1.0.3: 도구 37개 (기본 활성화 33개), MCP 리소스와 프롬프트, AutoJs6 서랍 스위치와 플러그인 설정 페이지. AutoJs6 6.8.0 (빌드 5279) 이상이 필요합니다. 선택적 autojs6://docs/ 리소스에는 AutoJs6 오프라인 문서 플러그인과 중계 메서드를 갖춘 호스트도 필요합니다. 진행 상황과 증거는 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) 에 기록합니다.
 
 ******
 
@@ -280,6 +280,12 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 ******
 
+#### v1.0.3
+
+_2026/10/04_
+
+- `개선` 플러그인 센터 아이콘에 Icon Studio에서 조정한 크기, 위치, 밝은 이미지와 어두운 이미지 및 원형 배경을 적용하고 재생성 가능한 원본과 매개변수를 유지
+
 #### v1.0.2
 
 _2026/09/19_
@@ -298,45 +304,6 @@ _2026/09/16_
 - `개선` MCP 적합성 (P6): 두 기기에서 공식 @modelcontextprotocol/conformance 스위트 0.1.16 을 상태 유지 /mcp 경로에 대해 실행했습니다. 32 개 서버 시나리오 중 9 개 통과 (initialize, ping, tools/list, 텍스트와 오류 도구 결과, resources/list, prompts/list, 동시 SSE 스트림, DNS rebinding 보호); 18 개는 스위트에 딸린 참조 픽스처 (test_* 도구, 프롬프트, test:// 리소스. 이 서버는 알 수 없는 도구 결과, -32602 또는 isError 로 응답합니다) 를 호출하고, 5 개는 이 서버가 선언하지 않는 기능 (logging, completions, 리소스 구독) 이 필요합니다. 루프백 Origin 헤더는 스위트가 기대하는 대로 이제 모든 모드에서 허용됩니다. CORS 헤더와 프리플라이트 응답은 여전히 개발자 모드로 제한됩니다. 2026-07-28 무상태 모델에는 라우트가 없습니다 (Roadmap D9). 자세한 내용은 docs/dev/p6-conformance.md.
 - `개선` 보안 감사 (P6): 체크리스트 7 개 항목 (토큰 저장, 로그 비식별화, 내보낸 구성 요소, 평문 범위, 로컬 네트워크 기본 꺼짐, 페어링 취소, 도구 그룹 기본 꺼짐) 을 코드와 두 기기에서 검증하여 docs/dev/p6-security-audit.md 에 기록했고, README 보안 절이 이 경계를 설명합니다. 평문 HTTP 는 앱 전체 usesCleartextTraffic 플래그 대신 네트워크 보안 구성으로 루프백 주소에 한정됩니다. 플러그인은 클라이언트 연결을 열지 않으며 리스너에는 이 플래그가 필요 없습니다.
 - `개선` 성능 기준선 (P6): API 24 에뮬레이터, Sony 휴대폰 (API 33), Xiaomi Pad (API 35) 에서 ui_dump 50 / 200 / 400 노드, screen_capture 세 가지 크기, script_run 왕복, 동시 요청 4 건을 측정하여 임계값 없는 참고치로 docs/dev/p6-performance-baseline.md 에 기록했습니다. 플러그인만 응답하는 호출은 에뮬레이터와 휴대폰에서 약 20 ms, ui_dump 는 노드당 약 0.05 ms 증가하며, 접근성 스크린샷 경로는 100 ms 이내에 응답하지만 API 24 의 MediaProjection 경로는 캡처당 약 1.35 s 가 걸리고, 동시 요청 4 건은 호스트의 동시 호출 상한 4 안에서 단일 왕복의 1.0-1.8 배로 완료됩니다.
-
-#### v1.0.0
-
-_2026/09/16_
-
-- `힌트` P4 개발 미리 보기: 도구 37개 중 33개가 기본 활성화되며 AutoJs6 서랍 스위치와 플러그인 설정 페이지를 제공합니다. 해당 P4 AutoJs6 빌드가 필요합니다. ROADMAP.md.
-- `기능` 서버 상태, USB 전달, 포트와 LAN, 토큰 표시/복사/교체, 페어링 해제, 도구 그룹과 root 권한, 개발자 모드, Claude Code / Cursor / Codex / 일반 HTTP 설정 복사, 출시 기록을 제공하며 AutoJs6 테마를 따릅니다. 네트워크 변경은 리스너를 재시작하고 토큰과 권한은 즉시 적용됩니다. 비밀 정보 창은 스크린샷을 차단합니다.
-- `기능` MCP 리소스 (P3.5)는 페어링 및 그룹 설정에 따라 읽기 전용 작업 파일, 호스트 예제 탐색, 기기 정보, 최근 콘솔 출력을 제공합니다. 텍스트 및 바이너리 읽기는 잘림 상태를 보고합니다. write_autojs6_script, automate_task, debug_selector는 영어와 중국어를 지원하며, 다른 기기 언어에서는 영어를 사용합니다.
-- `기능` 작업 디렉터리 도구 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1부터 시작하는 행과 열을 받는 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. 바이너리 읽기는 base64이며 원본 데이터 최대 1 MiB입니다. 쓰기는 호스트 요청 한도도 따릅니다 (보통 JSON 이스케이프 포함 96 KiB). 삭제와 Shell은 기본 비활성화이며 root에는 allowShellRoot와 호스트 shell.root 권한이 추가로 필요합니다. 일치하는 P3.4 호스트 빌드가 필요합니다.
-- `기능` 호스트 발견을 위한 INFO 서비스, Wake Activity, `org.autojs.plugin.MCP_SERVER` 서비스 뼈대를 갖춘 플러그인 ID `mcp-server`
-- `기능` 10개 언어의 README, 플러그인 센터 안내, 변경 기록
-- `기능` `http://127.0.0.1:9637/mcp`의 Streamable HTTP 엔드포인트와 `device_ping` 도구. adb 또는 호스트가 켜고 끌 수 있는 포그라운드 서비스가 제공 (개발 프리뷰)
-- `기능` `/mcp` 엔드포인트의 전송 강화: 바인드 주소와 포트는 서버 설정 저장소에서 가져오고, 요청 본문은 1 MiB로 제한되며, 유휴 연결은 60초 후 닫히고, 포트가 이미 사용 중이거나 바인드가 거부되면 충돌 대신 힌트가 담긴 `port_in_use` / `bind_failed` 상태로 끝납니다
-- `기능` SDK 전송 앞단의 DNS rebinding 보호: 루프백 모드는 `Host`로 `localhost` / `127.0.0.1` / `[::1]`만 허용하고, LAN 모드는 기기의 현재 IPv4 주소와 선택적 추가 호스트 이름을 더해 네트워크가 바뀔 때 갱신합니다; 브라우저 출처는 거부되며 "개발자 모드" 스위치만 Inspector의 루프백 출처를 CORS로 허용합니다
-- `기능` 서버 식별자 `autojs6-mcp-server`에 플러그인 버전을 담고 tools (`listChanged`), resources, prompts 기능을 선언합니다; `tools/list`는 등록 순서를 유지해 클라이언트가 캐시할 수 있습니다
-- `기능` 모든 `/mcp` 요청에 대한 Bearer 토큰 인증: 첫 시작 시 32바이트 토큰을 생성해 Android Keystore의 AES-GCM 키로 감싼 뒤 플러그인의 비공개이며 백업되지 않는 저장소에 보관합니다; `Authorization` 헤더가 없거나 잘못되면 상수 시간 비교 후 `401` + `WWW-Authenticate: Bearer`와 JSON-RPC `-32001` 오류로 거부합니다; 토큰은 로그에 기록되지 않습니다
-- `기능` 전송 앞단의 최초 페어링: 페어링되지 않은 클라이언트는 `initialize`와 tools, resources, prompts 목록 조회는 할 수 있지만, 첫 `tools/call`, `resources/read`, `resources/subscribe` 또는 `prompts/get`은 60초 안에 휴대폰에서 확인될 때까지 `PAIRING_REQUIRED` (`-32002`)를 반환합니다; 거부되거나 시간이 초과되면 30초 동안 `PAIRING_DENIED` (`-32003`)를 반환합니다; 클라이언트는 `clientInfo` 이름 (없으면 `User-Agent`)과 주소 종류 (루프백 / LAN)로 식별되므로 토큰을 교체해도 기존 페어링이 유지되며, 최대 32개의 클라이언트를 페어링할 수 있습니다
-- `기능` 휴대폰에서의 페어링 확인은 두 경로로 이루어집니다: 허용 / 거부 동작이 있는 높은 우선순위 알림과, 화면이 잠금 해제된 동안의 대화 상자입니다; 서버 설정, 토큰, 페어링된 클라이언트는 원자적으로 교체되는 파일에 저장되어 서버 프로세스와 설정 페이지가 오래된 캐시 없이 공유합니다
-- `기능` 그룹 스위치가 있는 도구 카탈로그 (결정 D6): `device_ping` (플러그인 내부), `device_info` (AutoJs6 `device.info`), `script_run` (AutoJs6 `engines.execScript`: JavaScript를 실행하고 최대 `timeoutMs`까지 종료를 기다린 뒤 결과와 최신 콘솔 줄을 반환하며, 실행 중에는 진행 알림을 보냅니다); 모든 도구는 닫힌 JSON Schema (`additionalProperties: false`)를 선언하고 인수는 AutoJs6에 도달하기 전에 검증됩니다; 그룹 스위치 `script` / `ui` / `ui_gesture` / `screen` / `files` / `files_delete` / `device` / `shell`은 `tool_groups.json`에 저장되며, 꺼진 그룹은 다음 요청부터 `tools/list`에서 사라지고 해당 도구는 `TOOL_DISABLED`로 응답합니다
-- `기능` 호스트 브리지: `org.autojs.plugin.MCP_SERVER` 서비스가 실제 `IMcpServerPlugin` Binder를 구현합니다 (`getInfo` / `getCapabilities`는 계약 버전 1, 도구 그룹, MCP 프로토콜 버전, SDK 버전을 보고하고, `openServer`는 설치된 동일 서명의 AutoJs6만 허용하며 `getStatus` / `updateConfig` / `stop` / `close`를 가진 `IMcpServerSession`을 반환합니다); 도구 호출은 단조 증가하는 요청 id, 호출별 시간 제한, 4개 동시 실행 상한과 함께 호스트 기능 브로커를 거치며, 호스트 오류 범주는 `HOST_UNAVAILABLE` / `A11Y_SERVICE_NOT_RUNNING` / `CAPABILITY_DENIED` / `LIMIT_EXCEEDED` / `RATE_LIMITED` / `TIMEOUT` / `HOST_ERROR`로 매핑됩니다; AutoJs6가 종료되어도 리스너는 계속 실행되고 호스트 기반 도구는 호스트가 다시 연결될 때까지 `HOST_UNAVAILABLE`로 응답합니다; 상태와 이벤트 (`pairing_requested`, `client_paired`, `tool_call`, `warning`)는 콜백을 통해 호스트에 전달됩니다
-- `기능` 포그라운드 서비스 알림에 엔드포인트, AutoJs6 연결 상태, 페어링된 클라이언트 수와 중지 동작을 표시합니다; 알림이 차단된 경우 토스트로 엔드포인트를 알립니다; `dumpsys activity service`는 호스트 세션, 도구 그룹 스위치, 등록된 도구도 함께 출력합니다
-- `기능` 스크립트 그룹 완성: `script_run_file`은 기기의 스크립트 파일을 실행하고, `script_stop` / `script_stop_all`은 AutoJs6 실행을 하나 또는 전부 중지하며, `script_list`는 실행 중인 항목을 나열하고, `console_tail`은 `nextSinceId` 커서와 레벨 필터와 함께 최신 콘솔 줄을 반환합니다; `script_run`과 `script_run_file`은 이제 `executionId`, `status` (`finished` / `error` / `running`), `durationMs`, 줄 번호가 포함된 예외, 최신 콘솔 줄을 반환하며, 대기 중에는 2초마다 최신 콘솔 줄을 담은 진행 알림을 보냅니다
-- `기능` MCP 엔드포인트의 응답이 서버 전송 이벤트 (SSE) 로 스트리밍됩니다 (SDK 의 JSON 응답 모드는 사용하지 않음). 실행 중인 스크립트의 진행 하트비트처럼 요청에 속한 알림은 해당 요청 자신의 응답으로 클라이언트에 전달됩니다
-- `기능` UI 그룹 추가 (roadmap P3.2): `ui_dump`는 현재 창을 `#n` 참조가 달린 간결한 노드 트리로 반환하고 (`format`은 text / json / xml, `maxNodes`는 최대 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for`는 선택자를 폴링하며, `ui_current_window`와 `ui_explain_selector`는 창과 선택자가 실패하는 이유를 보고하고, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll`은 `nodeRef` (지문으로 다시 찾으며 사라지면 `NODE_REF_STALE`) 또는 `selector`에 작용하며, `ui_press_key`는 back / home / recents / notifications / quick_settings / power_dialog / lock_screen을 누르고, 기본적으로 꺼져 있는 `ui_gesture` 그룹은 `ui_swipe`, `ui_gesture`와 클릭 도구의 좌표 형식을 추가합니다 (그룹이 꺼져 있으면 `TOOL_DISABLED`); 도구 카탈로그 스냅샷은 20개 도구로 늘어났습니다; 좌표 제스처에는 2026-09-11 이후에 빌드된 AutoJs6 호스트가 필요합니다 (더 오래된 호스트는 무작위로 "the system cancelled ..."로 응답합니다)
-- `기능` 스크린샷 그룹 (P3.3): screen_capture는 자르기, scale 또는 maxWidth, JPEG / PNG / WebP, 품질 설정을 지원하는 MCP 이미지를 반환합니다. 기본값은 JPEG 품질 70, 긴 변 1280 px입니다. base64가 4 MiB를 초과하면 품질이나 크기를 낮춰 재시도하고 메타데이터에 변경을 표시합니다. screen_state는 화면 켜짐 상태, 크기, 방향, 밀도를 반환합니다. 도구 목록은 22개입니다. MediaProjection 대체 경로에는 2026-09-13 이후 빌드한 AutoJs6와 휴대전화의 승인이 필요하며 호스트 세션에서 승인을 재사용합니다.
-- `기능` 로컬 네트워크 경로 (P5.1): 로컬 네트워크 접근을 켜면 설정 페이지에 휴대전화의 현재 주소 (Wi-Fi 변경 시 갱신) 와 같은 네트워크 / 방화벽 안내를 표시. 로컬 네트워크에서 온 페어링 요청은 대화상자와 알림에 표시. 서버가 아직 로컬 네트워크에서 접근 가능하다는 알림을 매일 보내며 리스너를 재시작하지 않고 끌 수 있음. README에 USB 와 로컬 네트워크 경로를 기록.
-- `기능` 클라이언트별 속도 제한 (P6): 클라이언트당 초당 최대 20 요청, 분당 최대 30 회의 screen_capture. 한도를 넘는 요청은 Retry-After 헤더와 retryAfterMs 를 담은 JSON-RPC RATE_LIMITED 오류가 있는 HTTP 429 를 받고, 한도를 넘는 스크린샷은 retryAfterMs 가 있는 RATE_LIMITED 도구 결과로 응답되어 모델이 기다릴 수 있습니다. 호스트 grant 의 접근성 조회 속도는 그 위에 계속 적용됩니다.
-- `기능` 유휴 자동 중지와 배터리 (P6): 설정 페이지에 "유휴 시 자동 중지" (기본값 끄기, 5 / 15 / 30 / 60 / 120 분) 를 추가했습니다. 리스너는 선택한 시간 동안 클라이언트 요청이 없으면 스스로 중지하고, 플러그인 내부의 idle_timeout 사유를 기록하며, 자동으로 사라지는 알림 하나를 남기고, 사용자 중지로 세지 않습니다. 처리 중인 요청 (실행 중인 도구 호출) 은 유휴로 보지 않으며, 스트림만 열어 두고 요청을 보내지 않는 클라이언트는 서버를 계속 실행시키지 않습니다. Android 가 이 앱의 배터리 사용을 제한하면 (HyperOS 와 MIUI 는 사이드로드한 앱에 기본적으로 그렇게 하며, 배터리 사용 중 화면이 꺼지고 약 1 분 뒤 포그라운드 서비스를 중지합니다) 설정 페이지에 경고와 "배터리 설정" 버튼을 표시하고 AutoJs6 는 warning 이벤트를 받습니다. 유휴 CPU 시간과 1 시간 유휴의 batterystats 추정치는 docs/dev/p6-battery-and-residency.md 에 기록했습니다.
-- `수정` IDE rebuild 시 JVM 단위 테스트용 APK를 찾던 문제 해결. APK 검증 작업이 필요한 산출물을 자동으로 빌드하므로 clean 후에도 바로 실행 가능.
-- `수정` 플러그인 센터의 밝은 모드와 어두운 모드에서 아이콘 비율이 달라지는 문제; 야간에도 적응형 아이콘을 사용하고 레이어 크기를 조정하여 ic_launcher_round.png 의 전체 그림과 여백을 유지하며 배경색만 변경
-- `수정` 설정 페이지의 키보드 Tab 이동이 툴바 뒤로 버튼을 건너뛰던 문제 해결. 이제 Tab 순환이 뒤로 버튼과 모든 컨트롤을 포함 (Android 7 포함). 기기 테스트로 스크린 리더 레이블과 키보드 조작을 확인.
-- `수정` script_run 과 script_run_file 의 arguments 맵이 값 타입을 JSON Schema 배열로 선언해 일부 MCP 클라이언트가 거부하거나 약화하던 문제 수정. 이제 스키마는 단일 타입 anyOf 분기를 사용. README에 클라이언트 연결과 자주 묻는 질문 장, 검증된 클라이언트 표 추가.
-- `수정` 악의적인 요청 본문은 파서가 재귀하기 전에 거부됩니다. 64단계보다 깊게 중첩된 JSON, 요청 id 가 중복된 본문, 같은 세션에서 아직 처리 중인 요청 id (이전에는 먼저 온 요청이 응답을 받지 못했음) 는 400 과 JSON-RPC 오류를 반환하고, 유효한 세션이 없는 GET 스트림은 빈 이벤트 스트림 대신 400 / 404 를 반환합니다. JVM 테스트와 기기 테스트 (API 28 / 31 / 33 / 35) 가 초과 길이, 과도한 깊이, 잘못된 UTF-8, 알 수 없는 메서드, 헤더 조합, 큰 base64, 64 동시 세션을 검증합니다.
-- `수정` 수명 주기 매트릭스 (P6): 이전 리스너 프로세스의 세션 id 를 담은 요청 (리스너가 종료되었거나 토큰 교체로 다시 시작된 뒤) 은 전송 계층의 404 에 맡겨 클라이언트가 다시 initialize 하도록 하며, 이미 페어링된 클라이언트에 대해 요청의 User-Agent 이름으로 불필요한 페어링 확인을 띄우지 않습니다. 죽은 리스너 프로세스가 알림창에 남긴 페어링 알림은 다음 리스너가 시작될 때 지워집니다. 호스트 종료, 리스너 종료, 둘의 동시 종료, 시스템 설정에서의 강제 중지, 활성 세션 중의 토큰 교체, 호스트 종료와 리스너 종료를 가로지르는 대기 중 페어링에 대해 기대 상태와 복구 경로를 docs/dev/lifecycle-matrix.md 에 기록하고 실제 기기에서 검증했습니다.
-- `개선` 빌드 시 의도하지 않은 네이티브 의존성을 거부하고 JSON 보고서 생성
-- `의존성` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`)과 Ktor 3.5.1 CIO 엔진
-- `의존성` JVM 전송 테스트를 위해 Ktor 3.5.1 `ktor-server-test-host` 추가 (테스트 범위만)
-- `의존성` `mcp-server-api.aar` (AutoJs6 모듈 `plugin-api/mcp-server-api`, 호스트 빌드 6.8.0 / 5279, MPL 2.0)을 AutoJs6와 플러그인 사이의 Binder 계약으로 추가하고 `locks/host-api-aars.lock`에 해시를 고정
-- `의존성` P4 호스트의 common-plugin-api 및 mcp-server-api AAR 업데이트: 선택적 설정 확장 v1, AIDL 순서 유지, SHA-256 잠금, SDK 36 호환성 유지.
 
 ##### 더 많은 릴리스 기록
 

@@ -5,6 +5,12 @@
   "changelog_label_improvement": "تحسين",
   "changelog_label_dependency": "تبعية",
   "$data": {
+    "v1.0.3": {
+      "released_date": "2026/10/04",
+      "improvement": [
+        "تستخدم أيقونات مركز الملحقات الأحجام والمواضع والصور الفاتحة والداكنة والخلفيات الدائرية المعدلة في Icon Studio مع الاحتفاظ بالمصادر والمعلمات لإعادة إنتاجها"
+      ]
+    },
     "v1.0.2": {
       "released_date": "2026/09/19",
       "improvement": [

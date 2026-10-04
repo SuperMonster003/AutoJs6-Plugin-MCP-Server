@@ -5,6 +5,12 @@
   "changelog_label_improvement": "改善",
   "changelog_label_dependency": "依存関係",
   "$data": {
+    "v1.0.3": {
+      "released_date": "2026/10/04",
+      "improvement": [
+        "プラグインセンターのアイコンに Icon Studio で調整したサイズ, 位置, 明暗の図稿と円形背景を適用し, 再生成可能な原稿とパラメーターを保持"
+      ]
+    },
     "v1.0.2": {
       "released_date": "2026/09/19",
       "improvement": [
