@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Mejora",
   "changelog_label_dependency": "Dependencia",
   "$data": {
+    "v1.0.3": {
+      "released_date": "2026/10/04",
+      "improvement": [
+        "Los iconos del centro de plugins usan los tamaños, posiciones, imágenes claras y oscuras y fondos circulares ajustados en Icon Studio, conservando fuentes y parámetros reproducibles"
+      ]
+    },
     "v1.0.2": {
       "released_date": "2026/09/19",
       "improvement": [

@@ -52,7 +52,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 
 ******
 
-バージョン 1.0.2: 37 ツール (既定で 33 が有効), MCP リソースとプロンプト, AutoJs6 のドロワースイッチとプラグイン設定画面. AutoJs6 6.8.0 (ビルド 5279) 以降が必要です. オプションの autojs6://docs/ リソースには AutoJs6 オフラインドキュメントプラグインと中継メソッドを持つホストも必要です. 進捗と証跡は [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) に記録しています.
+バージョン 1.0.3: 37 ツール (既定で 33 が有効), MCP リソースとプロンプト, AutoJs6 のドロワースイッチとプラグイン設定画面. AutoJs6 6.8.0 (ビルド 5279) 以降が必要です. オプションの autojs6://docs/ リソースには AutoJs6 オフラインドキュメントプラグインと中継メソッドを持つホストも必要です. 進捗と証跡は [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) に記録しています.
 
 ******
 
@@ -280,6 +280,12 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 ******
 
+#### v1.0.3
+
+_2026/10/04_
+
+- `改善` プラグインセンターのアイコンに Icon Studio で調整したサイズ, 位置, 明暗の図稿と円形背景を適用し, 再生成可能な原稿とパラメーターを保持
+
 #### v1.0.2
 
 _2026/09/19_
@@ -298,45 +304,6 @@ _2026/09/16_
 - `改善` MCP 適合性 (P6): 2 台の端末で公式の @modelcontextprotocol/conformance スイート 0.1.16 をステートフルな /mcp パスに対して実行しました. 32 のサーバーシナリオのうち 9 が合格 (initialize, ping, tools/list, テキストとエラーのツール結果, resources/list, prompts/list, 並行 SSE ストリーム, DNS rebinding 保護); 18 はスイート付属の参照フィクスチャ (test_* ツール, プロンプト, test:// リソース. このサーバーは未知ツールの結果, -32602 または isError で応答します) を呼び, 5 はこのサーバーが宣言しない機能 (logging, completions, リソース購読) を必要とします. ループバックの Origin ヘッダーはスイートの期待どおりどのモードでも受け付けるようになりました. CORS ヘッダーとプリフライト応答は引き続き開発者モード限定です. 2026-07-28 のステートレスモデルにはルートがありません (Roadmap D9). 詳細は docs/dev/p6-conformance.md.
 - `改善` セキュリティ監査 (P6): チェックリスト 7 項目 (トークンの保存, ログの秘匿, エクスポートされたコンポーネント, 平文の範囲, ローカルネットワークのデフォルトオフ, ペアリングの取り消し, ツールグループのデフォルトオフ) をコードと 2 台の端末で検証し, docs/dev/p6-security-audit.md に記録しました. README のセキュリティ節はこれらの境界を説明するようになりました. 平文 HTTP はアプリ全体の usesCleartextTraffic フラグの代わりにネットワークセキュリティ構成でループバックアドレスに限定されます. プラグインはクライアント接続を開かず, リスナーにはこのフラグは不要です.
 - `改善` 性能ベースライン (P6): API 24 エミュレータ, Sony 端末 (API 33), Xiaomi Pad (API 35) で ui_dump の 50 / 200 / 400 ノード, screen_capture の 3 サイズ, script_run の往復, 4 件の同時リクエストを計測し, しきい値なしの参考値として docs/dev/p6-performance-baseline.md に記録しました. プラグインだけで応答する呼び出しはエミュレータと端末で約 20 ms, ui_dump はノードあたり約 0.05 ms 増え, アクセシビリティ経由のスクリーンショットは 100 ms 以内に応答する一方 API 24 の MediaProjection 経由は 1 回約 1.35 s かかり, 4 件の同時リクエストはホストの同時呼び出し上限 4 の範囲で単独往復の 1.0-1.8 倍で完了します.
-
-#### v1.0.0
-
-_2026/09/16_
-
-- `ヒント` P4 開発プレビュー: 37 ツール中 33 が既定で有効です. AutoJs6 のドロワースイッチとプラグイン設定画面を提供します. 対応する P4 AutoJs6 ビルドが必要です. ROADMAP.md.
-- `機能` サーバー状態, USB 転送, ポートと LAN, トークンの表示/コピー/更新, ペアリング解除, ツールグループと root, 開発者モード, Claude Code / Cursor / Codex / 汎用 HTTP 設定のコピー, リリース履歴を提供し AutoJs6 の外観に追従します. ネットワーク変更はリスナーを再起動し, トークンと権限は即時反映します. 秘密情報の画面は撮影を防止します.
-- `機能` MCP リソース (P3.5) は読み取り専用の作業ファイル, ホストのサンプル参照, デバイス情報, 最近のコンソール出力を提供し, ペアリングとグループ設定に従います. テキストとバイナリの読み取りには切り詰め情報が含まれます. write_autojs6_script, automate_task, debug_selector は英語と中国語に対応し, その他の端末言語では英語を使用します.
-- `機能` 作業ディレクトリのツール (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1 から始まる行と列を指定する editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. バイナリ読み取りは base64 で元データ最大 1 MiB. 書き込みはホストの要求上限にも従います (通常は JSON エスケープ込みで 96 KiB). 削除と Shell は初期状態で無効. root には allowShellRoot とホストの shell.root 許可が必要です. 対応する P3.4 ホストビルドが必要です.
-- `機能` ホスト検出用の INFO サービス, Wake Activity, `org.autojs.plugin.MCP_SERVER` サービスの骨組みを備えたプラグイン ID `mcp-server`
-- `機能` 10 言語の README, プラグインセンターの説明, 変更履歴
-- `機能` `http://127.0.0.1:9637/mcp` の Streamable HTTP エンドポイントと `device_ping` ツール. adb またはホストから起動と停止ができるフォアグラウンドサービスが提供 (開発プレビュー)
-- `機能` `/mcp` エンドポイントのトランスポート強化: バインドアドレスとポートはサーバー設定ストアから取得し, リクエスト本文は 1 MiB まで, アイドル接続は 60 秒で閉じ, ポートが使用中またはバインドが拒否された場合はクラッシュせず `port_in_use` / `bind_failed` 状態とヒントで終了します
-- `機能` SDK トランスポート前段の DNS rebinding 保護: ループバックモードでは `Host` として `localhost` / `127.0.0.1` / `[::1]` のみを受け付け, LAN モードではデバイスの現在の IPv4 アドレスと任意の追加ホスト名を加えてネットワーク変化時に更新します; ブラウザのオリジンは拒否され, "開発者モード" スイッチのみが Inspector のループバックオリジンを CORS で許可します
-- `機能` サーバー識別子 `autojs6-mcp-server` にプラグインのバージョンを添え, tools (`listChanged`), resources, prompts の機能を宣言します; `tools/list` は登録順を保ち, クライアントがキャッシュできるようにします
-- `機能` すべての `/mcp` リクエストに対する Bearer トークン認証: 初回起動時に 32 バイトのトークンを生成し, Android Keystore の AES-GCM 鍵で包んでプラグインのプライベートかつバックアップ対象外のストレージに保存します; `Authorization` ヘッダーが欠落または不正な場合は定数時間比較の後に `401` + `WWW-Authenticate: Bearer` と JSON-RPC `-32001` エラーで拒否します; トークンはログに書き込まれません
-- `機能` トランスポート前段の初回ペアリング: 未ペアリングのクライアントは `initialize` と tools, resources, prompts の一覧取得はできますが, 最初の `tools/call`, `resources/read`, `resources/subscribe`, `prompts/get` は 60 秒以内にスマートフォンで確認されるまで `PAIRING_REQUIRED` (`-32002`) を返します; 拒否またはタイムアウト後は 30 秒間 `PAIRING_DENIED` (`-32003`) を返します; クライアントは `clientInfo` の名前 (欠落時は `User-Agent`) とアドレス種別 (ループバック / LAN) で識別されるため, トークンのローテーションで既存のペアリングは失われず, 最大 32 クライアントをペアリングできます
-- `機能` スマートフォンでのペアリング確認は 2 つの経路で行います: 許可 / 拒否アクション付きの高優先度通知と, 画面ロック解除中のダイアログです; サーバー設定, トークン, ペアリング済みクライアントはアトミックに置き換えられるファイルに保存され, サーバープロセスと設定ページが古いキャッシュなしで共有します
-- `機能` グループスイッチ付きのツールカタログ (決定 D6): `device_ping` (プラグイン内), `device_info` (AutoJs6 の `device.info`), `script_run` (AutoJs6 の `engines.execScript`: JavaScript を実行し, 最大 `timeoutMs` まで終了を待って結果と最新のコンソール行を返し, 実行中は進捗通知を送ります); すべてのツールは閉じた JSON Schema (`additionalProperties: false`) を宣言し, 引数は AutoJs6 に届く前に検証されます; グループスイッチ `script` / `ui` / `ui_gesture` / `screen` / `files` / `files_delete` / `device` / `shell` は `tool_groups.json` に保存され, オフにしたグループは次のリクエストから `tools/list` に現れず, そのツールは `TOOL_DISABLED` を返します
-- `機能` ホストブリッジ: `org.autojs.plugin.MCP_SERVER` サービスが本物の `IMcpServerPlugin` Binder を実装します (`getInfo` / `getCapabilities` はコントラクトバージョン 1, ツールグループ, MCP プロトコルバージョン, SDK バージョンを報告し, `openServer` はインストール済みで同じ署名の AutoJs6 のみを受け入れ, `getStatus` / `updateConfig` / `stop` / `close` を持つ `IMcpServerSession` を返します); ツール呼び出しは単調増加のリクエスト id, 呼び出しごとのタイムアウト, 4 件の同時実行上限を伴ってホストの能力ブローカーを経由し, ホストのエラー分類は `HOST_UNAVAILABLE` / `A11Y_SERVICE_NOT_RUNNING` / `CAPABILITY_DENIED` / `LIMIT_EXCEEDED` / `RATE_LIMITED` / `TIMEOUT` / `HOST_ERROR` に対応付けられます; AutoJs6 が終了してもリスナーは動き続け, ホスト依存のツールはホストが再接続するまで `HOST_UNAVAILABLE` を返します; 状態とイベント (`pairing_requested`, `client_paired`, `tool_call`, `warning`) はコールバック経由でホストに届きます
-- `機能` フォアグラウンドサービスの通知にエンドポイント, AutoJs6 の接続状態, ペアリング済みクライアント数と停止アクションを表示します; 通知がブロックされている場合はトーストでエンドポイントを知らせます; `dumpsys activity service` はホストセッション, ツールグループスイッチ, 登録済みツールも出力します
-- `機能` スクリプトグループを完成: `script_run_file` は端末上のスクリプトファイルを実行し, `script_stop` / `script_stop_all` は AutoJs6 の実行を 1 つまたはすべて停止し, `script_list` は実行中のものを列挙し, `console_tail` は `nextSinceId` カーソルとレベルフィルター付きで最新のコンソール行を返します; `script_run` と `script_run_file` は `executionId`, `status` (`finished` / `error` / `running`), `durationMs`, 行番号付きの例外, 最新のコンソール行を返すようになり, 待機中は 2 秒ごとに最新のコンソール行を含む進捗通知を送ります
-- `機能` MCP エンドポイントの応答は Server-Sent Events (SSE) でストリーム配信されるようになりました (SDK の JSON 応答モードは使いません). 実行中スクリプトの進捗ハートビートなど, リクエストに属する通知はそのリクエスト自身の応答でクライアントに届きます
-- `機能` UI グループを追加 (roadmap P3.2): `ui_dump` は現在のウィンドウを `#n` 参照付きのコンパクトなノードツリーで返し (`format` は text / json / xml, `maxNodes` は最大 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` はセレクターをポーリングし, `ui_current_window` と `ui_explain_selector` はウィンドウとセレクターが失敗する理由を報告し, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` は `nodeRef` (フィンガープリントで再特定し, 消えていれば `NODE_REF_STALE`) または `selector` に作用し, `ui_press_key` は back / home / recents / notifications / quick_settings / power_dialog / lock_screen を押し, 既定で無効の `ui_gesture` グループは `ui_swipe`, `ui_gesture` とクリックツールの座標形式を追加します (グループが無効の間は `TOOL_DISABLED`); ツールカタログのスナップショットは 20 ツールに増えました; 座標ジェスチャーには 2026-09-11 以降にビルドされた AutoJs6 ホストが必要です (それより古いホストはランダムに "the system cancelled ..." と応答します)
-- `機能` スクリーンショットグループ (P3.3): screen_capture は切り抜き, scale または maxWidth, JPEG / PNG / WebP, 品質指定に対応した MCP 画像を返します. 既定値は JPEG 品質 70, 長辺 1280 px です. base64 が 4 MiB を超える場合は品質やサイズを下げて再試行し, 変更をメタデータに記録します. screen_state は画面の点灯状態, サイズ, 向き, 密度を返します. ツール数は 22 になりました. MediaProjection のフォールバックには 2026-09-13 以降にビルドされた AutoJs6 と端末での許可が必要で, 許可はホストセッションで再利用されます.
-- `機能` ローカルネットワーク経路 (P5.1): ローカルネットワークアクセスを有効にすると設定ページに端末の現在のアドレス (Wi-Fi 変更時に更新) と同一ネットワーク / ファイアウォールのヒントを表示. ローカルネットワークからのペアリング要求はダイアログと通知で明示. サーバーがまだローカルネットワークから到達可能であることを毎日通知し, リスナーを再起動せずにオフにできる. README に USB とローカルネットワークの経路を記載.
-- `機能` クライアントごとのレート制限 (P6): クライアントごとに毎秒最大 20 リクエスト, 毎分最大 30 回の screen_capture. 上限を超えたリクエストは Retry-After ヘッダーと retryAfterMs を含む JSON-RPC RATE_LIMITED エラー付きの HTTP 429 を受け取り, 上限を超えたスクリーンショットは retryAfterMs 付きの RATE_LIMITED ツール結果として応答されるため, モデルは待機できます. ホストの grant によるアクセシビリティ照会レートはこれに加えて有効です.
-- `機能` アイドル時自動停止とバッテリー (P6): 設定ページに "アイドル時に自動停止" (デフォルトはオフ, 5 / 15 / 30 / 60 / 120 分) を追加しました. リスナーは選んだ時間クライアントからのリクエストがないと自ら停止し, プラグイン内部の idle_timeout 理由を記録し, 自動で消える通知を 1 件残し, ユーザーによる停止とは数えません. 処理中のリクエスト (実行中のツール呼び出し) はアイドルと見なされず, ストリームを開いたままリクエストを送らないクライアントはサーバーを動かし続けません. Android がこのアプリのバッテリー使用を制限している場合 (HyperOS と MIUI はサイドロードしたアプリにデフォルトでそうし, バッテリー駆動で画面が消えてから約 1 分後にフォアグラウンドサービスを停止します), 設定ページに警告と "バッテリー設定" ボタンを表示し, AutoJs6 は warning イベントを受け取ります. アイドル時の CPU 時間と 1 時間アイドルの batterystats 推定値は docs/dev/p6-battery-and-residency.md に記録しています.
-- `修正` IDE の rebuild で JVM 単体テスト用の APK を探す問題を解消. APK 検証タスクが必要な成果物を自動生成し, clean 後も直接実行可能.
-- `修正` プラグインセンターのライトモードとダークモードでアイコンの比率が異なる問題; 夜間もアダプティブアイコンを使用し, レイヤーのサイズを調整して ic_launcher_round.png 全体の図形と余白を維持し, 背景色のみを切り替える
-- `修正` 設定ページのキーボード Tab 移動でツールバーの戻るボタンが飛ばされる問題を解消. Tab の循環が戻るボタンと全コントロールを含むようにした (Android 7 を含む). デバイステストでスクリーンリーダー用ラベルとキーボード操作を確認.
-- `修正` script_run と script_run_file の arguments マップが値の型を JSON Schema の配列で宣言しており, 一部の MCP クライアントが拒否または弱体化させる問題を修正. スキーマは単一型の anyOf 分岐を使うようにした. README にクライアント接続とよくある質問の章, 検証済みクライアントの一覧を追加.
-- `修正` 悪意あるリクエスト本文はパーサーが再帰する前に拒否されます. 64 段より深くネストした JSON, リクエスト id が重複する本文, 同一セッションで処理中のリクエスト id (以前は先のリクエストが応答を失っていた) は 400 と JSON-RPC エラーを返し, 有効なセッションのない GET ストリームは空のイベントストリームではなく 400 / 404 を返します. JVM テストとデバイステスト (API 28 / 31 / 33 / 35) が超長, 超深, 不正な UTF-8, 未知のメソッド, ヘッダーの組み合わせ, 巨大な base64, 64 同時セッションを検証します.
-- `修正` ライフサイクルマトリクス (P6): 以前のリスナープロセスのセッション id を持つリクエスト (リスナーが強制終了された後, またはトークンローテーションで再起動した後) はトランスポートの 404 に委ねてクライアントに再度 initialize させ, すでにペアリング済みのクライアントに対してリクエストの User-Agent 名義で余計なペアリング確認を出さなくなりました. 死んだリスナープロセスが通知シェードに残したペアリング通知は次のリスナーの起動時に消去されます. ホストの強制終了, リスナーの強制終了, 両方の同時終了, システム設定からの強制停止, 有効なセッション中のトークンローテーション, ホストとリスナーの終了をまたぐ保留中のペアリングについて, 期待される状態と復旧手順を docs/dev/lifecycle-matrix.md に記録し, 実機で検証しました.
-- `改善` 意図しないネイティブ依存関係をビルド時に拒否し, JSON レポートを生成
-- `依存関係` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) と Ktor 3.5.1 CIO エンジン
-- `依存関係` JVM トランスポートテスト用に Ktor 3.5.1 `ktor-server-test-host` を追加 (テストスコープのみ)
-- `依存関係` `mcp-server-api.aar` (AutoJs6 のモジュール `plugin-api/mcp-server-api`, ホストビルド 6.8.0 / 5279, MPL 2.0) を AutoJs6 とプラグイン間の Binder コントラクトとして追加し, `locks/host-api-aars.lock` でハッシュを固定
-- `依存関係` P4 ホストの common-plugin-api と mcp-server-api AAR を更新: 任意の設定拡張 v1, AIDL 順序維持, SHA-256 固定, SDK 36 互換性保持.
 
 ##### さらに詳しいリリース履歴
 

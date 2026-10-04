@@ -52,7 +52,7 @@ MCP Server 讓執行 AutoJs6 的 Android 裝置成為一台 [Model Context Proto
 
 ******
 
-版本 1.0.2: 37 個工具 (預設啟用 33 個), MCP 資源與提示, AutoJs6 抽屜開關與外掛程式設定頁. 需要 AutoJs6 6.8.0 (組建 5279) 或更高版本; 可選的 autojs6://docs/ 資源還需要 AutoJs6 離線文件外掛以及帶轉讀方法的宿主. 進度與證據記錄在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+版本 1.0.3: 37 個工具 (預設啟用 33 個), MCP 資源與提示, AutoJs6 抽屜開關與外掛程式設定頁. 需要 AutoJs6 6.8.0 (組建 5279) 或更高版本; 可選的 autojs6://docs/ 資源還需要 AutoJs6 離線文件外掛以及帶轉讀方法的宿主. 進度與證據記錄在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -280,6 +280,12 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 ******
 
+#### v1.0.3
+
+_2026/10/04_
+
+- `優化` 外掛程式中心圖示採用統一工作台調整後的尺寸, 位置, 明暗圖稿與圓形底色, 保留可重建原稿和參數
+
 #### v1.0.2
 
 _2026/09/19_
@@ -298,45 +304,6 @@ _2026/09/16_
 - `優化` MCP 一致性 (P6): 在兩台裝置上以官方 @modelcontextprotocol/conformance 套件 0.1.16 測試有狀態的 /mcp 路徑. 32 個伺服器場景中 9 個通過 (initialize, ping, tools/list, 文字與錯誤工具結果, resources/list, prompts/list, 並行 SSE 串流, DNS rebinding 保護); 18 個呼叫套件自帶的參考夾具 (test_* 工具, 提示與 test:// 資源, 本伺服器以未知工具結果, -32602 或 isError 回應), 5 個依賴本伺服器未宣告的能力 (logging, completions, 資源訂閱). 回環 Origin 標頭現在在任何模式下都被接受 (套件如此要求); CORS 標頭與預檢回應仍僅限開發者模式. 2026-07-28 無狀態模型沒有路由 (Roadmap D9). 詳見 docs/dev/p6-conformance.md.
 - `優化` 安全審計 (P6): 七項清單 (權杖儲存, 日誌脫敏, 匯出元件, 明文範圍, 區域網路預設關閉, 配對撤銷, 工具分組預設關閉) 已在程式碼與兩台裝置上逐項核對, 記錄於 docs/dev/p6-security-audit.md, README 安全章節改為說明這些邊界. 明文 HTTP 由網路安全設定限定為回送位址, 取代應用程式層級的 usesCleartextTraffic 旗標; 外掛不發起用戶端連線, 監聽器也不需要該旗標.
 - `優化` 效能基準 (P6): 在 API 24 模擬器, Sony 手機 (API 33) 與小米平板 (API 35) 上量測 ui_dump 50 / 200 / 400 節點, screen_capture 三檔尺寸, script_run 往返與 4 路並行請求, 記錄於 docs/dev/p6-performance-baseline.md, 僅作參考不設門檻. 僅由外掛應答的呼叫在模擬器與手機上約 20 ms, ui_dump 每節點約增加 0.05 ms, 無障礙截圖路徑 100 ms 內應答而 API 24 的 MediaProjection 路徑每次約 1.35 s, 4 路並行請求在宿主 4 路並行上限內以單次往返的 1.0-1.8 倍完成.
-
-#### v1.0.0
-
-_2026/09/16_
-
-- `提示` P4 開發預覽: 37 個工具, 預設啟用 33 個, 提供 AutoJs6 抽屜開關與外掛程式設定頁. 需要配套的 P4 AutoJs6 組建. ROADMAP.md.
-- `新增` 手機設定頁提供服務狀態, USB 轉發, 連接埠與區域網路存取, 權杖顯示/複製/輪換, 配對撤銷, 工具群組與 root 權限, 開發者模式, 可複製的 Claude Code / Cursor / Codex / 通用 HTTP 設定及發行歷史, 並跟隨 AutoJs6 外觀. 網路設定會重新啟動執行中的監聽器, 權杖與權限變更立即生效. 敏感資訊視窗禁止截圖.
-- `新增` MCP 資源 (P3.5) 提供唯讀工作目錄檔案, 可瀏覽的宿主範例, 裝置資訊和最近主控台輸出, 遵守配對與分組開關. 文字和二進位讀取報告截斷狀態. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指引, 其他手機語言回退英語.
-- `新增` 工作目錄工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用從 1 開始的行列號的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二進位讀取使用 base64, 原始資料最多 1 MiB. 寫入亦受宿主請求預算約束 (通常為包含 JSON 跳脫的 96 KiB). 檔案刪除和 Shell 預設關閉; root 另需 allowShellRoot 開關與宿主 shell.root 授權. 這些能力需要相符的 P3.4 宿主建置.
-- `新增` 外掛識別碼 `mcp-server`, 含 INFO 服務, Wake Activity 以及供主程式探索的 `org.autojs.plugin.MCP_SERVER` 服務骨架
-- `新增` 10 種語言的 README, 外掛中心說明與更新日誌
-- `新增` 位於 `http://127.0.0.1:9637/mcp` 的 Streamable HTTP 端點及 `device_ping` 工具, 由可經 adb 或宿主啟停的前台服務承載 (開發預覽)
-- `新增` `/mcp` 端點的傳輸加固: 綁定位址與連接埠來自伺服器設定存放區, 請求本體上限 1 MiB, 閒置連線 60 秒後關閉, 連接埠被佔用或綁定被拒絕時以 `port_in_use` / `bind_failed` 狀態附帶提示結束而非當機
-- `新增` SDK 傳輸前置的 DNS rebinding 保護: 迴環模式只接受 `localhost` / `127.0.0.1` / `[::1]` 作為 `Host`, 區域網路模式加入裝置目前的 IPv4 位址與可選的額外主機名稱並在網路變化時重新整理; 瀏覽器來源一律拒絕, 僅 "開發者模式" 開關經 CORS 放行 Inspector 的迴環來源
-- `新增` 伺服器識別 `autojs6-mcp-server` 攜帶外掛程式版本, 並宣告 tools (`listChanged`), resources 與 prompts 能力; `tools/list` 保持註冊順序以便用戶端快取
-- `新增` 每個 `/mcp` 請求的 Bearer 權杖鑑權: 首次啟動時產生 32 位元組權杖, 以 Android Keystore 的 AES-GCM 金鑰包裹後存放在外掛程式私有且不參與備份的儲存空間; `Authorization` 標頭缺失或錯誤時經常數時間比較後以 `401` + `WWW-Authenticate: Bearer` 與 JSON-RPC `-32001` 錯誤拒絕; 權杖不寫入日誌
-- `新增` 傳輸前置的首次配對: 未配對用戶端可以 `initialize` 並列出 tools, resources 與 prompts, 但首次 `tools/call`, `resources/read`, `resources/subscribe` 或 `prompts/get` 回傳 `PAIRING_REQUIRED` (`-32002`), 直到 60 秒內在手機上確認; 拒絕或逾時後 30 秒內回傳 `PAIRING_DENIED` (`-32003`); 用戶端按 `clientInfo` 名稱 (缺失時用 `User-Agent`) 加位址類別 (迴環 / 區域網路) 識別, 因此權杖輪換不影響既有配對, 最多可配對 32 個用戶端
-- `新增` 手機上的配對確認走雙通道: 帶允許 / 拒絕動作的高優先級通知, 以及螢幕解鎖時彈出的對話框; 伺服器設定, 權杖與已配對用戶端保存在原子替換的檔案中, 伺服器程序與設定頁共享且不會讀到過期快取
-- `新增` 帶分組開關的工具目錄 (決策 D6): `device_ping` (外掛本機), `device_info` (AutoJs6 `device.info`) 與 `script_run` (AutoJs6 `engines.execScript`: 執行 JavaScript, 最多等待 `timeoutMs` 直到指令碼結束, 回傳結果與最新的主控台行, 執行期間送出進度通知); 每個工具宣告封閉的 JSON Schema (`additionalProperties: false`), 參數在送達 AutoJs6 之前完成驗證; 分組開關 `script` / `ui` / `ui_gesture` / `screen` / `files` / `files_delete` / `device` / `shell` 存放於 `tool_groups.json`, 關閉的分組自下一次請求起從 `tools/list` 消失, 其工具回應 `TOOL_DISABLED`
-- `新增` 宿主橋接: `org.autojs.plugin.MCP_SERVER` 服務實作真實的 `IMcpServerPlugin` Binder (`getInfo` / `getCapabilities` 回報契約版本 1, 工具分組, MCP 協定版本與 SDK 版本; `openServer` 只接受已安裝且同簽章的 AutoJs6, 回傳帶 `getStatus` / `updateConfig` / `stop` / `close` 的 `IMcpServerSession`); 工具呼叫經宿主能力代理傳遞, 帶單調遞增的請求 id, 每次呼叫的逾時, 4 路並行上限, 宿主錯誤類別映射為 `HOST_UNAVAILABLE` / `A11Y_SERVICE_NOT_RUNNING` / `CAPABILITY_DENIED` / `LIMIT_EXCEEDED` / `RATE_LIMITED` / `TIMEOUT` / `HOST_ERROR`; AutoJs6 結束時監聽器繼續執行, 依賴宿主的工具回應 `HOST_UNAVAILABLE` 直到宿主重新連線; 狀態與事件 (`pairing_requested`, `client_paired`, `tool_call`, `warning`) 經回呼送達宿主
-- `新增` 前景服務通知顯示端點, AutoJs6 連線狀態與已配對用戶端數, 並提供停止動作; 通知被停用時以 toast 提示端點; `dumpsys activity service` 額外列印宿主工作階段, 工具分組開關與已註冊工具
-- `新增` 補全指令碼分組: `script_run_file` 執行裝置上的指令碼檔案, `script_stop` / `script_stop_all` 停止一個或全部 AutoJs6 執行, `script_list` 列出執行中的執行, `console_tail` 回傳最新的主控台行並帶 `nextSinceId` 游標與層級篩選; `script_run` 與 `script_run_file` 現在回傳 `executionId`, `status` (`finished` / `error` / `running`), `durationMs`, 含行號的例外與最新的主控台行, 等待期間每 2 s 送出一則攜帶最新主控台行的進度通知
-- `新增` MCP 端點的回應改為以伺服器傳送事件 (SSE) 串流回傳 (不再使用 SDK 的 JSON 回應模式), 屬於某個請求的通知 (如執行中指令碼的進度心跳) 會隨該請求自身的回應送達用戶端
-- `新增` 新增 UI 分組 (roadmap P3.2): `ui_dump` 以帶 `#n` 參照的緊湊節點樹回傳目前視窗 (`format` 為 text / json / xml, `maxNodes` 最多 400, `maxDepth`, `visibleOnly`, `window`), `ui_find` / `ui_wait_for` 輪詢選擇器, `ui_current_window` 與 `ui_explain_selector` 回報視窗與選擇器失敗的原因, `ui_click` / `ui_long_click` / `ui_set_text` / `ui_scroll` 作用於 `nodeRef` (依指紋重新定位, 節點消失時回傳 `NODE_REF_STALE`) 或 `selector`, `ui_press_key` 按下 back / home / recents / notifications / quick_settings / power_dialog / lock_screen, 預設關閉的 `ui_gesture` 分組新增 `ui_swipe`, `ui_gesture` 與點擊工具的座標形式 (分組關閉時回傳 `TOOL_DISABLED`); 工具目錄快照增至 20 個工具; 座標手勢需要 2026-09-11 或之後建置的 AutoJs6 宿主 (更早的宿主會隨機以 "the system cancelled ..." 回應)
-- `新增` 螢幕擷取群組 (P3.3): screen_capture 傳回 MCP 圖片, 支援裁切, scale 或 maxWidth, JPEG / PNG / WebP 與品質參數. 預設 JPEG 品質 70, 最長邊 1280 px. base64 超過 4 MiB 時降低品質或尺寸重試, 中繼資料說明調整情況. screen_state 傳回亮屏狀態, 尺寸, 方向和密度. 工具目錄現有 22 項. MediaProjection 備援需要 2026-09-13 或之後建置的 AutoJs6 主程式及手機端授權, 主程式工作階段重用該授權.
-- `新增` 區域網路路徑 (P5.1): 開啟區域網路存取後, 設定頁列出手機目前位址 (Wi-Fi 變化時重新整理) 並提示同網段與防火牆; 來自區域網路的配對要求在對話方塊和通知中顯著標註; 每日提醒伺服器仍可從區域網路存取, 可關閉且不重啟監聽. README 記錄 USB 與區域網路路徑.
-- `新增` 每用戶端速率限制 (P6): 每用戶端每秒最多 20 個請求, 每分鐘最多 30 次 screen_capture. 超限請求回傳 HTTP 429, 帶 Retry-After 標頭和含 retryAfterMs 的 JSON-RPC RATE_LIMITED 錯誤; 超限截圖以帶 retryAfterMs 的 RATE_LIMITED 工具結果回應, 便於模型等待. 宿主 grant 的無障礙查詢速率在此之上仍然生效.
-- `新增` 閒置自動停止與電量 (P6): 設定頁新增 "閒置時自動停止" (預設關閉; 5 / 15 / 30 / 60 / 120 分鐘). 監聽器在所選時間內沒有用戶端請求時自行停止, 記錄外掛程式內部的 idle_timeout 原因, 留下一條可自動消失的通知, 且不算作使用者停止; 處理中的請求 (正在執行的工具呼叫) 不算閒置, 而僅保持連線卻不發請求的用戶端不會讓伺服器繼續執行. 當 Android 限制了本應用程式的電池用量 (HyperOS 與 MIUI 預設對側載應用程式如此, 熄屏並使用電池約一分鐘後會停止前景服務) 時, 設定頁顯示警告和 "電池設定" 按鈕, AutoJs6 收到一條 warning 事件. 閒置 CPU 時間與一小時閒置的 batterystats 估算記錄於 docs/dev/p6-battery-and-residency.md.
-- `修復` IDE rebuild 不再為 JVM 單元測試尋找 APK. APK 驗證工作會自動組建所需產物, 可直接從 clean 後執行.
-- `修復` 外掛程式中心明暗模式下圖示比例不一致及自適應圖示留白不足的問題; 夜間同樣使用自適應圖示, 調整圖層尺寸以保留 ic_launcher_round.png 的完整圖形和留白, 僅切換背景色
-- `修復` 設定頁的鍵盤 Tab 導覽會略過工具列返回按鈕; 現在 Tab 循環涵蓋返回按鈕和全部控制項 (含 Android 7). 裝置測試檢查螢幕閱讀器標籤與鍵盤操作.
-- `修復` script_run 與 script_run_file 的 arguments 對應以 JSON Schema 陣列宣告值型別, 部分 MCP 用戶端會拒絕或弱化; 現改為單型別 anyOf 分支. README 新增 "接入" 與 "常見問題" 章節及實測用戶端矩陣.
-- `修復` 敵意請求體在任何解析器遞迴之前就被拒絕: 巢狀超過 64 層的 JSON, 重複請求 id 的請求體, 以及同一工作階段上仍在途的請求 id (原本會讓先到的請求得不到回應) 都回傳 400 與 JSON-RPC 錯誤; 沒有有效工作階段的 GET 串流回傳 400 / 404 而非空事件串流. JVM 測試與裝置測試 (API 28 / 31 / 33 / 35) 涵蓋超長, 超深, 非法 UTF-8, 未知方法, 標頭組合, 超大 base64 與 64 並行工作階段.
-- `修復` 生命週期矩陣 (P6): 帶有上一個監聽處理程序工作階段 id 的請求 (監聽處理程序被終止, 或因權杖輪換而重新啟動之後) 交由傳輸層回 404, 讓用戶端重新 initialize, 而不再以請求的 User-Agent 為已配對的用戶端發起多餘的配對提示; 監聽處理程序死亡後殘留在通知列的配對通知在下一個監聽器啟動時清除. 宿主被終止, 監聽處理程序被終止, 兩者同時被終止, 在系統設定中強制停止, 活動工作階段中的權杖輪換, 以及跨越宿主被終止與監聽處理程序被終止的待確認配對, 各自的期望狀態與恢復路徑記錄於 docs/dev/lifecycle-matrix.md 並在實機上驗證.
-- `優化` 建置階段阻止意外引入原生相依套件, 並輸出 JSON 校驗報告
-- `相依性` MCP Kotlin SDK 0.15.0 (`kotlin-sdk-server`) 與 Ktor 3.5.1 CIO 引擎
-- `相依性` 附加 Ktor 3.5.1 `ktor-server-test-host` 用於 JVM 傳輸測試 (僅測試範圍)
-- `相依性` 附加 `mcp-server-api.aar` (AutoJs6 模組 `plugin-api/mcp-server-api`, 宿主建置 6.8.0 / 5279, MPL 2.0) 作為 AutoJs6 與外掛之間的 Binder 契約, 並在 `locks/host-api-aars.lock` 中鎖定雜湊
-- `相依性` 更新來自 P4 宿主組建的 common-plugin-api 與 mcp-server-api 配套 AAR: 可選設定擴充 v1, AIDL transaction 順序不變, SHA-256 鎖定, 保留 SDK 36 消費相容性.
 
 ##### 更多發行歷史
 
