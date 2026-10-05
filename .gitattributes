@@ -7,3 +7,9 @@ app/src/main/res/raw/keep_plugin_center_icon.xml text eol=lf
 app/src/main/res/raw/keep_icon_studio.xml text eol=lf
 app/src/main/res/raw/keep_icon_studio_background.xml text eol=lf
 app/src/main/res/values*/icon_studio_backgrounds.xml text eol=lf
+
+# Icon Studio reproducible assets
+app/src/main/res/mipmap*/ic_icon_studio_application*.xml text eol=lf
+
+# Icon Studio reproducible assets
+app/src/main/res/raw/keep_icon_studio_application.xml text eol=lf

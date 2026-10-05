@@ -6,9 +6,10 @@
   "changelog_label_dependency": "Dependency",
   "$data": {
     "v1.0.3": {
-      "released_date": "2026/10/04",
+      "released_date": "2026/10/05",
       "improvement": [
-        "Plugin Center icons use the sizes, positions, light and dark artwork, and circular backgrounds adjusted in Icon Studio, retaining reproducible sources and parameters"
+        "Plugin Center icons use the sizes, positions, light and dark artwork, and circular backgrounds adjusted in Icon Studio, retaining reproducible sources and parameters",
+        "Android App info icons share Icon Studio artwork and light/dark backgrounds while preserving transparent Plugin Center artwork and existing launcher choices"
       ]
     },
     "v1.0.2": {

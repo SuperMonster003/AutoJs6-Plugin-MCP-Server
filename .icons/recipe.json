@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatorVersion": "1.2.0",
+  "generatorVersion": "1.3.0",
   "profile": "catalog",
   "repository": "AutoJs6-Plugin-MCP-Server",
   "packages": [
@@ -101,6 +101,30 @@
     },
     "app/src/main/res/raw/keep_icon_studio_background.xml": {
       "role": "background-keep"
+    },
+    "app/src/main/res/mipmap/ic_icon_studio_application.png": {
+      "role": "legacy-day"
+    },
+    "app/src/main/res/mipmap-night/ic_icon_studio_application.png": {
+      "role": "legacy-night"
+    },
+    "app/src/main/res/mipmap/ic_icon_studio_application_foreground.png": {
+      "role": "adaptive-day"
+    },
+    "app/src/main/res/mipmap-night/ic_icon_studio_application_foreground.png": {
+      "role": "adaptive-night"
+    },
+    "app/src/main/res/mipmap/ic_icon_studio_application_monochrome.png": {
+      "role": "mono"
+    },
+    "app/src/main/res/mipmap-anydpi-v26/ic_icon_studio_application.xml": {
+      "role": "application-adaptive"
+    },
+    "app/src/main/res/mipmap-night-anydpi-v26/ic_icon_studio_application.xml": {
+      "role": "application-adaptive"
+    },
+    "app/src/main/res/raw/keep_icon_studio_application.xml": {
+      "role": "application-keep"
     }
   },
   "assets": [
@@ -109,8 +133,11 @@
   ],
   "legacyGenerator": ".python/generate_launcher_icons.py",
   "backgroundDefaults": {
-    "day": "transparent",
-    "night": "transparent"
+    "day": "#0f766e",
+    "night": "#115e59"
   },
-  "originalSources": {}
+  "originalSources": {},
+  "systemIcon": true,
+  "systemIconMinSdk": 24,
+  "systemIconObsolete": []
 }

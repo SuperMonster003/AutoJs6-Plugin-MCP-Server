@@ -37,7 +37,7 @@ class ManifestContractTest {
         val application = manifest.child("application")
         assertEquals("false", application.androidAttribute("allowBackup"))
         assertEquals("@string/app_name", application.androidAttribute("label"))
-        assertEquals("@mipmap/ic_launcher", application.androidAttribute("icon"))
+        assertEquals("@mipmap/ic_icon_studio_application", application.androidAttribute("icon"))
 
         val metaData = application.children("meta-data").associate { it.androidAttribute("name") to it.androidAttribute("value") }
         assertEquals(".WakeActivity", metaData["org.autojs.plugin.WAKE_ACTIVITY"])

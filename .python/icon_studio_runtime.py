@@ -14,13 +14,34 @@ import json
 import math
 import re
 import struct
+import xml.etree.ElementTree as ET
 import zlib
 from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageOps
 
-VERSION = "1.2.0"
-SUPPORTED_VERSIONS = {"1.0.0", "1.1.0", VERSION}
+VERSION = "1.3.0"
+SUPPORTED_VERSIONS = {"1.0.0", "1.1.0", "1.2.0", VERSION}
+APPLICATION_MANIFEST = "app/src/main/AndroidManifest.xml"
+APPLICATION_ICON = "ic_icon_studio_application"
+APPLICATION_OUTPUTS = {
+    "app/src/main/res/mipmap/ic_icon_studio_application.png": "legacy-day",
+    "app/src/main/res/mipmap-night/ic_icon_studio_application.png": "legacy-night",
+    "app/src/main/res/mipmap/ic_icon_studio_application_foreground.png": "adaptive-day",
+    "app/src/main/res/mipmap-night/ic_icon_studio_application_foreground.png": "adaptive-night",
+    "app/src/main/res/mipmap/ic_icon_studio_application_monochrome.png": "mono",
+    "app/src/main/res/mipmap-anydpi-v26/ic_icon_studio_application.xml": "application-adaptive",
+    "app/src/main/res/mipmap-night-anydpi-v26/ic_icon_studio_application.xml": "application-adaptive",
+    "app/src/main/res/raw/keep_icon_studio_application.xml": "application-keep",
+}
+
+
+def application_outputs(min_sdk: int = 24) -> dict[str, str]:
+    return {
+        path.replace("anydpi-v26/", "anydpi/") if min_sdk >= 26 else path: role
+        for path, role in APPLICATION_OUTPUTS.items()
+        if min_sdk < 26 or not role.startswith("legacy-")
+    }
 RECOMMENDED_SCALE = (0.80, 1.20)
 VISUAL_TARGET = 0.52
 RASTER_TOLERANCE = 0.006
@@ -490,7 +511,18 @@ def generated_files(recipe: dict, loader, *, strict=True) -> dict[str, bytes]:
         if not path.startswith("app/src/") or "/res/" not in path:
             raise ValueError("生成目标必须是项目资源文件")
         role = descriptor["role"]
-        if role == "background-keep":
+        if role == "application-keep":
+            result[path] = b'<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@mipmap/ic_launcher" />\n'
+        elif role == "application-adaptive":
+            result[path] = (
+                '<?xml version="1.0" encoding="utf-8"?>\n'
+                '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
+                '    <background android:drawable="@color/ic_plugin_center_background" />\n'
+                f'    <foreground android:drawable="@mipmap/{APPLICATION_ICON}_foreground" />\n'
+                f'    <monochrome android:drawable="@mipmap/{APPLICATION_ICON}_monochrome" />\n'
+                '</adaptive-icon>\n'
+            ).encode()
+        elif role == "background-keep":
             result[path] = (
                 b'<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@color/ic_plugin_center_background" />\n'
             )
@@ -537,6 +569,66 @@ def generated_files(recipe: dict, loader, *, strict=True) -> dict[str, bytes]:
     return result
 
 
+def application_manifest(data: bytes) -> bytes:
+    """Change only the application's two icon references; preserve all components."""
+    text = data.decode("utf-8")
+    document = ET.fromstring(text)
+    if len(document.findall("application")) != 1:
+        raise ValueError("系统图标需要唯一的 application 节点")
+    if not re.search(r'xmlns:android\s*=\s*[\"\']http://schemas.android.com/apk/res/android[\"\']', text):
+        raise ValueError("无法识别 Manifest 的 android 命名空间")
+    tags = list(re.finditer(r"<application(?=[\s/>])(?:[^\"'>]|\"[^\"]*\"|'[^']*')*?>", text))
+    if len(tags) != 1:
+        raise ValueError("无法安全定位 application 图标引用")
+    match = tags[0]
+    tag = match[0]
+    for attribute in ("icon", "roundIcon"):
+        pattern = rf"(\bandroid:{attribute}\s*=\s*)([\"'])(.*?)(\2)"
+        value = "@mipmap/" + APPLICATION_ICON
+        if re.search(pattern, tag, re.DOTALL):
+            tag = re.sub(pattern, lambda m, value=value: m[1] + m[2] + value + m[4], tag, flags=re.DOTALL)
+        else:
+            closing = "/>" if tag.endswith("/>") else ">"
+            head = tag[: -len(closing)]
+            trimmed = head.rstrip()
+            indentation = re.search(r"\n([ \t]+)\S", tag)
+            separator = ("\r\n" if "\r\n" in tag else "\n") + indentation[1] if indentation else " "
+            tag = trimmed + separator + f'android:{attribute}="{value}"' + head[len(trimmed) :] + closing
+    return (text[: match.start()] + tag + text[match.end() :]).encode("utf-8")
+
+
+def project_files(recipe: dict, loader, read, *, strict=True) -> dict[str, bytes | None]:
+    outputs = generated_files(recipe, loader, strict=strict)
+    if recipe.get("systemIcon"):
+        outputs[APPLICATION_MANIFEST] = application_manifest(read(APPLICATION_MANIFEST))
+        owned_paths = set(APPLICATION_OUTPUTS) | set(application_outputs(26))
+        for path in recipe.get("systemIconObsolete", []):
+            if path not in owned_paths or path in outputs:
+                raise ValueError("不能移除不属于旧系统图标配置的文件: " + str(path))
+            outputs[path] = None
+        try:
+            properties = read("version.properties")
+        except FileNotFoundError:
+            properties = None
+        minimum = re.search(rb"(?m)^MIN_SDK_VERSION=(\d+)", properties or b"")
+        if minimum and "systemIconMinSdk" in recipe and int(minimum[1]) != recipe["systemIconMinSdk"]:
+            raise ValueError("最低 Android 版本已改变，请重新扫描并应用系统图标资源")
+    return outputs
+
+
+def remove_system_resource(root: Path, relative: str) -> None:
+    if relative not in set(APPLICATION_OUTPUTS) | set(application_outputs(26)):
+        raise ValueError("只能移除已列明的系统图标资源")
+    path = confined(root, relative)
+    if not path.is_relative_to((root / "app/src/main/res").resolve()):
+        raise ValueError("系统图标删除目标越出资源目录")
+    path.unlink()
+    try:
+        path.parent.rmdir()  # Only removes an empty resource folder; never recursive.
+    except OSError:
+        pass
+
+
 def main(root: Path | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Generate resources from the committed Icon Studio recipe"
@@ -560,11 +652,13 @@ def main(root: Path | None = None) -> int:
             raise ValueError("源图摘要不匹配")
         return data
 
-    outputs = generated_files(recipe, loader)
+    outputs = project_files(recipe, loader, lambda path: confined(root, path).read_bytes())
+    if any(confined(root, p).exists() and not confined(root, p).is_file() for p in outputs):
+        raise ValueError("生成目标被同名目录占用")
     changed = [
         (confined(root, p), data)
         for p, data in outputs.items()
-        if not confined(root, p).is_file() or confined(root, p).read_bytes() != data
+        if (confined(root, p).read_bytes() if confined(root, p).is_file() else None) != data
     ]
     if args.check:
         if changed:
@@ -575,9 +669,13 @@ def main(root: Path | None = None) -> int:
         print(f"Verified {len(outputs)} Icon Studio resources")
         return 0
     for path, data in changed:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(data)
-        print(f"Generated {path.relative_to(root).as_posix()}")
+        if data is None:
+            remove_system_resource(root, path.relative_to(root).as_posix())
+            print(f"Removed obsolete system resource {path.relative_to(root).as_posix()}")
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+            print(f"Generated {path.relative_to(root).as_posix()}")
     return 0
 
 
