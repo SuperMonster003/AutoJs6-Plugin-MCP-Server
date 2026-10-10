@@ -68,8 +68,13 @@ treats it as the user's decision (`McpServerSessionController.stopForUnavailable
 lifecycle matrix); the drawer switch had to be turned on again. `run-as <plugin> kill` is refused
 by SELinux on Android 12. The scenario therefore uses the instrumentation restart.
 
+A rerun with the build of `90005cc` (`@modelcontextprotocol/sdk` 1.32.1, Node.js 22 required) gave
+the same result: the first `device_ping` after the restart succeeded in 354 ms including the new
+session, with `notifications/tools/list_changed` before the answer.
+
 ## Remaining
 
-Publishing 0.1.1 to npm needs the maintainer (npm two-factor authentication); until then
+Pushing the bridge commits, the first CI run on GitHub and publishing 0.1.1 to npm need the
+maintainer (npm two-factor authentication); until then
 Claude Desktop setups that run `npx autojs6-mcp-bridge` keep 0.1.0 and need the server restarted in
 the client after a listener restart.
