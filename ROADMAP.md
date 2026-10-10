@@ -17,6 +17,24 @@ MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平
 4. 涉及宿主公开契约或脚本 API 的条目, 完成后必须同步宿主 `docs/dev/`, 宿主 `.changelog` (10 语言) 与本仓库 `.changelog`.
 5. 附录 C 的 "待决事项" 在进入对应阶段前由维护者拍板, 拍板结果回填到 "固定决策".
 6. 本仓库骨架 (Gradle / Manifest / 资源 / CI) 在 P0 落地时按 `D:/idea-projects/AUTOJS6_PLUGIN_NEW_REPO_AGENTS.md` 生成, 并将该文件复制为本仓库 `AGENTS.md` 后裁剪.
+7. 发布, 阶段状态或宿主契约变化时同步更新第 0 节 "当前结论"; 该节只做摘要, 细节以各阶段条目与会话记录为准.
+
+---
+
+## 0. 当前结论 (2026-10-10)
+
+| 项目 | 结论 | 依据 |
+| --- | --- | --- |
+| 公开版本 | v1.0.1 (2026-09-16, versionCode 57) 与 v1.0.2 (2026-09-20, versionCode 67, 当前最新); 本地 1.0.3 开发中 (图标工作台图稿与系统应用图标, 共享 Gradle 插件 1.9.0), 未发布 | GitHub Release; 官方索引 `release-manifests/io.github.supermonster003.autojs6.plugin.mcp.server/{57,67}.json` |
+| 宿主要求 | `requiresHostVersion` 5279 (AutoJs6 6.8.0); 宿主 6.8.0 尚未公开发布 (GitHub 公开版最新为 6.7.0), 公开用户需等待宿主发布 | `McpServerPlugin.REQUIRED_HOST_VERSION`; P9 宿主发布后回归 |
+| 宿主契约 | 插件实现 MCP 契约 v1 (`openServer` + `IMcpHostCapabilityBroker`); 宿主当前同时支持 v1 与 v2 (`openServerV2` + 共享 `IHostCapabilityBroker`), 按插件声明的契约版本分流, v1 保持兼容 | 文首两条迁移记录; P10 |
+| MCP 协议 | 有状态 Streamable HTTP (`/mcp`, 带请求的 POST 以 SSE 应答), 协商 2024-11-05 至 2025-11-25; 2026-07-28 无状态模型未实现 (D9), kotlin-sdk 0.15.0 截至 2026-10-10 仍为最新版 | D9; docs/dev/p6-conformance.md |
+| 能力面 | 37 个工具 / 8 个分组 (默认可见 33 个, `ui_gesture` / `files_delete` / `shell` 默认关闭), 资源 (工作目录, 示例, 设备, 控制台, 可选离线文档), 3 个提示 | 附录 A; `app/src/test/resources/tool-catalog.snapshot.json` |
+| 阶段 | P0 - P4, P6, P7 完成; P5 未完成 (P5.2 客户端矩阵与 P5.3 Claude Desktop 于 2026-10-10 重新打开); P8 可选, 未启动; P9 (1.0.x 补完) 与 P10 (1.1.0 契约 v2) 为 2026-10-10 新增 | 第 5 节阶段总览 |
+| 客户端实测 | 有真实结果: Claude Code 2.1.257 / 2.1.270 (HTTP, 以及经桥接程序的 stdio), Codex CLI 0.154.0-alpha.6.2, MCP Inspector CLI 2.5.0 / 2.6.0; 未验证: Cursor, VS Code Copilot / Cline, Gemini CLI, Claude Desktop | docs/dev/p5-client-matrix.md; docs/dev/p7-public-release.md |
+| PC 桥接程序 | `autojs6-mcp-bridge@0.1.0` (npm, 2026-09-15), 独立仓库 `AutoJs6-MCP-Bridge` (D19); 不是 APK 插件, 不进入插件中心; 维护者 2026-10-10 确认保留独立仓库 | D19; P5.3 |
+| 已知限制 | HyperOS / MIUI 默认限制侧载应用后台, 息屏用电池约 1 分钟后前台服务可能被停止 (设置页有提示); Ktor CIO 空闲时每 500 ms 唤醒一次; 每客户端 20 请求 / s 与 30 次截图 / min 上限; API 24 / 25 截图走 MediaProjection, 监听器重启后需重新同意 | docs/dev/p6-battery-and-residency.md, p6-rate-limits.md, p6-performance-baseline.md |
+| 仓库状态 | 本地 master 因 2026-10-10 的历史改写与 origin 分叉, 未推送; 正文引用的插件提交 hash 为早期改写前的值, 换算见附录 G | 附录 G; P9 远端同步 |
 
 ---
 
@@ -207,6 +225,8 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 | P6 | 健壮性, 安全, 性能, 一致性测试 | 全部 | P3 |
 | P7 | 文档, changelog, 发布 gate, 官方索引 | 文档 + 发布 | P5, P6 |
 | P8 (可选) | 公网隧道 + OAuth 2.1 (Claude.ai / Desktop 连接器) | 插件 + 文档 | P7 |
+| P9 | 1.0.x 补完: 重新打开的客户端验收, 各阶段遗留候选项与未执行的真机项, 取证脚本入库, 宿主公开发布后回归, 远端同步 | 全部 | P7 |
+| P10 | 1.1.0: 迁移到宿主 MCP 契约 v2 (共享能力数据面) 与宿主侧节点快照引用 | 插件 (宿主只读同步 AAR) | 宿主 v2 契约 (已就绪) |
 
 建议会话切分: P0 一次会话; P1 一到两次 (契约 + 代理为一次, bridge 新方法 + 注册为一次); P2 两次 (传输与鉴权; 目录与前台服务); P3 按工具组各一次; P4 一次; P5 两次 (路径与矩阵; 桥接程序); P6 一到两次; P7 一次.
 
@@ -430,7 +450,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 - [x] (发布) 验证顺序: `py .python/generate_markdown.py --check`, `:app:testDebugUnitTest`, `:app:assembleDebug :app:assembleDebugAndroidTest`, `:app:lintDebug`, instrumentation (AVD), `:app:appendDigestToReleasedFiles` (签名齐全, 单 APK `autojs6-plugin-mcp-server-v1.0.0-<CRC32>.apk`). (ANDROID_BUILD + BINDER: 2026-09-16 在构建 54 的工作树按此顺序执行: `generate_markdown.py --check` MARKDOWN_OK 10 语言 36 产物; `:app:testDebugUnitTest` 235 / 235; `:app:assembleDebug` 得 `autojs6-plugin-mcp-server-v1.0.1.apk`, `:app:assembleDebugAndroidTest` 得 `app-debug-androidTest.apk`; `:app:lintDebug` 0 错误 / 8 警告 (依赖版本与图标重复类, 与 P6 一致); AVD_API_33 (`emulator-5554`, x86_64) instrumentation `OK (35 tests)`, 34 通过 + 1 假设跳过 (`killListenerProcess` 需 `-e mcpKillListener true`), 109.9 s; `:app:appendDigestToReleasedFiles` 经 `assembleRelease` 断言文件名后产出 `releases/autojs6-plugin-mcp-server-v1.0.1-e6f720e3.apk` (1377446 字节, versionCode 54, apksigner 签名者 CN=SM003). 期间修正一处测试节奏问题: `McpServerHostSessionTest.workspaceToolsBridgeArgumentsPayloadsAndSeparateDangerousSwitches` 在预热后的 x86_64 模拟器上 1 s 内发出超过 20 个请求, 被监听器自身的 20 请求 / s 上限以 429 拒绝 (构建 53 全量运行 2 / 2 复现, 单独运行通过, 真机较慢未触发), 现按 `Retry-After` 重试一次, 产品行为未改. 注: 文件名中的版本为 1.0.1 (当前 VERSION_NAME) 而非本条原文的 1.0.0; CRC32 随 versionCode 变化, 维护者须在打 tag 的提交上重新执行 digest 任务并以该产物发布.)
 - [x] (发布) GitHub Release (首个公开 tag `v1.0.1`, 签名 APK, changelog 文本); `AutoJs6-Official-Plugins-Index` 经 `tools/generate_official_plugin_index.py` 重新生成 (不手改 JSON), 追加 `release-manifests/<packageName>/<versionCode>.json` (真实 sha256 / size / signer); 宿主插件中心可发现并安装, 两台设备完成 P2 客户端验收. (RELEASE + INDEX + DEVICE, 2026-09-16: 仓库与 [Release v1.0.1](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases/tag/v1.0.1) 已公开. Tag 指向 `d2731e8ffed1efc2a222b57cc782f4b65e29adec`, versionCode 57; 全部语言 v1.0.1 与此前未公开的 v1.0.0 released_date 已更新为 `2026/09/16` 并重新生成文档. 在最终 tag 提交重跑 digest, 以该 APK 和 `--commit d2731e8ffed1efc2a222b57cc782f4b65e29adec` 生成清单; 公开资产名 `autojs6-plugin-mcp-server-v1.0.1-3b9fc1b0.apk` 与 artifacts.name 完全相同, 1377442 字节, SHA-256 `c8b5d521358fb196b746fc417797f5d283b15dcb287ebc0f5a71c22fbcd565b5`, 签名 SHA-256 `31a681fcfffb3e428420cae280ded89292b12a3b0f59e19b7a73e32a8ae4c213`; 下载公开资产后复核一致. 索引仓库 `release-manifests/io.github.supermonster003.autojs6.plugin.mcp.server/57.json` 已纳入 `0084f13` 并推送 main, 全量生成 37 个插件条目, 单元测试 33/33, MCP 恰有一个条目且资产 / 版本 / 源码提交 / 签名均匹配. Sony XQ-DQ72 API 33 与 Xiaomi 23046RP50C API 35 已通过插件中心更新安装到 1.0.1 / 57, 拉取设备 base APK 的 SHA-256 均与公开资产相同. Inspector 与生命周期证据见 `docs/dev/p7-public-release.md`; Claude Code 2.1.270 后续通过维护者指定的 ACP 配置 `Claude via AIGoCode [Fabel 5.1 (C)]` (model `claude-fable-5-1[1m]`) 在两台公开 APK 上完成真实 device_info / script_run. 两台均先收到 PAIRING_REQUIRED, 经手机允许后成功; Sony 5 轮 / 15089 ms, Xiaomi 确认配对后的成功会话 3 轮 / 10393 ms, script_run 均 finished 且控制台含验证标记. 临时客户端配对 / CLI 配置 / adb forward 已清理, 开发者模式与停止状态已恢复. Sony 本轮开始时已升级为开发版 1.0.2 / 60, 为测试临时无清数据回装公开版, 完成后恢复原开发 APK 并核对哈希; 平板保持公开版. 两台完整 P2 客户端 gate 已满足, 本条据此勾选. 第 8 项与真机 docs 证据按本次要求留给下次会话.)
 - [x] (测试) ColorOS 或同类设备的安装后激活实测 (插件中心出现 "激活", 点击后可用, 重启后仍可发现); 无设备时如实记录 "未执行". (DEVICE: ColorOS 未执行, 手头无 ColorOS 设备 (在线设备为 Sony XQ-DQ72 API 33, Xiaomi Pad HyperOS API 33 与 AVD). 同类 OEM 的安装后激活路径已在 P4 覆盖 (2026-09-15 记录: 未安装 / 需要激活 / 已停用 / 版本不兼容四态引导与恢复在 API 28 / 31 / 33 / 33 / 35 真机各通过一轮, 含 Xiaomi HyperOS; 新装后抽屉需宿主重启才刷新的观察仍是宿主待办, 已于 2026-10-10 修复, 见 P9), P6 生命周期矩阵覆盖宿主 / 插件进程被杀后的重新发现. 整机重启后的可发现性未单独实测 (Xiaomi Pad 重启后需图案解锁, 不由 adb 驱动). 取得 ColorOS 设备后按本条原文补做并回填.)
-- [ ] (发布) 发布后回填本文件 "当前结论" 表与附录 D 证据; 更新维护者记忆 / 宿主 a11y Roadmap 的跨运行时消费方列表.
+- [x] (发布) 发布后回填本文件 "当前结论" 表与附录 D 证据; 更新维护者记忆 / 宿主 a11y Roadmap 的跨运行时消费方列表. (DOCS, 2026-10-10: 原文所说的 "当前结论" 表此前并不存在, 现新建为第 0 节, 回填 v1.0.1 / v1.0.2 发布, 宿主要求, 契约, 协议, 能力面, 阶段, 客户端, 桥接程序与已知限制; 附录 D 的证据等级定义仍适用, 未改动; 宿主 `docs/dev/accessibility-automation-roadmap.md` 的非目标节补记 MCP Server 为后续消费方 (宿主 commit 646d13285c), `docs/dev/accessibility-architecture.md` 的跨运行时消费方表自 P1.3 起已含 MCP 行; 维护者记忆 (Claude 记忆) 记录 MCP Server 与桥接程序的关系及本次复核结论.)
 
 验收条件: 官方索引条目可见, 从索引安装的 APK 在两台设备上完成 P2 验收的端到端; 工作树干净, `VERSION_BUILD` 与提交数一致.
 
@@ -446,6 +466,45 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 - [ ] (文档) 风险说明: 公网暴露设备控制能力的后果, 仅在需要时开启, 用完即关.
 
 验收条件: 至少一个云端客户端经隧道 + OAuth 完成工具调用; 默认关闭且有醒目警告.
+
+---
+
+## P9: 1.0.x 补完与验收回填
+
+目标: 收拢 2026-10-10 复核发现的缺口: 重新打开的客户端验收, 各阶段已记录但没有后续条目承接的候选项与未执行的真机项, 以及发布与仓库层面的待办. 本阶段不改变工具面与公共契约; 需要新契约的工作放在 P10.
+
+- [x] (宿主) 宿主抽屉在 MCP Server 插件安装 / 启用 / 更新后刷新引导状态 (P4 与 P7 记录的宿主待办: 新装插件后抽屉保持 "未安装插件" 直到宿主重启). (SOURCE: 宿主 `McpServerOwner` 增加监听 `ACTION_PACKAGE_ADDED` (原先只有 REMOVED / CHANGED / REPLACED), 开关未开启时包变化与插件状态变化不再直接返回, 而是重新检查插件并替换过时的引导; 纯函数 `McpServerUiPolicy.guidance` / `refreshedGuidance`, 检查失败不覆盖当前状态; 宿主 changelog v6.8.0 `fix` 10 语言 (简体中文并入既有的 "安装状态, 启用状态及运行状态显示" 一条); 宿主 commit 52bc3be32c. JVM: `McpServerUiPolicyTest` +1, MCP 包与插件中心注册 22/22. DEVICE: Redmi 22120RN86C (MIUI, API 33), 宿主 6.8.0 / 5328 debug 构建, 插件为公开 1.0.2 / 67 (SHA-256 与 Release 资产一致): `pm uninstall -k --user 0` 后点抽屉开关得到 "Plugin not installed", 以备份的同一 APK `adb install -r --user 0` 后 3 s 内副标题变为 "Activation required" (MIUI 让新装应用保持停止态, 引导正确), 宿主未重启; 对照: 修复前的同版宿主 APK 走同一流程, 重装 5 s 后仍显示 "Plugin not installed". `pm install-existing --user 0` 在该机上返回成功但包仍未对 user 0 安装, 不能用于该测试. 结束时恢复修复版宿主, 插件已激活但未启用 (与测试前一致), 动画设置已复原; 2026-10-10)
+- [ ] (测试) 重新打开的客户端验收 (P5.2 / P5.3 / P4 验收): VS Code 1.138 Copilot Chat (`mcp.json` 的 `servers.<name>`: `type: "http"`, `url`, `headers`; 令牌建议用 `${input:...}` 由 VS Code 提示输入), Claude Desktop (经桥接程序的 stdio, `claude_desktop_config.json`), Cursor (如安装); 兼容矩阵至少 5 个客户端有真实结果后回填 P5.2 / P5.3 与 docs/dev/p5-client-matrix.md; 若 VS Code 的配置格式与设置页 "通用 JSON" 片段不同, 同步补充设置页片段与 README.
+- [ ] (测试) P3.5 可选 docs 资源的真机证据: 当前宿主构建 (5328, 含 `app.listDocs` / `app.readDoc`) 与 Offline-Docs 插件已装在 Xiaomi 23046RP50C (API 35) 与 Redmi 22120RN86C (API 33), 按 P3.5 原证据项 (列表, 索引, 页面, blob, 卸载与重装) 补做.
+- [ ] (测试) 取证脚本入库: 证据引用的 `build/tools/*.py` / `*.sh` (git 忽略: stdlib MCP 客户端, 令牌读取, 配对确认, adb forward 管理, uiautomator 驱动等) 已随 2026-10-10 的工作区清理丢失, T 盘归档中也没有, 相关证据目前无法复现; 把通用部分重建为入库的 `tools/evidence/` (不写入令牌与个人数据), 之后的新证据只引用入库脚本.
+- [ ] (测试) 未执行的真机项: 第三方应用上的 dump -> click -> set_text -> scroll -> back 全链路 (P3.2 以 AutoJs6 UI 模式脚本代替), 真机 root Shell 与 Shizuku 自动启用 (P3.4), 速率限制的截图窗口 (P6, 仅 JVM), 生命周期矩阵的 API 31 S5 与 API 28 (P6), ColorOS 新装激活与整机重启后的可发现性 (P7), Android 17 真机本地网络授权 (1.0.2 仅在模拟器验证).
+- [ ] (插件) SSE 断线续传 (SEP-1699 SHOULD): POST / GET 事件流带事件 id, priming 事件与 `retry` 字段, 接入 SDK 的 `EventStore` 以支持 `Last-Event-ID` 续传 (P6 一致性记录的后续候选, 见 docs/dev/p6-conformance.md).
+- [ ] (插件, 可选) 为结构稳定的工具声明 `outputSchema` (如 `device_info`, `screen_state`, `script_run`), 与现有 `structuredContent` 保持一致 (P2.3 偏差: 目前没有工具声明).
+- [ ] (插件, 可选) `screen_capture(annotate: true)`: 在截图上叠加最近一次 `ui_dump` 的 `#n` 编号 (P3.3 可选项, P6 未承接).
+- [ ] (插件, 可选) 设置页客户端配置片段的二维码 (P4 可选项).
+- [ ] (宿主) 为 `McpServerSessionController` 的重绑路径增加测试缝, 让假插件覆盖 1 / 3 / 9 s 退避与插件死亡后的可用性检查 (P1.2 的 `McpServerPluginHostTest` 未做, P6 一致性测试应用因宿主钉死正式包名而不覆盖); 是否加缝由维护者决定.
+- [ ] (宿主) 复核 `UiObject.kt` 中另一处没有 handler 的 `GlobalActionAutomator` (脚本线程; P3.2 只修复了 bridge 路径).
+- [ ] (发布) 1.0.3: 本地已有图标工作台图稿与系统应用图标, 共享 Gradle 插件 1.9.0; 按 P7 第 5 - 6 项的验证顺序与索引流程发布.
+- [ ] (发布) 宿主 6.8.0 公开发布后的回归: 用公开宿主与官方索引安装的插件在两台设备重跑 P2 验收的端到端, 核对 README 与插件中心说明中的宿主要求.
+- [ ] (仓库) 远端同步: 本地 master 因 2026-10-10 的历史改写与 origin 分叉 (本地多 72 个提交, 远端多 69 个); 强推会让官方索引 `57.json` / `67.json` 记录的 `sourceCommit` (`965178f` / `1061bbc`, 即 GitHub 当前 tag 指向) 在 GitHub 上不再可达. 强推前需决定保留旧 tag 指向, 或按 `T:/backups/idea-projects/_workspace-cleanup-20261010/_repo-reset-backups/agents-claude-history-20261010/AutoJs6-Plugin-MCP-Server.commit-map` 换算 (`965178f -> f0dadd4`, `1061bbc -> cf090a8`) 后重新生成索引清单; 推送后复核 CI. 桥接仓库本地领先 origin 2 个提交 (忽略代理说明文件, 兼容表), 可快进推送.
+- [ ] (PC) 桥接程序维护: Node.js 18 与 20 均已结束维护, 评估把 `engines` 提到 >= 20 或 >= 22 并为桥接仓库补多 Node 版本 CI; SDK 1.30.0 -> 1.32.x; 下次发布 (0.1.1) 时把 2026-10-10 的兼容表更新带到 npm 页面.
+
+验收条件: 客户端验收条目完成且兼容矩阵至少 5 个客户端有真实结果; 非可选条目全部勾选或经维护者明确转出; 取证脚本入库后至少一项新证据只依赖入库脚本.
+
+---
+
+## P10: 1.1.0 宿主契约 v2 与宿主侧节点引用
+
+目标: 按文首两条迁移记录 (2026-09-22 的 D33, 2026-09-23 的 D26), 把插件从 MCP 契约 v1 迁移到宿主共享能力数据面 (契约 v2), 并改用宿主生成的节点快照与引用, 去掉插件内重复维护的 `NodeRefRegistry`. 宿主同时保留 v1, 本阶段不阻塞 1.0.x 发布. 维护者 2026-10-10 确认把它作为 1.1.0 的规划, 当次不实施.
+
+- [ ] (插件) 从同一宿主构建同步 `common-plugin-api.aar` / `host-capability-api.aar` / `mcp-server-api.aar` 到 `libs/`, 更新 `locks/host-api-aars.lock`, `THIRD_PARTY_NOTICES.md` 与契约测试.
+- [ ] (插件) 实现 `IMcpServerPlugin.openServerV2(config, IHostCapabilityBroker, callback)`: 共享 broker 经同一 `HostBridgeClient` (单调 id, 超时, 并发上限, 错误映射不变), 能力键声明 `mcpServerContractVersion = 2`; v1 `openServer` 的行为保持不变.
+- [ ] (测试) 版本分流与往返: 新宿主走 v2, 只支持 v1 的宿主走 v1; 插件 `McpServerHostSessionTest` 覆盖两个版本, 宿主 `McpServerPluginRoundTripTest` 与 `McpServerAndroidConformanceTest` 重跑.
+- [ ] (插件) `ui_dump` 与动作工具改用宿主 `accessibility.dump({format: "compact"})` 返回的 `snapshotId` 和动作参数 `{nodeRef, snapshotId}`: 宿主每链路保留 8 个 LRU 快照, 失效返回 `invalid-request` + `NODE_REF_STALE`, 与插件现有的 60 s TTL 不同; 同步工具 Schema, 调用转换, 会话清理, 错误提示, 目录快照与回归用例, 行为差异写入 changelog; 移除 `NodeRefRegistry` 的重复实现.
+- [ ] (文档) README / 插件说明 / changelog 10 语言与宿主协议文档同步; 决定 `REQUIRED_HOST_VERSION` 是否提升到交付 v2 与 compact 快照的宿主构建 (保留 v1 回退时可以不提升).
+- [ ] (评估) 依赖: kotlin-sdk 0.15.0 截至 2026-10-10 仍为最新, D9 的无状态模型继续等待; Ktor 3.6.0 已发布, 随 SDK 升级一并评估 (SDK 以 Ktor 3.5.1 构建).
+
+验收条件: 新旧宿主各一台设备完成 P2 验收的端到端; 节点引用迁移后 P3.2 的 dump -> click -> set_text -> scroll -> back 全链路通过; 契约版本与 AAR 锁一致.
 
 ---
 
@@ -663,6 +722,30 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 插件生态: `D:/idea-projects/AUTOJS6_PLUGIN_NEW_REPO_AGENTS.md`, `AutoJs6-Plugin-Three-Stone-AI` (设置页 / 发行历史 / Roadmap 风格), `AutoJs6-Plugin-Python-Runtime` (AAR 锁定, 宿主调用方校验, 长时执行), `AutoJs6-Plugin-Three-Ember-Player` (前台服务 Manifest), `AutoJs6-Official-Plugins-Index` (索引生成器与 release manifest).
 - MCP: 规范 `2026-07-28` 及其 changelog, Streamable HTTP 传输页, MRTR 模式页; Kotlin SDK `modelcontextprotocol/kotlin-sdk` (releases, README 的 `mcpStreamableHttp` 示例); 客户端文档 (Claude Code MCP, Cursor MCP, Codex CLI 配置).
 - 同类项目 (设计参照): `danielealbano/android-remote-control-mcp`, `zerotap-app/android-mcp-server`, `mobile-next/mobile-mcp` (ADB 侧对照).
+
+---
+
+## 附录 G: 插件提交 hash 换算 (2026-10-10)
+
+本仓库历史改写过不止一次 (作者邮箱改为 GitHub noreply 地址; 2026-10-10 移除代理说明文件), 正文证据中的插件提交 hash 多为早期改写前的值, 在当前历史中已不可达. 下表按提交标题与作者日期换算: "GitHub" 列是 2026-10-10 时 origin 上的值 (官方索引清单引用的就是这一列), "当前本地" 列是 2026-10-10 改写后的值 (未推送). 宿主仓库未改写, 正文中的宿主 hash 仍然有效.
+
+| 正文引用 | GitHub (origin) | 当前本地 | 日期 | 提交标题 |
+| --- | --- | --- | --- | --- |
+| `95f7079` | `c5348bd` | `c5348bd` | 2026-09-08 | build: bootstrap the plugin repository with platform versions 1.7.4 and the hash-locked host API |
+| `fb54f4e` | `fac3021` | `fac3021` | 2026-09-08 | feat: register MCP Server with the AutoJs6 host (INFO service, Wake Activity, MCP_SERVER service skeleton) |
+| `73bb204` | `6e76e50` | `f08de31` | 2026-09-08 | docs: add 10-language resources, README, plugin instructions, changelog generation, and repository guides |
+| `6eaa7a4` | `64b8727` | `bff16cf` | 2026-09-08 | test: add JVM contract tests, the instrumentation contract test, and CI workflows |
+| `873c7f2` | `aa86e5b` | `68d7767` | 2026-09-08 | feat(server): host a device_ping MCP endpoint on the loopback interface with the official Kotlin SDK (P0.2 spike) |
+| `0f2d112` | `28f9d67` | `7e570b2` | 2026-09-10 | feat(server): harden the /mcp transport with a config store, request gate, and bind failure reporting (roadmap P2.1) |
+| `a88dd7c` | `26db738` | `77e0dc3` | 2026-09-10 | feat(server): require a bearer token and first-use pairing on /mcp with a phone-side confirmation (roadmap P2.2) |
+| `d6d9a10` | `7e771ad` | `0a76d87` | 2026-09-10 | feat(server): host bridge, tool catalog, and the real plugin Binder (roadmap P2.3) |
+| `f314ec5` | `cfca01a` | `28fa817` | 2026-09-10 | feat(tools): complete the script group with streaming responses (roadmap P3.1) |
+| `811781d` | `e892d55` | `919eeaa` | 2026-09-11 | feat(tools): add the ui and ui_gesture groups with node references (roadmap P3.2) |
+| `d2731e8` (tag `v1.0.1`) | `965178f` | `f0dadd4` | 2026-09-16 | chore(release): prepare v1.0.1 for its first public release |
+| `5e67a73` | `e583b33` | `ad01ff5` | 2026-09-16 | test(androidTest): confirm stopped state before ending the idle timer |
+| `e56e7ef` | `a6ab7c2` | `a600a16` | 2026-09-16 | feat(network): prepare Android 17 local network permissions for v1.0.2 |
+| `d4c3796` | `8d818fd` | `5bee46f` | 2026-09-16 | docs(release): record v1.0.1 publication and device acceptance evidence |
+| (tag `v1.0.2`, 正文未引用) | `1061bbc` | `cf090a8` | 2026-09-19 | fix(build): upgrade shared Gradle plugins to 1.8.3 |
 
 ---
 
@@ -987,3 +1070,20 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 检查限制: 宿主全量 lint 的联网尝试等待 Google Maven HTTPS, 离线重试超过 15 分钟仍在 JoinEffectDetector / Analysis.eval 全项目数据流分析, 未得到本轮报告, 已停止本次 Gradle 客户端并单独执行 APK 构建. 不以 2026-09-14 的历史报告冒充通过, 未削弱 lint 规则. 本插件 Markdown 检查与 ApplicationTextPunctuationTest 通过.
 - 工作区: 宿主仍有本次范围外的 docs/dev/apk-size-reduction-roadmap.md 改动, 按 AGENTS 第 3.3 节停止自动提交. 本次修复与证据保留在工作区, 不混入用户内容; 插件 VERSION_BUILD=65 与当前提交数一致.
 - 下次起点: P7 原有回填与 docs 资源待办保持不变. 本次仅修正宿主的启用默认值, 不改变插件版本或最低宿主契约要求.
+
+### 2026-09-20: v1.0.2 发布 (2026-10-10 补记)
+
+- 发布: GitHub Release `1.0.2` (tag `v1.0.2`, 2026-09-20 06:54 UTC), 资产为唯一 APK `autojs6-plugin-mcp-server-v1.0.2-3321db9b.apk` (1391706 字节, SHA-256 `2dd26f23...be74ca7`) 与 `SHA256SUMS`; versionCode 67, 源码提交为 `fix(build): upgrade shared Gradle plugins to 1.8.3` (GitHub `1061bbc`, 本地 `cf090a8`). 官方索引 `release-manifests/io.github.supermonster003.autojs6.plugin.mcp.server/67.json` 已收录, 签名 SHA-256 与 v1.0.1 相同.
+- 内容 (changelog v1.0.2): 独立设置页跟随宿主主题色与对比度修正, Android 17 (SDK 37) 适配与本地网络授权移入插件中心启用流程及插件设置, 共享构建插件 1.8.3 修正的构建警告.
+- 说明: 发布当时未在本文件记录; 本条依据 GitHub Release, 索引清单与 git 历史补写, 未重新执行验证.
+
+### 2026-10-10: 已勾选项完成度复核
+
+- 范围: 逐项核对 106 个已勾选条目的证据与当前代码, 宿主, 发布状态, 并回答桥接仓库的定位问题. 维护者拍板: 未达标的勾选取消并补测; 本轮实施路线图校正, 宿主抽屉修复与兼容表修正; 契约 v2 作为 1.1.0 阶段 (P10); 桥接程序保留独立仓库 (D19 补充说明).
+- 健康度: 插件 HEAD JVM 235/235, `generate_markdown.py --check` 通过, 工作树干净; 桥接 `npm test` 23/23.
+- 取消勾选: P5.2 客户端矩阵, P5.3 Claude Desktop (原因见条目). 补证据: P5.1 三项, P5.2 README 一项, P5.3 前两项. 更新过时说明: P0.1 CI, P2.3 通知, P3.2 无障碍提示, P3.3 `annotate`, P3.5 docs, P4 设置页与验收, P6 生命周期分支, P7 ColorOS 条目, 附录 A.3. 新增: 第 0 节当前结论, P9, P10, 附录 G; P7 第 8 项完成.
+- 宿主: 抽屉新装刷新修复 (52bc3be32c, 真机前后对照见 P9 第 1 项) 与 a11y 路线图消费方补记 (646d13285c).
+- 文档: 插件 README 10 语言与桥接 README 中英的兼容表改为插件 1.0.1 及以上 (插件 3d1ea17, 桥接 e731272); 桥接 README 的协商范围由 "2025-06-18 或更早" 更正为 2024-11-05 至 2025-11-25 (P6 一致性实测协商到 2025-11-25).
+- 发现: 取证脚本丢失, 本地与 origin 分叉及其对官方索引 `sourceCommit` 的影响 (均入 P9); 宿主 6.8.0 尚未公开发布 (第 0 节); `pm install-existing` 在 MIUI 上不可靠.
+- 未做: 客户端补测 (需要维护者在 VS Code / Claude Desktop 中操作), docs 真机证据与其余 P9 条目; 未推送任何仓库.
+- 下次会话建议起点: P9 第 2 项客户端补测, 随后取证脚本入库与 docs 真机证据.
