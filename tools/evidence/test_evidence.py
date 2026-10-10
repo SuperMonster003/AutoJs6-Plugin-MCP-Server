@@ -26,7 +26,7 @@ class FakeDevice(Device):
 
 class EvidenceToolTest(unittest.TestCase):
     def test_sse_payloads_skip_comments_and_join_data_lines(self):
-        stream = ": keep-alive\n\nevent: message\ndata: {\"jsonrpc\":\"2.0\",\ndata: \"id\":3,\"result\":{}}\n\n" \
+        stream = ": keep-alive\n\nid: 1\nretry: 1000\ndata: \n\nevent: message\ndata: {\"jsonrpc\":\"2.0\",\ndata: \"id\":3,\"result\":{}}\n\n" \
                  "data: {\"jsonrpc\":\"2.0\",\"method\":\"notifications/progress\"}\n"
         messages = parse_sse(stream)
         self.assertEqual([3, None], [m.get("id") for m in messages])

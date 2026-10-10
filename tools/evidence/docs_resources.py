@@ -21,8 +21,9 @@ import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from device import HOST_PACKAGE, PLUGIN_PACKAGE, PLUGIN_TEST_RUNNER, Device, DeviceError, progress  # noqa: E402
+from device import HOST_PACKAGE, PLUGIN_PACKAGE, Device, DeviceError, progress  # noqa: E402
 from mcp_client import McpClient, McpError  # noqa: E402
+from session import evidence_session  # noqa: E402
 
 DOCS_PACKAGE = "io.github.supermonster003.autojs6.plugin.offlinedocs"
 DOCS_ROOT = "autojs6://docs/"
@@ -134,83 +135,59 @@ def run(device: Device, args) -> dict:
     }
     if not report["packages"]["offlineDocs"] or not report["packages"]["offlineDocs"]["enabled"]:
         raise DeviceError("the Offline Docs plugin must be installed and enabled before the run")
-    # The helpers restart the plugin package, so they run before the host session is held.
-    was_running = device.plugin_state()["running"]
-    progress("reading the token")
-    token, source = device.read_token(args.token_source)
-    report["tokenSource"] = source
-    pairing = None
-    if source != "env" and device.has_instrumentation(PLUGIN_TEST_RUNNER):
-        progress(f"pre-pairing {CLIENT_NAME}")
-        pairing = device.pre_pair(CLIENT_NAME)
-        report["pairing"] = {"method": "EvidenceHelperTest#pairClient", "fingerprint": pairing}
-    if was_running:
-        progress("waiting for the host to rebind the restarted listener")
-        device.wait_listener_with_host()
-    try:
-        run_session(device, args, token, report)
-    finally:
-        if pairing and not args.keep_pairing:
-            progress("revoking the evidence pairing")
-            device.revoke_pairing(pairing)
-            report["pairing"]["revoked"] = True
+    with evidence_session(device, report, CLIENT_NAME, args.hold_seconds, args.token_source, args.keep_pairing) as client:
+        run_scenario(device, client, args, report)
     report["finishedAt"] = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
     return report
 
 
-def run_session(device: Device, args, token: str, report: dict) -> None:
-    with device.host_session(args.hold_seconds) as session:
-        report["hostSession"] = {"source": session["source"], "grantedMethods": session.get("grantedMethods")}
-        progress(f"host session ready ({session['source']}), port {session['port']}")
-        with device.forward(session["port"]) as local_port, McpClient(f"http://127.0.0.1:{local_port}/mcp", token, CLIENT_NAME) as client:
-            init = client.initialize()
-            report["initialize"] = {"protocolVersion": init.get("protocolVersion"), "serverInfo": init.get("serverInfo")}
-            progress("listing templates and resources")
-            index_result, index_ms = first_read(client)
+def run_scenario(device: Device, client: McpClient, args, report: dict) -> None:
+    progress("listing templates and resources")
+    index_result, index_ms = first_read(client)
 
-            templates = template_uris(client)
-            listing = docs_listing(client)
-            uris = listing.pop("_uris")
-            report["templates"] = {"count": len(templates), "docsTemplate": any(t.startswith(DOCS_ROOT) for t in templates)}
-            report["listing"] = listing
+    templates = template_uris(client)
+    listing = docs_listing(client)
+    uris = listing.pop("_uris")
+    report["templates"] = {"count": len(templates), "docsTemplate": any(t.startswith(DOCS_ROOT) for t in templates)}
+    report["listing"] = listing
 
-            index_text = index_result["contents"][0].get("text", "")
-            report["reads"] = {"index": {**content_facts(index_result), "elapsedMs": round(index_ms), "index": index_facts(index_text)}}
-            for name in ("index.html", "app.html"):
-                uri = next((u for u in uris if u.endswith("/" + name)), None)
-                if uri:
-                    result, ms = read(client, uri)
-                    report["reads"][name] = {**content_facts(result), "elapsedMs": round(ms)}
-            png = find_png(json.loads(index_text)) if index_text.startswith("{") else None
-            if not png:
-                images, _ms = read(client, DOCS_ROOT + "images/")
-                png = find_png(json.loads(images["contents"][0].get("text", "{}")))
-            if png:
-                uri = png if png.startswith(DOCS_ROOT) else DOCS_ROOT + png.lstrip("/")
-                result, ms = read(client, uri)
-                report["reads"]["png"] = {**content_facts(result), "elapsedMs": round(ms)}
+    index_text = index_result["contents"][0].get("text", "")
+    report["reads"] = {"index": {**content_facts(index_result), "elapsedMs": round(index_ms), "index": index_facts(index_text)}}
+    for name in ("index.html", "app.html"):
+        uri = next((u for u in uris if u.endswith("/" + name)), None)
+        if uri:
+            result, ms = read(client, uri)
+            report["reads"][name] = {**content_facts(result), "elapsedMs": round(ms)}
+    png = find_png(json.loads(index_text)) if index_text.startswith("{") else None
+    if not png:
+        images, _ms = read(client, DOCS_ROOT + "images/")
+        png = find_png(json.loads(images["contents"][0].get("text", "{}")))
+    if png:
+        uri = png if png.startswith(DOCS_ROOT) else DOCS_ROOT + png.lstrip("/")
+        result, ms = read(client, uri)
+        report["reads"]["png"] = {**content_facts(result), "elapsedMs": round(ms)}
 
-            progress("reading pages and probing errors")
-            report["probes"] = [probe(client, DOCS_ROOT + suffix) for suffix in
-                                ("does-not-exist.html", "images", "index.html/", "../index.html")]
+    progress("reading pages and probing errors")
+    report["probes"] = [probe(client, DOCS_ROOT + suffix) for suffix in
+                        ("does-not-exist.html", "images", "index.html/", "../index.html")]
 
-            if args.toggle_docs:
-                progress("disabling and enabling the Offline Docs plugin")
-                toggle: dict = {}
-                try:
-                    device.set_package_enabled(DOCS_PACKAGE, False)
-                    gone, ms = wait_listing(client, lambda item: item["docs"] == 0, timeout=30)
-                    gone.pop("_uris")
-                    root, _ms = read(client, DOCS_ROOT)
-                    toggle["disabled"] = {**gone, "goneAfterMs": round(ms), "templates": len(template_uris(client)),
-                                          "rootIndex": index_facts(root["contents"][0].get("text", "")),
-                                          "pageRead": probe(client, DOCS_ROOT + "index.html")}
-                finally:
-                    device.set_package_enabled(DOCS_PACKAGE, True)
-                back, ms = wait_listing(client, lambda item: item["docs"] == listing["docs"], timeout=60)
-                back.pop("_uris")
-                toggle["enabled"] = {**back, "backAfterMs": round(ms)}
-                report["docsToggle"] = toggle
+    if args.toggle_docs:
+        progress("disabling and enabling the Offline Docs plugin")
+        toggle: dict = {}
+        try:
+            device.set_package_enabled(DOCS_PACKAGE, False)
+            gone, ms = wait_listing(client, lambda item: item["docs"] == 0, timeout=30)
+            gone.pop("_uris")
+            root, _ms = read(client, DOCS_ROOT)
+            toggle["disabled"] = {**gone, "goneAfterMs": round(ms), "templates": len(template_uris(client)),
+                                  "rootIndex": index_facts(root["contents"][0].get("text", "")),
+                                  "pageRead": probe(client, DOCS_ROOT + "index.html")}
+        finally:
+            device.set_package_enabled(DOCS_PACKAGE, True)
+        back, ms = wait_listing(client, lambda item: item["docs"] == listing["docs"], timeout=60)
+        back.pop("_uris")
+        toggle["enabled"] = {**back, "backAfterMs": round(ms)}
+        report["docsToggle"] = toggle
 
 
 def main() -> int:

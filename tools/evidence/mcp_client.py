@@ -7,9 +7,11 @@ logged, `repr()` hides it and error messages never include request headers.
 """
 from __future__ import annotations
 
+import http.client
 import json
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any
 
@@ -38,13 +40,18 @@ class McpError(Exception):
 
 
 def parse_sse(text: str) -> list[dict]:
-    """JSON payloads of the `data:` fields of an event stream; comments and empty events are skipped."""
+    """JSON payloads of the `data:` fields of an event stream.
+
+    Comments, events without data and priming events (an id with an empty `data:` field, SEP-1699)
+    are skipped.
+    """
     messages, data = [], []
     for line in text.splitlines() + [""]:
         if line == "":
-            if data:
-                messages.append(json.loads("\n".join(data)))
-                data = []
+            payload = "\n".join(data)
+            if payload.strip():
+                messages.append(json.loads(payload))
+            data = []
         elif line.startswith(":"):
             continue
         elif line.startswith("data:"):
@@ -60,6 +67,73 @@ def decode_messages(content_type: str, body: bytes) -> list[dict]:
         return parse_sse(text)
     value = json.loads(text)
     return value if isinstance(value, list) else [value]
+
+
+class SseEvent:
+    def __init__(self, event_id: str | None, retry: int | None, message: dict | None):
+        self.id = event_id
+        self.retry = retry
+        self.message = message
+
+    def __repr__(self) -> str:
+        method = (self.message or {}).get("method")
+        return f"SseEvent(id={self.id}, retry={self.retry}, method={method}, response={self.message is not None and 'id' in self.message})"
+
+
+class EventStream:
+    """One SSE response read event by event over its own connection; close() drops it like a lost network."""
+
+    def __init__(self, client: "McpClient", method: str, body: bytes | None, extra: dict, request_id: int | None,
+                 timeout: float | None):
+        parsed = urllib.parse.urlsplit(client.url)
+        self.request_id = request_id
+        self._connection = http.client.HTTPConnection(parsed.hostname, parsed.port, timeout=timeout or client.timeout)
+        headers = {**client._headers(), **extra}
+        self._connection.request(method, parsed.path, body=body, headers=headers)
+        self._response = self._connection.getresponse()
+        self.status = self._response.status
+        self.content_type = self._response.getheader("Content-Type", "")
+        self.events: list[SseEvent] = []
+
+    def next_event(self) -> SseEvent | None:
+        """The next event with an id or a message; None when the stream ended. Comments are skipped."""
+        event_id, retry, data = None, None, []
+        while True:
+            raw = self._response.readline()
+            if not raw:
+                return None
+            line = raw.decode("utf-8").rstrip("\r\n")
+            if line == "":
+                payload = "\n".join(data)
+                if event_id is not None or payload.strip():
+                    event = SseEvent(event_id, retry, json.loads(payload) if payload.strip() else None)
+                    self.events.append(event)
+                    return event
+                event_id, retry, data = None, None, []
+            elif line.startswith(":"):
+                continue
+            elif line.startswith("id:"):
+                event_id = line[3:].strip()
+            elif line.startswith("retry:"):
+                retry = int(line[6:].strip())
+            elif line.startswith("data:"):
+                data.append(line[5:].removeprefix(" "))
+
+    def read_body(self) -> bytes:
+        return self._response.read()
+
+    def until_response(self) -> SseEvent | None:
+        """Reads until the answer to this stream's request (or any response on a resumed GET)."""
+        while True:
+            event = self.next_event()
+            if event is None:
+                return None
+            message = event.message or {}
+            if ("result" in message or "error" in message) and (self.request_id is None or message.get("id") == self.request_id):
+                return event
+
+    def close(self) -> None:
+        self._connection.close()
 
 
 class McpClient:
@@ -162,6 +236,19 @@ class McpClient:
             cursor = result.get("nextCursor")
             if not cursor:
                 return items, elapsed, metas
+
+    def stream(self, method: str, params: dict | None = None, timeout: float | None = None) -> "EventStream":
+        """Sends one request and returns its SSE response as an EventStream read event by event."""
+        request_id = self._next_id
+        self._next_id += 1
+        payload = {"jsonrpc": "2.0", "id": request_id, "method": method}
+        if params is not None:
+            payload["params"] = params
+        return EventStream(self, "POST", json.dumps(payload).encode("utf-8"), {}, request_id, timeout)
+
+    def resume(self, last_event_id: str, request_id: int | None = None, timeout: float | None = None) -> "EventStream":
+        """Reconnects a stream with `GET` and `Last-Event-ID` (SEP-1699)."""
+        return EventStream(self, "GET", None, {"Last-Event-ID": last_event_id, "Accept": "text/event-stream"}, request_id, timeout)
 
     def close(self) -> None:
         if not self.session_id:

@@ -6,9 +6,11 @@ evidence should only depend on these files.
 
 | File | Purpose |
 | --- | --- |
-| `mcp_client.py` | Streamable HTTP MCP client (standard library only): `initialize`, requests answered as JSON or SSE, `Mcp-Session-Id`, pagination, `DELETE` on close |
+| `mcp_client.py` | Streamable HTTP MCP client (standard library only): `initialize`, requests answered as JSON or SSE, `Mcp-Session-Id`, pagination, streams read event by event, resumption with `Last-Event-ID`, `DELETE` on close |
 | `device.py` | adb helpers: plugin `dumpsys` state, `adb forward` with automatic cleanup, token reading, pre-pairing and revocation of the evidence client, a held host session, package enable / disable |
+| `session.py` | The common frame of a scenario: token, evidence pairing, held host session, forward, MCP session, revocation |
 | `docs_resources.py` | Scenario: offline docs resources on a device (roadmap P3.5 optional item) |
+| `sse_resume.py` | Scenario: SSE resumption with `Last-Event-ID` mid-run and after the end, unknown ids (roadmap P9, SEP-1699) |
 | `test_evidence.py` | Offline checks of the parsing and redaction logic |
 
 ## Prerequisites
@@ -46,6 +48,7 @@ evidence should only depend on these files.
 ```shell
 py -m unittest discover -s tools/evidence
 py tools/evidence/docs_resources.py --serial <serial>
+py tools/evidence/sse_resume.py --serial <serial>
 ```
 
 `docs_resources.py` options: `--hold-seconds` (host session hold, default 240),
