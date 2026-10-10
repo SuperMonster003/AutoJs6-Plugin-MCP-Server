@@ -171,11 +171,11 @@ USB: `adb forward tcp:9637 tcp:9637` 将手机端口映射到 PC; 多台设备�
 
 ******
 
-设置页会为下列每个客户端复制带真实令牌的现成配置; 此处的片段以 `<token>` 作为占位. 所有客户端都通过带 Authorization 头的 Streamable HTTP 通信, 新客户端的首次调用需在手机上确认. 已实测: Claude Code, Codex CLI 与 MCP Inspector; 其余客户端使用相同的 URL 与头部, 但维护者尚未测试.
+设置页会为下列每个客户端复制带真实令牌的现成配置; 此处的片段以 `<token>` 作为占位. 所有客户端都通过带 Authorization 头的 Streamable HTTP 通信, 新客户端的首次调用需在手机上确认. 已实测: Claude Code, Codex CLI, MCP Inspector, VS Code Copilot Chat, Cursor CLI 与 Claude Desktop (经桥接程序); 其余客户端使用相同的 URL 与头部, 但维护者尚未测试.
 
 Claude Code: 执行 "客户端配置" 中的命令 (设置页复制的版本已带令牌); 随后 `claude mcp list` 会将 `autojs6` 显示为 Connected.
 
-Cursor: 将下面的条目加入 `mcp.json`:
+Cursor: 将下面的条目加入 `mcp.json` (Cursor CLI `cursor-agent` 读取同一个 `~/.cursor/mcp.json`):
 
 ```json
 {
@@ -184,6 +184,30 @@ Cursor: 将下面的条目加入 `mcp.json`:
       "url": "http://127.0.0.1:9637/mcp",
       "headers": {
         "Authorization": "Bearer <token>"
+      }
+    }
+  }
+}
+```
+
+VS Code (Copilot Chat): 执行 `MCP: Open User Configuration` 命令, 把下面的内容合并进打开的 `mcp.json`; 顶层键是 `servers` 而不是 `mcpServers`, 所以通用 JSON 片段不能原样使用. 首次启动服务器时 VS Code 会提示输入令牌并保存在其密钥存储中, 令牌不写入文件 (设置页 "VS Code mcp.json" 对话框的 "复制令牌" 按钮可复制令牌):
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "autojs6-token",
+      "description": "AutoJs6 MCP Server token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "autojs6": {
+      "type": "http",
+      "url": "http://127.0.0.1:9637/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:autojs6-token}"
       }
     }
   }
@@ -204,9 +228,9 @@ MCP Inspector: CLI 模式无需额外设置, Web 界面通过自带的 Node 代�
 npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport http --header "Authorization: Bearer <token>" --method tools/list
 ```
 
-Cline, VS Code Copilot Chat, Gemini CLI 等客户端: 在各自的 MCP 配置中使用相同的 URL 与头部; 设置页提供带 `"type": "http"` 的通用 JSON 片段.
+Cline, Gemini CLI 等客户端: 在各自的 MCP 配置中使用相同的 URL 与头部; 设置页提供带 `"type": "http"` 的通用 JSON 片段 (顶层键为 `mcpServers`).
 
-Claude Desktop 及其他仅支持 stdio 的客户端: 用 `npm install -g autojs6-mcp-bridge` 安装桥接程序, 将 `autojs6-mcp-bridge --serial <serial>` 注册为 stdio 服务器并把 `AUTOJS6_MCP_TOKEN` 放入其环境变量块 (Claude Desktop 与 Claude Code 的片段见[桥接程序 README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)). 桥接程序 0.1.0 适用于插件 1.0.1 及以上 (发布前以 1.0.0 开发版验证, 此后 MCP 传输与鉴权未变), 透传客户端的协议版本; 已用 Claude Code 2.1.257 经 stdio 验证.
+Claude Desktop 及其他仅支持 stdio 的客户端: 用 `npm install -g autojs6-mcp-bridge` 安装桥接程序, 将 `autojs6-mcp-bridge --serial <serial>` 注册为 stdio 服务器并把 `AUTOJS6_MCP_TOKEN` 放入其环境变量块 (Claude Desktop 与 Claude Code 的片段见[桥接程序 README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)). 桥接程序 0.1.0 适用于插件 1.0.1 及以上 (发布前以 1.0.0 开发版验证, 此后 MCP 传输与鉴权未变), 透传客户端的协议版本; 已用 Claude Code 2.1.257 与 Claude Desktop 2.9939 经 stdio 验证. Windows 上可直接用 `node` 运行全局安装目录中的 `autojs6-mcp-bridge/dist/cli.js`, 比经 `npx` 启动更稳定.
 
 ******
 
@@ -215,12 +239,15 @@ Claude Desktop 及其他仅支持 stdio 的客户端: 用 `npm install -g autojs
 ******
 
 - 401 Unauthorized: 令牌缺失, 输错或已轮换. 从设置页重新复制配置; 轮换令牌后每个客户端都需要新值.
+- VS Code 弹出 OAuth 或客户端注册提示: 令牌错误时 VS Code 会先尝试 OAuth 发现与动态客户端注册, 而插件只接受静态令牌. 取消提示, 清除 VS Code 已保存的输入值后重新输入令牌, 再重启服务器.
 - 配对超时: 新客户端的首次调用会等待约一分钟, 直到手机上点击允许. 解锁手机, 接受对话框或通知动作, 然后重复调用. 拒绝会进入短暂冷却, 之后下一次调用会再次询问.
 - HOST_UNAVAILABLE: AutoJs6 未运行或插件会话已关闭. 打开 AutoJs6, 保持抽屉开关开启, 并在设置页查看连接状态.
+- 连接被拒绝 (`ECONNREFUSED`): 抽屉开关未开启, 或电脑上的 `adb forward` 已失效. adb 服务重启 (重新连接设备, 或其他工具重启了 adb) 会清空所有转发; 重新执行 `adb -s <serial> forward tcp:9637 tcp:9637`, 或让桥接程序用 `--serial` 自行建立转发 (桥接程序退出时会移除该转发).
 - 无障碍未启用: `ui_*` 工具与截屏需要 AutoJs6 无障碍服务. 调用 `device_ensure_accessibility`, 或在系统无障碍设置中启用该服务.
 - 端口占用: 抽屉会报告 `port_in_use`. 在设置页修改端口, 并用 adb 转发新端口.
 - 局域网不可达: 开启局域网访问, 使用设置页列出的地址, 让 PC 与手机处于同一网络且无访客隔离, 并在 PC 防火墙放行该端口. 手机 Wi-Fi 省电会使每次调用增加几百毫秒.
 - 息屏后服务器消失: 限制了本应用电池用量的手机 (HyperOS 与 MIUI 默认对侧载应用如此) 会在使用电池息屏约一分钟后停止前台服务. 此时设置页显示警告和 "电池设置" 按钮, 请在其中为 MCP Server 选择 "无限制". 可选的 "空闲时自动停止" (默认关闭) 也会在所选分钟数内无请求时停止服务器, 并留下一条说明通知.
+- Cursor CLI 拒绝工具调用: `cursor-agent` 默认只运行允许列表中的工具, 在打印模式 (`-p`) 下未放行的 MCP 工具会在本地被拒绝, 请求不会到达手机, 手机上也不会出现配对提示. 在 `~/.cursor/cli-config.json` 的 `permissions.allow` 中按工具加入 `Mcp(autojs6:<工具名>)`, 例如 `Mcp(autojs6:device_info)`.
 
 ******
 
@@ -282,8 +309,9 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 #### v1.0.3
 
-_2026/10/05_
+_2026/10/10_
 
+- `新增` 设置页客户端配置提供 VS Code mcp.json 片段, 令牌由 VS Code 在首次启动服务器时提示输入, 不写入配置文件 (对话框提供 "复制令牌" 按钮)
 - `优化` 插件中心图标采用统一工作台调整后的尺寸, 位置, 亮暗图稿与圆形底色, 保留可重建原稿和参数
 - `优化` Android 系统应用信息图标与图标工作台共用图稿和亮暗底色, 保留插件中心透明图稿及现有启动器选项
 

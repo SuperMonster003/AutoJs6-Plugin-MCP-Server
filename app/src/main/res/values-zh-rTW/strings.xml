@@ -45,6 +45,7 @@
     <string name="settings_client_codex">Codex config.toml</string>
     <string name="settings_client_cursor">Cursor mcp.json</string>
     <string name="settings_client_generic">通用 JSON</string>
+    <string name="settings_client_vscode">VS Code mcp.json</string>
     <string name="settings_clients">用戶端設定</string>
     <string name="settings_clients_hint">複製對應用戶端的設定, 然後在此裝置上確認首次配對要求.</string>
     <string name="settings_codex_hint">將此段加入 ~/.codex/config.toml. 另行複製並執行 PowerShell 指令, 然後在同一終端啟動 Codex 以讀取權杖.</string>
@@ -54,6 +55,7 @@
     <string name="settings_copy">複製</string>
     <string name="settings_copy_adb">複製 adb forward 指令</string>
     <string name="settings_copy_environment">複製 PowerShell 指令</string>
+    <string name="settings_copy_token">複製權杖</string>
     <string name="settings_cursor_hint">儲存至 .cursor/mcp.json. 若檔案已存在, 將 autojs6 項目合併至 mcpServers 物件.</string>
     <string name="settings_dangerous_group">啟用 %1$s? 已配對用戶端將能夠在此裝置上執行這些操作.</string>
     <string name="settings_developer">開發者模式</string>
@@ -113,4 +115,5 @@
     <string name="settings_token_masked">已隱藏, 尾碼 %1$s</string>
     <string name="settings_tools">工具權限</string>
     <string name="settings_tools_hint">關閉的群組將從用戶端工具清單中隱藏. 所有操作仍受宿主權限限制.</string>
+    <string name="settings_vscode_hint">在 VS Code 中執行 MCP: Open User Configuration, 將 inputs 項目與 autojs6 伺服器合併至該 mcp.json (頂層鍵為 servers 而非 mcpServers). 首次啟動伺服器時 VS Code 會要求輸入權杖, 權杖不寫入檔案; 可用 \"複製權杖\" 複製.</string>
 </resources>

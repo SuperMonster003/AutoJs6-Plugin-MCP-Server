@@ -45,6 +45,7 @@
     <string name="settings_client_codex">Codex config.toml</string>
     <string name="settings_client_cursor">Cursor mcp.json</string>
     <string name="settings_client_generic">Универсальный JSON</string>
+    <string name="settings_client_vscode">VS Code mcp.json</string>
     <string name="settings_clients">Настройка клиента</string>
     <string name="settings_clients_hint">Скопируйте настройки клиента и подтвердите первый запрос сопряжения на этом устройстве.</string>
     <string name="settings_codex_hint">Добавьте раздел в ~/.codex/config.toml. Отдельно скопируйте и выполните команду PowerShell, затем запустите Codex из того же терминала для передачи токена.</string>
@@ -54,6 +55,7 @@
     <string name="settings_copy">Копировать</string>
     <string name="settings_copy_adb">Копировать команду adb forward</string>
     <string name="settings_copy_environment">Копировать команду PowerShell</string>
+    <string name="settings_copy_token">Копировать токен</string>
     <string name="settings_cursor_hint">Сохраните JSON в .cursor/mcp.json. Если файл уже есть, добавьте autojs6 в объект mcpServers.</string>
     <string name="settings_dangerous_group">Включить %1$s? Сопряженные клиенты смогут выполнять эти операции на устройстве.</string>
     <string name="settings_developer">Режим разработчика</string>
@@ -113,4 +115,5 @@
     <string name="settings_token_masked">Скрыт, оканчивается на %1$s</string>
     <string name="settings_tools">Разрешения инструментов</string>
     <string name="settings_tools_hint">Выключенные группы скрываются из списка инструментов клиента. Для всех операций по-прежнему действуют разрешения хоста.</string>
+    <string name="settings_vscode_hint">В VS Code выполните MCP: Open User Configuration и добавьте запись inputs и сервер autojs6 в этот mcp.json (ключ верхнего уровня servers, а не mcpServers). При первом запуске сервера VS Code запросит токен и не сохранит его в файле; скопируйте его кнопкой \"Копировать токен\".</string>
 </resources>

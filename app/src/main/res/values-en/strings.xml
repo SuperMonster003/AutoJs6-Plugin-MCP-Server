@@ -45,6 +45,7 @@
     <string name="settings_client_codex">Codex config.toml</string>
     <string name="settings_client_cursor">Cursor mcp.json</string>
     <string name="settings_client_generic">Generic JSON</string>
+    <string name="settings_client_vscode">VS Code mcp.json</string>
     <string name="settings_clients">Client configuration</string>
     <string name="settings_clients_hint">Copy the configuration for your client, then confirm its first pairing request on this device.</string>
     <string name="settings_codex_hint">Add this section to ~/.codex/config.toml. Copy and run the PowerShell command separately, then start Codex from that same terminal so it inherits the token.</string>
@@ -54,6 +55,7 @@
     <string name="settings_copy">Copy</string>
     <string name="settings_copy_adb">Copy adb forward command</string>
     <string name="settings_copy_environment">Copy PowerShell command</string>
+    <string name="settings_copy_token">Copy token</string>
     <string name="settings_cursor_hint">Save this JSON in .cursor/mcp.json. If a file already exists, merge the autojs6 entry into its mcpServers object.</string>
     <string name="settings_dangerous_group">Enable %1$s? Paired clients will be able to perform these operations on this device.</string>
     <string name="settings_developer">Developer mode</string>
@@ -113,4 +115,5 @@
     <string name="settings_token_masked">Hidden, ending in %1$s</string>
     <string name="settings_tools">Tool permissions</string>
     <string name="settings_tools_hint">Disabled groups disappear from the client tool list. Host permissions still apply to every operation.</string>
+    <string name="settings_vscode_hint">Run MCP: Open User Configuration in VS Code and merge the inputs entry and the autojs6 server into that mcp.json (the top-level key is servers, not mcpServers). VS Code asks for the token when the server first starts and keeps it out of the file; copy it with Copy token.</string>
 </resources>

@@ -45,6 +45,7 @@
     <string name="settings_client_codex">Codex config.toml</string>
     <string name="settings_client_cursor">Cursor mcp.json</string>
     <string name="settings_client_generic">汎用 JSON</string>
+    <string name="settings_client_vscode">VS Code mcp.json</string>
     <string name="settings_clients">クライアント設定</string>
     <string name="settings_clients_hint">クライアントの設定をコピーし, この端末で最初のペアリング要求を承認してください.</string>
     <string name="settings_codex_hint">~/.codex/config.toml に追加します. PowerShell コマンドを別にコピーして実行し, 同じターミナルから Codex を起動してトークンを引き継ぎます.</string>
@@ -54,6 +55,7 @@
     <string name="settings_copy">コピー</string>
     <string name="settings_copy_adb">adb forward コマンドをコピー</string>
     <string name="settings_copy_environment">PowerShell コマンドをコピー</string>
+    <string name="settings_copy_token">トークンをコピー</string>
     <string name="settings_cursor_hint">.cursor/mcp.json に保存します. 既存のファイルでは mcpServers に autojs6 を追加してください.</string>
     <string name="settings_dangerous_group">%1$s を有効にしますか? ペアリング済みクライアントがこの端末で操作できるようになります.</string>
     <string name="settings_developer">開発者モード</string>
@@ -113,4 +115,5 @@
     <string name="settings_token_masked">非表示, 末尾 %1$s</string>
     <string name="settings_tools">ツールの権限</string>
     <string name="settings_tools_hint">無効なグループはクライアントのツール一覧から非表示になります. すべての操作にホストの権限が適用されます.</string>
+    <string name="settings_vscode_hint">VS Code で MCP: Open User Configuration を実行し, inputs の項目と autojs6 サーバーをその mcp.json に統合します (最上位キーは mcpServers ではなく servers). サーバーの初回起動時に VS Code がトークンの入力を求め, ファイルには保存しません. \"トークンをコピー\" でコピーできます.</string>
 </resources>

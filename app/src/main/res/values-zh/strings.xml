@@ -45,6 +45,7 @@
     <string name="settings_client_codex">Codex config.toml</string>
     <string name="settings_client_cursor">Cursor mcp.json</string>
     <string name="settings_client_generic">通用 JSON</string>
+    <string name="settings_client_vscode">VS Code mcp.json</string>
     <string name="settings_clients">客户端配置</string>
     <string name="settings_clients_hint">复制对应客户端的配置, 然后在此设备上确认首次配对请求.</string>
     <string name="settings_codex_hint">将此段加入 ~/.codex/config.toml. 另行复制并执行 PowerShell 命令, 然后在同一终端启动 Codex 以读取令牌.</string>
@@ -54,6 +55,7 @@
     <string name="settings_copy">复制</string>
     <string name="settings_copy_adb">复制 adb forward 命令</string>
     <string name="settings_copy_environment">复制 PowerShell 命令</string>
+    <string name="settings_copy_token">复制令牌</string>
     <string name="settings_cursor_hint">保存到 .cursor/mcp.json. 若文件已存在, 将 autojs6 条目合并到 mcpServers 对象.</string>
     <string name="settings_dangerous_group">启用 %1$s? 已配对客户端将能够在此设备上执行这些操作.</string>
     <string name="settings_developer">开发者模式</string>
@@ -113,4 +115,5 @@
     <string name="settings_token_masked">已隐藏, 尾号 %1$s</string>
     <string name="settings_tools">工具权限</string>
     <string name="settings_tools_hint">关闭的分组将从客户端工具列表中隐藏. 所有操作仍受宿主权限限制.</string>
+    <string name="settings_vscode_hint">在 VS Code 中执行 MCP: Open User Configuration, 将 inputs 条目与 autojs6 服务器合并到该 mcp.json (顶层键为 servers 而非 mcpServers). 首次启动服务器时 VS Code 会要求输入令牌, 令牌不写入文件; 可用 \"复制令牌\" 复制.</string>
 </resources>

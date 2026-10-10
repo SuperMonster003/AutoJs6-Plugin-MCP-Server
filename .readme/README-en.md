@@ -171,11 +171,11 @@ Both paths keep the same token and the same phone-side pairing. Clients without 
 
 ******
 
-The settings page copies a ready configuration with the real token for each client below; the snippets here use `<token>` as a placeholder. Every client speaks Streamable HTTP with an Authorization header, and the first call of a new client is confirmed on the phone. Verified: Claude Code, Codex CLI and MCP Inspector; the other clients use the same URL and header but have not been tested by the maintainer yet.
+The settings page copies a ready configuration with the real token for each client below; the snippets here use `<token>` as a placeholder. Every client speaks Streamable HTTP with an Authorization header, and the first call of a new client is confirmed on the phone. Verified: Claude Code, Codex CLI, MCP Inspector, VS Code Copilot Chat, Cursor CLI and Claude Desktop (through the bridge); the other clients use the same URL and header but have not been tested by the maintainer yet.
 
 Claude Code: run the command shown under Client Configuration (the settings page copies it with the token); `claude mcp list` then reports `autojs6` as Connected.
 
-Cursor: add the entry below to `mcp.json`:
+Cursor: add the entry below to `mcp.json` (the Cursor CLI `cursor-agent` reads the same `~/.cursor/mcp.json`):
 
 ```json
 {
@@ -184,6 +184,30 @@ Cursor: add the entry below to `mcp.json`:
       "url": "http://127.0.0.1:9637/mcp",
       "headers": {
         "Authorization": "Bearer <token>"
+      }
+    }
+  }
+}
+```
+
+VS Code (Copilot Chat): run the `MCP: Open User Configuration` command and merge the content below into the `mcp.json` it opens; the top-level key is `servers`, not `mcpServers`, so the generic JSON snippet does not fit as is. VS Code asks for the token when the server first starts and keeps it in its secret storage instead of the file (the Copy token button of the "VS Code mcp.json" dialog on the settings page copies it):
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "autojs6-token",
+      "description": "AutoJs6 MCP Server token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "autojs6": {
+      "type": "http",
+      "url": "http://127.0.0.1:9637/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:autojs6-token}"
       }
     }
   }
@@ -204,9 +228,9 @@ MCP Inspector: the CLI mode needs no extra setup, and the web UI reaches the pho
 npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport http --header "Authorization: Bearer <token>" --method tools/list
 ```
 
-Cline, VS Code Copilot Chat, Gemini CLI and similar clients: use the same URL and header in their MCP configuration; the settings page offers a generic JSON snippet with `"type": "http"`.
+Cline, Gemini CLI and similar clients: use the same URL and header in their MCP configuration; the settings page offers a generic JSON snippet with `"type": "http"` (top-level key `mcpServers`).
 
-Claude Desktop and other stdio-only clients: install the bridge with `npm install -g autojs6-mcp-bridge` and register `autojs6-mcp-bridge --serial <serial>` as a stdio server with `AUTOJS6_MCP_TOKEN` in its environment block (see the [bridge README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) for the Claude Desktop and Claude Code snippets). Bridge 0.1.0 works with plugin 1.0.1 and later (verified against the pre-release 1.0.0 build; the MCP transport and authentication have not changed since) and passes the client's protocol version through; it was verified with Claude Code 2.1.257 over stdio.
+Claude Desktop and other stdio-only clients: install the bridge with `npm install -g autojs6-mcp-bridge` and register `autojs6-mcp-bridge --serial <serial>` as a stdio server with `AUTOJS6_MCP_TOKEN` in its environment block (see the [bridge README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) for the Claude Desktop and Claude Code snippets). Bridge 0.1.0 works with plugin 1.0.1 and later (verified against the pre-release 1.0.0 build; the MCP transport and authentication have not changed since) and passes the client's protocol version through; it was verified with Claude Code 2.1.257 and Claude Desktop 2.9939 over stdio. On Windows, running the globally installed `autojs6-mcp-bridge/dist/cli.js` with `node` is more reliable than starting it through `npx`.
 
 ******
 
@@ -215,12 +239,15 @@ Claude Desktop and other stdio-only clients: install the bridge with `npm instal
 ******
 
 - 401 Unauthorized: the token is missing, mistyped or rotated. Copy the configuration again from the settings page; after Rotate token every client needs the new value.
+- VS Code shows an OAuth or client registration prompt: with a wrong token VS Code first tries OAuth discovery and dynamic client registration, while the plugin only accepts its static token. Cancel the prompt, clear the input value VS Code saved, enter the token again and restart the server.
 - Pairing timeout: the first call of a new client waits about a minute for Allow on the phone. Unlock the phone, accept the dialog or the notification action, then repeat the call. Deny starts a short cooldown, after which the next call asks again.
 - HOST_UNAVAILABLE: AutoJs6 is not running or its plugin session is closed. Open AutoJs6, keep the drawer switch on, and check the connection state on the settings page.
+- Connection refused (`ECONNREFUSED`): the drawer switch is off or the `adb forward` on the computer is gone. Restarting the adb server (replugging the device, or another tool restarting adb) clears every forward; run `adb -s <serial> forward tcp:9637 tcp:9637` again, or let the bridge create the forward with `--serial` (it removes the forward when it exits).
 - Accessibility off: the `ui_*` tools and screen capture need the AutoJs6 accessibility service. Call `device_ensure_accessibility` or enable the service in the system accessibility settings.
 - Port in use: the drawer reports `port_in_use`. Change the port on the settings page and forward the new port with adb.
 - Local network unreachable: turn on local network access, use an address listed on the settings page, keep the PC and the phone on the same network without guest isolation, and allow the port through the PC firewall. Wi-Fi power saving on the phone adds a few hundred milliseconds per call.
 - Server gone after the screen turned off: phones that restrict the app's battery usage (HyperOS and MIUI do so for sideloaded apps by default) stop the foreground service about a minute after the screen turns off on battery. The settings page then shows a warning with a Battery settings button; choose Unrestricted for MCP Server there. The optional Stop automatically when idle setting (off by default) also stops the server after the chosen minutes without requests and leaves a notification saying so.
+- Cursor CLI rejects tool calls: `cursor-agent` only runs tools on its allow list, so in print mode (`-p`) an MCP tool that is not allowed is rejected locally; the request never reaches the phone and no pairing prompt appears. Add `Mcp(autojs6:<tool name>)` per tool to `permissions.allow` in `~/.cursor/cli-config.json`, for example `Mcp(autojs6:device_info)`.
 
 ******
 
@@ -282,8 +309,9 @@ The plugin's plans and progress are maintained as a checkable list in ROADMAP.md
 
 #### v1.0.3
 
-_2026/10/05_
+_2026/10/10_
 
+- `Feature` VS Code mcp.json snippet in the client configuration of the settings page: VS Code asks for the token when the server first starts, so the token stays out of the file (the dialog has a "Copy token" button)
 - `Improvement` Plugin Center icons use the sizes, positions, light and dark artwork, and circular backgrounds adjusted in Icon Studio, retaining reproducible sources and parameters
 - `Improvement` Android App info icons share Icon Studio artwork and light/dark backgrounds while preserving transparent Plugin Center artwork and existing launcher choices
 

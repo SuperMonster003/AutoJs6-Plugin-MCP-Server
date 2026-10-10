@@ -6,8 +6,9 @@
 
 # v1.0.3
 
-###### 2026/10/05
+###### 2026/10/10
 
+* `Función` Fragmento VS Code mcp.json en la configuración de clientes de la página de ajustes: VS Code pide el token al iniciar el servidor por primera vez, por lo que el token no queda en el archivo (el diálogo incluye un botón "Copiar token")
 * `Mejora` Los iconos del centro de plugins usan los tamaños, posiciones, imágenes claras y oscuras y fondos circulares ajustados en Icon Studio, conservando fuentes y parámetros reproducibles
 * `Mejora` Los iconos de información de la aplicación de Android comparten las imágenes y los fondos claros y oscuros de Icon Studio, conservando las imágenes transparentes del centro de plugins y las opciones del lanzador
 

@@ -171,11 +171,11 @@ Les deux chemins utilisent le même jeton et le même appairage côté télépho
 
 ******
 
-La page des paramètres copie une configuration prête avec le vrai jeton pour chaque client ci-dessous; les extraits ici utilisent `<token>` comme espace réservé. Tous les clients parlent Streamable HTTP avec un en-tête Authorization, et le premier appel d'un nouveau client est confirmé sur le téléphone. Vérifiés: Claude Code, Codex CLI et MCP Inspector; les autres clients utilisent la même URL et le même en-tête mais n'ont pas encore été testés par le mainteneur.
+La page des paramètres copie une configuration prête avec le vrai jeton pour chaque client ci-dessous; les extraits ici utilisent `<token>` comme espace réservé. Tous les clients parlent Streamable HTTP avec un en-tête Authorization, et le premier appel d'un nouveau client est confirmé sur le téléphone. Vérifiés: Claude Code, Codex CLI, MCP Inspector, VS Code Copilot Chat, Cursor CLI et Claude Desktop (via le pont); les autres clients utilisent la même URL et le même en-tête mais n'ont pas encore été testés par le mainteneur.
 
 Claude Code: exécutez la commande indiquée sous "Configuration du client" (la page des paramètres la copie avec le jeton); ensuite `claude mcp list` affiche `autojs6` comme Connected.
 
-Cursor: ajoutez l'entrée ci-dessous à `mcp.json`:
+Cursor: ajoutez l'entrée ci-dessous à `mcp.json` (la CLI de Cursor, `cursor-agent`, lit le même `~/.cursor/mcp.json`):
 
 ```json
 {
@@ -184,6 +184,30 @@ Cursor: ajoutez l'entrée ci-dessous à `mcp.json`:
       "url": "http://127.0.0.1:9637/mcp",
       "headers": {
         "Authorization": "Bearer <token>"
+      }
+    }
+  }
+}
+```
+
+VS Code (Copilot Chat): exécutez la commande `MCP: Open User Configuration` et fusionnez le contenu ci-dessous dans le `mcp.json` ouvert; la clé de premier niveau est `servers`, pas `mcpServers`, donc l'extrait JSON générique ne convient pas tel quel. VS Code demande le jeton au premier démarrage du serveur et le conserve dans son stockage de secrets plutôt que dans le fichier (le bouton Copier le jeton de la boîte de dialogue "VS Code mcp.json" de la page des paramètres le copie):
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "autojs6-token",
+      "description": "AutoJs6 MCP Server token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "autojs6": {
+      "type": "http",
+      "url": "http://127.0.0.1:9637/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:autojs6-token}"
       }
     }
   }
@@ -204,9 +228,9 @@ MCP Inspector: le mode CLI ne demande aucune configuration supplémentaire, et l
 npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport http --header "Authorization: Bearer <token>" --method tools/list
 ```
 
-Cline, VS Code Copilot Chat, Gemini CLI et clients similaires: utilisez la même URL et le même en-tête dans leur configuration MCP; la page des paramètres propose un extrait JSON générique avec `"type": "http"`.
+Cline, Gemini CLI et clients similaires: utilisez la même URL et le même en-tête dans leur configuration MCP; la page des paramètres propose un extrait JSON générique avec `"type": "http"` (clé de premier niveau `mcpServers`).
 
-Claude Desktop et les autres clients stdio uniquement: installez le pont avec `npm install -g autojs6-mcp-bridge`, enregistrez `autojs6-mcp-bridge --serial <serial>` comme serveur stdio et placez `AUTOJS6_MCP_TOKEN` dans son bloc d'environnement (les extraits pour Claude Desktop et Claude Code sont dans le [README du pont](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)). Le pont 0.1.0 fonctionne avec le plugin 1.0.1 et ultérieur (vérifié avec la version préliminaire 1.0.0; le transport MCP et l'authentification n'ont pas changé depuis) et transmet la version de protocole du client telle quelle; vérifié avec Claude Code 2.1.257 en stdio.
+Claude Desktop et les autres clients stdio uniquement: installez le pont avec `npm install -g autojs6-mcp-bridge`, enregistrez `autojs6-mcp-bridge --serial <serial>` comme serveur stdio et placez `AUTOJS6_MCP_TOKEN` dans son bloc d'environnement (les extraits pour Claude Desktop et Claude Code sont dans le [README du pont](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)). Le pont 0.1.0 fonctionne avec le plugin 1.0.1 et ultérieur (vérifié avec la version préliminaire 1.0.0; le transport MCP et l'authentification n'ont pas changé depuis) et transmet la version de protocole du client telle quelle; vérifié avec Claude Code 2.1.257 et Claude Desktop 2.9939 en stdio. Sous Windows, lancer avec `node` le fichier `autojs6-mcp-bridge/dist/cli.js` installé globalement est plus fiable que de passer par `npx`.
 
 ******
 
@@ -215,12 +239,15 @@ Claude Desktop et les autres clients stdio uniquement: installez le pont avec `n
 ******
 
 - 401 Unauthorized: le jeton est absent, mal saisi ou a été renouvelé. Copiez à nouveau la configuration depuis la page des paramètres; après un renouvellement du jeton, chaque client a besoin de la nouvelle valeur.
+- VS Code affiche une invite OAuth ou d'enregistrement de client: avec un jeton erroné, VS Code tente d'abord la découverte OAuth et l'enregistrement dynamique de client, alors que le plugin n'accepte que son jeton statique. Annulez l'invite, effacez la valeur d'entrée enregistrée par VS Code, saisissez de nouveau le jeton et redémarrez le serveur.
 - Délai d'appairage dépassé: le premier appel d'un nouveau client attend environ une minute que vous touchiez Autoriser sur le téléphone. Déverrouillez le téléphone, acceptez la boîte de dialogue ou l'action de la notification, puis répétez l'appel. Refuser lance une courte pause, après laquelle l'appel suivant redemande.
 - HOST_UNAVAILABLE: AutoJs6 n'est pas lancé ou sa session de plugin est fermée. Ouvrez AutoJs6, laissez l'interrupteur du tiroir activé et vérifiez l'état de connexion sur la page des paramètres.
+- Connexion refusée (`ECONNREFUSED`): l'interrupteur du tiroir est désactivé ou le `adb forward` de l'ordinateur n'existe plus. Un redémarrage du serveur adb (rebranchement de l'appareil, ou un autre outil qui relance adb) efface toutes les redirections; relancez `adb -s <serial> forward tcp:9637 tcp:9637`, ou laissez le pont créer la redirection avec `--serial` (il la supprime en quittant).
 - Accessibilité désactivée: les outils `ui_*` et la capture d'écran ont besoin du service d'accessibilité d'AutoJs6. Appelez `device_ensure_accessibility` ou activez le service dans les paramètres d'accessibilité du système.
 - Port occupé: le tiroir signale `port_in_use`. Changez le port sur la page des paramètres et redirigez le nouveau port avec adb.
 - Réseau local injoignable: activez l'accès depuis le réseau local, utilisez une adresse listée sur la page des paramètres, gardez le PC et le téléphone sur le même réseau sans isolation invité, et autorisez le port dans le pare-feu du PC. L'économie d'énergie Wi-Fi du téléphone ajoute quelques centaines de millisecondes par appel.
 - Le serveur disparaît après l'extinction de l'écran: les téléphones qui limitent l'utilisation de la batterie par l'application (HyperOS et MIUI le font par défaut pour les applications installées manuellement) arrêtent le service de premier plan environ une minute après l'extinction de l'écran sur batterie. La page des paramètres affiche alors un avertissement avec le bouton "Paramètres de batterie"; choisissez-y "Sans restriction" pour MCP Server. Le paramètre facultatif "Arrêt automatique en cas d'inactivité" (désactivé par défaut) arrête aussi le serveur après les minutes choisies sans requête et laisse une notification qui l'indique.
+- La CLI de Cursor refuse les appels d'outils: `cursor-agent` n'exécute que les outils de sa liste d'autorisation, donc en mode impression (`-p`) un outil MCP non autorisé est refusé localement; la requête n'atteint pas le téléphone et aucune invite d'appairage n'apparaît. Ajoutez `Mcp(autojs6:<nom de l'outil>)` pour chaque outil à `permissions.allow` dans `~/.cursor/cli-config.json`, par exemple `Mcp(autojs6:device_info)`.
 
 ******
 
@@ -282,8 +309,9 @@ Les plans et l'avancement du plugin sont tenus sous forme de liste cochable dans
 
 #### v1.0.3
 
-_2026/10/05_
+_2026/10/10_
 
+- `Fonctionnalité` Extrait VS Code mcp.json dans la configuration des clients de la page des paramètres: VS Code demande le jeton au premier démarrage du serveur, qui reste donc hors du fichier (la boîte de dialogue propose un bouton "Copier le jeton")
 - `Amélioration` Les icônes du centre de plugins utilisent les tailles, positions, images claires et sombres et fonds circulaires réglés dans Icon Studio, avec les sources et paramètres permettant de les reproduire
 - `Amélioration` Les icônes des informations d'application Android utilisent les illustrations et les fonds clairs et sombres d'Icon Studio, en conservant les images transparentes du centre de plugins et les choix du lanceur
 

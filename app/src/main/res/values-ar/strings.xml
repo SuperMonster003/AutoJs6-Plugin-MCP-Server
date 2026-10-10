@@ -45,6 +45,7 @@
     <string name="settings_client_codex">Codex config.toml</string>
     <string name="settings_client_cursor">Cursor mcp.json</string>
     <string name="settings_client_generic">JSON عام</string>
+    <string name="settings_client_vscode">VS Code mcp.json</string>
     <string name="settings_clients">إعداد العميل</string>
     <string name="settings_clients_hint">انسخ إعداد العميل, ثم أكد طلب الاقتران الأول على هذا الجهاز.</string>
     <string name="settings_codex_hint">أضف هذا القسم إلى ~/.codex/config.toml. انسخ أمر PowerShell ونفذه بشكل منفصل, ثم ابدأ Codex من الطرفية نفسها ليرث الرمز.</string>
@@ -54,6 +55,7 @@
     <string name="settings_copy">نسخ</string>
     <string name="settings_copy_adb">نسخ أمر adb forward</string>
     <string name="settings_copy_environment">نسخ أمر PowerShell</string>
+    <string name="settings_copy_token">نسخ الرمز</string>
     <string name="settings_cursor_hint">احفظ JSON في .cursor/mcp.json. إذا كان الملف موجودا, ادمج autojs6 داخل mcpServers.</string>
     <string name="settings_dangerous_group">تفعيل %1$s? سيتمكن العملاء المقترنون من تنفيذ هذه العمليات على هذا الجهاز.</string>
     <string name="settings_developer">وضع المطور</string>
@@ -113,4 +115,5 @@
     <string name="settings_token_masked">مخفي, ينتهي بـ %1$s</string>
     <string name="settings_tools">أذونات الأدوات</string>
     <string name="settings_tools_hint">تختفي المجموعات المعطلة من قائمة أدوات العميل. تظل أذونات المضيف مطلوبة لكل عملية.</string>
+    <string name="settings_vscode_hint">في VS Code نفذ MCP: Open User Configuration وادمج عنصر inputs والخادم autojs6 في ملف mcp.json هذا (المفتاح الأعلى هو servers وليس mcpServers). يطلب VS Code الرمز عند أول تشغيل للخادم ولا يحفظه في الملف; انسخه بزر \"نسخ الرمز\".</string>
 </resources>

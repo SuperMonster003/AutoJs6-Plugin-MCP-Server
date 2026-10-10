@@ -132,6 +132,30 @@ claude mcp add --transport http autojs6 http://127.0.0.1:{{ mcp_default_port }}{
 }
 ```
 
+{{ p_client_vscode }}:
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "autojs6-token",
+      "description": "AutoJs6 MCP Server token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "autojs6": {
+      "type": "http",
+      "url": "http://127.0.0.1:{{ mcp_default_port }}{{ mcp_endpoint_path }}",
+      "headers": {
+        "Authorization": "Bearer ${input:autojs6-token}"
+      }
+    }
+  }
+}
+```
+
 {{ p_client_codex }}:
 
 ```toml

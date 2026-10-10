@@ -338,14 +338,17 @@ class McpServerSettingsActivity : SettingsPageActivity() {
         val endpoints = (listOf("http://127.0.0.1:${config.port}/mcp") + status.endpoints + lanUrls).distinct()
         val show: (String) -> Unit = { endpoint -> work {
             val snippet = ClientConfigSnippet.create(client, endpoint, tokens.current())
-            main.post { if (resumed) showSecret(getString(clientTitle(client)), snippet.text, snippet.environmentCommand, getString(clientHint(client))) }
+            // The Codex and VS Code files reference the token, so their extra copy button carries it.
+            val extraCopy = snippet.environmentCommand?.let { R.string.settings_copy_environment to it }
+                ?: snippet.token?.let { R.string.settings_copy_token to it }
+            main.post { if (resumed) showSecret(getString(clientTitle(client)), snippet.text, extraCopy, getString(clientHint(client))) }
         } }
         if (endpoints.size == 1) show(endpoints.single())
         else dialog = AlertDialog.Builder(this).setTitle(R.string.settings_choose_endpoint)
             .setItems(endpoints.toTypedArray()) { _, which -> show(endpoints[which]) }.setNegativeButton(android.R.string.cancel, null).showThemed()
     }
 
-    private fun showSecret(title: String, text: String, environment: String? = null, hint: String? = null) {
+    private fun showSecret(title: String, text: String, extraCopy: Pair<Int, String>? = null, hint: String? = null) {
         secretDialog?.dismiss()
         val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(24), dp(8), dp(24), dp(8)) }
         if (hint != null) label(hint, box).setTextColor(secondary)
@@ -356,7 +359,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
         }
         val builder = AlertDialog.Builder(this).setTitle(title).setView(ScrollView(this).apply { addView(box) })
             .setNegativeButton(android.R.string.cancel, null).setPositiveButton(R.string.settings_copy) { _, _ -> copy(text, true) }
-        if (environment != null) builder.setNeutralButton(R.string.settings_copy_environment) { _, _ -> copy(environment, true) }
+        if (extraCopy != null) builder.setNeutralButton(extraCopy.first) { _, _ -> copy(extraCopy.second, true) }
         secretDialog = builder.create().also { popup ->
             popup.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
             popup.setOnDismissListener { secret.text = "" }
@@ -422,12 +425,14 @@ class McpServerSettingsActivity : SettingsPageActivity() {
         private fun clientTitle(client: McpClient): Int = when (client) {
             McpClient.CLAUDE_CODE -> R.string.settings_client_claude
             McpClient.CURSOR -> R.string.settings_client_cursor
+            McpClient.VS_CODE -> R.string.settings_client_vscode
             McpClient.CODEX -> R.string.settings_client_codex
             McpClient.GENERIC -> R.string.settings_client_generic
         }
         private fun clientHint(client: McpClient): Int = when (client) {
             McpClient.CLAUDE_CODE -> R.string.settings_claude_hint
             McpClient.CURSOR -> R.string.settings_cursor_hint
+            McpClient.VS_CODE -> R.string.settings_vscode_hint
             McpClient.CODEX -> R.string.settings_codex_hint
             McpClient.GENERIC -> R.string.settings_generic_hint
         }

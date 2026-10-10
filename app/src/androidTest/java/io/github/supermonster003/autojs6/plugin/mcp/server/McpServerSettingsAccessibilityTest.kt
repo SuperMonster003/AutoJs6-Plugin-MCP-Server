@@ -147,6 +147,35 @@ class McpServerSettingsAccessibilityTest {
         onMain { settings.secretDialog?.dismiss() }
     }
 
+    @Test fun theVsCodeSnippetKeepsTheTokenOutOfTheFileAndCopiesItSeparately() {
+        val settings = launch()
+        awaitLoaded(settings)
+        val config = ServerConfigStore(context).load()
+        assertEquals("the check expects the loopback endpoint only", BindScope.LOOPBACK, config.bindScope)
+        val token = TokenStore(context).current()
+        val expected = ClientConfigSnippet.create(McpClient.VS_CODE, "http://127.0.0.1:${config.port}/mcp", token).text
+        assertFalse("the VS Code file never embeds the token", expected.contains(token))
+        val clipboard = onMain { context.getSystemService(ClipboardManager::class.java) }
+        val clipText = { onMain { clipboard.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString().orEmpty() } }
+        fun openSnippet() {
+            onMain { click(settings, R.string.settings_client_vscode) }
+            await("VS Code snippet dialog") { onMain { settings.secretDialog?.isShowing == true } }
+        }
+        openSnippet()
+        onMain { settings.secretDialog!!.getButton(AlertDialog.BUTTON_POSITIVE).performClick() }
+        await("snippet on the clipboard") { clipText() == expected }
+        openSnippet()
+        val neutral = onMain { settings.secretDialog!!.getButton(AlertDialog.BUTTON_NEUTRAL) }
+        assertEquals(settings.getString(R.string.settings_copy_token), onMain { neutral.text.toString() })
+        onMain { neutral.performClick() }
+        await("token on the clipboard") { clipText() == token }
+        if (Build.VERSION.SDK_INT >= 33) {
+            assertTrue("the token clip is marked sensitive", onMain { clipboard.primaryClip?.description?.extras?.getBoolean(ClipDescription.EXTRA_IS_SENSITIVE) == true })
+        }
+        if (Build.VERSION.SDK_INT >= 28) onMain { clipboard.clearPrimaryClip() }
+        onMain { settings.secretDialog?.dismiss() }
+    }
+
     private fun launch(): McpServerSettingsActivity =
         (instrumentation.startActivitySync(Intent(context, McpServerSettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as McpServerSettingsActivity).also { activity = it }
 

@@ -45,6 +45,7 @@
     <string name="settings_client_codex">Codex config.toml</string>
     <string name="settings_client_cursor">Cursor mcp.json</string>
     <string name="settings_client_generic">JSON genérico</string>
+    <string name="settings_client_vscode">VS Code mcp.json</string>
     <string name="settings_clients">Configuración del cliente</string>
     <string name="settings_clients_hint">Copia la configuración del cliente y confirma su primera solicitud de vinculación en este dispositivo.</string>
     <string name="settings_codex_hint">Añade esta sección a ~/.codex/config.toml. Copia y ejecuta el comando PowerShell por separado y abre Codex desde esa misma terminal para que herede el token.</string>
@@ -54,6 +55,7 @@
     <string name="settings_copy">Copiar</string>
     <string name="settings_copy_adb">Copiar comando adb forward</string>
     <string name="settings_copy_environment">Copiar comando PowerShell</string>
+    <string name="settings_copy_token">Copiar token</string>
     <string name="settings_cursor_hint">Guarda este JSON en .cursor/mcp.json. Si ya existe, integra autojs6 en el objeto mcpServers.</string>
     <string name="settings_dangerous_group">Activar %1$s? Los clientes vinculados podrán realizar estas operaciones en este dispositivo.</string>
     <string name="settings_developer">Modo de desarrollador</string>
@@ -113,4 +115,5 @@
     <string name="settings_token_masked">Oculto, termina en %1$s</string>
     <string name="settings_tools">Permisos de herramientas</string>
     <string name="settings_tools_hint">Los grupos desactivados desaparecen de la lista del cliente. Todas las operaciones siguen sujetas a los permisos del anfitrión.</string>
+    <string name="settings_vscode_hint">En VS Code, ejecuta MCP: Open User Configuration e integra la entrada inputs y el servidor autojs6 en ese mcp.json (la clave superior es servers, no mcpServers). VS Code pide el token al iniciar el servidor por primera vez y no lo guarda en el archivo; cópialo con Copiar token.</string>
 </resources>

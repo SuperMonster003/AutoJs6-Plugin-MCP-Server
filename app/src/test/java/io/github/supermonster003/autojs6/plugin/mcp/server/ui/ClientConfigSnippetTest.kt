@@ -1,6 +1,8 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server.ui
 
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.*
@@ -16,7 +18,25 @@ class ClientConfigSnippetTest {
             val entry = expected.getValue(client.name).jsonObject
             assertEquals(client.name, entry.getValue("text").jsonPrimitive.content, actual.text)
             assertEquals(entry["environmentCommand"]?.jsonPrimitive?.content, actual.environmentCommand)
+            assertEquals(entry["token"]?.jsonPrimitive?.content, actual.token)
         }
+    }
+
+    @Test fun `VS Code file uses the servers key and an input prompt instead of the secret`() {
+        val snippet = ClientConfigSnippet.create(McpClient.VS_CODE, "http://[::1]:9637/mcp", token)
+        assertFalse(snippet.text.contains(token))
+        assertNull(snippet.environmentCommand)
+        assertEquals(token, snippet.token)
+        val root = Json.parseToJsonElement(snippet.text).jsonObject
+        assertNull("VS Code ignores mcpServers in mcp.json", root["mcpServers"])
+        val input = root.getValue("inputs").jsonArray.single().jsonObject
+        assertEquals(ClientConfigSnippet.VS_CODE_TOKEN_INPUT, input.getValue("id").jsonPrimitive.content)
+        assertEquals("promptString", input.getValue("type").jsonPrimitive.content)
+        assertTrue(input.getValue("password").jsonPrimitive.boolean)
+        val server = root.getValue("servers").jsonObject.getValue("autojs6").jsonObject
+        assertEquals("http", server.getValue("type").jsonPrimitive.content)
+        assertEquals("http://[::1]:9637/mcp", server.getValue("url").jsonPrimitive.content)
+        assertEquals("Bearer \${input:${ClientConfigSnippet.VS_CODE_TOKEN_INPUT}}", server.getValue("headers").jsonObject.getValue("Authorization").jsonPrimitive.content)
     }
 
     @Test fun `Codex file uses an environment name and never embeds its secret`() {

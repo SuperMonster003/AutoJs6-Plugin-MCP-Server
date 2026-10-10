@@ -45,6 +45,7 @@
     <string name="settings_client_codex">Codex config.toml</string>
     <string name="settings_client_cursor">Cursor mcp.json</string>
     <string name="settings_client_generic">JSON générique</string>
+    <string name="settings_client_vscode">VS Code mcp.json</string>
     <string name="settings_clients">Configuration du client</string>
     <string name="settings_clients_hint">Copiez la configuration du client, puis confirmez sa première demande d\'association sur cet appareil.</string>
     <string name="settings_codex_hint">Ajoutez cette section à ~/.codex/config.toml. Copiez et exécutez séparément la commande PowerShell, puis lancez Codex depuis ce même terminal pour transmettre le jeton.</string>
@@ -54,6 +55,7 @@
     <string name="settings_copy">Copier</string>
     <string name="settings_copy_adb">Copier la commande adb forward</string>
     <string name="settings_copy_environment">Copier la commande PowerShell</string>
+    <string name="settings_copy_token">Copier le jeton</string>
     <string name="settings_cursor_hint">Enregistrez ce JSON dans .cursor/mcp.json. Si le fichier existe, ajoutez autojs6 à l\'objet mcpServers.</string>
     <string name="settings_dangerous_group">Activer %1$s? Les clients associés pourront effectuer ces opérations sur cet appareil.</string>
     <string name="settings_developer">Mode développeur</string>
@@ -113,4 +115,5 @@
     <string name="settings_token_masked">Masqué, se termine par %1$s</string>
     <string name="settings_tools">Autorisations des outils</string>
     <string name="settings_tools_hint">Les groupes désactivés disparaissent de la liste du client. Les autorisations de l\'hôte restent applicables à chaque opération.</string>
+    <string name="settings_vscode_hint">Dans VS Code, lancez MCP: Open User Configuration et fusionnez l\'entrée inputs et le serveur autojs6 dans ce mcp.json (la clé de premier niveau est servers, pas mcpServers). VS Code demande le jeton au premier démarrage du serveur sans l\'écrire dans le fichier; copiez-le avec Copier le jeton.</string>
 </resources>

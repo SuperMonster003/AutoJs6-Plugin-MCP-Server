@@ -171,11 +171,11 @@ USB: `adb forward tcp:9637 tcp:9637` で端末のポートを PC に対応付け
 
 ******
 
-設定ページは以下の各クライアント向けに実際のトークン入りの設定をコピーします. ここの断片では `<token>` をプレースホルダーにしています. どのクライアントも Authorization ヘッダー付きの Streamable HTTP で通信し, 新しいクライアントの最初の呼び出しは端末で確認します. 検証済み: Claude Code, Codex CLI, MCP Inspector. その他のクライアントも同じ URL とヘッダーを使いますが, メンテナーによる検証はまだです.
+設定ページは以下の各クライアント向けに実際のトークン入りの設定をコピーします. ここの断片では `<token>` をプレースホルダーにしています. どのクライアントも Authorization ヘッダー付きの Streamable HTTP で通信し, 新しいクライアントの最初の呼び出しは端末で確認します. 検証済み: Claude Code, Codex CLI, MCP Inspector, VS Code Copilot Chat, Cursor CLI, Claude Desktop (ブリッジ経由). その他のクライアントも同じ URL とヘッダーを使いますが, メンテナーによる検証はまだです.
 
 Claude Code: "クライアント設定" に示したコマンドを実行します (設定ページはトークン入りでコピーします). その後 `claude mcp list` で `autojs6` が Connected と表示されます.
 
-Cursor: 以下のエントリーを `mcp.json` に追加します:
+Cursor: 以下のエントリーを `mcp.json` に追加します (Cursor CLI の `cursor-agent` も同じ `~/.cursor/mcp.json` を読みます):
 
 ```json
 {
@@ -184,6 +184,30 @@ Cursor: 以下のエントリーを `mcp.json` に追加します:
       "url": "http://127.0.0.1:9637/mcp",
       "headers": {
         "Authorization": "Bearer <token>"
+      }
+    }
+  }
+}
+```
+
+VS Code (Copilot Chat): `MCP: Open User Configuration` コマンドを実行し, 開いた `mcp.json` に以下の内容を統合します. 最上位キーは `mcpServers` ではなく `servers` なので, 汎用 JSON 断片はそのままでは使えません. サーバーの初回起動時に VS Code がトークンの入力を求め, ファイルではなくシークレットストレージに保存します (設定ページの "VS Code mcp.json" ダイアログの "トークンをコピー" ボタンでコピーできます):
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "autojs6-token",
+      "description": "AutoJs6 MCP Server token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "autojs6": {
+      "type": "http",
+      "url": "http://127.0.0.1:9637/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:autojs6-token}"
       }
     }
   }
@@ -204,9 +228,9 @@ MCP Inspector: CLI モードは追加設定なしで使え, Web UI は自身の 
 npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport http --header "Authorization: Bearer <token>" --method tools/list
 ```
 
-Cline, VS Code Copilot Chat, Gemini CLI などのクライアント: それぞれの MCP 設定で同じ URL とヘッダーを使います. 設定ページには `"type": "http"` 付きの汎用 JSON 断片があります.
+Cline, Gemini CLI などのクライアント: それぞれの MCP 設定で同じ URL とヘッダーを使います. 設定ページには `"type": "http"` 付きの汎用 JSON 断片があります (最上位キーは `mcpServers`).
 
-Claude Desktop などの stdio 専用クライアント: `npm install -g autojs6-mcp-bridge` でブリッジをインストールし, `autojs6-mcp-bridge --serial <serial>` を stdio サーバーとして登録して, その環境変数ブロックに `AUTOJS6_MCP_TOKEN` を入れます (Claude Desktop と Claude Code の断片は[ブリッジの README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) を参照). ブリッジ 0.1.0 はプラグイン 1.0.1 以降で動作し (公開前の 1.0.0 ビルドで検証済み, その後 MCP の転送と認証は変更なし), クライアントのプロトコルバージョンをそのまま渡します. Claude Code 2.1.257 の stdio 接続で検証済みです.
+Claude Desktop などの stdio 専用クライアント: `npm install -g autojs6-mcp-bridge` でブリッジをインストールし, `autojs6-mcp-bridge --serial <serial>` を stdio サーバーとして登録して, その環境変数ブロックに `AUTOJS6_MCP_TOKEN` を入れます (Claude Desktop と Claude Code の断片は[ブリッジの README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) を参照). ブリッジ 0.1.0 はプラグイン 1.0.1 以降で動作し (公開前の 1.0.0 ビルドで検証済み, その後 MCP の転送と認証は変更なし), クライアントのプロトコルバージョンをそのまま渡します. Claude Code 2.1.257 と Claude Desktop 2.9939 の stdio 接続で検証済みです. Windows では `npx` 経由より, グローバルにインストールした `autojs6-mcp-bridge/dist/cli.js` を `node` で直接実行する方が安定します.
 
 ******
 
@@ -215,12 +239,15 @@ Claude Desktop などの stdio 専用クライアント: `npm install -g autojs6
 ******
 
 - 401 Unauthorized: トークンが未設定, 誤入力, またはローテーション済みです. 設定ページから設定をコピーし直してください. トークンをローテーションした後は全クライアントに新しい値が必要です.
+- VS Code に OAuth やクライアント登録の画面が出る: トークンが誤っていると VS Code はまず OAuth の検出と動的クライアント登録を試みますが, プラグインは静的トークンのみを受け付けます. 画面を閉じ, VS Code が保存した入力値を消去してからトークンを入力し直し, サーバーを再起動してください.
 - ペアリングのタイムアウト: 新しいクライアントの最初の呼び出しは, 端末で許可されるまで約 1 分待ちます. 端末のロックを解除し, ダイアログまたは通知のアクションで許可してから, 呼び出しを繰り返してください. 拒否すると短いクールダウンに入り, その後の呼び出しで再度確認されます.
 - HOST_UNAVAILABLE: AutoJs6 が起動していないか, プラグインセッションが閉じています. AutoJs6 を開き, ドロワーのスイッチをオンのままにし, 設定ページで接続状態を確認してください.
+- 接続拒否 (`ECONNREFUSED`): ドロワーのスイッチがオフか, コンピューター側の `adb forward` が失われています. adb サーバーが再起動すると (端末の再接続や他のツールによる adb の再起動) すべての転送が消えます. `adb -s <serial> forward tcp:9637 tcp:9637` を再実行するか, ブリッジに `--serial` を付けて転送を作成させてください (ブリッジは終了時に転送を削除します).
 - アクセシビリティが無効: `ui_*` ツールと画面キャプチャには AutoJs6 のアクセシビリティサービスが必要です. `device_ensure_accessibility` を呼ぶか, システムのアクセシビリティ設定でサービスを有効にしてください.
 - ポート使用中: ドロワーに `port_in_use` と表示されます. 設定ページでポートを変更し, 新しいポートを adb で転送してください.
 - ローカルネットワークに到達できない: ローカルネットワークアクセスを有効にし, 設定ページに表示されたアドレスを使い, PC と端末をゲスト分離のない同じネットワークに置き, PC のファイアウォールでポートを許可してください. 端末の Wi-Fi 省電力により呼び出しごとに数百ミリ秒が加わります.
 - 画面が消えるとサーバーが消える: アプリのバッテリー使用を制限する端末 (HyperOS と MIUI はサイドロードしたアプリにデフォルトでそうします) は, バッテリー駆動で画面が消えてから約 1 分後にフォアグラウンドサービスを停止します. その場合は設定ページに警告と "バッテリー設定" ボタンが表示されるので, そこで MCP Server を "制限なし" にしてください. 任意の "アイドル時に自動停止" (デフォルトはオフ) も, 選んだ分数リクエストがないとサーバーを停止し, その旨の通知を残します.
+- Cursor CLI がツール呼び出しを拒否する: `cursor-agent` は許可リストにあるツールだけを実行するため, プリントモード (`-p`) では許可されていない MCP ツールがローカルで拒否され, リクエストは端末に届かず, ペアリングの確認も表示されません. `~/.cursor/cli-config.json` の `permissions.allow` にツールごとに `Mcp(autojs6:<ツール名>)` (例: `Mcp(autojs6:device_info)`) を追加してください.
 
 ******
 
@@ -282,8 +309,9 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 #### v1.0.3
 
-_2026/10/05_
+_2026/10/10_
 
+- `機能` 設定ページのクライアント設定に VS Code mcp.json の断片を追加: トークンはサーバーの初回起動時に VS Code が入力を求めるため, ファイルには書き込まれません (ダイアログに "トークンをコピー" ボタンあり)
 - `改善` プラグインセンターのアイコンに Icon Studio で調整したサイズ, 位置, 明暗の図稿と円形背景を適用し, 再生成可能な原稿とパラメーターを保持
 - `改善` Android のアプリ情報アイコンに Icon Studio と共通の図案と明暗の背景色を使用し, プラグインセンターの透明な図案と既存のランチャー設定を維持
 

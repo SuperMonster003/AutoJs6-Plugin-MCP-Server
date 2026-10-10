@@ -45,6 +45,7 @@
     <string name="settings_client_codex">Codex config.toml</string>
     <string name="settings_client_cursor">Cursor mcp.json</string>
     <string name="settings_client_generic">일반 JSON</string>
+    <string name="settings_client_vscode">VS Code mcp.json</string>
     <string name="settings_clients">클라이언트 설정</string>
     <string name="settings_clients_hint">클라이언트 설정을 복사한 다음 이 기기에서 첫 페어링 요청을 승인하세요.</string>
     <string name="settings_codex_hint">~/.codex/config.toml에 이 섹션을 추가하세요. PowerShell 명령을 별도로 복사해 실행한 뒤 같은 터미널에서 Codex를 시작하여 토큰을 전달하세요.</string>
@@ -54,6 +55,7 @@
     <string name="settings_copy">복사</string>
     <string name="settings_copy_adb">adb forward 명령 복사</string>
     <string name="settings_copy_environment">PowerShell 명령 복사</string>
+    <string name="settings_copy_token">토큰 복사</string>
     <string name="settings_cursor_hint">.cursor/mcp.json에 저장하세요. 기존 파일이 있으면 mcpServers 객체에 autojs6 항목을 병합하세요.</string>
     <string name="settings_dangerous_group">%1$s 활성화? 페어링된 클라이언트가 이 기기에서 해당 작업을 수행할 수 있게 됩니다.</string>
     <string name="settings_developer">개발자 모드</string>
@@ -113,4 +115,5 @@
     <string name="settings_token_masked">숨김, 끝자리 %1$s</string>
     <string name="settings_tools">도구 권한</string>
     <string name="settings_tools_hint">비활성화한 그룹은 클라이언트 도구 목록에서 숨겨집니다. 모든 작업에는 호스트 권한이 적용됩니다.</string>
+    <string name="settings_vscode_hint">VS Code에서 MCP: Open User Configuration을 실행하고 inputs 항목과 autojs6 서버를 해당 mcp.json에 병합하세요 (최상위 키는 mcpServers가 아닌 servers). 서버를 처음 시작할 때 VS Code가 토큰 입력을 요청하며 파일에는 저장하지 않습니다. \"토큰 복사\"로 복사하세요.</string>
 </resources>

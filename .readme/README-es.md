@@ -171,11 +171,11 @@ Ambas rutas usan el mismo token y el mismo emparejamiento en el teléfono. Los c
 
 ******
 
-La página de ajustes copia una configuración lista con el token real para cada cliente de abajo; los fragmentos de aquí usan `<token>` como marcador. Todos los clientes hablan Streamable HTTP con una cabecera Authorization, y la primera llamada de un cliente nuevo se confirma en el teléfono. Verificados: Claude Code, Codex CLI y MCP Inspector; los demás clientes usan la misma URL y cabecera, pero el mantenedor aún no los ha probado.
+La página de ajustes copia una configuración lista con el token real para cada cliente de abajo; los fragmentos de aquí usan `<token>` como marcador. Todos los clientes hablan Streamable HTTP con una cabecera Authorization, y la primera llamada de un cliente nuevo se confirma en el teléfono. Verificados: Claude Code, Codex CLI, MCP Inspector, VS Code Copilot Chat, Cursor CLI y Claude Desktop (a través del puente); los demás clientes usan la misma URL y cabecera, pero el mantenedor aún no los ha probado.
 
 Claude Code: ejecuta el comando mostrado en "Configuración del cliente" (la página de ajustes lo copia con el token); después `claude mcp list` muestra `autojs6` como Connected.
 
-Cursor: añade la entrada de abajo a `mcp.json`:
+Cursor: añade la entrada de abajo a `mcp.json` (la CLI de Cursor, `cursor-agent`, lee el mismo `~/.cursor/mcp.json`):
 
 ```json
 {
@@ -184,6 +184,30 @@ Cursor: añade la entrada de abajo a `mcp.json`:
       "url": "http://127.0.0.1:9637/mcp",
       "headers": {
         "Authorization": "Bearer <token>"
+      }
+    }
+  }
+}
+```
+
+VS Code (Copilot Chat): ejecuta el comando `MCP: Open User Configuration` e integra el contenido de abajo en el `mcp.json` que se abre; la clave superior es `servers`, no `mcpServers`, por lo que el fragmento JSON genérico no sirve tal cual. VS Code pide el token al iniciar el servidor por primera vez y lo guarda en su almacén de secretos en lugar del archivo (el botón Copiar token del diálogo "VS Code mcp.json" de la página de ajustes lo copia):
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "autojs6-token",
+      "description": "AutoJs6 MCP Server token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "autojs6": {
+      "type": "http",
+      "url": "http://127.0.0.1:9637/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:autojs6-token}"
       }
     }
   }
@@ -204,9 +228,9 @@ MCP Inspector: el modo CLI no necesita configuración adicional, y la interfaz w
 npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport http --header "Authorization: Bearer <token>" --method tools/list
 ```
 
-Cline, VS Code Copilot Chat, Gemini CLI y clientes similares: usa la misma URL y cabecera en su configuración MCP; la página de ajustes ofrece un fragmento JSON genérico con `"type": "http"`.
+Cline, Gemini CLI y clientes similares: usa la misma URL y cabecera en su configuración MCP; la página de ajustes ofrece un fragmento JSON genérico con `"type": "http"` (clave superior `mcpServers`).
 
-Claude Desktop y otros clientes solo stdio: instala el puente con `npm install -g autojs6-mcp-bridge`, registra `autojs6-mcp-bridge --serial <serial>` como servidor stdio y pon `AUTOJS6_MCP_TOKEN` en su bloque de entorno (los fragmentos para Claude Desktop y Claude Code están en el [README del puente](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)). El puente 0.1.0 funciona con el plugin 1.0.1 y posteriores (verificado con la compilación previa 1.0.0; el transporte MCP y la autenticación no han cambiado desde entonces) y transmite la versión de protocolo del cliente sin cambios; se verificó con Claude Code 2.1.257 por stdio.
+Claude Desktop y otros clientes solo stdio: instala el puente con `npm install -g autojs6-mcp-bridge`, registra `autojs6-mcp-bridge --serial <serial>` como servidor stdio y pon `AUTOJS6_MCP_TOKEN` en su bloque de entorno (los fragmentos para Claude Desktop y Claude Code están en el [README del puente](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)). El puente 0.1.0 funciona con el plugin 1.0.1 y posteriores (verificado con la compilación previa 1.0.0; el transporte MCP y la autenticación no han cambiado desde entonces) y transmite la versión de protocolo del cliente sin cambios; se verificó con Claude Code 2.1.257 y Claude Desktop 2.9939 por stdio. En Windows es más fiable ejecutar con `node` el `autojs6-mcp-bridge/dist/cli.js` instalado globalmente que iniciarlo con `npx`.
 
 ******
 
@@ -215,12 +239,15 @@ Claude Desktop y otros clientes solo stdio: instala el puente con `npm install -
 ******
 
 - 401 Unauthorized: el token falta, está mal escrito o fue rotado. Copia de nuevo la configuración desde la página de ajustes; tras Rotar token, cada cliente necesita el valor nuevo.
+- VS Code muestra un aviso de OAuth o de registro de cliente: con un token incorrecto, VS Code intenta primero el descubrimiento OAuth y el registro dinámico de clientes, mientras que el plugin solo acepta su token estático. Cancela el aviso, borra el valor de entrada que VS Code guardó, vuelve a introducir el token y reinicia el servidor.
 - Tiempo de emparejamiento agotado: la primera llamada de un cliente nuevo espera alrededor de un minuto a que pulses Permitir en el teléfono. Desbloquea el teléfono, acepta el diálogo o la acción de la notificación y repite la llamada. Denegar inicia un breve periodo de espera, tras el cual la siguiente llamada vuelve a preguntar.
 - HOST_UNAVAILABLE: AutoJs6 no está en ejecución o su sesión de plugin está cerrada. Abre AutoJs6, mantén el interruptor del cajón activado y revisa el estado de conexión en la página de ajustes.
+- Conexión rechazada (`ECONNREFUSED`): el interruptor del cajón está apagado o el `adb forward` del ordenador ya no existe. Reiniciar el servidor adb (al reconectar el dispositivo o cuando otra herramienta reinicia adb) borra todos los reenvíos; ejecuta de nuevo `adb -s <serial> forward tcp:9637 tcp:9637`, o deja que el puente cree el reenvío con `--serial` (lo elimina al salir).
 - Accesibilidad desactivada: las herramientas `ui_*` y la captura de pantalla necesitan el servicio de accesibilidad de AutoJs6. Llama a `device_ensure_accessibility` o activa el servicio en los ajustes de accesibilidad del sistema.
 - Puerto en uso: el cajón informa `port_in_use`. Cambia el puerto en la página de ajustes y reenvía el nuevo puerto con adb.
 - Red local inaccesible: activa el acceso desde la red local, usa una dirección de las listadas en la página de ajustes, mantén el PC y el teléfono en la misma red sin aislamiento de invitados y permite el puerto en el cortafuegos del PC. El ahorro de energía Wi-Fi del teléfono añade unos cientos de milisegundos por llamada.
 - El servidor desaparece al apagarse la pantalla: los teléfonos que restringen el uso de batería de la aplicación (HyperOS y MIUI lo hacen por defecto con aplicaciones instaladas manualmente) detienen el servicio en primer plano alrededor de un minuto después de apagarse la pantalla con batería. La página de ajustes muestra entonces un aviso con el botón "Ajustes de batería"; elija allí "Sin restricciones" para MCP Server. El ajuste opcional "Detener automáticamente en reposo" (desactivado por defecto) también detiene el servidor tras los minutos elegidos sin peticiones y deja una notificación que lo indica.
+- La CLI de Cursor rechaza las llamadas a herramientas: `cursor-agent` solo ejecuta las herramientas de su lista de permitidos, así que en modo de impresión (`-p`) una herramienta MCP no permitida se rechaza localmente; la solicitud no llega al teléfono y no aparece ningún aviso de emparejamiento. Añade `Mcp(autojs6:<nombre de herramienta>)` por herramienta a `permissions.allow` en `~/.cursor/cli-config.json`, por ejemplo `Mcp(autojs6:device_info)`.
 
 ******
 
@@ -282,8 +309,9 @@ Los planes y el progreso del plugin se mantienen como una lista verificable en R
 
 #### v1.0.3
 
-_2026/10/05_
+_2026/10/10_
 
+- `Función` Fragmento VS Code mcp.json en la configuración de clientes de la página de ajustes: VS Code pide el token al iniciar el servidor por primera vez, por lo que el token no queda en el archivo (el diálogo incluye un botón "Copiar token")
 - `Mejora` Los iconos del centro de plugins usan los tamaños, posiciones, imágenes claras y oscuras y fondos circulares ajustados en Icon Studio, conservando fuentes y parámetros reproducibles
 - `Mejora` Los iconos de información de la aplicación de Android comparten las imágenes y los fondos claros y oscuros de Icon Studio, conservando las imágenes transparentes del centro de plugins y las opciones del lanzador
 

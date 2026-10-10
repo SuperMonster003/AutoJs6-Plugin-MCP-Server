@@ -171,11 +171,11 @@ USB: `adb forward tcp:9637 tcp:9637` 로 휴대전화 포트를 PC에 매핑합�
 
 ******
 
-설정 페이지는 아래 각 클라이언트용으로 실제 토큰이 들어간 설정을 복사합니다. 여기의 조각은 `<token>` 을 자리 표시자로 사용합니다. 모든 클라이언트는 Authorization 헤더가 있는 Streamable HTTP로 통신하며, 새 클라이언트의 첫 호출은 휴대전화에서 확인합니다. 검증됨: Claude Code, Codex CLI, MCP Inspector. 나머지 클라이언트는 같은 URL과 헤더를 사용하지만 관리자가 아직 테스트하지 않았습니다.
+설정 페이지는 아래 각 클라이언트용으로 실제 토큰이 들어간 설정을 복사합니다. 여기의 조각은 `<token>` 을 자리 표시자로 사용합니다. 모든 클라이언트는 Authorization 헤더가 있는 Streamable HTTP로 통신하며, 새 클라이언트의 첫 호출은 휴대전화에서 확인합니다. 검증됨: Claude Code, Codex CLI, MCP Inspector, VS Code Copilot Chat, Cursor CLI, Claude Desktop (브리지 경유). 나머지 클라이언트는 같은 URL과 헤더를 사용하지만 관리자가 아직 테스트하지 않았습니다.
 
 Claude Code: "클라이언트 설정" 에 있는 명령을 실행합니다 (설정 페이지는 토큰이 포함된 명령을 복사합니다). 이후 `claude mcp list` 가 `autojs6` 를 Connected로 표시합니다.
 
-Cursor: 아래 항목을 `mcp.json` 에 추가합니다:
+Cursor: 아래 항목을 `mcp.json` 에 추가합니다 (Cursor CLI `cursor-agent` 도 같은 `~/.cursor/mcp.json` 을 읽습니다):
 
 ```json
 {
@@ -184,6 +184,30 @@ Cursor: 아래 항목을 `mcp.json` 에 추가합니다:
       "url": "http://127.0.0.1:9637/mcp",
       "headers": {
         "Authorization": "Bearer <token>"
+      }
+    }
+  }
+}
+```
+
+VS Code (Copilot Chat): `MCP: Open User Configuration` 명령을 실행하고 열린 `mcp.json` 에 아래 내용을 병합합니다. 최상위 키가 `mcpServers` 가 아닌 `servers` 이므로 범용 JSON 조각은 그대로 쓸 수 없습니다. 서버를 처음 시작할 때 VS Code 가 토큰 입력을 요청하며, 토큰은 파일이 아닌 비밀 저장소에 보관됩니다 (설정 페이지 "VS Code mcp.json" 대화 상자의 "토큰 복사" 버튼으로 복사할 수 있습니다):
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "autojs6-token",
+      "description": "AutoJs6 MCP Server token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "autojs6": {
+      "type": "http",
+      "url": "http://127.0.0.1:9637/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:autojs6-token}"
       }
     }
   }
@@ -204,9 +228,9 @@ MCP Inspector: CLI 모드는 추가 설정이 필요 없고, 웹 UI는 자체 No
 npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport http --header "Authorization: Bearer <token>" --method tools/list
 ```
 
-Cline, VS Code Copilot Chat, Gemini CLI 등의 클라이언트: 각자의 MCP 설정에서 같은 URL과 헤더를 사용합니다. 설정 페이지는 `"type": "http"` 가 포함된 범용 JSON 조각을 제공합니다.
+Cline, Gemini CLI 등의 클라이언트: 각자의 MCP 설정에서 같은 URL과 헤더를 사용합니다. 설정 페이지는 `"type": "http"` 가 포함된 범용 JSON 조각을 제공합니다 (최상위 키 `mcpServers`).
 
-Claude Desktop 등 stdio 전용 클라이언트: `npm install -g autojs6-mcp-bridge` 로 브리지를 설치하고 `autojs6-mcp-bridge --serial <serial>` 을 stdio 서버로 등록하며 환경 변수 블록에 `AUTOJS6_MCP_TOKEN` 을 넣습니다 (Claude Desktop 과 Claude Code 조각은 [브리지 README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) 참조). 브리지 0.1.0 은 플러그인 1.0.1 이상에서 동작하며 (공개 전 1.0.0 빌드로 검증, 이후 MCP 전송과 인증은 변경 없음) 클라이언트의 프로토콜 버전을 그대로 전달합니다. Claude Code 2.1.257 의 stdio 연결로 검증했습니다.
+Claude Desktop 등 stdio 전용 클라이언트: `npm install -g autojs6-mcp-bridge` 로 브리지를 설치하고 `autojs6-mcp-bridge --serial <serial>` 을 stdio 서버로 등록하며 환경 변수 블록에 `AUTOJS6_MCP_TOKEN` 을 넣습니다 (Claude Desktop 과 Claude Code 조각은 [브리지 README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) 참조). 브리지 0.1.0 은 플러그인 1.0.1 이상에서 동작하며 (공개 전 1.0.0 빌드로 검증, 이후 MCP 전송과 인증은 변경 없음) 클라이언트의 프로토콜 버전을 그대로 전달합니다. Claude Code 2.1.257 과 Claude Desktop 2.9939 의 stdio 연결로 검증했습니다. Windows 에서는 `npx` 를 거치기보다 전역 설치된 `autojs6-mcp-bridge/dist/cli.js` 를 `node` 로 직접 실행하는 편이 안정적입니다.
 
 ******
 
@@ -215,12 +239,15 @@ Claude Desktop 등 stdio 전용 클라이언트: `npm install -g autojs6-mcp-bri
 ******
 
 - 401 Unauthorized: 토큰이 없거나 잘못 입력되었거나 교체되었습니다. 설정 페이지에서 설정을 다시 복사하세요. 토큰을 교체한 뒤에는 모든 클라이언트에 새 값이 필요합니다.
+- VS Code 에 OAuth 또는 클라이언트 등록 창이 뜸: 토큰이 틀리면 VS Code 는 먼저 OAuth 검색과 동적 클라이언트 등록을 시도하지만, 플러그인은 정적 토큰만 받습니다. 창을 취소하고 VS Code 가 저장한 입력값을 지운 뒤 토큰을 다시 입력하고 서버를 재시작하세요.
 - 페어링 시간 초과: 새 클라이언트의 첫 호출은 휴대전화에서 허용할 때까지 약 1분을 기다립니다. 휴대전화 잠금을 해제하고 대화상자나 알림 동작을 수락한 뒤 호출을 반복하세요. 거부하면 짧은 대기 시간이 시작되고, 그 뒤의 호출에서 다시 묻습니다.
 - HOST_UNAVAILABLE: AutoJs6가 실행 중이 아니거나 플러그인 세션이 닫혔습니다. AutoJs6를 열고 서랍 스위치를 켠 상태로 두며 설정 페이지에서 연결 상태를 확인하세요.
+- 연결 거부 (`ECONNREFUSED`): 드로어 스위치가 꺼져 있거나 컴퓨터의 `adb forward` 가 사라졌습니다. adb 서버가 다시 시작되면 (기기를 다시 연결하거나 다른 도구가 adb 를 재시작한 경우) 모든 포워딩이 지워집니다. `adb -s <serial> forward tcp:9637 tcp:9637` 을 다시 실행하거나, 브리지가 `--serial` 로 포워딩을 만들게 하세요 (브리지는 종료할 때 포워딩을 제거합니다).
 - 접근성 꺼짐: `ui_*` 도구와 화면 캡처에는 AutoJs6 접근성 서비스가 필요합니다. `device_ensure_accessibility` 를 호출하거나 시스템 접근성 설정에서 서비스를 켜세요.
 - 포트 사용 중: 서랍에 `port_in_use` 가 표시됩니다. 설정 페이지에서 포트를 바꾸고 새 포트를 adb로 포워딩하세요.
 - 로컬 네트워크에 접근 불가: 로컬 네트워크 접근을 켜고, 설정 페이지에 표시된 주소를 사용하며, PC와 휴대전화를 게스트 격리가 없는 같은 네트워크에 두고, PC 방화벽에서 포트를 허용하세요. 휴대전화의 Wi-Fi 절전은 호출마다 수백 밀리초를 더합니다.
 - 화면이 꺼진 뒤 서버가 사라짐: 앱의 배터리 사용을 제한하는 기기 (HyperOS 와 MIUI 는 사이드로드한 앱에 기본적으로 그렇게 합니다) 는 배터리 사용 중 화면이 꺼지고 약 1 분 뒤 포그라운드 서비스를 중지합니다. 그러면 설정 페이지에 경고와 "배터리 설정" 버튼이 표시되니 거기서 MCP Server 를 "제한 없음" 으로 선택하세요. 선택 사항인 "유휴 시 자동 중지" (기본값 끄기) 도 선택한 분 동안 요청이 없으면 서버를 중지하고 그 사실을 알리는 알림을 남깁니다.
+- Cursor CLI 가 도구 호출을 거부함: `cursor-agent` 는 허용 목록에 있는 도구만 실행하므로 출력 모드 (`-p`) 에서는 허용되지 않은 MCP 도구가 로컬에서 거부되며, 요청이 휴대전화에 도달하지 않고 페어링 확인도 나타나지 않습니다. `~/.cursor/cli-config.json` 의 `permissions.allow` 에 도구별로 `Mcp(autojs6:<도구 이름>)` (예: `Mcp(autojs6:device_info)`) 을 추가하세요.
 
 ******
 
@@ -282,8 +309,9 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 #### v1.0.3
 
-_2026/10/05_
+_2026/10/10_
 
+- `기능` 설정 페이지의 클라이언트 설정에 VS Code mcp.json 조각 제공: 서버를 처음 시작할 때 VS Code 가 토큰 입력을 요청하므로 토큰이 파일에 기록되지 않습니다 (대화 상자에 "토큰 복사" 버튼 제공)
 - `개선` 플러그인 센터 아이콘에 Icon Studio에서 조정한 크기, 위치, 밝은 이미지와 어두운 이미지 및 원형 배경을 적용하고 재생성 가능한 원본과 매개변수를 유지
 - `개선` Android 앱 정보 아이콘에 Icon Studio의 그림과 밝은 배경 및 어두운 배경을 사용하고 플러그인 센터의 투명 그림과 기존 런처 옵션을 유지
 

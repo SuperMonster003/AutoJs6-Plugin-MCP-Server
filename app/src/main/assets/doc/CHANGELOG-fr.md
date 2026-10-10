@@ -6,8 +6,9 @@
 
 # v1.0.3
 
-###### 2026/10/05
+###### 2026/10/10
 
+* `Fonctionnalité` Extrait VS Code mcp.json dans la configuration des clients de la page des paramètres: VS Code demande le jeton au premier démarrage du serveur, qui reste donc hors du fichier (la boîte de dialogue propose un bouton "Copier le jeton")
 * `Amélioration` Les icônes du centre de plugins utilisent les tailles, positions, images claires et sombres et fonds circulaires réglés dans Icon Studio, avec les sources et paramètres permettant de les reproduire
 * `Amélioration` Les icônes des informations d'application Android utilisent les illustrations et les fonds clairs et sombres d'Icon Studio, en conservant les images transparentes du centre de plugins et les choix du lanceur
 

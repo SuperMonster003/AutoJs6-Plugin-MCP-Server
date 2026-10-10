@@ -5,6 +5,10 @@
   "CURSOR": {
     "text": "{\n    \"mcpServers\": {\n        \"autojs6\": {\n            \"url\": \"http://127.0.0.1:9637/mcp\",\n            \"headers\": {\n                \"Authorization\": \"Bearer test_0000000000000000000000000000000000000000000\"\n            }\n        }\n    }\n}"
   },
+  "VS_CODE": {
+    "text": "{\n    \"inputs\": [\n        {\n            \"type\": \"promptString\",\n            \"id\": \"autojs6-token\",\n            \"description\": \"AutoJs6 MCP Server token\",\n            \"password\": true\n        }\n    ],\n    \"servers\": {\n        \"autojs6\": {\n            \"type\": \"http\",\n            \"url\": \"http://127.0.0.1:9637/mcp\",\n            \"headers\": {\n                \"Authorization\": \"Bearer ${input:autojs6-token}\"\n            }\n        }\n    }\n}",
+    "token": "test_0000000000000000000000000000000000000000000"
+  },
   "CODEX": {
     "text": "[mcp_servers.autojs6]\nurl = \"http://127.0.0.1:9637/mcp\"\nbearer_token_env_var = \"AUTOJS6_MCP_TOKEN\"\n",
     "environmentCommand": "$env:AUTOJS6_MCP_TOKEN = 'test_0000000000000000000000000000000000000000000'"
