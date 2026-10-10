@@ -206,7 +206,7 @@ npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport 
 
 Cline, VS Code Copilot Chat, Gemini CLI 等用戶端: 在各自的 MCP 設定中使用相同的 URL 與標頭; 設定頁提供帶 `"type": "http"` 的通用 JSON 片段.
 
-Claude Desktop 及其他只支援 stdio 的用戶端: 用 `npm install -g autojs6-mcp-bridge` 安裝橋接程式, 將 `autojs6-mcp-bridge --serial <serial>` 註冊為 stdio 伺服器並把 `AUTOJS6_MCP_TOKEN` 放入其環境變數區塊 (Claude Desktop 與 Claude Code 的片段見[橋接程式 README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)). 橋接程式 0.1.0 對應外掛 1.0.0, 透傳用戶端的協定版本; 已用 Claude Code 2.1.257 經 stdio 驗證.
+Claude Desktop 及其他只支援 stdio 的用戶端: 用 `npm install -g autojs6-mcp-bridge` 安裝橋接程式, 將 `autojs6-mcp-bridge --serial <serial>` 註冊為 stdio 伺服器並把 `AUTOJS6_MCP_TOKEN` 放入其環境變數區塊 (Claude Desktop 與 Claude Code 的片段見[橋接程式 README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)). 橋接程式 0.1.0 適用於外掛 1.0.1 以上版本 (發布前以 1.0.0 開發版驗證, 此後 MCP 傳輸與驗證方式未變), 透傳用戶端的協定版本; 已用 Claude Code 2.1.257 經 stdio 驗證.
 
 ******
 

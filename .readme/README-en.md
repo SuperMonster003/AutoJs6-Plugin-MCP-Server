@@ -206,7 +206,7 @@ npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport 
 
 Cline, VS Code Copilot Chat, Gemini CLI and similar clients: use the same URL and header in their MCP configuration; the settings page offers a generic JSON snippet with `"type": "http"`.
 
-Claude Desktop and other stdio-only clients: install the bridge with `npm install -g autojs6-mcp-bridge` and register `autojs6-mcp-bridge --serial <serial>` as a stdio server with `AUTOJS6_MCP_TOKEN` in its environment block (see the [bridge README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) for the Claude Desktop and Claude Code snippets). Bridge 0.1.0 pairs with plugin 1.0.0 and passes the client's protocol version through; it was verified with Claude Code 2.1.257 over stdio.
+Claude Desktop and other stdio-only clients: install the bridge with `npm install -g autojs6-mcp-bridge` and register `autojs6-mcp-bridge --serial <serial>` as a stdio server with `AUTOJS6_MCP_TOKEN` in its environment block (see the [bridge README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) for the Claude Desktop and Claude Code snippets). Bridge 0.1.0 works with plugin 1.0.1 and later (verified against the pre-release 1.0.0 build; the MCP transport and authentication have not changed since) and passes the client's protocol version through; it was verified with Claude Code 2.1.257 over stdio.
 
 ******
 

@@ -206,7 +206,7 @@ npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport 
 
 Cline, VS Code Copilot Chat, Gemini CLI などのクライアント: それぞれの MCP 設定で同じ URL とヘッダーを使います. 設定ページには `"type": "http"` 付きの汎用 JSON 断片があります.
 
-Claude Desktop などの stdio 専用クライアント: `npm install -g autojs6-mcp-bridge` でブリッジをインストールし, `autojs6-mcp-bridge --serial <serial>` を stdio サーバーとして登録して, その環境変数ブロックに `AUTOJS6_MCP_TOKEN` を入れます (Claude Desktop と Claude Code の断片は[ブリッジの README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) を参照). ブリッジ 0.1.0 はプラグイン 1.0.0 と組み合わせ, クライアントのプロトコルバージョンをそのまま渡します. Claude Code 2.1.257 の stdio 接続で検証済みです.
+Claude Desktop などの stdio 専用クライアント: `npm install -g autojs6-mcp-bridge` でブリッジをインストールし, `autojs6-mcp-bridge --serial <serial>` を stdio サーバーとして登録して, その環境変数ブロックに `AUTOJS6_MCP_TOKEN` を入れます (Claude Desktop と Claude Code の断片は[ブリッジの README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) を参照). ブリッジ 0.1.0 はプラグイン 1.0.1 以降で動作し (公開前の 1.0.0 ビルドで検証済み, その後 MCP の転送と認証は変更なし), クライアントのプロトコルバージョンをそのまま渡します. Claude Code 2.1.257 の stdio 接続で検証済みです.
 
 ******
 

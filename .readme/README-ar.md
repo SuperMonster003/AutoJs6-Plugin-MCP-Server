@@ -206,7 +206,7 @@ npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport 
 
 Cline و VS Code Copilot Chat و Gemini CLI والعملاء المشابهون: استخدم نفس العنوان والترويسة في تكوين MCP الخاص بها; تقدم صفحة الإعدادات مقطع JSON عاما مع `"type": "http"`.
 
-Claude Desktop وغيره من عملاء stdio فقط: ثبت الجسر بالأمر `npm install -g autojs6-mcp-bridge`, وسجل `autojs6-mcp-bridge --serial <serial>` كخادم stdio مع وضع `AUTOJS6_MCP_TOKEN` في كتلة متغيرات البيئة (انظر [README الجسر](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) لمقاطع Claude Desktop و Claude Code). الجسر 0.1.0 يعمل مع الإضافة 1.0.0 ويمرر إصدار بروتوكول العميل كما هو; تم التحقق منه مع Claude Code 2.1.257 عبر stdio.
+Claude Desktop وغيره من عملاء stdio فقط: ثبت الجسر بالأمر `npm install -g autojs6-mcp-bridge`, وسجل `autojs6-mcp-bridge --serial <serial>` كخادم stdio مع وضع `AUTOJS6_MCP_TOKEN` في كتلة متغيرات البيئة (انظر [README الجسر](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) لمقاطع Claude Desktop و Claude Code). الجسر 0.1.0 يعمل مع الإضافة 1.0.1 وما بعدها (تم التحقق منه مع اصدار 1.0.0 السابق للنشر, ولم يتغير نقل MCP والمصادقة منذ ذلك الحين) ويمرر إصدار بروتوكول العميل كما هو; تم التحقق منه مع Claude Code 2.1.257 عبر stdio.
 
 ******
 

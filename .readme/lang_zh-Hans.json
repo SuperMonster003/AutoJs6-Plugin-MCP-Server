@@ -57,7 +57,7 @@
   "p_client_codex": "Codex CLI: 将令牌放入环境变量 `AUTOJS6_MCP_TOKEN` (设置页可复制对应的 PowerShell 命令), 再把服务器加入 `config.toml`, 或执行 `codex mcp add autojs6 --url <url> --bearer-token-env-var AUTOJS6_MCP_TOKEN`",
   "p_client_inspector": "MCP Inspector: CLI 模式无需额外设置, Web 界面通过自带的 Node 代理访问手机. 仅当浏览器页面直接连接端点时, 才需在设置页开启开发者模式",
   "p_client_generic": "Cline, VS Code Copilot Chat, Gemini CLI 等客户端: 在各自的 MCP 配置中使用相同的 URL 与头部; 设置页提供带 `\"type\": \"http\"` 的通用 JSON 片段",
-  "p_client_claude_desktop": "Claude Desktop 及其他仅支持 stdio 的客户端: 用 `npm install -g autojs6-mcp-bridge` 安装桥接程序, 将 `autojs6-mcp-bridge --serial <serial>` 注册为 stdio 服务器并把 `AUTOJS6_MCP_TOKEN` 放入其环境变量块 (Claude Desktop 与 Claude Code 的片段见[桥接程序 README]({{ bridge_url }})). 桥接程序 0.1.0 对应插件 1.0.0, 透传客户端的协议版本; 已用 Claude Code 2.1.257 经 stdio 验证",
+  "p_client_claude_desktop": "Claude Desktop 及其他仅支持 stdio 的客户端: 用 `npm install -g autojs6-mcp-bridge` 安装桥接程序, 将 `autojs6-mcp-bridge --serial <serial>` 注册为 stdio 服务器并把 `AUTOJS6_MCP_TOKEN` 放入其环境变量块 (Claude Desktop 与 Claude Code 的片段见[桥接程序 README]({{ bridge_url }})). 桥接程序 0.1.0 适用于插件 1.0.1 及以上 (发布前以 1.0.0 开发版验证, 此后 MCP 传输与鉴权未变), 透传客户端的协议版本; 已用 Claude Code 2.1.257 经 stdio 验证",
   "h3_faq": "常见问题",
   "faq_points": [
     "401 Unauthorized: 令牌缺失, 输错或已轮换. 从设置页重新复制配置; 轮换令牌后每个客户端都需要新值.",

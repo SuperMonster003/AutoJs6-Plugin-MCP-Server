@@ -206,7 +206,7 @@ npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport 
 
 Cline, VS Code Copilot Chat, Gemini CLI 등의 클라이언트: 각자의 MCP 설정에서 같은 URL과 헤더를 사용합니다. 설정 페이지는 `"type": "http"` 가 포함된 범용 JSON 조각을 제공합니다.
 
-Claude Desktop 등 stdio 전용 클라이언트: `npm install -g autojs6-mcp-bridge` 로 브리지를 설치하고 `autojs6-mcp-bridge --serial <serial>` 을 stdio 서버로 등록하며 환경 변수 블록에 `AUTOJS6_MCP_TOKEN` 을 넣습니다 (Claude Desktop 과 Claude Code 조각은 [브리지 README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) 참조). 브리지 0.1.0 은 플러그인 1.0.0 과 짝을 이루며 클라이언트의 프로토콜 버전을 그대로 전달합니다. Claude Code 2.1.257 의 stdio 연결로 검증했습니다.
+Claude Desktop 등 stdio 전용 클라이언트: `npm install -g autojs6-mcp-bridge` 로 브리지를 설치하고 `autojs6-mcp-bridge --serial <serial>` 을 stdio 서버로 등록하며 환경 변수 블록에 `AUTOJS6_MCP_TOKEN` 을 넣습니다 (Claude Desktop 과 Claude Code 조각은 [브리지 README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) 참조). 브리지 0.1.0 은 플러그인 1.0.1 이상에서 동작하며 (공개 전 1.0.0 빌드로 검증, 이후 MCP 전송과 인증은 변경 없음) 클라이언트의 프로토콜 버전을 그대로 전달합니다. Claude Code 2.1.257 의 stdio 연결로 검증했습니다.
 
 ******
 

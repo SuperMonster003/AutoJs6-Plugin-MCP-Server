@@ -206,7 +206,7 @@ npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport 
 
 Cline, VS Code Copilot Chat, Gemini CLI и похожие клиенты: используйте тот же URL и заголовок в их конфигурации MCP; страница настроек предлагает универсальный фрагмент JSON с `"type": "http"`.
 
-Claude Desktop и другие клиенты только со stdio: установите мост командой `npm install -g autojs6-mcp-bridge`, зарегистрируйте `autojs6-mcp-bridge --serial <serial>` как stdio-сервер и поместите `AUTOJS6_MCP_TOKEN` в блок переменных окружения (фрагменты для Claude Desktop и Claude Code есть в [README моста](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)). Мост 0.1.0 работает с плагином 1.0.0 и передает версию протокола клиента без изменений; проверен с Claude Code 2.1.257 по stdio.
+Claude Desktop и другие клиенты только со stdio: установите мост командой `npm install -g autojs6-mcp-bridge`, зарегистрируйте `autojs6-mcp-bridge --serial <serial>` как stdio-сервер и поместите `AUTOJS6_MCP_TOKEN` в блок переменных окружения (фрагменты для Claude Desktop и Claude Code есть в [README моста](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)). Мост 0.1.0 работает с плагином 1.0.1 и новее (проверен на предварительной сборке 1.0.0; транспорт MCP и аутентификация с тех пор не менялись) и передает версию протокола клиента без изменений; проверен с Claude Code 2.1.257 по stdio.
 
 ******
 

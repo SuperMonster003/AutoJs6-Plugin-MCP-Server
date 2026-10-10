@@ -57,7 +57,7 @@
   "p_client_codex": "Codex CLI: トークンを環境変数 `AUTOJS6_MCP_TOKEN` に入れ (設定ページは対応する PowerShell コマンドをコピーします), サーバーを `config.toml` に追加するか, `codex mcp add autojs6 --url <url> --bearer-token-env-var AUTOJS6_MCP_TOKEN` を実行します",
   "p_client_inspector": "MCP Inspector: CLI モードは追加設定なしで使え, Web UI は自身の Node プロキシ経由で端末に到達します. ブラウザーページがエンドポイントへ直接接続する場合だけ, 設定ページで開発者モードを有効にしてください",
   "p_client_generic": "Cline, VS Code Copilot Chat, Gemini CLI などのクライアント: それぞれの MCP 設定で同じ URL とヘッダーを使います. 設定ページには `\"type\": \"http\"` 付きの汎用 JSON 断片があります",
-  "p_client_claude_desktop": "Claude Desktop などの stdio 専用クライアント: `npm install -g autojs6-mcp-bridge` でブリッジをインストールし, `autojs6-mcp-bridge --serial <serial>` を stdio サーバーとして登録して, その環境変数ブロックに `AUTOJS6_MCP_TOKEN` を入れます (Claude Desktop と Claude Code の断片は[ブリッジの README]({{ bridge_url }}) を参照). ブリッジ 0.1.0 はプラグイン 1.0.0 と組み合わせ, クライアントのプロトコルバージョンをそのまま渡します. Claude Code 2.1.257 の stdio 接続で検証済みです",
+  "p_client_claude_desktop": "Claude Desktop などの stdio 専用クライアント: `npm install -g autojs6-mcp-bridge` でブリッジをインストールし, `autojs6-mcp-bridge --serial <serial>` を stdio サーバーとして登録して, その環境変数ブロックに `AUTOJS6_MCP_TOKEN` を入れます (Claude Desktop と Claude Code の断片は[ブリッジの README]({{ bridge_url }}) を参照). ブリッジ 0.1.0 はプラグイン 1.0.1 以降で動作し (公開前の 1.0.0 ビルドで検証済み, その後 MCP の転送と認証は変更なし), クライアントのプロトコルバージョンをそのまま渡します. Claude Code 2.1.257 の stdio 接続で検証済みです",
   "h3_faq": "よくある質問",
   "faq_points": [
     "401 Unauthorized: トークンが未設定, 誤入力, またはローテーション済みです. 設定ページから設定をコピーし直してください. トークンをローテーションした後は全クライアントに新しい値が必要です.",
