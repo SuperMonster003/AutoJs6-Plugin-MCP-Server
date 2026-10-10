@@ -309,9 +309,10 @@ Los planes y el progreso del plugin se mantienen como una lista verificable en R
 
 #### v1.0.3
 
-_2026/10/10_
+_2026/10/11_
 
 - `Función` Fragmento VS Code mcp.json en la configuración de clientes de la página de ajustes: VS Code pide el token al iniciar el servidor por primera vez, por lo que el token no queda en el archivo (el diálogo incluye un botón "Copiar token")
+- `Mejora` Flujos de eventos reanudables en el endpoint MCP con estado: los eventos llevan id, los clientes con protocolo 2025-11-25 o posterior reciben primero un evento de preparación con el intervalo de reconexión, y un flujo de solicitud interrumpido puede reanudarse con un GET que lleve Last-Event-ID, que reenvía los eventos perdidos y el resultado final (retención limitada por sesión)
 - `Mejora` Los iconos del centro de plugins usan los tamaños, posiciones, imágenes claras y oscuras y fondos circulares ajustados en Icon Studio, conservando fuentes y parámetros reproducibles
 - `Mejora` Los iconos de información de la aplicación de Android comparten las imágenes y los fondos claros y oscuros de Icon Studio, conservando las imágenes transparentes del centro de plugins y las opciones del lanzador
 
