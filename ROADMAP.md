@@ -489,7 +489,8 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 - [ ] (发布) 1.0.3: 本地已有图标工作台图稿与系统应用图标, 共享 Gradle 插件 1.9.0, 设置页 VS Code 片段, SSE 断线续传; 按 P7 第 5 - 6 项的验证顺序与索引流程发布.
 - [ ] (发布) 宿主 6.8.0 公开发布后的回归: 用公开宿主与官方索引安装的插件在两台设备重跑 P2 验收的端到端, 核对 README 与插件中心说明中的宿主要求.
 - [ ] (仓库) 远端同步: 本地 master 因 2026-10-10 的历史改写与 origin 分叉 (本地多 72 个提交, 远端多 69 个); 强推会让官方索引 `57.json` / `67.json` 记录的 `sourceCommit` (`965178f` / `1061bbc`, 即 GitHub 当前 tag 指向) 在 GitHub 上不再可达. 强推前需决定保留旧 tag 指向, 或按 `T:/backups/idea-projects/_workspace-cleanup-20261010/_repo-reset-backups/agents-claude-history-20261010/AutoJs6-Plugin-MCP-Server.commit-map` 换算 (`965178f -> f0dadd4`, `1061bbc -> cf090a8`) 后重新生成索引清单; 推送后复核 CI. 桥接仓库本地领先 origin 2 个提交 (忽略代理说明文件, 兼容表), 可快进推送.
-- [ ] (PC) 桥接程序维护: 监听器重启后桥接程序沿用旧会话 id, 插件按规范回 `404 Session not found`, 桥接程序却报成 "端点路径错误" (2026-10-11 观察); 按规范应在带会话 id 的 404 后重新初始化上游会话 (重放客户端的 `initialize` 与 `notifications/initialized`) 并重试, 至少给出 "手机端会话已失效, 请在客户端重启该服务器" 的提示. Node.js 18 与 20 均已结束维护, 评估把 `engines` 提到 >= 20 或 >= 22 并为桥接仓库补多 Node 版本 CI; SDK 1.30.0 -> 1.32.x; 下次发布 (0.1.1) 时把 2026-10-10 的兼容表更新带到 npm 页面.
+- [x] (PC) 桥接程序在监听器重启后重开会话: 监听器重启后桥接程序沿用旧会话 id, 插件按规范回 `404 Session not found`, 桥接程序却报成 "端点路径错误" (2026-10-11 观察), 需要在客户端重启该服务器. (SOURCE: AutoJs6-MCP-Bridge `fac564f` (0.1.1, 本地未发布): 带会话 id 的消息得到 404 时, 在新传输上以内部请求 id 重放客户端的 `initialize` (含 `--protocol` 改写) 与 `notifications/initialized`, 应答不转发给客户端, 记录协商协议后重发被拒消息; 并发失败共用一次重开, 重开失败回 "The phone's MCP session ended ... could not open a new one: <原因>" 且下一请求再试; 同一客户端名使配对继续有效; 按手机声明向客户端发 `notifications/tools/list_changed` 等; 正文含 `Session not found` 的 404 不再报成路径错误; 关闭旧传输停止其事件流重连. 运行中的请求随监听器丢失, 由客户端超时处理. TEST: `npm test` 26/26 (新增假手机遗忘会话, 重开成功 / 并发共用 / 失败后再试, 错误文案). DEVICE (入库的 `tools/evidence/bridge_reopen.py`, Sony XQ-AT72 API 31, 抽屉开启的监听器, 协议 2025-11-25, 以 `am instrument` 重启插件包, 约 4.1 s 后宿主重绑出新监听进程): 0.1.0 重启后两次 `device_ping` 均为 -32000 且指向端点路径; 0.1.1 第一次 `device_ping` 成功 (339 ms, 含新会话) 并先收到 `notifications/tools/list_changed`, 第二次 60 ms 成功, 日志记录新会话; 证据配对已撤销. 详见 docs/dev/p9-bridge-session-reopen.md; 2026-10-11)
+- [ ] (PC) 桥接程序维护: 0.1.1 (上一项的会话重开与 2026-10-10 的兼容表更新) 发布到 npm 需维护者操作 (npm 双重验证), 发布时在桥接与插件两侧兼容表加入 0.1.1 行. Node.js 18 与 20 均已结束维护, 评估把 `engines` 提到 >= 20 或 >= 22 并为桥接仓库补多 Node 版本 CI; SDK 1.30.0 -> 1.32.x.
 
 验收条件: 客户端验收条目完成且兼容矩阵至少 5 个客户端有真实结果; 非可选条目全部勾选或经维护者明确转出; 取证脚本入库后至少一项新证据只依赖入库脚本. (2026-10-10: 第一项与第三项已满足 (6 个客户端; docs 真机证据只依赖 `tools/evidence/`), 第二项尚有未勾选的非可选条目.)
 
@@ -1105,3 +1106,10 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 验证: JVM 250/250 (新增 14), lint 0 错误, debug / androidTest / release 构建; 两台真机 instrumentation 21/21; 入库的 `tools/evidence/sse_resume.py` (新增 `session.py` 统一取证前置步骤, `mcp_client.py` 增加逐事件读取与续传) 在 Xiaomi 23046RP50C API 35 与 Sony G8441 API 28 上通过中途续传, 结束后续传与未知 id 三种情形; Cursor CLI 以协议 2025-11-25 在构建 84 上正常处理 priming 事件并完成调用. 证据: docs/dev/p9-sse-resumption.md.
 - 发现: 监听器重启后桥接程序把会话过期的 404 误报为端点路径错误, 已写入 P9 的桥接程序维护条目.
 - 设备: Sony XQ-AT72 已更新为构建 84 (保留数据, 宿主自动重绑); 本会话经 Claude Desktop 桥接的 autojs6 工具需要在 Claude Desktop 中重启该服务器后才能再次使用 (原因同上).
+
+### 2026-10-11: 桥接程序会话重开
+
+- 完成: P9 新拆出的 "桥接程序在监听器重启后重开会话" (AutoJs6-MCP-Bridge `fac564f`, 版本 0.1.1, 本地提交, 未推送, 未发布 npm). 新增入库取证场景 `tools/evidence/bridge_reopen.py` (以 stdio 驱动任意桥接命令, 同一次运行可对比新旧版本). 证据: docs/dev/p9-bridge-session-reopen.md.
+- 验证: 桥接仓库 `npm test` 26/26, `npm pack --dry-run` 0.1.1; Sony XQ-AT72 上 0.1.0 与 0.1.1 的前后对比 (见上项); 取证工具离线检查通过.
+- 发现: 对插件执行 `am force-stop` 后宿主按 P6 生命周期矩阵不再重绑, 抽屉开关被关闭, 已经 adb 点按抽屉开关恢复; Android 12 的 SELinux 拒绝 `run-as` 向应用进程发信号. 场景因此改用 `am instrument` 重启插件包.
+- 待办: P9 桥接程序维护条目 (npm 发布 0.1.1 需维护者, Node 版本与 CI, SDK 升级).

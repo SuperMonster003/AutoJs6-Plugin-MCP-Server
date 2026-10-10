@@ -11,6 +11,7 @@ evidence should only depend on these files.
 | `session.py` | The common frame of a scenario: token, evidence pairing, held host session, forward, MCP session, revocation |
 | `docs_resources.py` | Scenario: offline docs resources on a device (roadmap P3.5 optional item) |
 | `sse_resume.py` | Scenario: SSE resumption with `Last-Event-ID` mid-run and after the end, unknown ids (roadmap P9, SEP-1699) |
+| `bridge_reopen.py` | Scenario: the stdio bridge (`autojs6-mcp-bridge`) across a listener restart; each `--bridge` command runs once, so an old and a new bridge can be compared (roadmap P9) |
 | `test_evidence.py` | Offline checks of the parsing and redaction logic |
 
 ## Prerequisites
@@ -49,8 +50,16 @@ evidence should only depend on these files.
 py -m unittest discover -s tools/evidence
 py tools/evidence/docs_resources.py --serial <serial>
 py tools/evidence/sse_resume.py --serial <serial>
+py tools/evidence/bridge_reopen.py --serial <serial> --bridge "node ../AutoJs6-MCP-Bridge/dist/cli.js"
 ```
 
 `docs_resources.py` options: `--hold-seconds` (host session hold, default 240),
 `--token-source auto|env|instrumentation|dumpsys`, `--no-toggle-docs` (skip disabling the Offline
 Docs plugin), `--keep-pairing`, `--report-dir`.
+
+`bridge_reopen.py` needs Node.js, a listener that the AutoJs6 drawer switched on (a session held by
+the host instrumentation does not survive the restart) and the plugin androidTest APK: the restart
+is an `am instrument` run of `EvidenceHelperTest#pairClient`, which restarts the plugin package like
+an update. Do not restart it with `am force-stop`: the host treats that as the user's decision and
+leaves the server off until the drawer switch is turned on again. Write `--bridge` commands with
+forward slashes; the token reaches the bridge only through `AUTOJS6_MCP_TOKEN` in its environment.

@@ -8,6 +8,7 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
+from bridge_reopen import SESSION_ID, call_facts  # noqa: E402
 from device import Device, scrub  # noqa: E402
 from docs_resources import content_facts, find_png, index_facts  # noqa: E402
 from mcp_client import PAIRING_REQUIRED, McpError, decode_messages, parse_sse  # noqa: E402
@@ -75,6 +76,23 @@ class EvidenceToolTest(unittest.TestCase):
         index = index_facts(json.dumps({"fileCount": 185, "contentVersion": "6.8.0", "entries": [{"path": "a"}, {"path": "b"}]}))
         self.assertEqual({"fileCount": 185, "contentVersion": "6.8.0", "entriesCount": 2}, index)
         self.assertEqual("images/a.png", find_png({"entries": [{"path": "a.html"}, {"path": "images/a.png"}]}))
+
+    def test_bridge_reports_classify_errors_and_hide_session_ids(self):
+        ended = {"jsonrpc": "2.0", "id": 3, "error": {"code": -32000, "message": "The phone's MCP session ended (its listener "
+                                                                                 "restarted or was switched off) and the bridge could not open a new one: x"}}
+        facts = call_facts(ended, [], 12)
+        self.assertEqual((False, -32000, True, False), (facts["ok"], facts["errorCode"], facts["errorNamesEndedSession"],
+                                                        facts["errorBlamesEndpointPath"]))
+        old = {"jsonrpc": "2.0", "id": 3, "error": {"code": -32000, "message": "404 Not Found from http://127.0.0.1:1/mcp: "
+                                                                               "the endpoint path is wrong; the plugin serves /mcp."}}
+        self.assertTrue(call_facts(old, [], 1)["errorBlamesEndpointPath"])
+        ok = call_facts({"jsonrpc": "2.0", "id": 4, "result": {"content": []}},
+                        [{"jsonrpc": "2.0", "method": "notifications/tools/list_changed"}], 5)
+        self.assertEqual((True, ["notifications/tools/list_changed"]), (ok["ok"], ok["notifications"]))
+        line = "the phone no longer knew session 6c1f0e7a-93b2-4d0e (its listener restarted); opened session 0b9d2c44-77aa-41f3"
+        self.assertEqual("the phone no longer knew session <id> (its listener restarted); opened session <id>",
+                         SESSION_ID.sub(r"\1<id>", line))
+        self.assertEqual("The phone's MCP session ended", SESSION_ID.sub(r"\1<id>", "The phone's MCP session ended"))
 
 
 if __name__ == "__main__":
