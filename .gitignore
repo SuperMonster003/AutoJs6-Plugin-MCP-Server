@@ -38,6 +38,8 @@ __pycache__/
 /tools/*
 !/tools/nodejs/
 !/tools/nodejs/**
+!/tools/evidence/
+!/tools/evidence/**
 
 /gradle/wrappers/backup/
 
