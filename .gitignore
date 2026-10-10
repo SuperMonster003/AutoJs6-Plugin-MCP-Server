@@ -54,3 +54,7 @@ build-logic/*/build/
 
 *.keystore
 *.pre-platform-versions.bak
+
+# Local agent instruction files stay out of the repository.
+AGENTS.md
+CLAUDE.md
