@@ -14,6 +14,7 @@ evidence should only depend on these files.
 | `ui_chain.py` | Scenario: the UI tools on the system Settings app, dump -> find -> click -> wait -> set_text -> scroll -> back (roadmap P3.2 / P9) |
 | `screenshot_rate.py` | Scenario: 31 captures in a row, the 31st `RATE_LIMITED` with `retryAfterMs`, then a capture after the wait (roadmap P6 / P9) |
 | `token_rotation.py` | Scenario: lifecycle S5, the token rotated on the settings page while a session is live (roadmap P6 / P9) |
+| `lifecycle.py` | Scenario: the P6 lifecycle matrix S1 - S6 with kills from adb and `ACTION:` prompts for the on-screen steps (roadmap P6 / P9) |
 | `bridge_reopen.py` | Scenario: the stdio bridge (`autojs6-mcp-bridge`) across a listener restart; each `--bridge` command runs once, so an old and a new bridge can be compared (roadmap P9) |
 | `test_evidence.py` | Offline checks of the parsing and redaction logic |
 
@@ -57,6 +58,7 @@ py tools/evidence/bridge_reopen.py --serial <serial> --bridge "node ../AutoJs6-M
 py tools/evidence/ui_chain.py --serial <serial>
 py tools/evidence/screenshot_rate.py --serial <serial>
 py tools/evidence/token_rotation.py --serial <serial>   # then rotate the token on the settings page
+py tools/evidence/lifecycle.py --serial <serial> [--only S1 S2 ...]   # follow the ACTION lines on stderr
 ```
 
 `docs_resources.py` options: `--hold-seconds` (host session hold, default 240),

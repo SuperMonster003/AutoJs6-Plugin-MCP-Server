@@ -81,6 +81,12 @@ with the current token (`device_ping` 66 ms); the token was then rotated on the 
 
 This completes S5 on API 31, which the P6 run could not drive.
 
+## Lifecycle matrix on API 28
+
+`tools/evidence/lifecycle.py` ran S1 - S6 on Sony G8441 (Android 9, API 28), the phone the P6 run
+could not drive; all six scenarios behaved as the matrix expects. The results are in
+docs/dev/lifecycle-matrix.md ("Evidence, Sony G8441").
+
 ## Found on the way
 
 - A held host session (the host's `McpServerPluginRoundTripTest`) restarts the AutoJs6 process, so

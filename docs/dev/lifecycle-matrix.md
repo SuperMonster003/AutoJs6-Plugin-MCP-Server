@@ -62,13 +62,13 @@ of the P4 / P5 helpers) runs the six scenarios in one session per device:
 
 | # | Scenario | Expected state | Recovery path | Verified |
 | --- | --- | --- | --- | --- |
-| S1 | Host killed while a client session is live | Listener keeps running with `hostAvailable = false`; notification "Waiting for AutoJs6"; `device_ping` answers, host-backed tools answer `HOST_UNAVAILABLE`; the drawer is gone with the host | The host starts, `connectIfNotNormallyClosed` reopens the server, the plugin replaces the degraded session (same listener process, same client session, no re-initialize) | API 33, 31, 35 |
-| S2 | Listener process killed while the host is attached | The host's death recipient fires; rebind after 1 s (then 3 s, 9 s); a new listener process serves the same endpoint; the drawer keeps showing the endpoint; the paired clients are unchanged | The client's next request on its old session id gets `404` "Session not found" and initializes again; no pairing prompt (the fix below) | API 33, 31, 35 |
-| S3 | Host and listener killed at once | Nothing runs and nothing restarts on its own (no boot receiver, no sticky service); the endpoint refuses connections | The host starts and reopens the server as in S1; the client initializes again | API 33, 31, 35 |
-| S4 | The user force-stops the plugin in the system settings | The listener stays dead; the host does not rebind (the fix below); the drawer switch turns off and its subtitle reads "Activation required" | The user turns the switch on: the activation guide starts the plugin explicitly, the listener comes back, the client initializes again | API 33, 31, 35 |
-| S5 | Token rotated from the settings page while a client session is live | The listener restarts with the new token; the old token gets `401` / `UNAUTHORIZED`; the old session id gets `404` with the new token; pairing survives (it is keyed by client name and address class, not by the token) | The client updates its token and initializes again; no pairing prompt (the fix below) | API 33, 35, 31 (2026-10-11, docs/dev/p9-device-items.md) |
-| S6a | Pairing pending, then the host is killed | The pending request lives in the listener process and survives; the prompt can still be answered | Allow pairs the client; `device_ping` works at once, host-backed tools answer `HOST_UNAVAILABLE` until the host is back | API 33, 31, 35 |
-| S6b | Pairing pending, then the listener process is killed | The pending request dies with the process; its notification is cleared when the new listener starts (the fix below); the client is not paired | The client initializes again, the prompt appears again, Allow pairs it | API 33, 31, 35 |
+| S1 | Host killed while a client session is live | Listener keeps running with `hostAvailable = false`; notification "Waiting for AutoJs6"; `device_ping` answers, host-backed tools answer `HOST_UNAVAILABLE`; the drawer is gone with the host | The host starts, `connectIfNotNormallyClosed` reopens the server, the plugin replaces the degraded session (same listener process, same client session, no re-initialize) | API 33, 31, 35, 28 |
+| S2 | Listener process killed while the host is attached | The host's death recipient fires; rebind after 1 s (then 3 s, 9 s); a new listener process serves the same endpoint; the drawer keeps showing the endpoint; the paired clients are unchanged | The client's next request on its old session id gets `404` "Session not found" and initializes again; no pairing prompt (the fix below) | API 33, 31, 35, 28 |
+| S3 | Host and listener killed at once | Nothing runs and nothing restarts on its own (no boot receiver, no sticky service); the endpoint refuses connections | The host starts and reopens the server as in S1; the client initializes again | API 33, 31, 35, 28 |
+| S4 | The user force-stops the plugin in the system settings | The listener stays dead; the host does not rebind (the fix below); the drawer switch turns off and its subtitle reads "Activation required" | The user turns the switch on: the activation guide starts the plugin explicitly, the listener comes back, the client initializes again | API 33, 31, 35, 28 |
+| S5 | Token rotated from the settings page while a client session is live | The listener restarts with the new token; the old token gets `401` / `UNAUTHORIZED`; the old session id gets `404` with the new token; pairing survives (it is keyed by client name and address class, not by the token) | The client updates its token and initializes again; no pairing prompt (the fix below) | API 33, 35, 31, 28 (2026-10-11, docs/dev/p9-device-items.md) |
+| S6a | Pairing pending, then the host is killed | The pending request lives in the listener process and survives; the prompt can still be answered | Allow pairs the client; `device_ping` works at once, host-backed tools answer `HOST_UNAVAILABLE` until the host is back | API 33, 31, 35, 28 |
+| S6b | Pairing pending, then the listener process is killed | The pending request dies with the process; its notification is cleared when the new listener starts (the fix below); the client is not paired | The client initializes again, the prompt appears again, Allow pairs it | API 33, 31, 35, 28 |
 
 ## Findings and fixes
 
@@ -156,3 +156,24 @@ showing the endpoint.
 | Drawer after the plugin was force-stopped (API 33) | [drawer-force-stopped-api33](images/p6/drawer-force-stopped-api33.png) |
 | Activation guide when the switch is turned on again (API 33) | [dialog-activate-after-force-stop-api33](images/p6/dialog-activate-after-force-stop-api33.png) |
 | Drawer after the listener process was killed and rebound (API 33) | [drawer-after-listener-kill-api33](images/p6/drawer-after-listener-kill-api33.png) |
+
+## Evidence, Sony G8441 (API 28), 2026-10-11
+
+Plugin 1.0.3 (build 95), host 6.8.0 debug build 5328. The P6 run could not operate this phone
+because `uiautomator dump` returned no root node; this run used the committed
+`tools/evidence/lifecycle.py` with screenshot-guided taps for the drawer, the activation guide, the
+settings page and the pairing dialogs.
+
+| Step | Observation |
+| --- | --- |
+| S1 host killed | listener lost the host 92 ms after `am force-stop` (state `degraded`); `device_ping` ok, `device_info` HOST_UNAVAILABLE; host started through its launcher activity and reattached after 3352 ms (app start included); same listener pid, same client session, both tools ok |
+| S2 listener killed | new listener with the host 2131 ms after the kill helper; old session: `-32000` "Session not found" (no `PAIRING_REQUIRED`); re-initialize 466 ms, both tools ok |
+| S3 both killed | 6 s later no listener, no host, the endpoint dropped the connection; after the host start the listener was back with the host in 4765 ms; re-initialize 719 ms, both tools ok |
+| S4 force-stop | listener absent in all 20 samples of 20 s; drawer "Activation required", switch off; switch on showed the activation guide, ACTIVATE brought the listener back (47.7 s including the manual steps); re-initialize 624 ms, both tools ok |
+| S5 token rotated | fingerprint changed; old token `-32001`; old session id with the new token `-32000`; re-initialize 408 ms, both tools ok |
+| S6a pending, host killed | `PAIRING_REQUIRED` (`-32002`) for the new client, 1 pairing notification before and after the host kill; Allow on the dialog with the host dead: `device_ping` ok, `device_info` HOST_UNAVAILABLE; after the host came back both ok |
+| S6b pending, listener killed | 1 pairing notification before the kill, 0 after the new listener (4508 ms); the next call raised a new prompt (`-32002`), Allow paired the client, both tools ok |
+
+The pairing notification counts come from the active "Notification List" of `dumpsys
+notification`; the first full run also counted the notification archive and the channel table,
+so S6 was repeated with the corrected count (the S1 - S5 results do not depend on it).
