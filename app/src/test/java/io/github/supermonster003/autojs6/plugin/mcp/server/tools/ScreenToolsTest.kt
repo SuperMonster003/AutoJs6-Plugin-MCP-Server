@@ -164,41 +164,43 @@ class ScreenToolsTest {
         OutputSchemaTest.assertConforms(ToolCatalog.screenState, result.structured)
     }
 
-    @Test fun `annotate draws the live references scaled into the image and reports them`() = runBlocking {
-        val refs = NodeRefRegistry()
-        refs.replace(listOf(
-            UiNodeInfo("android.widget.Button", "OK", "", "", Bounds(108, 216, 540, 432), clickable = true, enabled = true),
-            UiNodeInfo("android.widget.TextView", "hidden", "", "", Bounds(0, 0, 100, 100), clickable = false, enabled = true, visible = false),
-        ))
+    @Test fun `annotate draws the references of the newest dump scaled into the image and reports them`() = runBlocking {
+        val refs = HostSnapshots()
+        refs.record("p:1", listOf(
+            "window: com.a/.Main  bounds=[0,0][1080,2400]  nodes=3",
+            "#n1 Button clickable \"OK\" [108,216][540,432]",
+            "#n2  TextView hidden \"gone\" c=(50,50)",
+            "#n3  TextView \"leaf\" c=(540,1000)",
+        ).joinToString("\n"))
         val drawn = mutableListOf<List<AnnotationMark>>()
-        val tools = ScreenTools(nodeRefs = refs, annotator = { image, mime, quality, marks ->
+        val tools = ScreenTools(snapshots = refs, annotator = { image, mime, quality, marks ->
             assertEquals("image/jpeg", mime)
             assertEquals(70, quality)
             drawn += marks
             image + byteArrayOf(9)
         })
         val result = run(Host(), """{"annotate":true}""", tools)
-        // The 1080 px wide screen is scaled to the 100 px wide image.
-        assertEquals(listOf(AnnotationMark("#n1", 10, 20, 50, 40)), drawn.single())
+        // The 1080 px wide screen is scaled to the 100 px wide image; the leaf gets a 32 px square around its centre.
+        assertEquals(listOf(AnnotationMark("#n1", 10, 20, 50, 40), AnnotationMark("#n3", 49, 91, 51, 94)), drawn.single())
         assertArrayEquals(byteArrayOf(1, 2, 3, 9), Base64.decode(result.image!!.data))
         assertEquals(JsonPrimitive(4), result.structured["bytes"])
-        assertEquals(json("""{"snapshotId":"s1","drawn":1,"skipped":1}"""), result.structured["annotation"])
+        assertEquals(json("""{"snapshotId":"p:1","drawn":2,"skipped":1}"""), result.structured["annotation"])
         assertEquals(JsonPrimitive(true), result.structured["requested"]!!.jsonObject["annotate"])
     }
 
-    @Test fun `annotate without live references or with an undecodable image returns the image unchanged`() = runBlocking {
-        val none = run(Host(), """{"annotate":true}""", ScreenTools(nodeRefs = NodeRefRegistry(), annotator = { _, _, _, _ -> fail("nothing to draw"); null }))
+    @Test fun `annotate without a dump or with an undecodable image returns the image unchanged`() = runBlocking {
+        val none = run(Host(), """{"annotate":true}""", ScreenTools(snapshots = HostSnapshots(), annotator = { _, _, _, _ -> fail("nothing to draw"); null }))
         assertArrayEquals(byteArrayOf(1, 2, 3), Base64.decode(none.image!!.data))
         val hint = none.structured["annotation"]!!.jsonObject
         assertEquals(JsonPrimitive(0), hint["drawn"])
-        assertTrue(hint["hint"]!!.jsonPrimitive.content.startsWith("no live node references: call ui_dump"))
+        assertTrue(hint["hint"]!!.jsonPrimitive.content.startsWith("no node references: call ui_dump first"))
 
-        val refs = NodeRefRegistry().apply { replace(listOf(UiNodeInfo("A", "", "", "", Bounds(0, 0, 540, 540), clickable = true, enabled = true))) }
-        val broken = run(Host(), """{"annotate":true}""", ScreenTools(nodeRefs = refs, annotator = { _, _, _, _ -> null }))
+        val refs = HostSnapshots().apply { record("p:1", "#n1 A [0,0][540,540]") }
+        val broken = run(Host(), """{"annotate":true}""", ScreenTools(snapshots = refs, annotator = { _, _, _, _ -> null }))
         assertArrayEquals(byteArrayOf(1, 2, 3), Base64.decode(broken.image!!.data))
         assertEquals(JsonPrimitive(0), broken.structured["annotation"]!!.jsonObject["drawn"])
 
-        val plain = run(Host(), "{}", ScreenTools(nodeRefs = refs, annotator = { _, _, _, _ -> fail("not requested"); null }))
+        val plain = run(Host(), "{}", ScreenTools(snapshots = refs, annotator = { _, _, _, _ -> fail("not requested"); null }))
         assertNull(plain.structured["annotation"])
     }
 

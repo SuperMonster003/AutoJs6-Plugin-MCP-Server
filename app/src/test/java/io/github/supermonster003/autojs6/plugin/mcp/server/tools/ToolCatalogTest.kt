@@ -209,18 +209,18 @@ class ToolCatalogTest {
         assertTrue(ToolCatalog.uiWaitFor.maxTimeoutMs > ToolCatalog.Ui.MAX_WAIT_TIMEOUT_MS)
 
         listOf(ToolCatalog.uiClick, ToolCatalog.uiLongClick).forEach { spec ->
-            assertEquals(spec.name, listOf("nodeRef", "selector", "x", "y"), spec.properties.keys.toList())
+            assertEquals(spec.name, listOf("nodeRef", "snapshotId", "selector", "x", "y"), spec.properties.keys.toList())
             assertTrue(spec.name, spec.required.isEmpty())
             assertEquals(spec.name, ToolCatalog.Ui.MAX_COORDINATE, (spec.properties["x"] as JsonObject)["maximum"]?.jsonPrimitive?.content?.toLong())
         }
         assertEquals(BridgeMethod("accessibility", "click"), ToolCatalog.uiClick.bridge)
         assertEquals(BridgeMethod("accessibility", "longClick"), ToolCatalog.uiLongClick.bridge)
         assertEquals(BridgeMethod("accessibility", "setText"), ToolCatalog.uiSetText.bridge)
-        assertEquals(listOf("nodeRef", "selector", "text", "append"), ToolCatalog.uiSetText.properties.keys.toList())
+        assertEquals(listOf("nodeRef", "snapshotId", "selector", "text", "append"), ToolCatalog.uiSetText.properties.keys.toList())
         assertEquals(listOf("text"), ToolCatalog.uiSetText.required)
         assertEquals(ToolCatalog.Ui.MAX_TEXT_BYTES.toLong(), (ToolCatalog.uiSetText.properties["text"] as JsonObject)["maxLength"]?.jsonPrimitive?.content?.toLong())
         assertEquals(BridgeMethod("accessibility", "scrollForward"), ToolCatalog.uiScroll.bridge)
-        assertEquals(listOf("nodeRef", "selector", "direction", "times"), ToolCatalog.uiScroll.properties.keys.toList())
+        assertEquals(listOf("nodeRef", "snapshotId", "selector", "direction", "times"), ToolCatalog.uiScroll.properties.keys.toList())
         assertEquals(listOf("forward", "backward", "down", "up", "right", "left"), ((ToolCatalog.uiScroll.properties["direction"] as JsonObject)["enum"] as JsonArray).map { it.jsonPrimitive.content })
         assertEquals(ToolCatalog.Ui.MAX_TIMES, (ToolCatalog.uiScroll.properties["times"] as JsonObject)["maximum"]?.jsonPrimitive?.content?.toLong())
         assertEquals(BridgeMethod("accessibility", "back"), ToolCatalog.uiPressKey.bridge)

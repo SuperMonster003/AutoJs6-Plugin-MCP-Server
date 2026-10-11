@@ -164,6 +164,7 @@ object ToolCatalog {
         const val WINDOW = "window"
         const val SELECTOR = "selector"
         const val NODE_REF = "nodeRef"
+        const val SNAPSHOT_ID = "snapshotId"
         const val LIMIT = "limit"
         const val TIMEOUT_MS = "timeoutMs"
         const val STATE = "state"
@@ -419,8 +420,10 @@ object ToolCatalog {
     )
 
 
-    private const val NODE_REF_DESCRIPTION = "A #n reference from the last ui_dump (or ui_find / ui_wait_for); the node is found again by its class, text, " +
-            "description, id, and bounds, and NODE_REF_STALE asks for a new ui_dump when it is gone"
+    private const val NODE_REF_DESCRIPTION = "A #n reference from ui_dump; AutoJs6 finds the node again in the current window before acting, and " +
+            "NODE_REF_STALE asks for a new ui_dump when the window changed or the node moved, changed, or is gone"
+    private const val SNAPSHOT_ID_DESCRIPTION = "The snapshotId of the ui_dump the nodeRef comes from; defaults to the newest dump. AutoJs6 keeps the " +
+            "newest 8 dumps"
     private const val TARGET_NOTE = " Give nodeRef or selector, not both."
 
     val uiDump: ToolSpec = ToolSpec(
@@ -428,11 +431,12 @@ object ToolCatalog {
         title = "Dump UI tree",
         description = "Dumps the accessibility node tree of the active window as compact text: one node per line with a #n reference, " +
                 "an indent per depth, the short class name, the state markers that apply (clickable, long_clickable, checkable, checked, " +
-                "scrollable, editable, focused, selected, !enabled, hidden), the text in quotes, desc=, id= (name part only), and the " +
-                "position (bounds [l,t][r,b] for a node with children, c=(x,y) for a leaf). Pass a #n reference as nodeRef to ui_click, " +
-                "ui_long_click, ui_set_text, or ui_scroll; references stay valid until the next ui_dump or for 60 s. Call it before acting " +
-                "and again after the screen changed. format json returns the nodes as objects with every flag; format xml returns the " +
-                "uiautomator-style export.",
+                "scrollable, editable, focused, selected, !enabled, hidden), the text in quotes, desc=, id= (the full resource id), and " +
+                "the position (bounds [l,t][r,b] for a node with children, c=(x,y) for a leaf). Pass a #n reference as nodeRef to " +
+                "ui_click, ui_long_click, ui_set_text, or ui_scroll: AutoJs6 keeps the newest 8 dumps (snapshotId) and finds the node " +
+                "again when acting, so a reference works until the window changes or the node moves or changes. Call it before acting " +
+                "and again after the screen changed. format json returns the nodes as objects with every flag and format xml the " +
+                "uiautomator-style export; neither has references.",
         inputSchema = JsonSchemas.objectSchema(
             properties = linkedMapOf(
                 Ui.FORMAT to JsonSchemas.string("Output form", enum = Ui.FORMATS, default = Ui.FORMAT_TEXT),
@@ -453,8 +457,8 @@ object ToolCatalog {
         name = UI_FIND,
         title = "Find UI nodes",
         description = "Finds the nodes of the active window that match every condition of the selector, optionally waiting up to " +
-                "timeoutMs for the first match, and returns up to limit of them with #n references, bounds, and center. An empty count " +
-                "is not an error; ui_explain_selector tells which condition fails.",
+                "timeoutMs for the first match, and returns up to limit of them with bounds, center, and a selector that pins each node " +
+                "(pass it as selector to the action tools). An empty count is not an error; ui_explain_selector tells which condition fails.",
         inputSchema = JsonSchemas.objectSchema(
             properties = linkedMapOf(
                 Ui.SELECTOR to JsonSchemas.selector("The conditions a node must meet (all of them)"),
@@ -505,8 +509,8 @@ object ToolCatalog {
         name = UI_WAIT_FOR,
         title = "Wait for UI node",
         description = "Waits until a node matching the selector appears (default) or disappears, polling the active window every 0.5 s " +
-                "for up to timeoutMs, and answers TIMEOUT when the state is not reached. Use it after an action that opens a screen or " +
-                "dismisses a dialog.",
+                "for up to timeoutMs, and answers TIMEOUT when the state is not reached; an appeared node comes with a selector that " +
+                "pins it. Use it after an action that opens a screen or dismisses a dialog.",
         inputSchema = JsonSchemas.objectSchema(
             properties = linkedMapOf(
                 Ui.SELECTOR to JsonSchemas.selector("The conditions of the node to wait for"),
@@ -552,8 +556,8 @@ object ToolCatalog {
         name = UI_SET_TEXT,
         title = "Set text",
         description = "Sets the text of an editable node (an EditText, marked editable by ui_dump) given by nodeRef or selector; append " +
-                "adds to the current text instead of replacing it. Works without focus or the keyboard; ACTION_FAILED means the node is " +
-                "not editable or not enabled." + TARGET_NOTE,
+                "adds to the current text instead of replacing it and needs a selector. Works without focus or the keyboard; " +
+                "ACTION_FAILED means the node is not editable or not enabled." + TARGET_NOTE,
         inputSchema = JsonSchemas.objectSchema(
             properties = targetProperties(coordinates = false).apply {
                 put(Ui.TEXT, JsonSchemas.string("The text to set (or to append)", maxLength = Ui.MAX_TEXT_BYTES))
@@ -654,7 +658,7 @@ object ToolCatalog {
                 "Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. " +
                 "Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. " +
                 "Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. " +
-                "With annotate the #n references of the latest ui_dump / ui_find are drawn on the image. " +
+                "With annotate the #n references of the newest ui_dump are drawn on the image. " +
                 "At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs.",
         group = ToolGroup.SCREEN,
         inputSchema = JsonSchemas.objectSchema(linkedMapOf(
@@ -669,8 +673,8 @@ object ToolCatalog {
             Screen.QUALITY to JsonSchemas.integer("JPEG or WebP quality; PNG ignores quality", 1, 100, Screen.DEFAULT_QUALITY.toLong()),
             Screen.REGION to JsonSchemas.bounds("Crop in current screen pixels before scaling; right and bottom are exclusive"),
             Screen.ANNOTATE to JsonSchemas.boolean(
-                "Draw the #n references of the latest ui_dump / ui_find on the image (a box and a label per node) so they can be matched " +
-                        "to what is visible; references expire after 60 s, the result's annotation field reports what was drawn",
+                "Draw the #n references of the newest ui_dump on the image (a box and a label per node, a small square at the centre of " +
+                        "a leaf) so they can be matched to what is visible; the result's annotation field reports what was drawn",
                 default = false,
             ),
         )),
@@ -813,6 +817,7 @@ object ToolCatalog {
     /** `nodeRef` and `selector` (and the coordinate pair for the click tools) every action tool accepts. */
     private fun targetProperties(coordinates: Boolean): LinkedHashMap<String, JsonObject> = linkedMapOf<String, JsonObject>().apply {
         put(Ui.NODE_REF, JsonSchemas.string(NODE_REF_DESCRIPTION, maxLength = 32))
+        put(Ui.SNAPSHOT_ID, JsonSchemas.string(SNAPSHOT_ID_DESCRIPTION, maxLength = HostSnapshots.MAX_SNAPSHOT_ID_LENGTH))
         put(Ui.SELECTOR, JsonSchemas.selector("Conditions that identify the node; the first match in pre-order is used"))
         if (coordinates) {
             put(Ui.X, JsonSchemas.integer("x of a coordinate tap in device pixels (ui_gesture group)", minimum = 0, maximum = Ui.MAX_COORDINATE))

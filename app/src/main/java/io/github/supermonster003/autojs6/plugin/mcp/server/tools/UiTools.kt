@@ -19,15 +19,16 @@ import kotlin.math.max
 
 /**
  * The flows of the `ui` and `ui_gesture` groups (roadmap P3.2): each tool is one or more host
- * `accessibility` calls plus the plugin-side work the roadmap assigns to it. `ui_dump` turns
- * the host's JSON nodes into the compact tree and registers the `#n` references, the action
- * tools resolve a `nodeRef` by relocating its fingerprint (D12) or a `selector` by `findOne`
- * and then act through an exact selector, `ui_find` / `ui_wait_for` poll, `ui_scroll` repeats,
- * and the coordinate forms are gated by the `ui_gesture` switch (D22). Pure Kotlin over a
+ * `accessibility` calls plus the plugin-side work the roadmap assigns to it. `ui_dump` returns
+ * the host's compact dump, whose `#n` references live in a host snapshot (roadmap P10, D26):
+ * an action given a `nodeRef` hands `{nodeRef, snapshotId}` to the host, which relocates the
+ * node and acts or answers `NODE_REF_STALE`. A `selector` is resolved by `findOne`; `ui_find` /
+ * `ui_wait_for` poll and return an exact selector per node, `ui_scroll` repeats, and the
+ * coordinate forms are gated by the `ui_gesture` switch (D22). Pure Kotlin over a
  * [BridgeCaller]; `UiToolsTest` drives it with a fake host.
  */
 class UiTools(
-    private val registry: NodeRefRegistry,
+    private val snapshots: HostSnapshots,
     private val permissions: () -> ToolPermissions,
     private val clock: () -> Long = System::currentTimeMillis,
     private val sleep: suspend (Long) -> Unit = { delay(it) },
@@ -35,8 +36,39 @@ class UiTools(
     private val settleMs: Long = SCROLL_SETTLE_MS,
 ) : ToolFlows {
 
-    /** A located node the action tools act on. */
-    private class Target(val node: UiNodeInfo, val ref: String?, val via: String, val selector: JsonObject)
+    /** What an action tool acts on: a host reference, or a node the plugin found with a selector. */
+    private sealed class Target {
+
+        abstract val via: String
+
+        /** The first argument of the host action. */
+        abstract val hostTarget: JsonObject
+
+        /** `#n3` or `TextView "Wi-Fi"` for messages. */
+        abstract fun label(): String
+
+        /** The `target` of the tool result. */
+        abstract fun json(): JsonObject
+
+        class Ref(val ref: String, val snapshotId: String) : Target() {
+            override val via: String = "nodeRef"
+            override val hostTarget: JsonObject = buildJsonObject {
+                put("nodeRef", ref)
+                put("snapshotId", snapshotId)
+            }
+            override fun label(): String = ref
+            override fun json(): JsonObject = buildJsonObject {
+                put("ref", ref)
+                put("snapshotId", snapshotId)
+            }
+        }
+
+        class Node(val node: UiNodeInfo, override val via: String, val selector: JsonObject) : Target() {
+            override val hostTarget: JsonObject get() = selector
+            override fun label(): String = node.label()
+            override fun json(): JsonObject = node.toJson()
+        }
+    }
 
     private class ScreenSize(val width: Int, val height: Int, val readAt: Long)
 
@@ -69,7 +101,11 @@ class UiTools(
         val window = ToolArguments.string(arguments, Ui.WINDOW, Ui.WINDOW_ACTIVE)!!
         return ToolFlow(DUMP_TIMEOUT_MS) { caller ->
             val options = buildJsonObject {
-                put("format", if (format == Ui.FORMAT_XML) Ui.FORMAT_XML else "json")
+                put("format", when (format) {
+                    Ui.FORMAT_TEXT -> HOST_FORMAT_COMPACT
+                    Ui.FORMAT_XML -> Ui.FORMAT_XML
+                    else -> Ui.FORMAT_JSON
+                })
                 put("maxDepth", maxDepth)
                 put("maxNodes", maxNodes)
                 put("visibleOnly", visibleOnly)
@@ -78,6 +114,23 @@ class UiTools(
             val result = caller.objectOrThrow("accessibility", "dump", JsonArray(listOf(options)), DUMP_TIMEOUT_MS, ACCESSIBILITY)
             val windowInfo = UiNodeInfo.windowOf(result)
             val truncated = result.flag("truncated")
+            if (format == Ui.FORMAT_TEXT) {
+                val snapshotId = result.string("snapshotId")
+                if (snapshotId.isEmpty() || snapshotId.length > HostSnapshots.MAX_SNAPSHOT_ID_LENGTH) {
+                    throw ToolFailureException(ToolFailure.internal("accessibility.dump answered without a snapshot id; AutoJs6 keeps node references from build 5298 on"))
+                }
+                val text = result.string("text")
+                snapshots.record(snapshotId, text)
+                val structured = buildJsonObject {
+                    put("snapshotId", snapshotId)
+                    put("format", format)
+                    put("window", windowInfo)
+                    put("roots", result["roots"] ?: JsonPrimitive(1))
+                    put("nodeCount", result["nodeCount"] ?: JsonPrimitive(0))
+                    put("truncated", truncated)
+                }
+                return@ToolFlow ToolFlowResult(structured, text)
+            }
             if (format == Ui.FORMAT_XML) {
                 val text = result.string("text")
                 val structured = buildJsonObject {
@@ -90,22 +143,17 @@ class UiTools(
                 }
                 return@ToolFlow ToolFlowResult(structured, text)
             }
+            // The json export carries every flag but no references: those come from the compact form only.
             val nodes = UiNodeInfo.listFromJson(result["nodes"])
-            val registration = registry.replace(nodes)
             val structured = buildJsonObject {
-                put("snapshotId", registration.snapshotId)
                 put("format", format)
                 put("window", windowInfo)
                 put("roots", result["roots"] ?: JsonPrimitive(1))
                 put("nodeCount", nodes.size)
                 put("truncated", truncated)
-                if (format == Ui.FORMAT_JSON) put("nodes", JsonArray(registration.entries.map { it.node.toJson(it.ref, full = true) }))
+                put("nodes", JsonArray(nodes.map { it.toJson(full = true) }))
             }
-            if (format == Ui.FORMAT_JSON) {
-                ToolFlowResult(structured)
-            } else {
-                ToolFlowResult(structured, CompactNodeText.render(windowInfo, registration.entries, truncated, maxNodes, maxDepth))
-            }
+            ToolFlowResult(structured)
         }
     }
 
@@ -122,16 +170,14 @@ class UiTools(
                 sleep(pollMs)
             }
             val kept = nodes.take(limit)
-            val registration = if (kept.isEmpty()) null else registry.append(kept)
             ToolFlowResult(
                 buildJsonObject {
-                    registration?.let { put("snapshotId", it.snapshotId) }
                     put("selector", selector)
                     put("count", nodes.size)
                     put("returned", kept.size)
                     put("truncated", nodes.size > kept.size)
                     put("elapsedMs", clock() - startedAt)
-                    put("nodes", JsonArray(registration?.entries?.map { it.node.toJson(it.ref) }.orEmpty()))
+                    put("nodes", JsonArray(kept.map { it.toJson(selector = UiSelectors.exact(it)) }))
                     if (nodes.isEmpty()) put("hint", "no node matches ${UiSelectors.describe(selector)} in the active window; ui_dump shows the window, ui_explain_selector reports which condition fails")
                 },
             )
@@ -150,17 +196,13 @@ class UiTools(
                 val satisfied = if (appear) node != null else node == null
                 val elapsed = clock() - startedAt
                 if (satisfied) {
-                    val registration = node?.let { registry.append(listOf(it)) }
                     return@ToolFlow ToolFlowResult(
                         buildJsonObject {
                             put("state", state)
                             put("satisfied", true)
                             put("selector", selector)
                             put("elapsedMs", elapsed)
-                            registration?.let {
-                                put("snapshotId", it.snapshotId)
-                                put("node", it.entries.single().node.toJson(it.entries.single().ref))
-                            }
+                            node?.let { put("node", it.toJson(selector = UiSelectors.exact(it))) }
                         },
                     )
                 }
@@ -233,7 +275,7 @@ class UiTools(
             }
             val target = resolveTarget(tool, arguments, caller)
             performOnNode(
-                caller, method, JsonArray(listOf(target.selector)), target,
+                caller, method, emptyList(), target,
                 hint = if (long) {
                     "Android reports a long click as performed only when the node consumes it, so the press may still have taken effect (check with ui_dump or ui_wait_for); " +
                             "ui_dump marks long_clickable nodes, try such an ancestor, or use x and y with the ui_gesture group"
@@ -248,11 +290,13 @@ class UiTools(
     private fun setText(arguments: JsonObject): ToolFlow {
         val text = ToolArguments.string(arguments, Ui.TEXT).orEmpty()
         val append = ToolArguments.boolean(arguments, Ui.APPEND, false)
+        // The host keeps only bounded values in its snapshot, so the full current text is read from a node found by selector.
+        if (append && arguments.has(Ui.NODE_REF)) fail("${ToolCatalog.UI_SET_TEXT}: append needs a selector, because the current text is read from the node it finds; with nodeRef, set the whole text")
         return ToolFlow(ACTION_TIMEOUT_MS + QUERY_TIMEOUT_MS) { caller ->
             val target = resolveTarget(ToolCatalog.UI_SET_TEXT, arguments, caller)
-            val value = if (append) target.node.text + text else text
+            val value = if (append) (target as Target.Node).node.text + text else text
             performOnNode(
-                caller, "setText", JsonArray(listOf(target.selector, JsonPrimitive(value))), target,
+                caller, "setText", listOf(JsonPrimitive(value)), target,
                 hint = "target an enabled editable node (ui_dump marks them editable), for example the EditText itself rather than its container",
             )
             ToolFlowResult(
@@ -260,7 +304,7 @@ class UiTools(
                     put("action", "set_text")
                     put("performed", true)
                     put("via", target.via)
-                    put("target", target.node.toJson(target.ref))
+                    put("target", target.json())
                     put("text", value)
                     put("appended", append)
                 },
@@ -275,15 +319,14 @@ class UiTools(
         val method = if (forward) "scrollForward" else "scrollBackward"
         return ToolFlow(ACTION_TIMEOUT_MS * times + QUERY_TIMEOUT_MS) { caller ->
             val target = resolveTargetOrNull(ToolCatalog.UI_SCROLL, arguments, caller)
-                ?: findFirst(caller, SCROLLABLE_SELECTOR)?.let { Target(it, null, "scrollable", SCROLLABLE_SELECTOR) }
+                ?: findFirst(caller, SCROLLABLE_SELECTOR)?.let { Target.Node(it, "scrollable", SCROLLABLE_SELECTOR) }
                 ?: throw ToolFailureException(ToolFailure.nodeNotFound("no scrollable node in the active window; give nodeRef or selector"))
             var performed = 0
             for (i in 1..times) {
-                val result = caller.callOrThrow("accessibility", method, JsonArray(listOf(target.selector)), ACTION_TIMEOUT_MS, ACCESSIBILITY)
-                when ((result as? JsonPrimitive)?.takeIf { !it.isString }?.booleanOrNull) {
+                when (act(caller, method, emptyList(), target)) {
                     true -> performed++
                     false -> break
-                    null -> throw ToolFailureException(ToolFailure.nodeNotFound("${target.node.label()} disappeared before $method could run"))
+                    null -> throw ToolFailureException(ToolFailure.nodeNotFound("${target.label()} disappeared before $method could run"))
                 }
                 if (i < times) sleep(settleMs)
             }
@@ -295,7 +338,7 @@ class UiTools(
                     put("performed", performed)
                     put("atEnd", performed < times)
                     put("via", target.via)
-                    put("target", target.node.toJson(target.ref))
+                    put("target", target.json())
                     if (performed < times) put("hint", "the node stopped scrolling $direction after $performed of $times steps; it is at the end, or another node scrolls")
                 },
             )
@@ -373,9 +416,9 @@ class UiTools(
     // ------------------------------------------------------------------ helpers
 
     /**
-     * The node an action tool targets: a `nodeRef` is relocated by its fingerprint (the
-     * closest of the matches wins, none is `NODE_REF_STALE`), a `selector` by `findOne`
-     * (`NODE_NOT_FOUND` without a match).
+     * The node an action tool targets: a `nodeRef` becomes a host reference to the snapshot of
+     * `snapshotId` or of the newest `ui_dump` (the host relocates it when acting), a `selector`
+     * is resolved by `findOne` (`NODE_NOT_FOUND` without a match).
      */
     private suspend fun resolveTarget(tool: String, arguments: JsonObject, caller: BridgeCaller): Target =
         resolveTargetOrNull(tool, arguments, caller) ?: fail("$tool needs nodeRef (a #n reference from ui_dump) or selector")
@@ -385,21 +428,20 @@ class UiTools(
         val hasRef = arguments.has(Ui.NODE_REF)
         val hasSelector = arguments.has(Ui.SELECTOR)
         if (hasRef && hasSelector) fail("$tool accepts nodeRef or selector, not both")
+        if (arguments.has(Ui.SNAPSHOT_ID) && !hasRef) fail("$tool: snapshotId goes with nodeRef")
         if (hasRef) {
-            val ref = ToolArguments.string(arguments, Ui.NODE_REF).orEmpty().trim()
-            val entry = when (val resolution = registry.resolve(ref)) {
-                is NodeRefRegistry.Resolution.Found -> resolution.entry
-                is NodeRefRegistry.Resolution.Stale -> throw ToolFailureException(ToolFailure.nodeRefStale(ref.ifEmpty { "nodeRef" }, resolution.detail))
-            }
-            val candidates = UiNodeInfo.listFromJson(caller.callOrThrow("accessibility", "findAll", JsonArray(listOf(UiSelectors.relocation(entry.node))), QUERY_TIMEOUT_MS, ACCESSIBILITY))
-            val located = candidates.minByOrNull { it.bounds.distanceTo(entry.node.bounds) }
-                ?: throw ToolFailureException(ToolFailure.nodeRefStale(entry.ref, "(${entry.node.label()}) is no longer in the active window"))
-            return Target(located, entry.ref, "nodeRef", UiSelectors.exact(located))
+            val raw = ToolArguments.string(arguments, Ui.NODE_REF).orEmpty().trim()
+            val ref = HostSnapshots.normalizeRef(raw)
+                ?: throw ToolFailureException(ToolFailure.nodeRefStale(raw.ifEmpty { "nodeRef" }, "is not a node reference; ui_dump lists nodes as #n1, #n2, ..."))
+            val snapshotId = ToolArguments.string(arguments, Ui.SNAPSHOT_ID)?.trim()?.takeIf { it.isNotEmpty() }
+                ?: snapshots.latest?.id
+                ?: throw ToolFailureException(ToolFailure.nodeRefStale(ref, "refers to a node, but no ui_dump has been taken yet"))
+            return Target.Ref(ref, snapshotId)
         }
         if (hasSelector) {
             val selector = UiSelectors.parse(tool, arguments[Ui.SELECTOR])
             val node = findFirst(caller, selector) ?: throw ToolFailureException(ToolFailure.nodeNotFound("no node matches ${UiSelectors.describe(selector)} in the active window"))
-            return Target(node, null, "selector", selector)
+            return Target.Node(node, "selector", selector)
         }
         return null
     }
@@ -407,14 +449,30 @@ class UiTools(
     private suspend fun findFirst(caller: BridgeCaller, selector: JsonObject): UiNodeInfo? =
         UiNodeInfo.fromJson(caller.callOrThrow("accessibility", "findOne", JsonArray(listOf(selector)), QUERY_TIMEOUT_MS, ACCESSIBILITY))
 
-    /** Runs a selector action; `true` is success, `false` is `ACTION_FAILED`, `null` (no match) is `NODE_NOT_FOUND`. */
-    private suspend fun performOnNode(caller: BridgeCaller, method: String, args: JsonArray, target: Target, hint: String) {
-        val result = caller.callOrThrow("accessibility", method, args, ACTION_TIMEOUT_MS, ACCESSIBILITY)
-        when ((result as? JsonPrimitive)?.takeIf { !it.isString }?.booleanOrNull) {
+    /** Runs a node action; `true` is success, `false` is `ACTION_FAILED`, `null` (no match) is `NODE_NOT_FOUND`. */
+    private suspend fun performOnNode(caller: BridgeCaller, method: String, extraArgs: List<JsonElement>, target: Target, hint: String) {
+        when (act(caller, method, extraArgs, target)) {
             true -> Unit
-            false -> throw ToolFailureException(ToolFailure.actionFailed("${target.node.label()} did not perform $method", hint))
-            null -> throw ToolFailureException(ToolFailure.nodeNotFound("${target.node.label()} disappeared before $method could run"))
+            false -> throw ToolFailureException(ToolFailure.actionFailed("${target.label()} did not perform $method", hint))
+            null -> throw ToolFailureException(ToolFailure.nodeNotFound("${target.label()} disappeared before $method could run"))
         }
+    }
+
+    /**
+     * One host action on [target]: the host's boolean, or null when a selector no longer matches.
+     * A host reference the host cannot relocate any more answers `NODE_REF_STALE` with its reason.
+     */
+    private suspend fun act(caller: BridgeCaller, method: String, extraArgs: List<JsonElement>, target: Target): Boolean? {
+        val args = JsonArray(listOf(target.hostTarget) + extraArgs)
+        val result = when (val outcome = caller.call("accessibility", method, args, ACTION_TIMEOUT_MS, ACCESSIBILITY)) {
+            is BridgeOutcome.Ok -> outcome.result
+            is BridgeOutcome.Failed -> {
+                val reason = staleReason(outcome.failure.message)
+                if (target is Target.Ref && reason != null) throw ToolFailureException(ToolFailure.nodeRefStale(target.ref, "is stale: $reason"))
+                throw ToolFailureException(outcome.failure)
+            }
+        }
+        return (result as? JsonPrimitive)?.takeIf { !it.isString }?.booleanOrNull
     }
 
     /** Runs a coordinate gesture; the host answers `true` when the system completed it. */
@@ -429,7 +487,7 @@ class UiTools(
         put("action", action)
         put("performed", true)
         put("via", target.via)
-        put("target", target.node.toJson(target.ref))
+        put("target", target.json())
     }
 
     /** Refuses points beyond the screen; the size comes from `device.info` and is cached for a minute. */
@@ -517,5 +575,13 @@ class UiTools(
 
         /** The default target of `ui_scroll`: the first scrollable node in pre-order. */
         val SCROLLABLE_SELECTOR: JsonObject = buildJsonObject { put("scrollable", true) }
+
+        /** The host dump format whose rows carry `#n` references kept in a host snapshot. */
+        const val HOST_FORMAT_COMPACT = "compact"
+
+        private val STALE = Regex("""NODE_REF_STALE: ([^;]{1,200})""")
+
+        /** The host's reason in `NODE_REF_STALE: window changed; take a new compact dump.`, or null for another error. */
+        fun staleReason(message: String): String? = STALE.find(message)?.groupValues?.get(1)?.trim()
     }
 }

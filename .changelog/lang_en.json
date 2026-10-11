@@ -7,12 +7,17 @@
   "$data": {
     "v1.1.0": {
       "released_date": "2026/10/11",
+      "hint": [
+        "Requires AutoJs6 6.8.0 build 5298 or later (previously 5279), because node references now rely on AutoJs6",
+        "Behavior change of the ui tools: ui_find and ui_wait_for return a selector for each node instead of a #n reference, the json and xml forms of ui_dump have no references, ui_set_text with append needs a selector, and ui_dump shows full resource ids"
+      ],
       "fix": [
         "The status bar of the settings and release history pages did not take the theme color on Android 15 and later (only the toolbar did)",
         "Pairing requests from a computer could stay invisible on the phone on Android 14 and later when notifications were not allowed (the settings page now shows a pending request when it opens and points out that notifications are off)"
       ],
       "improvement": [
-        "AutoJs6 6.8.0 build 5283 and later connect to the plugin through the capability interface AutoJs6 shares with its other plugins (MCP contract version 2); earlier builds keep the original interface, so the required AutoJs6 version stays the same"
+        "AutoJs6 connects to the plugin through the capability interface it shares with its other plugins (MCP contract version 2)",
+        "The #n references of ui_dump are kept by AutoJs6, which finds the node again when you act on it: a reference keeps working while the window and the node stay the same instead of expiring after 60 s, the newest 8 dumps stay available through snapshotId, and a stale reference says why"
       ],
       "dependency": [
         "AutoJs6 plugin API files updated to host build 6.8.0 / 5329, with `host-capability-api.aar` (AutoJs6 module `plugin-api/host-capability-api`, MPL 2.0) added; all hash-locked in `locks/host-api-aars.lock`"

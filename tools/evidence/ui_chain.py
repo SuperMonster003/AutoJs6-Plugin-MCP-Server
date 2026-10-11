@@ -1,9 +1,11 @@
 """The UI tools on a third-party app (roadmap P3.2 / P9): dump -> click -> set_text -> scroll -> back.
 
-The app is the system Settings, opened with `android.settings.SETTINGS`: `ui_dump` of its main page,
-`ui_find` of the search entry (by its text, description or id, then the innermost clickable node
-containing it, since search bars often draw their hint in a non-clickable child), `ui_click` on it
-by `#n` reference, `ui_wait_for` an editable node,
+The app is the system Settings, opened with `android.settings.SETTINGS`: `ui_find` of the search
+entry on its main page (by its text, description or id, then the innermost clickable node containing
+it, since search bars often draw their hint in a non-clickable child), `ui_dump` to get that node's
+`#n` reference, `ui_click` on it by reference (the host relocates it in its snapshot, roadmap P10),
+the same reference once more after the screen changed (`NODE_REF_STALE` expected), `ui_wait_for`
+an editable node,
 `ui_set_text` of a one-letter query (many results), `ui_scroll` of the results (or, when they do
 not scroll, of the main list after one back), then `ui_press_key back` until Settings is left. No setting is changed and nothing is submitted.
 
@@ -20,6 +22,7 @@ import argparse
 import datetime
 import json
 import pathlib
+import re
 import sys
 import time
 
@@ -40,9 +43,10 @@ SEARCH_SELECTORS = [
     {"idMatches": ".*search.*"},
 ]
 EDITABLE = {"className": "android.widget.EditText"}
+ROW = re.compile(r"^#n(\d+) +(.*) (?:\[(-?\d+),(-?\d+)]\[(-?\d+),(-?\d+)]|c=\((-?\d+),(-?\d+)\))$")
 
 
-def call(client: McpClient, name: str, arguments: dict | None = None, timeout: float = 60) -> tuple[dict, dict]:
+def call(client: McpClient, name: str, arguments: dict | None = None, timeout: float = 60, text: list | None = None) -> tuple[dict, dict]:
     started = time.perf_counter()
     result, _ = client.request("tools/call", {"name": name, "arguments": arguments or {}}, timeout=timeout)
     structured = result.get("structuredContent") or {}
@@ -50,7 +54,25 @@ def call(client: McpClient, name: str, arguments: dict | None = None, timeout: f
     if result.get("isError"):
         step["code"] = ((structured.get("error") or {}).get("code")
                         or (result.get("content") or [{}])[0].get("text", "").split(":")[0])
+    if text is not None:
+        text.extend(item.get("text", "") for item in result.get("content") or [] if item.get("type") == "text")
     return step, structured
+
+
+def ref_for(dump_text: str, bounds: dict) -> str | None:
+    """The `#n` reference of the dump row at [bounds]: a container by its bounds, a clickable leaf by its centre."""
+    edges = [bounds.get(key) for key in ("left", "top", "right", "bottom")]
+    centre = ((edges[0] + edges[2]) // 2, (edges[1] + edges[3]) // 2)
+    for line in dump_text.splitlines():
+        match = ROW.match(line.rstrip())
+        if not match:
+            continue
+        if match.group(3) is not None:
+            if [int(match.group(i)) for i in (3, 4, 5, 6)] == edges:
+                return f"#n{match.group(1)}"
+        elif (int(match.group(7)), int(match.group(8))) == centre and "clickable" in match.group(2).split():
+            return f"#n{match.group(1)}"
+    return None
 
 
 def window_package(client: McpClient) -> str | None:
@@ -64,10 +86,6 @@ def run_chain(client: McpClient, settings_package: str) -> dict:
     steps = facts["steps"]
     facts["windowBefore"] = window_package(client)
 
-    step, dump = call(client, "ui_dump")
-    step["nodeCount"] = dump.get("nodeCount")
-    steps.append(step)
-
     entry = None
     for selector in SEARCH_SELECTORS:
         step, found = call(client, "ui_find", {"selector": selector, "limit": 3})
@@ -80,7 +98,7 @@ def run_chain(client: McpClient, settings_package: str) -> dict:
             break
     if entry is None:
         raise DeviceError("no search entry found in Settings")
-    ref = entry.get("ref")
+    target = entry
     if not entry.get("clickable"):
         # Pre-order lists ancestors first, so the last clickable node containing the entry is the innermost one.
         step, around = call(client, "ui_find", {"selector": {"clickable": True, "boundsContains": entry.get("bounds")}, "limit": 50})
@@ -90,11 +108,28 @@ def run_chain(client: McpClient, settings_package: str) -> dict:
         containing = around.get("nodes") or []
         if not containing:
             raise DeviceError("the search entry has no clickable ancestor")
-        ref = containing[-1].get("ref")
+        target = containing[-1]
+
+    dump_text: list = []
+    step, dump = call(client, "ui_dump", {"maxNodes": 400}, text=dump_text)
+    step["nodeCount"] = dump.get("nodeCount")
+    step["snapshot"] = bool(dump.get("snapshotId"))
+    steps.append(step)
+    ref = ref_for("\n".join(dump_text), target.get("bounds") or {})
+    facts["refFound"] = ref is not None
+    if ref is None:
+        raise DeviceError("the search entry is not a row of the dump")
 
     step, clicked = call(client, "ui_click", {"nodeRef": ref})
     step["via"] = clicked.get("via")
     steps.append(step)
+    time.sleep(1.5)
+
+    # The search page replaced the window the snapshot was taken in, so the host refuses the old reference.
+    step, _ = call(client, "ui_click", {"nodeRef": ref})
+    step["purpose"] = "stale reference after the screen changed"
+    steps.append(step)
+    facts["staleAfterChange"] = step.get("code") == "NODE_REF_STALE"
 
     step, waited = call(client, "ui_wait_for", {"selector": EDITABLE, "state": "appear", "timeoutMs": 8000}, timeout=30)
     step["satisfied"] = waited.get("satisfied")

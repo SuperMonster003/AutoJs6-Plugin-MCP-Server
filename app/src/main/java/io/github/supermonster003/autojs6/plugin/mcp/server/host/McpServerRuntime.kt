@@ -26,7 +26,7 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfigSto
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerLifecycleStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerStatusStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.CatalogToolExecutor
-import io.github.supermonster003.autojs6.plugin.mcp.server.tools.NodeRefRegistry
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.HostSnapshots
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolCatalog
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolPermissionStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolRegistry
@@ -84,8 +84,8 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
 
     val toolPermissions: ToolPermissionStore = ToolPermissionStore(this.context)
 
-    /** The `#n` references of the last `ui_dump` (roadmap D12); one snapshot per process. */
-    val nodeRefs: NodeRefRegistry = NodeRefRegistry()
+    /** The newest host snapshot behind the `#n` references of `ui_dump` (roadmap D12 / P10); it belongs to the current host session. */
+    val nodeRefs: HostSnapshots = HostSnapshots()
 
     private val lifecycleThread = AtomicReference<Thread>()
     private val lifecycle = Executors.newSingleThreadExecutor { runnable ->
@@ -97,7 +97,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
 
     private val info by lazy { this.context.mcpServerPluginRuntimeInfo() }
     private val uiTools = UiTools(nodeRefs, permissions = { toolPermissions.load() })
-    private val screenTools = ScreenTools(nodeRefs = nodeRefs, annotator = AndroidImageAnnotator)
+    private val screenTools = ScreenTools(snapshots = nodeRefs, annotator = AndroidImageAnnotator)
     private val fileTools = FileTools()
     private val deviceTools = DeviceTools()
     private val shellTools = ShellTools { toolPermissions.load() }
@@ -311,6 +311,8 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
             this.session = session
         }
         replaced?.detach()
+        // Host snapshots live in the broker of one session; ids of a replaced session are unknown to the new one.
+        nodeRefs.clear()
         val grant = transport.brokerInfo
         Log.i(TAG, "Session ${session.id} (contract v$contractVersion) opened by uid $callerUid: broker ${grant.brokerId ?: "?"} v${grant.brokerVersion}, ${grant.methods.size} granted methods, ${grant.maxConcurrentCalls} concurrent calls, host label ${config.hostLabel ?: "-"}")
         lifecycle.execute {

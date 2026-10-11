@@ -117,6 +117,21 @@ condition, as are an empty selector, an unknown key, a wrong type, and a conditi
 
 ### Node references
 
+Since 1.1.0 (roadmap P10) the host keeps the references. `ui_dump` (its default text form) asks
+for `accessibility.dump({format: "compact"})`; the host renders the compact text below, keeps the
+rows in a snapshot (`snapshotId`, the newest 8 per host session, least recently used first out),
+and an action on a `nodeRef` is one host call with `{nodeRef, snapshotId}` as its target (the
+snapshot of the newest dump unless the tool call names one). The host relocates the node by its
+fingerprint within bounded movement and the same window, acts with the same climbing rules as a
+selector, and answers `invalid-request` with `NODE_REF_STALE: <reason>` when the window changed or
+the node no longer matches; the plugin passes the reason on (`#n3 is stale: window changed`). The
+json and xml dump forms carry no references, and `ui_find` / `ui_wait_for` return an exact
+selector per node instead of appending to the snapshot. `ui_set_text` with `append` needs a
+selector, since the snapshot holds only bounded values. `screen_capture(annotate)` draws the rows
+of the newest dump (a leaf, shown by its centre, gets a small square). The host requirement became
+5298, the first build after the relocation fixes of 5290 - 5297. The rest of this section describes
+1.0.x.
+
 `ui_dump` replaces the snapshot (`s1`, `s2`, ...) and numbers its nodes `#n1`, `#n2`, ... in
 pre-order; `ui_find` and `ui_wait_for` append their nodes to the current snapshot (and start one
 when there is none). A reference lives 60 s. An action on a `nodeRef` makes two host calls: an
@@ -142,7 +157,7 @@ The header names the window (package and the activity's short form), the root bo
 count, and `truncated=true` when the host cut the tree. Each line is the reference, one space per
 depth, the simple class name, the markers (`clickable`, `long_clickable`, `checkable`, `checked`,
 `scrollable`, `editable`, `focused`, `selected`, `!enabled`, `hidden`), `"text"`, `desc="..."`,
-`id=<short id>`, and either the bounds (a node with children) or the centre `c=(x,y)` (a leaf).
+`id=<short id>` (the full resource id since 1.1.0, as the host renders it), and either the bounds (a node with children) or the centre `c=(x,y)` (a leaf).
 Text is escaped and cut at 40 characters. A closing line says when listed nodes have children
 that are not shown (`visibleOnly`, `maxDepth`, or the `maxNodes` budget) and names the knobs
 (`maxNodes` up to 400, `maxDepth`, `ui_find`).

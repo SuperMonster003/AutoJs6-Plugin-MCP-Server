@@ -27,12 +27,12 @@ import kotlin.math.roundToInt
  * descriptor bytes into MCP image content. Captures are serialized, including consent, and
  * their complete queue/consent/retry budget is bounded. The host reuses a live projection on
  * repeated requests and releases it with its session; no stale authorization flag is cached here.
- * With `annotate`, the live `#n` references of [nodeRefs] are drawn on each captured image by
- * [annotator] before its size is checked (roadmap P9).
+ * With `annotate`, the `#n` references of the newest `ui_dump` in [snapshots] are drawn on each
+ * captured image by [annotator] before its size is checked (roadmap P9 / P10).
  */
 class ScreenTools(
     private val clock: () -> Long = { System.nanoTime() / 1_000_000L },
-    private val nodeRefs: NodeRefRegistry? = null,
+    private val snapshots: HostSnapshots? = null,
     private val annotator: ImageAnnotator? = null,
 ) : ToolFlows {
 
@@ -74,7 +74,7 @@ class ScreenTools(
             maxWidth = minOf(croppedWidth, (Screen.DEFAULT_LONG_EDGE.toDouble() * croppedWidth / maxOf(croppedWidth, croppedHeight)).roundToInt().coerceAtLeast(1))
         }
         var quality = requested.quality
-        val live = if (requested.annotate) nodeRefs?.live() else null
+        val latest = if (requested.annotate) snapshots?.latest else null
         var projection = false
         var captureAttempts = 0
         while (captureAttempts < Screen.MAX_ATTEMPTS) {
@@ -117,7 +117,7 @@ class ScreenTools(
                     var data = payload.data
                     var annotation: JsonObject? = null
                     if (requested.annotate) {
-                        val annotated = annotate(data, expectedMime, quality, live, width, requested.region, outputWidth, outputHeight)
+                        val annotated = annotate(data, expectedMime, quality, latest, width, requested.region, outputWidth, outputHeight)
                         data = annotated.first
                         annotation = annotated.second
                     }
@@ -157,22 +157,22 @@ class ScreenTools(
         throw ToolFailureException(ToolFailure.limitExceeded("the screenshot still exceeds 4 MiB after $captureAttempts bounded attempts"))
     }
 
-    /** The image with the live references drawn on it, and the `annotation` summary of the result. */
+    /** The image with the references of the newest dump drawn on it, and the `annotation` summary of the result. */
     private fun annotate(
-        image: ByteArray, mime: String, quality: Int, live: NodeRefRegistry.Registration?, screenWidth: Int,
+        image: ByteArray, mime: String, quality: Int, latest: HostSnapshots.Snapshot?, screenWidth: Int,
         region: Region?, outputWidth: Int, outputHeight: Int,
     ): Pair<ByteArray, JsonObject> {
-        if (live == null || live.entries.isEmpty()) {
+        if (latest == null || latest.rows.isEmpty()) {
             return image to buildJsonObject {
-                live?.let { put("snapshotId", it.snapshotId) }
+                latest?.let { put("snapshotId", it.id) }
                 put("drawn", 0)
-                put("hint", "no live node references: call ui_dump (or ui_find) first; references expire after ${NodeRefRegistry.TTL_MS / 1000} s")
+                put("hint", "no node references: call ui_dump first (its default text form); the image shows the references of the newest dump")
             }
         }
-        val layout = ScreenAnnotations.layout(live.entries, screenWidth, region?.let { Bounds(it.left, it.top, it.right, it.bottom) }, outputWidth, outputHeight)
+        val layout = ScreenAnnotations.layout(latest.rows, screenWidth, region?.let { Bounds(it.left, it.top, it.right, it.bottom) }, outputWidth, outputHeight)
         val drawn = if (layout.marks.isEmpty()) image else annotator?.annotate(image, mime, quality, layout.marks)
         return (drawn ?: image) to buildJsonObject {
-            put("snapshotId", live.snapshotId)
+            put("snapshotId", latest.id)
             put("drawn", if (drawn == null) 0 else layout.marks.size)
             put("skipped", layout.skipped)
             if (drawn == null) put("hint", "the image could not be annotated; it is returned unchanged")

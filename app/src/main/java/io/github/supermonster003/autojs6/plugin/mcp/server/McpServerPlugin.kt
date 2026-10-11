@@ -33,9 +33,11 @@ object McpServerPlugin {
 
     /**
      * Minimum AutoJs6 `versionCode` able to list this plugin. The current value is the 6.8.0
-     * host build that ships the MCP contract module and the capability broker (roadmap P1.4).
+     * host build whose compact dumps keep node snapshots and relocate `{nodeRef, snapshotId}`
+     * targets with the fixes of builds 5290 - 5297 (roadmap P10); earlier builds from 5279 on
+     * served plugin 1.0.x, which kept its own references.
      */
-    const val REQUIRED_HOST_VERSION = 5279L
+    const val REQUIRED_HOST_VERSION = 5298L
 
     /** Default TCP port of the MCP endpoint (decision D16); loopback only unless the user opts in. */
     const val DEFAULT_PORT = 9637

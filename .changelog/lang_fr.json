@@ -7,12 +7,17 @@
   "$data": {
     "v1.1.0": {
       "released_date": "2026/10/11",
+      "hint": [
+        "Nécessite AutoJs6 6.8.0 build 5298 ou ultérieur (auparavant 5279), car AutoJs6 gère désormais les références de nœuds",
+        "Changement de comportement des outils ui: ui_find et ui_wait_for renvoient un sélecteur par nœud au lieu d'une référence #n, les formes json et xml de ui_dump n'ont pas de références, append de ui_set_text nécessite un sélecteur et ui_dump affiche les identifiants de ressource complets"
+      ],
       "fix": [
         "La barre d'état des pages des paramètres et de l'historique des versions ne prenait pas la couleur du thème sur Android 15 et ultérieur (seule la barre d'outils la prenait)",
         "Les demandes d'appairage depuis un ordinateur pouvaient ne pas apparaître du tout sur le téléphone sous Android 14 et ultérieur si les notifications n'étaient pas autorisées (la page des paramètres affiche désormais la demande en attente à son ouverture et signale que les notifications sont désactivées)"
       ],
       "improvement": [
-        "AutoJs6 6.8.0 à partir du build 5283 se connecte au plugin par l'interface de capacités qu'AutoJs6 partage avec ses autres plugins (contrat MCP version 2); les builds antérieurs gardent l'interface d'origine, la version d'AutoJs6 requise ne change donc pas"
+        "AutoJs6 se connecte au plugin par l'interface de capacités qu'il partage avec ses autres plugins (contrat MCP version 2)",
+        "AutoJs6 conserve les références #n de ui_dump et retrouve lui-même le nœud lors d'une action: une référence reste valable tant que la fenêtre et le nœud ne changent pas (plus d'expiration après 60 s), les 8 derniers dumps restent accessibles via snapshotId et une référence périmée indique la raison"
       ],
       "dependency": [
         "Fichiers de l'API des plugins AutoJs6 mis à jour vers le build de l'hôte 6.8.0 / 5329, avec l'ajout de `host-capability-api.aar` (module `plugin-api/host-capability-api` d'AutoJs6, MPL 2.0); empreintes verrouillées dans `locks/host-api-aars.lock`"

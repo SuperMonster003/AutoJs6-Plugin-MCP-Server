@@ -5,10 +5,8 @@ import org.junit.Test
 
 class ScreenAnnotationsTest {
 
-    private fun entries(vararg nodes: Pair<Bounds, Boolean>): List<NodeRefRegistry.Entry> =
-        nodes.mapIndexed { i, (bounds, visible) ->
-            NodeRefRegistry.Entry(i + 1, UiNodeInfo("android.view.View", "", "", "", bounds, clickable = true, enabled = true, visible = visible), 0L)
-        }
+    private fun entries(vararg nodes: Pair<Bounds, Boolean>): List<HostSnapshots.Row> =
+        nodes.mapIndexed { i, (bounds, visible) -> HostSnapshots.Row("#n${i + 1}", bounds, leaf = false, hidden = !visible) }
 
     @Test
     fun `the whole screen is scaled uniformly by the output width`() {

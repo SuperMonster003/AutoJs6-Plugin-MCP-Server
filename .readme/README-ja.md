@@ -52,7 +52,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 
 ******
 
-バージョン 1.1.0: 37 ツール (既定で 33 が有効), MCP リソースとプロンプト, AutoJs6 のドロワースイッチとプラグイン設定画面. AutoJs6 6.8.0 (ビルド 5279) 以降が必要です. オプションの autojs6://docs/ リソースには AutoJs6 オフラインドキュメントプラグインと中継メソッドを持つホストも必要です. 進捗と証跡は [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) に記録しています.
+バージョン 1.1.0: 37 ツール (既定で 33 が有効), MCP リソースとプロンプト, AutoJs6 のドロワースイッチとプラグイン設定画面. AutoJs6 6.8.0 (ビルド 5298) 以降が必要です. オプションの autojs6://docs/ リソースには AutoJs6 オフラインドキュメントプラグインと中継メソッドを持つホストも必要です. 進捗と証跡は [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) に記録しています.
 
 ******
 
@@ -65,7 +65,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 - サーバー状態, USB 転送, ポートと LAN, トークンの表示/コピー/更新, ペアリング解除, ツールグループと root, 開発者モード, Claude Code / Cursor / Codex / VS Code / 汎用 HTTP 設定のコピー (QR コード表示も可), リリース履歴を提供し AutoJs6 の外観に追従します. ネットワーク変更はリスナーを再起動し, トークンと権限は即時反映します. 秘密情報の画面は撮影を防止します.
 - スクリプト実行: AutoJs6 内でテキストまたはファイルから JavaScript を実行し, エンジンの一覧表示と停止, 最近のコンソール出力の読み取りを行います.
 - アクセシビリティ UI: ノードツリーをコンパクトなテキスト形式で出力し, AutoJs6 のセレクター構文でノードを検索し, クリック, 長押し, スクロール, テキスト設定, 戻るやホームなどのグローバルキー操作を行います.
-- スクリーンショットグループ (P3.3): screen_capture は切り抜き, scale または maxWidth, JPEG / PNG / WebP, 品質指定に対応した MCP 画像を返します. 既定値は JPEG 品質 70, 長辺 1280 px です. base64 が 4 MiB を超える場合は品質やサイズを下げて再試行し, 変更をメタデータに記録します. screen_state は画面の点灯状態, サイズ, 向き, 密度を返します. ツール数は 37 になりました. MediaProjection のフォールバックには 2026-09-13 以降にビルドされた AutoJs6 と端末での許可が必要で, 許可はホストセッションで再利用されます. annotate: true を指定すると, 直近の ui_dump / ui_find の #n 参照を画像に描画し (ノードごとに枠とラベル), 画面上の要素と対応付けられます.
+- スクリーンショットグループ (P3.3): screen_capture は切り抜き, scale または maxWidth, JPEG / PNG / WebP, 品質指定に対応した MCP 画像を返します. 既定値は JPEG 品質 70, 長辺 1280 px です. base64 が 4 MiB を超える場合は品質やサイズを下げて再試行し, 変更をメタデータに記録します. screen_state は画面の点灯状態, サイズ, 向き, 密度を返します. ツール数は 37 になりました. MediaProjection のフォールバックには 2026-09-13 以降にビルドされた AutoJs6 と端末での許可が必要で, 許可はホストセッションで再利用されます. annotate: true を指定すると, 直近の ui_dump の #n 参照を画像に描画し (ノードごとに枠とラベル), 画面上の要素と対応付けられます.
 - 作業ディレクトリのツール (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1 から始まる行と列を指定する editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. バイナリ読み取りは base64 で元データ最大 1 MiB. 書き込みはホストの要求上限にも従います (通常は JSON エスケープ込みで 96 KiB). 削除と Shell は初期状態で無効. root には allowShellRoot とホストの shell.root 許可が必要です. 対応する P3.4 ホストビルドが必要です.
 - MCP リソース (P3.5) は読み取り専用の作業ファイル, ホストのサンプル参照, AutoJs6 オフラインドキュメントプラグインをインストールした場合のオフラインドキュメント, デバイス情報, 最近のコンソール出力を提供し, ペアリングとグループ設定に従います. テキストとバイナリの読み取りには切り詰め情報が含まれます. write_autojs6_script, automate_task, debug_selector は英語と中国語に対応し, その他の端末言語では英語を使用します.
 - 接続経路: `adb forward` による USB 接続, 明示的に有効化するローカルネットワーク接続, および HTTP トランスポートを持たないクライアント向けの PC 側 stdio ブリッジ.
@@ -89,19 +89,19 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 | `script_stop_all` | `script` | 有効 | Stops every script AutoJs6 is running, including ones started on the phone, and returns how many were stopped. |
 | `script_list` | `script` | 有効 | Lists the scripts AutoJs6 is running or starting, with executionId, name, path, working directory, state, and uptime. |
 | `console_tail` | `script` | 有効 | Returns the newest lines of the AutoJs6 console, which every script shares; optionally only entries after sinceId or at least a level. nextSinceId in the result continues from where this call ended. |
-| `ui_dump` | `ui` | 有効 | Dumps the accessibility node tree of the active window as compact text: one node per line with a #n reference, an indent per depth, the short class name, the state markers that apply (clickable, long_clickable, checkable, checked, scrollable, editable, focused, selected, !enabled, hidden), the text in quotes, desc=, id= (name part only), and the position (bounds [l,t][r,b] for a node with children, c=(x,y) for a leaf). Pass a #n reference as nodeRef to ui_click, ui_long_click, ui_set_text, or ui_scroll; references stay valid until the next ui_dump or for 60 s. Call it before acting and again after the screen changed. format json returns the nodes as objects with every flag; format xml returns the uiautomator-style export. |
-| `ui_find` | `ui` | 有効 | Finds the nodes of the active window that match every condition of the selector, optionally waiting up to timeoutMs for the first match, and returns up to limit of them with #n references, bounds, and center. An empty count is not an error; ui_explain_selector tells which condition fails. |
+| `ui_dump` | `ui` | 有効 | Dumps the accessibility node tree of the active window as compact text: one node per line with a #n reference, an indent per depth, the short class name, the state markers that apply (clickable, long_clickable, checkable, checked, scrollable, editable, focused, selected, !enabled, hidden), the text in quotes, desc=, id= (the full resource id), and the position (bounds [l,t][r,b] for a node with children, c=(x,y) for a leaf). Pass a #n reference as nodeRef to ui_click, ui_long_click, ui_set_text, or ui_scroll: AutoJs6 keeps the newest 8 dumps (snapshotId) and finds the node again when acting, so a reference works until the window changes or the node moves or changes. Call it before acting and again after the screen changed. format json returns the nodes as objects with every flag and format xml the uiautomator-style export; neither has references. |
+| `ui_find` | `ui` | 有効 | Finds the nodes of the active window that match every condition of the selector, optionally waiting up to timeoutMs for the first match, and returns up to limit of them with bounds, center, and a selector that pins each node (pass it as selector to the action tools). An empty count is not an error; ui_explain_selector tells which condition fails. |
 | `ui_current_window` | `ui` | 有効 | Returns the package and activity in the foreground, whether the AutoJs6 accessibility service is available, and the accessibility windows with their type, title, bounds, and focus. |
 | `ui_explain_selector` | `ui` | 有効 | Explains why a selector matches or not: evaluates its conditions one by one over the active window and reports how many nodes pass each step cumulatively, the first failing condition, the matches, and the near misses. Use it when ui_find returns nothing. |
-| `ui_wait_for` | `ui` | 有効 | Waits until a node matching the selector appears (default) or disappears, polling the active window every 0.5 s for up to timeoutMs, and answers TIMEOUT when the state is not reached. Use it after an action that opens a screen or dismisses a dialog. |
+| `ui_wait_for` | `ui` | 有効 | Waits until a node matching the selector appears (default) or disappears, polling the active window every 0.5 s for up to timeoutMs, and answers TIMEOUT when the state is not reached; an appeared node comes with a selector that pins it. Use it after an action that opens a screen or dismisses a dialog. |
 | `ui_click` | `ui` | 有効 | Clicks a node given by nodeRef (a #n reference from the last ui_dump), by selector (the first match in pre-order), or by x and y (a coordinate tap, allowed only while the ui_gesture group is enabled). The accessibility click climbs to the nearest clickable ancestor when the node itself is not clickable. Returns the node it acted on. Give nodeRef or selector, not both. |
 | `ui_long_click` | `ui` | 有効 | Long-presses a node given by nodeRef or selector (the accessibility long click climbs to the nearest node that accepts it), or by x and y as a 700 ms press at that point (allowed only while the ui_gesture group is enabled). Give nodeRef or selector, not both. |
-| `ui_set_text` | `ui` | 有効 | Sets the text of an editable node (an EditText, marked editable by ui_dump) given by nodeRef or selector; append adds to the current text instead of replacing it. Works without focus or the keyboard; ACTION_FAILED means the node is not editable or not enabled. Give nodeRef or selector, not both. |
+| `ui_set_text` | `ui` | 有効 | Sets the text of an editable node (an EditText, marked editable by ui_dump) given by nodeRef or selector; append adds to the current text instead of replacing it and needs a selector. Works without focus or the keyboard; ACTION_FAILED means the node is not editable or not enabled. Give nodeRef or selector, not both. |
 | `ui_scroll` | `ui` | 有効 | Scrolls a node given by nodeRef or selector, or the first scrollable node of the window when neither is given: forward, down, and right move towards the end, backward, up, and left towards the start; times repeats the step. performed counts the steps the node accepted, fewer than requested means it reached the end. Give nodeRef or selector, not both. |
 | `ui_press_key` | `ui` | 有効 | Presses a global key through the accessibility service: back, home, recents, notifications (opens the notification shade), quick_settings, power_dialog, or lock_screen (Android 9 or later). |
 | `ui_swipe` | `ui_gesture` | 無効 | Swipes one finger from (x1, y1) to (x2, y2) in device pixels over durationMs; take the coordinates from ui_dump bounds or a screenshot. Part of the ui_gesture group, which is off by default. |
 | `ui_gesture` | `ui_gesture` | 無効 | Performs a free-path one-finger gesture through the given points over durationMs (at most 10 s): the first point is the touch down, the last the lift. Part of the ui_gesture group, which is off by default. |
-| `screen_capture` | `screen` | 有効 | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. With annotate the #n references of the latest ui_dump / ui_find are drawn on the image. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
+| `screen_capture` | `screen` | 有効 | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. With annotate the #n references of the newest ui_dump are drawn on the image. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
 | `screen_state` | `screen` | 有効 | Read whether the screen is on, its current width and height, orientation, rotation, and density. Does not request screen capture consent. |
 | `files_list` | `files` | 有効 | Lists workspace files with metadata. Results are bounded and report truncation. |
 | `files_stat` | `files` | 有効 | Returns existence, type, size, and modification time of a workspace path. |
@@ -125,7 +125,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 
 ******
 
-1. AutoJs6 ビルド 5279 (6.8.0) 以降を搭載したデバイスに, [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) からプラグインの APK をインストールします.
+1. AutoJs6 ビルド 5298 (6.8.0) 以降を搭載したデバイスに, [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) からプラグインの APK をインストールします.
 2. AutoJs6 のプラグインセンターを開き, `MCP Server` が認識されていることを確認して有効にします. 公式リリースパッケージは署名検証を自動的に通過します.
 3. AutoJs6 のドロワーで MCP サーバーを有効にします. タイトルを長押しするかプラグインセンターの設定を開き, PC クライアント用の設定をコピーしてください.
 4. PC で `adb forward tcp:9637 tcp:9637` を実行し, MCP クライアントを `http://127.0.0.1:9637/mcp` に向け, トークンを Bearer 資格情報として指定します.
@@ -285,7 +285,7 @@ service action: org.autojs.plugin.MCP_SERVER
 service category: mcp-server
 info action: org.autojs.plugin.INFO
 aidl interface: org.autojs.plugin.mcp.server.api.IMcpServerPlugin
-minimum host build: 5279 (6.8.0)
+minimum host build: 5298 (6.8.0)
 default endpoint: http://127.0.0.1:9637/mcp
 ```
 
@@ -311,9 +311,12 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 _2026/10/11_
 
+- `ヒント` AutoJs6 6.8.0 のビルド 5298 以降が必要 (以前は 5279). ノード参照を AutoJs6 側で管理するようになったため
+- `ヒント` ui ツールの動作の変更: ui_find と ui_wait_for はノードごとに #n 参照ではなくセレクターを返し, ui_dump の json と xml 形式には参照が含まれず, ui_set_text の append にはセレクターが必要で, ui_dump は完全なリソース ID を表示する
 - `修正` Android 15 以降で設定ページと更新履歴ページのステータスバーがテーマカラーにならない (ツールバーのみ色が付く) 問題
 - `修正` Android 14 以降で通知が許可されていないと, パソコンからのペアリング要求が端末にまったく表示されないことがある問題 (設定ページを開くと保留中の要求を表示し, 通知がオフであることを案内するようにした)
-- `改善` AutoJs6 6.8.0 のビルド 5283 以降は, AutoJs6 がほかのプラグインと共有する機能インターフェースでこのプラグインに接続する (MCP コントラクト バージョン 2). それより前のビルドは従来のインターフェースを使い続けるため, 必要な AutoJs6 のバージョンは変わらない
+- `改善` AutoJs6 がほかのプラグインと共有する機能インターフェースでこのプラグインに接続するようになった (MCP コントラクト バージョン 2)
+- `改善` ui_dump の #n 参照を AutoJs6 が保持し, 操作時に AutoJs6 がノードを再特定するようになった: ウィンドウとノードが変わらない限り参照は有効で (60 秒で失効しない), snapshotId で直近 8 回の dump を使え, 失効した参照は理由を示す
 - `依存関係` AutoJs6 プラグイン API ファイルをホストビルド 6.8.0 / 5329 に更新し, `host-capability-api.aar` (AutoJs6 のモジュール `plugin-api/host-capability-api`, MPL 2.0) を追加. すべて `locks/host-api-aars.lock` でハッシュを固定
 
 #### v1.0.3

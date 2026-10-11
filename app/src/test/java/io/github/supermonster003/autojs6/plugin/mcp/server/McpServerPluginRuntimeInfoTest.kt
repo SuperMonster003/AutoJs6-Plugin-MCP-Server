@@ -34,7 +34,7 @@ class McpServerPluginRuntimeInfoTest {
         assertEquals(1L, info.versionCode)
         assertEquals("Sep 7, 2026", info.versionDate)
         assertArrayEquals(emptyArray<String>(), info.supportedAbis)
-        assertEquals(5279L, info.requiresHostVersion)
+        assertEquals(5298L, info.requiresHostVersion)
         assertEquals(McpServerPlugin.REQUIRED_HOST_VERSION, info.requiresHostVersion)
     }
 
@@ -59,7 +59,8 @@ class McpServerPluginRuntimeInfoTest {
         fun info(host: Long?) = McpServerPluginRuntimeInfo("MCP Server", "d", null, "1.1.0", 1L, "Oct 11, 2026", hostVersionCode = host)
 
         assertEquals(1, info(null).contractVersion)
-        assertEquals(1, info(McpServerPlugin.REQUIRED_HOST_VERSION).contractVersion)
+        assertEquals(1, info(5279L).contractVersion)
+        assertEquals(2, info(McpServerPlugin.REQUIRED_HOST_VERSION).contractVersion)
         assertEquals(1, info(HostContractVersion.V2_MIN_HOST_VERSION - 1).contractVersion)
         assertEquals(2, info(HostContractVersion.V2_MIN_HOST_VERSION).contractVersion)
         assertEquals(2, info(5329L).contractVersion)

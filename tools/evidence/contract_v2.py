@@ -5,8 +5,8 @@ host then opens the listener with `openServerV2` (shared host capability broker)
 With the drawer listener running, the scenario records the host and plugin versions, the contract
 version of the session the host opened after the evidence helpers restarted the plugin (dumpsys
 and the plugin's own log line), and a few tools that reach the host through that broker, including
-a descriptor payload (`screen_capture`, only while the AutoJs6 accessibility service runs). The
-report holds statuses, sizes and timings, never content.
+a descriptor payload (`screen_capture` with the `#n` references of the dump drawn on it, only while
+the AutoJs6 accessibility service runs). The report holds statuses, sizes and timings, never content.
 
 Uses the listener the drawer switched on when it runs (the host reopens it after the helpers);
 otherwise the host androidTest APK holds a session as in the other scenarios.
@@ -43,7 +43,7 @@ CALLS = [
 ]
 # Returned through a descriptor. Called only when ui_dump worked: without the accessibility service the
 # host falls back to MediaProjection, which shows a consent dialog on the phone.
-CAPTURE = ("screen_capture", {"maxWidth": 64})
+CAPTURE = ("screen_capture", {"maxWidth": 320, "annotate": True})
 
 
 def call(client, name: str, arguments: dict) -> dict:
@@ -62,6 +62,8 @@ def call(client, name: str, arguments: dict) -> dict:
         "contentTypes": sorted({item.get("type") for item in content}),
         "imageBytes": sum(len(item.get("data", "")) * 3 // 4 for item in content if item.get("type") == "image"),
         "textBytes": sum(len(item.get("text", "").encode("utf-8")) for item in content if item.get("type") == "text"),
+        **({"snapshot": bool(structured.get("snapshotId"))} if name == "ui_dump" else {}),
+        **({"annotation": {k: v for k, v in structured["annotation"].items() if k in ("drawn", "skipped")}} if "annotation" in structured else {}),
     }
 
 

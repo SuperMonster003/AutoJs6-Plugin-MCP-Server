@@ -10,7 +10,6 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
-import kotlin.math.min
 
 /**
  * The selector dialect of the `ui` tools (roadmap D13): the keys of the host's `BridgeSelector`,
@@ -20,9 +19,9 @@ import kotlin.math.min
  * `idMatches` over any package, and a `className` without `.` is the short class name and
  * becomes a `classNameMatches` over any package.
  *
- * Also builds the selectors the node references need (D12): the relocation selector of a
- * fingerprint (class, id, text, description, bounds with a tolerance) and the exact selector
- * of a located node. Pure Kotlin; `UiSelectorsTest` covers it.
+ * Also builds the exact selector that pins a found node (class, id, text, description, and its
+ * exact bounds), which `ui_find` and `ui_wait_for` return for the action tools. Pure Kotlin;
+ * `UiSelectorsTest` covers it.
  */
 object UiSelectors {
 
@@ -38,11 +37,8 @@ object UiSelectors {
     /** Longest string condition; the host caps requests anyway, this keeps messages readable. */
     const val MAX_STRING_LENGTH = 4096
 
-    /** Text and description longer than this are left out of a fingerprint selector. */
+    /** Text and description longer than this are left out of an exact selector. */
     const val MAX_FINGERPRINT_TEXT = 256
-
-    /** How far a node may have moved, per side, and still be the node a reference means. */
-    const val BOUNDS_TOLERANCE_PX = 48
 
     private val STRING_KEYS = setOf("text", "textContains", "desc", "descContains", "id", "className")
     private val REGEX_KEYS = setOf("textMatches", "descMatches", "idMatches", "classNameMatches")
@@ -91,19 +87,6 @@ object UiSelectors {
         }
         if (out.isEmpty()) fail("$tool: $name needs at least one condition (${KEYS.joinToString(", ")})")
         return JsonObject(out)
-    }
-
-    /**
-     * The selector that finds the node a reference means again: class, id, text, and
-     * description when the fingerprint has them, and the bounds with a tolerance that stays
-     * below half the node size (so a neighbour of the same size never qualifies).
-     */
-    fun relocation(node: UiNodeInfo): JsonObject = buildJsonObject {
-        identity(node)
-        val bounds = node.bounds
-        val dx = min(BOUNDS_TOLERANCE_PX, bounds.width / 2)
-        val dy = min(BOUNDS_TOLERANCE_PX, bounds.height / 2)
-        put("boundsInside", bounds.expanded(dx, dy).toJson())
     }
 
     /** The selector that pins one located node: its identity plus its exact bounds. */

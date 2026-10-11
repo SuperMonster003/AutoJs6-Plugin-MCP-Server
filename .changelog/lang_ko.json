@@ -7,12 +7,17 @@
   "$data": {
     "v1.1.0": {
       "released_date": "2026/10/11",
+      "hint": [
+        "AutoJs6 6.8.0 빌드 5298 이상이 필요함 (이전에는 5279). 노드 참조를 AutoJs6가 관리하게 되었기 때문",
+        "ui 도구 동작 변경: ui_find와 ui_wait_for는 노드마다 #n 참조 대신 선택자를 반환하고, ui_dump의 json 및 xml 형식에는 참조가 없으며, ui_set_text의 append에는 선택자가 필요하고, ui_dump는 전체 리소스 ID를 표시함"
+      ],
       "fix": [
         "Android 15 이상에서 설정 페이지와 릴리스 기록 페이지의 상태 표시줄에 테마 색상이 적용되지 않던 문제 (툴바에만 적용됨)",
         "Android 14 이상에서 알림이 허용되지 않으면 컴퓨터의 페어링 요청이 휴대전화에 전혀 표시되지 않을 수 있던 문제 (이제 설정 페이지를 열면 대기 중인 요청을 표시하고 알림이 꺼져 있음을 안내함)"
       ],
       "improvement": [
-        "AutoJs6 6.8.0 빌드 5283 이상은 AutoJs6가 다른 플러그인과 함께 쓰는 기능 인터페이스로 이 플러그인에 연결함 (MCP 계약 버전 2). 이전 빌드는 기존 인터페이스를 그대로 사용하므로 필요한 AutoJs6 버전은 바뀌지 않음"
+        "AutoJs6가 다른 플러그인과 함께 쓰는 기능 인터페이스로 이 플러그인에 연결함 (MCP 계약 버전 2)",
+        "ui_dump의 #n 참조를 AutoJs6가 보관하고 동작할 때 AutoJs6가 노드를 다시 찾음: 창과 노드가 그대로인 동안 참조가 계속 유효하며 (60초 후 만료되지 않음), snapshotId로 최근 8번의 dump를 사용할 수 있고, 만료된 참조는 이유를 알려 줌"
       ],
       "dependency": [
         "AutoJs6 플러그인 API 파일을 호스트 빌드 6.8.0 / 5329로 업데이트하고 `host-capability-api.aar` (AutoJs6 모듈 `plugin-api/host-capability-api`, MPL 2.0)를 추가함. 모두 `locks/host-api-aars.lock`에 해시를 고정"

@@ -4,9 +4,11 @@ package io.github.supermonster003.autojs6.plugin.mcp.server.host
  * Which control-plane contract the plugin declares as `mcpServerContractVersion` (roadmap P10).
  *
  * The host reads the declared version before it opens a server and calls `openServer` for 1 or
- * `openServerV2` for 2; a host that only knows version 1 rejects a plugin declaring 2. The plugin
- * therefore declares 2 only to host builds that accept it and keeps version 1 for older ones, so
- * the required host version stays unchanged. Both transactions stay implemented either way.
+ * `openServerV2` for 2; a host that only knows version 1 rejects a plugin declaring 2 as invalid.
+ * The plugin therefore declares 2 only to host builds that accept it. Every host the plugin
+ * supports (`McpServerPlugin.REQUIRED_HOST_VERSION`) does; an older one still gets version 1, so it
+ * can read the plugin's metadata and report the required host version instead of a contract
+ * error. Both transactions stay implemented.
  */
 object HostContractVersion {
 

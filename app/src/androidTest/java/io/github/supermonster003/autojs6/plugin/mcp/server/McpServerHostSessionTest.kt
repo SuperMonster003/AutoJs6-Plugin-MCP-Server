@@ -52,8 +52,8 @@ import java.util.concurrent.CopyOnWriteArrayList
  * broker with the documented envelope -> host failures map onto plugin codes -> a switched-off
  * group hides its tools and answers `TOOL_DISABLED` -> `stop` / `close` end the listener; plus
  * `already_open`, `invalid_config`, and tools without a host session answering `HOST_UNAVAILABLE`.
- * Roadmap P3.2 adds the `ui` group: `ui_dump` -> compact text and `#n` references, `ui_click` by
- * reference (relocation, exact selector), a stale reference, `ui_set_text`, `ui_scroll`,
+ * Roadmap P3.2 adds the `ui` group: `ui_dump` -> the host's compact text and snapshot, `ui_click` by
+ * reference (`{nodeRef, snapshotId}` to the host, roadmap P10), a stale reference, `ui_set_text`, `ui_scroll`,
  * `ui_press_key` on the `keys` module, `ui_current_window`, and the `ui_gesture` switch (D22).
  */
 @RunWith(AndroidJUnit4::class)
@@ -274,51 +274,46 @@ class McpServerHostSessionTest {
         val held = post(toolsCallRequest(ToolCatalog.UI_DUMP), sessionId)
         assertTrue(runtime.server.pairingGate!!.approve(held.json().getJSONObject("error").getJSONObject("data").getString("fingerprint")))
 
-        // ui_dump: the host JSON nodes become the compact text and the #n references of snapshot s1.
+        // ui_dump: the host's compact dump and the snapshot that keeps its #n references.
         val dump = post(toolsCallRequest(ToolCatalog.UI_DUMP, """{"maxNodes":50}"""), sessionId).result()
         assertFalse(dump.toString(), dump.optBoolean("isError"))
         val dumpText = dump.getJSONArray("content").getJSONObject(0).getString("text")
         assertEquals("window: com.android.settings/.Settings  bounds=[0,0][1080,2400]  nodes=3", dumpText.lines()[0])
-        assertEquals("#n2  RecyclerView scrollable id=list [0,200][1080,2400]", dumpText.lines()[2])
+        assertEquals("#n2  RecyclerView scrollable id=com.android.settings:id/list [0,200][1080,2400]", dumpText.lines()[2])
         assertEquals("#n3   TextView clickable \"Wi-Fi\" c=(540,250)", dumpText.lines()[3])
         val dumpResult = dump.getJSONObject("structuredContent")
-        assertEquals("s1", dumpResult.getString("snapshotId"))
+        assertEquals(FAKE_SNAPSHOT_ID, dumpResult.getString("snapshotId"))
         assertEquals(3, dumpResult.getInt("nodeCount"))
         assertEquals("com.android.settings", dumpResult.getJSONObject("window").getString("packageName"))
         val dumpRequest = broker.requests.last()
         assertEquals("accessibility", dumpRequest.getString("module"))
         assertEquals("dump", dumpRequest.getString("method"))
-        assertEquals("json", dumpRequest.getJSONArray("args").getJSONObject(0).getString("format"))
+        assertEquals("compact", dumpRequest.getJSONArray("args").getJSONObject(0).getString("format"))
         assertEquals(50, dumpRequest.getJSONArray("args").getJSONObject(0).getInt("maxNodes"))
         assertEquals(listOf("accessibility"), dumpRequest.getJSONArray("permissions").toStringList())
         assertEquals(20_000L, dumpRequest.getLong("timeoutMs"))
         Log.i(TAG, "ui_dump through the broker:\n$dumpText")
 
-        // ui_click by nodeRef: relocation by fingerprint (the node drifted 10 px), then the exact selector.
+        // ui_click by nodeRef: one host call with the reference and the snapshot of the newest dump; the host relocates the node.
         val click = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"nodeRef":"#n3"}"""), sessionId).result()
         assertFalse(click.toString(), click.optBoolean("isError"))
         val clickResult = click.getJSONObject("structuredContent")
         assertEquals("click", clickResult.getString("action"))
         assertEquals("nodeRef", clickResult.getString("via"))
         assertEquals("#n3", clickResult.getJSONObject("target").getString("ref"))
-        assertEquals(210, clickResult.getJSONObject("target").getJSONObject("bounds").getInt("top"))
-        val relocation = broker.requests[broker.requests.size - 2]
-        assertEquals("findAll", relocation.getString("method"))
-        val relocationSelector = relocation.getJSONArray("args").getJSONObject(0)
-        assertEquals("Wi-Fi", relocationSelector.getString("text"))
-        assertEquals("android.widget.TextView", relocationSelector.getString("className"))
-        assertEquals(152, relocationSelector.getJSONObject("boundsInside").getInt("top"))
+        assertEquals(FAKE_SNAPSHOT_ID, clickResult.getJSONObject("target").getString("snapshotId"))
         val clickRequest = broker.requests.last()
         assertEquals("click", clickRequest.getString("method"))
-        val exact = clickRequest.getJSONArray("args").getJSONObject(0)
-        assertEquals(210, exact.getJSONObject("boundsInside").getInt("top"))
-        assertEquals(210, exact.getJSONObject("boundsContains").getInt("top"))
-        Log.i(TAG, "ui_click #n3: relocation $relocationSelector -> exact $exact")
+        val target = clickRequest.getJSONArray("args").getJSONObject(0)
+        assertEquals("#n3", target.getString("nodeRef"))
+        assertEquals(FAKE_SNAPSHOT_ID, target.getString("snapshotId"))
+        assertEquals(1, clickRequest.getJSONArray("args").length())
+        Log.i(TAG, "ui_click #n3: host target $target")
 
         val stale = post(toolsCallRequest(ToolCatalog.UI_CLICK, """{"nodeRef":"#n9"}"""), sessionId).result()
         assertTrue(stale.getBoolean("isError"))
         val staleText = stale.getJSONArray("content").getJSONObject(0).getString("text")
-        assertTrue(staleText, staleText.startsWith("NODE_REF_STALE: #n9 is not in the current snapshot s1"))
+        assertTrue(staleText, staleText.startsWith("NODE_REF_STALE: #n9 is stale: unknown node"))
         assertEquals("NODE_REF_STALE", stale.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
 
         val setText = post(toolsCallRequest(ToolCatalog.UI_SET_TEXT, """{"selector":{"id":"search"},"text":" more","append":true}"""), sessionId).result()
@@ -657,7 +652,14 @@ class McpServerHostSessionTest {
             val id = json.getString("id")
             var imageBytes: ByteArray? = null
             var payloadMime = "image/jpeg"
+            val nodeRef = json.optJSONArray("args")?.optJSONObject(0)?.optString("nodeRef").orEmpty()
             val response = when ("${json.getString("module")}.${json.getString("method")}") {
+                // Host snapshot references (roadmap P10): #n1 - #n3 exist in the fake snapshot, anything else is stale.
+                "accessibility.click", "accessibility.longClick", "accessibility.setText", "accessibility.scrollForward", "accessibility.scrollBackward"
+                    -> if (nodeRef.isEmpty()) null else if (nodeRef in setOf("#n1", "#n2", "#n3")) ok(id, true) else JSONObject().put("id", id).put("ok", false)
+                    .put("error", JSONObject().put("name", "Error").put("message", "NODE_REF_STALE: unknown node; take a new compact dump.").put("code", "invalid-request").put("category", "invalid-request"))
+                else -> null
+            } ?: when ("${json.getString("module")}.${json.getString("method")}") {
                 "app.listSamples" -> ok(id, JSONObject().put("available", true).put("truncated", false).put("entries", JSONArray().put(JSONObject().put("path", "Examples/hello.js").put("name", "hello.js").put("type", "file"))))
                 "app.readSample" -> ok(id, JSONObject().put("content", "console.log('sample');").put("encoding", "utf-8").put("bytes", 22).put("truncated", false))
                 "files.list", "files.stat", "files.write", "files.mkdir", "files.rename", "files.delete" -> ok(id, JSONObject().put("schema", "file-v1").put("path", json.getJSONArray("args").getString(0)))
@@ -748,7 +750,21 @@ class McpServerHostSessionTest {
                             .put("nextSinceId", 9).put("latestId", 9).put("total", 40).put("truncated", false).put("entries", entries),
                     )
                 }
-                "accessibility.dump" -> ok(
+                "accessibility.dump" -> if (json.getJSONArray("args").getJSONObject(0).optString("format") == "compact") ok(
+                    id,
+                    JSONObject().put("schema", "autojs6-bridge-accessibility-dump-v1").put("format", "compact").put("window", "active").put("roots", 1)
+                        .put("packageName", "com.android.settings").put("activityName", "com.android.settings.Settings").put("nodeCount", 3).put("truncated", false)
+                        .put("snapshotId", FAKE_SNAPSHOT_ID).put("windowIdentity", "ab12")
+                        .put(
+                            "text",
+                            listOf(
+                                "window: com.android.settings/.Settings  bounds=[0,0][1080,2400]  nodes=3",
+                                "#n1 FrameLayout [0,0][1080,2400]",
+                                "#n2  RecyclerView scrollable id=com.android.settings:id/list [0,200][1080,2400]",
+                                "#n3   TextView clickable \"Wi-Fi\" c=(540,250)",
+                            ).joinToString("\n"),
+                        ),
+                ) else ok(
                     id,
                     JSONObject().put("schema", "autojs6-bridge-accessibility-dump-v1").put("format", "json").put("window", "active").put("roots", 1)
                         .put("packageName", "com.android.settings").put("activityName", "com.android.settings.Settings").put("nodeCount", 3).put("truncated", false)
@@ -980,6 +996,7 @@ class McpServerHostSessionTest {
     private companion object {
         const val TAG = "McpServerHostSessionTest"
         const val CLIENT_NAME = "McpServerHostSessionTest"
+        const val FAKE_SNAPSHOT_ID = "fake-broker:1"
         const val PROTOCOL_VERSION = "2025-06-18"
         const val PORT = 9639
         const val SLOW_SCRIPT_MS = 2_600L

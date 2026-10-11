@@ -7,12 +7,17 @@
   "$data": {
     "v1.1.0": {
       "released_date": "2026/10/11",
+      "hint": [
+        "需要 AutoJs6 6.8.0 建置 5298 以上 (先前為 5279), 因為節點編號改由 AutoJs6 維護",
+        "ui 工具的行為變化: ui_find 與 ui_wait_for 為每個節點傳回選擇器而非 #n 編號, ui_dump 的 json 與 xml 格式不含編號, ui_set_text 的 append 需要使用選擇器, ui_dump 顯示完整的資源 id"
+      ],
       "fix": [
         "設定頁與發行歷史頁的狀態列在 Android 15 以上版本未跟隨主題色 (僅標題列著色) 的問題",
         "Android 14 以上版本未允許通知時, 來自電腦的配對請求在手機上可能完全看不到的問題 (現在開啟設定頁會顯示待確認的請求並提示通知已關閉)"
       ],
       "improvement": [
-        "AutoJs6 6.8.0 建置 5283 以上會透過 AutoJs6 與其他外掛共用的能力介面連接本外掛 (MCP 契約版本 2); 更早的建置繼續使用原介面, 因此所需的 AutoJs6 版本不變"
+        "AutoJs6 透過與其他外掛共用的能力介面連接本外掛 (MCP 契約版本 2)",
+        "ui_dump 的 #n 編號改由 AutoJs6 保存, 操作時由 AutoJs6 重新定位節點: 只要視窗和節點未變, 編號就持續有效 (不再 60 秒過期), 可透過 snapshotId 使用最近 8 次 dump, 編號失效時會說明原因"
       ],
       "dependency": [
         "更新 AutoJs6 外掛介面檔案至主程式建置 6.8.0/5329, 並附加 host-capability-api 本機模組 (MPL 2.0, 鎖定檔案雜湊)"

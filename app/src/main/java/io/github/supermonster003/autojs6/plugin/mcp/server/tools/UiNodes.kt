@@ -9,7 +9,6 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.put
-import kotlin.math.abs
 
 /** A screen rectangle in device pixels, as the host's `BridgeBounds` JSON (`{left, top, right, bottom}`) carries it. */
 data class Bounds(val left: Int, val top: Int, val right: Int, val bottom: Int) {
@@ -25,13 +24,6 @@ data class Bounds(val left: Int, val top: Int, val right: Int, val bottom: Int) 
 
     val centerY: Int
         get() = (top + bottom) / 2
-
-    /** Sum of the absolute edge differences; 0 for identical rectangles. */
-    fun distanceTo(other: Bounds): Int =
-        abs(left - other.left) + abs(top - other.top) + abs(right - other.right) + abs(bottom - other.bottom)
-
-    /** The rectangle grown by [dx] / [dy] on every side, never below 0. */
-    fun expanded(dx: Int, dy: Int): Bounds = Bounds((left - dx).coerceAtLeast(0), (top - dy).coerceAtLeast(0), right + dx, bottom + dy)
 
     /** `[l,t][r,b]`, the compact form of appendix B. */
     fun compact(): String = "[$left,$top][$right,$bottom]"
@@ -101,11 +93,11 @@ data class UiNodeInfo(
     }
 
     /**
-     * The JSON a tool result carries for the node: the descriptor fields, `center`, and, when
-     * [full], the tree position and every state flag (the `format = json` dump).
+     * The JSON a tool result carries for the node: the descriptor fields, `center`, when [full]
+     * the tree position and every state flag (the `format = json` dump), and, when given, the
+     * [selector] that pins this node for the action tools (`ui_find`, `ui_wait_for`).
      */
-    fun toJson(ref: String? = null, full: Boolean = false): JsonObject = buildJsonObject {
-        ref?.let { put("ref", it) }
+    fun toJson(selector: JsonObject? = null, full: Boolean = false): JsonObject = buildJsonObject {
         if (full) {
             put("depth", depth)
             put("index", index)
@@ -129,6 +121,7 @@ data class UiNodeInfo(
             put("focused", focused)
             put("selected", selected)
         }
+        selector?.let { put("selector", it) }
     }
 
     companion object {
