@@ -230,7 +230,7 @@ npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport 
 
 Cline, Gemini CLI 등의 클라이언트: 각자의 MCP 설정에서 같은 URL과 헤더를 사용합니다. 설정 페이지는 `"type": "http"` 가 포함된 범용 JSON 조각을 제공합니다 (최상위 키 `mcpServers`).
 
-Claude Desktop 등 stdio 전용 클라이언트: `npm install -g autojs6-mcp-bridge` 로 브리지를 설치하고 `autojs6-mcp-bridge --serial <serial>` 을 stdio 서버로 등록하며 환경 변수 블록에 `AUTOJS6_MCP_TOKEN` 을 넣습니다 (Claude Desktop 과 Claude Code 조각은 [브리지 README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) 참조). 브리지 0.1.0 은 플러그인 1.0.1 이상에서 동작하며 (공개 전 1.0.0 빌드로 검증, 이후 MCP 전송과 인증은 변경 없음) 클라이언트의 프로토콜 버전을 그대로 전달합니다. Claude Code 2.1.257 과 Claude Desktop 2.9939 의 stdio 연결로 검증했습니다. Windows 에서는 `npx` 를 거치기보다 전역 설치된 `autojs6-mcp-bridge/dist/cli.js` 를 `node` 로 직접 실행하는 편이 안정적입니다.
+Claude Desktop 등 stdio 전용 클라이언트: `npm install -g autojs6-mcp-bridge` 로 브리지를 설치하고 `autojs6-mcp-bridge --serial <serial>` 을 stdio 서버로 등록하며 환경 변수 블록에 `AUTOJS6_MCP_TOKEN` 을 넣습니다 (Claude Desktop 과 Claude Code 조각은 [브리지 README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) 참조). 브리지 0.1.1 (Node.js 22 이상 필요) 은 플러그인 1.0.1 이상에서 동작하고 클라이언트의 프로토콜 버전을 그대로 전달하며, 휴대전화의 리스너가 다시 시작되면 스스로 새 세션을 엽니다 (Node.js 18 이상용 0.1.0 은 이때 클라이언트에서 서버를 다시 시작해야 했습니다). Claude Code 2.1.257 과 Claude Desktop 2.9939 의 stdio 연결로 검증했습니다. Windows 에서는 `npx` 를 거치기보다 전역 설치된 `autojs6-mcp-bridge/dist/cli.js` 를 `node` 로 직접 실행하는 편이 안정적입니다.
 
 ******
 

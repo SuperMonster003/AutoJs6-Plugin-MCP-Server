@@ -230,7 +230,7 @@ npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport 
 
 Cline, Gemini CLI 等客户端: 在各自的 MCP 配置中使用相同的 URL 与头部; 设置页提供带 `"type": "http"` 的通用 JSON 片段 (顶层键为 `mcpServers`).
 
-Claude Desktop 及其他仅支持 stdio 的客户端: 用 `npm install -g autojs6-mcp-bridge` 安装桥接程序, 将 `autojs6-mcp-bridge --serial <serial>` 注册为 stdio 服务器并把 `AUTOJS6_MCP_TOKEN` 放入其环境变量块 (Claude Desktop 与 Claude Code 的片段见[桥接程序 README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)). 桥接程序 0.1.0 适用于插件 1.0.1 及以上 (发布前以 1.0.0 开发版验证, 此后 MCP 传输与鉴权未变), 透传客户端的协议版本; 已用 Claude Code 2.1.257 与 Claude Desktop 2.9939 经 stdio 验证. Windows 上可直接用 `node` 运行全局安装目录中的 `autojs6-mcp-bridge/dist/cli.js`, 比经 `npx` 启动更稳定.
+Claude Desktop 及其他仅支持 stdio 的客户端: 用 `npm install -g autojs6-mcp-bridge` 安装桥接程序, 将 `autojs6-mcp-bridge --serial <serial>` 注册为 stdio 服务器并把 `AUTOJS6_MCP_TOKEN` 放入其环境变量块 (Claude Desktop 与 Claude Code 的片段见[桥接程序 README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge)). 桥接程序 0.1.1 (需要 Node.js 22 或更新) 适用于插件 1.0.1 及以上, 透传客户端的协议版本, 手机监听器重启后会自动开启新会话 (0.1.0 适用 Node.js 18 或更新, 此时需要在客户端重启该服务器); 已用 Claude Code 2.1.257 与 Claude Desktop 2.9939 经 stdio 验证. Windows 上可直接用 `node` 运行全局安装目录中的 `autojs6-mcp-bridge/dist/cli.js`, 比经 `npx` 启动更稳定.
 
 ******
 

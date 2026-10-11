@@ -230,7 +230,7 @@ npx @modelcontextprotocol/inspector --cli http://127.0.0.1:9637/mcp --transport 
 
 Cline, Gemini CLI などのクライアント: それぞれの MCP 設定で同じ URL とヘッダーを使います. 設定ページには `"type": "http"` 付きの汎用 JSON 断片があります (最上位キーは `mcpServers`).
 
-Claude Desktop などの stdio 専用クライアント: `npm install -g autojs6-mcp-bridge` でブリッジをインストールし, `autojs6-mcp-bridge --serial <serial>` を stdio サーバーとして登録して, その環境変数ブロックに `AUTOJS6_MCP_TOKEN` を入れます (Claude Desktop と Claude Code の断片は[ブリッジの README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) を参照). ブリッジ 0.1.0 はプラグイン 1.0.1 以降で動作し (公開前の 1.0.0 ビルドで検証済み, その後 MCP の転送と認証は変更なし), クライアントのプロトコルバージョンをそのまま渡します. Claude Code 2.1.257 と Claude Desktop 2.9939 の stdio 接続で検証済みです. Windows では `npx` 経由より, グローバルにインストールした `autojs6-mcp-bridge/dist/cli.js` を `node` で直接実行する方が安定します.
+Claude Desktop などの stdio 専用クライアント: `npm install -g autojs6-mcp-bridge` でブリッジをインストールし, `autojs6-mcp-bridge --serial <serial>` を stdio サーバーとして登録して, その環境変数ブロックに `AUTOJS6_MCP_TOKEN` を入れます (Claude Desktop と Claude Code の断片は[ブリッジの README](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge) を参照). ブリッジ 0.1.1 (Node.js 22 以降が必要) はプラグイン 1.0.1 以降で動作し, クライアントのプロトコルバージョンをそのまま渡し, 端末のリスナーが再起動すると自動で新しいセッションを開きます (Node.js 18 以降向けの 0.1.0 では, その場合クライアントでサーバーを再起動する必要がありました). Claude Code 2.1.257 と Claude Desktop 2.9939 の stdio 接続で検証済みです. Windows では `npx` 経由より, グローバルにインストールした `autojs6-mcp-bridge/dist/cli.js` を `node` で直接実行する方が安定します.
 
 ******
 
