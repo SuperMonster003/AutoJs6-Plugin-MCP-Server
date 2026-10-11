@@ -39,6 +39,16 @@ object McpServerPlugin {
      */
     const val REQUIRED_HOST_VERSION = 5298L
 
+    /**
+     * First AutoJs6 build that binds the listener with `BIND_ALLOW_ACTIVITY_STARTS` (host commit
+     * 6b3ae51de6): on Android 14 and later the pairing dialog then also opens while AutoJs6 is in
+     * the foreground, not only while a window of this plugin is.
+     */
+    const val FOREGROUND_PAIRING_HOST_VERSION = 5333L
+
+    /** Whether a host of [hostVersionCode] lets the pairing dialog open in front of AutoJs6. */
+    fun showsPairingOverHost(hostVersionCode: Long?): Boolean = hostVersionCode != null && hostVersionCode >= FOREGROUND_PAIRING_HOST_VERSION
+
     /** Default TCP port of the MCP endpoint (decision D16); loopback only unless the user opts in. */
     const val DEFAULT_PORT = 9637
     const val ENDPOINT_PATH = "/mcp"

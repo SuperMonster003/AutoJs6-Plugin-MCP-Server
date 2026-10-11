@@ -5,6 +5,12 @@
   "changelog_label_improvement": "改善",
   "changelog_label_dependency": "依存関係",
   "$data": {
+    "v1.1.1": {
+      "released_date": "2026/10/12",
+      "improvement": [
+        "AutoJs6 6.8.0 のビルド 5333 以降では, 設定ページの通知オフの案内で, AutoJs6 が前面にあるときもペアリング要求が表示されることを説明するようにした"
+      ]
+    },
     "v1.1.0": {
       "released_date": "2026/10/11",
       "hint": [

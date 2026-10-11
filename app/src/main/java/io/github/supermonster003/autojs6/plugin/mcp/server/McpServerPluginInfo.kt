@@ -12,11 +12,6 @@ import org.autojs.plugin.mcp.server.api.McpServerCapabilityKeys
 /** Collects the installed package version and the localized metadata of this plugin. */
 internal fun Context.mcpServerPluginRuntimeInfo(): McpServerPluginRuntimeInfo {
     val packageInfo = packageManager.getPackageInfo(packageName, 0)
-    val hostPackageInfo = try {
-        packageManager.getPackageInfo(McpServerPlugin.HOST_PACKAGE_NAME, 0)
-    } catch (_: PackageManager.NameNotFoundException) {
-        null
-    }
     return McpServerPluginRuntimeInfo(
         name = getString(R.string.app_name),
         description = getString(R.string.plugin_description),
@@ -26,8 +21,15 @@ internal fun Context.mcpServerPluginRuntimeInfo(): McpServerPluginRuntimeInfo {
         versionName = packageInfo.versionName.orEmpty(),
         versionCode = packageInfo.versionCodeCompat,
         versionDate = getString(R.string.plugin_version_date),
-        hostVersionCode = hostPackageInfo?.versionCodeCompat,
+        hostVersionCode = hostVersionCode(),
     )
+}
+
+/** `versionCode` of the installed AutoJs6 host, or null when it is not installed. */
+internal fun Context.hostVersionCode(): Long? = try {
+    packageManager.getPackageInfo(McpServerPlugin.HOST_PACKAGE_NAME, 0).versionCodeCompat
+} catch (_: PackageManager.NameNotFoundException) {
+    null
 }
 
 private val PackageInfo.versionCodeCompat: Long

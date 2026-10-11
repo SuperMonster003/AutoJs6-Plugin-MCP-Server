@@ -28,6 +28,7 @@ import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import io.github.supermonster003.autojs6.plugin.mcp.server.McpServerPlugin
+import io.github.supermonster003.autojs6.plugin.mcp.server.hostVersionCode
 import io.github.supermonster003.autojs6.plugin.mcp.server.LocalNetworkAccess
 import io.github.supermonster003.autojs6.plugin.mcp.server.LocalNetworkPermissionActivity
 import io.github.supermonster003.autojs6.plugin.mcp.server.mcpServerPluginRuntimeInfo
@@ -106,7 +107,8 @@ class McpServerSettingsActivity : SettingsPageActivity() {
             restrictedHint = label(getString(R.string.settings_background_restricted), box).apply { visibility = View.GONE }
             batteryButton = button(R.string.settings_battery_settings, box, ::batterySettings).apply { visibility = View.GONE }
             button(R.string.settings_open_host, box, ::openHost)
-            notificationsHint = label(getString(R.string.settings_notifications_off), box).apply { visibility = View.GONE }
+            val notificationsOff = if (McpServerPlugin.showsPairingOverHost(hostVersionCode())) R.string.settings_notifications_off_host else R.string.settings_notifications_off
+            notificationsHint = label(getString(notificationsOff), box).apply { visibility = View.GONE }
             button(R.string.settings_notifications, box, ::notifications)
         }
         card(R.string.settings_network).also { box ->

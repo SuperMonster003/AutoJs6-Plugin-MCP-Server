@@ -90,6 +90,7 @@
     <string name="settings_no_clients">No paired clients</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_notifications_off">Notifications are off for MCP Server, so a pairing request from a computer only appears while this page is open. Allow notifications to confirm requests from anywhere.</string>
+    <string name="settings_notifications_off_host">Notifications are off for MCP Server, so a pairing request from a computer only appears while this page or AutoJs6 is in the foreground. Allow notifications to confirm requests from anywhere.</string>
     <string name="settings_open_host">Open AutoJs6</string>
     <string name="settings_paired_clients">Paired clients</string>
     <string name="settings_port">Port</string>

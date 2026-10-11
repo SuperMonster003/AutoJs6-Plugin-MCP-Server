@@ -90,6 +90,7 @@
     <string name="settings_no_clients">لا يوجد عملاء مقترنون</string>
     <string name="settings_notifications">الإشعارات</string>
     <string name="settings_notifications_off">إشعارات MCP Server متوقفة, لذلك لا يظهر طلب الاقتران من الكمبيوتر إلا أثناء فتح هذه الصفحة. اسمح بالإشعارات لتأكيد الطلبات من أي مكان.</string>
+    <string name="settings_notifications_off_host">إشعارات MCP Server متوقفة, لذلك لا يظهر طلب الاقتران من الكمبيوتر إلا أثناء ظهور هذه الصفحة أو AutoJs6 في المقدمة. اسمح بالإشعارات لتأكيد الطلبات من أي مكان.</string>
     <string name="settings_open_host">فتح AutoJs6</string>
     <string name="settings_paired_clients">العملاء المقترنون</string>
     <string name="settings_port">المنفذ</string>

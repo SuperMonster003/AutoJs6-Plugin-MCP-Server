@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Amélioration",
   "changelog_label_dependency": "Dépendance",
   "$data": {
+    "v1.1.1": {
+      "released_date": "2026/10/12",
+      "improvement": [
+        "Avec AutoJs6 6.8.0 build 5333 ou ultérieur, l'avis de notifications désactivées de la page des paramètres indique que les demandes d'appairage apparaissent aussi lorsque AutoJs6 est au premier plan"
+      ]
+    },
     "v1.1.0": {
       "released_date": "2026/10/11",
       "hint": [

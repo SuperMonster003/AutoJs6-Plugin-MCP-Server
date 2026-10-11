@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Mejora",
   "changelog_label_dependency": "Dependencia",
   "$data": {
+    "v1.1.1": {
+      "released_date": "2026/10/12",
+      "improvement": [
+        "Con AutoJs6 6.8.0 compilación 5333 o posterior, el aviso de notificaciones desactivadas de la página de ajustes indica que las solicitudes de emparejamiento también aparecen mientras AutoJs6 está en primer plano"
+      ]
+    },
     "v1.1.0": {
       "released_date": "2026/10/11",
       "hint": [

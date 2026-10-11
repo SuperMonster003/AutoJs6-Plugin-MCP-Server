@@ -90,6 +90,7 @@
     <string name="settings_no_clients">Aucun client associé</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_notifications_off">Les notifications de MCP Server sont désactivées, donc une demande d\'appairage depuis un ordinateur n\'apparaît que lorsque cette page est ouverte. Autorisez les notifications pour confirmer les demandes depuis n\'importe quel écran.</string>
+    <string name="settings_notifications_off_host">Les notifications de MCP Server sont désactivées, donc une demande d\'appairage depuis un ordinateur n\'apparaît que lorsque cette page ou AutoJs6 est au premier plan. Autorisez les notifications pour confirmer les demandes depuis n\'importe quel écran.</string>
     <string name="settings_open_host">Ouvrir AutoJs6</string>
     <string name="settings_paired_clients">Clients associés</string>
     <string name="settings_port">Port</string>

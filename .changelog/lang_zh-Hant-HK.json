@@ -5,6 +5,12 @@
   "changelog_label_improvement": "優化",
   "changelog_label_dependency": "依賴",
   "$data": {
+    "v1.1.1": {
+      "released_date": "2026/10/12",
+      "improvement": [
+        "AutoJs6 6.8.0 建置 5333 或以上時, 設定頁的通知關閉提示會說明配對請求在 AutoJs6 位於前景時同樣會出現"
+      ]
+    },
     "v1.1.0": {
       "released_date": "2026/10/11",
       "hint": [

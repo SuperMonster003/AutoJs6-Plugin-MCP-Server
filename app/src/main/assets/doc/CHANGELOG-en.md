@@ -4,6 +4,12 @@
 
 ******
 
+# v1.1.1
+
+###### 2026/10/12
+
+* `Improvement` With AutoJs6 6.8.0 build 5333 or later, the settings page notice about turned-off notifications says that pairing requests also appear while AutoJs6 is in the foreground
+
 # v1.1.0
 
 ###### 2026/10/11

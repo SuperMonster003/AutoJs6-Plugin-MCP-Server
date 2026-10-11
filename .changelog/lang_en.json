@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Improvement",
   "changelog_label_dependency": "Dependency",
   "$data": {
+    "v1.1.1": {
+      "released_date": "2026/10/12",
+      "improvement": [
+        "With AutoJs6 6.8.0 build 5333 or later, the settings page notice about turned-off notifications says that pairing requests also appear while AutoJs6 is in the foreground"
+      ]
+    },
     "v1.1.0": {
       "released_date": "2026/10/11",
       "hint": [

@@ -5,6 +5,12 @@
   "changelog_label_improvement": "优化",
   "changelog_label_dependency": "依赖",
   "$data": {
+    "v1.1.1": {
+      "released_date": "2026/10/12",
+      "improvement": [
+        "AutoJs6 6.8.0 构建 5333 及以上时, 设置页的通知关闭提示会说明配对请求在 AutoJs6 位于前台时同样会出现"
+      ]
+    },
     "v1.1.0": {
       "released_date": "2026/10/11",
       "hint": [

@@ -4,6 +4,12 @@
 
 ******
 
+# v1.1.1
+
+###### 2026/10/12
+
+* `Amélioration` Avec AutoJs6 6.8.0 build 5333 ou ultérieur, l'avis de notifications désactivées de la page des paramètres indique que les demandes d'appairage apparaissent aussi lorsque AutoJs6 est au premier plan
+
 # v1.1.0
 
 ###### 2026/10/11

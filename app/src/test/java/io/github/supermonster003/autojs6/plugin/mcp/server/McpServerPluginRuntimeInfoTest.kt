@@ -55,6 +55,15 @@ class McpServerPluginRuntimeInfoTest {
     }
 
     @Test
+    fun `the pairing dialog opens over AutoJs6 only from the host build that allows it`() {
+        assertEquals(false, McpServerPlugin.showsPairingOverHost(null))
+        assertEquals(false, McpServerPlugin.showsPairingOverHost(McpServerPlugin.REQUIRED_HOST_VERSION))
+        assertEquals(false, McpServerPlugin.showsPairingOverHost(McpServerPlugin.FOREGROUND_PAIRING_HOST_VERSION - 1))
+        assertEquals(true, McpServerPlugin.showsPairingOverHost(McpServerPlugin.FOREGROUND_PAIRING_HOST_VERSION))
+        assertTrue(McpServerPlugin.FOREGROUND_PAIRING_HOST_VERSION > McpServerPlugin.REQUIRED_HOST_VERSION)
+    }
+
+    @Test
     fun `contract version 2 is declared only to hosts that accept it`() {
         fun info(host: Long?) = McpServerPluginRuntimeInfo("MCP Server", "d", null, "1.1.0", 1L, "Oct 11, 2026", hostVersionCode = host)
 

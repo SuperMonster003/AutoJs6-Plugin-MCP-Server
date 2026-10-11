@@ -5,6 +5,12 @@
   "changelog_label_improvement": "تحسين",
   "changelog_label_dependency": "تبعية",
   "$data": {
+    "v1.1.1": {
+      "released_date": "2026/10/12",
+      "improvement": [
+        "مع AutoJs6 6.8.0 البناء 5333 أو أحدث, يوضح تنبيه الإشعارات المتوقفة في صفحة الإعدادات أن طلبات الاقتران تظهر أيضا عندما يكون AutoJs6 في المقدمة"
+      ]
+    },
     "v1.1.0": {
       "released_date": "2026/10/11",
       "hint": [

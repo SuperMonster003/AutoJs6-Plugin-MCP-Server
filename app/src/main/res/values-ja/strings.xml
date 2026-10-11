@@ -90,6 +90,7 @@
     <string name="settings_no_clients">ペアリング済みクライアントなし</string>
     <string name="settings_notifications">通知設定</string>
     <string name="settings_notifications_off">MCP Server の通知がオフのため, パソコンからのペアリング要求はこのページを開いている間しか表示されません. 通知を許可すると, どの画面でも要求を確認できます.</string>
+    <string name="settings_notifications_off_host">MCP Server の通知がオフのため, パソコンからのペアリング要求はこのページまたは AutoJs6 が前面にある間しか表示されません. 通知を許可すると, どの画面でも要求を確認できます.</string>
     <string name="settings_open_host">AutoJs6 を開く</string>
     <string name="settings_paired_clients">ペアリング済みクライアント</string>
     <string name="settings_port">ポート</string>
