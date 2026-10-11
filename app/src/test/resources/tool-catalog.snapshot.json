@@ -1934,7 +1934,7 @@
   {
     "name": "screen_capture",
     "title": "Capture the screen",
-    "description": "Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs.",
+    "description": "Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. With annotate the #n references of the latest ui_dump / ui_find are drawn on the image. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs.",
     "group": "screen",
     "defaultEnabled": true,
     "bridge": "accessibility.screenshot",
@@ -2012,6 +2012,11 @@
             "bottom"
           ],
           "additionalProperties": false
+        },
+        "annotate": {
+          "type": "boolean",
+          "description": "Draw the #n references of the latest ui_dump / ui_find on the image (a box and a label per node) so they can be matched to what is visible; references expire after 60 s, the result's annotation field reports what was drawn",
+          "default": false
         }
       },
       "additionalProperties": false

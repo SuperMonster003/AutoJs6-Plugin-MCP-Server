@@ -50,7 +50,11 @@ store, the transport stores every event it emits and sends it with that id, send
 
 Limits: a client that never received an event with an id (a pre-2025-11-25 client whose stream broke
 before the first message) cannot resume; events dropped by the budgets cannot be replayed; the SDK's
-private standalone stream id `_GET_stream` is named in the mount and pinned by a test.
+private standalone stream id `_GET_stream` is named in the mount and pinned by a test. A resumed
+standalone stream is registered by the SDK only after its replay, a moment after the response
+headers; a notification sent in that window is stored but reaches the client only with its next
+resume (found 2026-10-11 when the JVM test sent its notification right after the headers; the test
+now repeats the notification until one arrives).
 
 ## Tests
 

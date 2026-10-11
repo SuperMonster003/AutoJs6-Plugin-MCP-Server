@@ -65,7 +65,7 @@ MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Proto
 - 手機設定頁提供服務狀態, USB 轉發, 連接埠與區域網絡存取, 權杖顯示/複製/輪換, 配對撤銷, 工具群組與 root 權限, 開發者模式, 可複製的 Claude Code / Cursor / Codex / 通用 HTTP 設定及發行歷史, 並跟隨 AutoJs6 外觀. 網絡設定會重新啟動執行中的監聽器, 權杖與權限變更立即生效. 敏感資訊視窗禁止截圖.
 - 腳本執行: 在 AutoJs6 內執行文字或檔案形式的 JavaScript, 列出與停止引擎, 讀取最近的主控台輸出.
 - 無障礙介面: 以緊湊文字格式匯出節點樹, 用 AutoJs6 選擇器語法尋找節點, 點擊, 長按, 捲動, 設定文字, 以及觸發返回和主畫面等全域按鍵.
-- 截圖分組 (P3.3): screen_capture 傳回 MCP 圖片, 支援裁剪, scale 或 maxWidth, JPEG / PNG / WebP 與品質參數. 預設 JPEG 品質 70, 最長邊 1280 px. base64 超過 4 MiB 時降低品質或尺寸重試, 中繼資料說明調整情況. screen_state 傳回亮屏狀態, 尺寸, 方向和密度. 工具目錄現有 37 項. MediaProjection 回退需要 2026-09-13 或之後建置的 AutoJs6 主程式及手機端授權, 主程式工作階段重用該授權.
+- 截圖分組 (P3.3): screen_capture 傳回 MCP 圖片, 支援裁剪, scale 或 maxWidth, JPEG / PNG / WebP 與品質參數. 預設 JPEG 品質 70, 最長邊 1280 px. base64 超過 4 MiB 時降低品質或尺寸重試, 中繼資料說明調整情況. screen_state 傳回亮屏狀態, 尺寸, 方向和密度. 工具目錄現有 37 項. MediaProjection 回退需要 2026-09-13 或之後建置的 AutoJs6 主程式及手機端授權, 主程式工作階段重用該授權. annotate: true 時在截圖上標出最近一次 ui_dump / ui_find 的 #n 編號 (每個節點一個邊框和標籤), 便於把編號與畫面對應.
 - 工作目錄工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用從 1 開始的行列號的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二進制讀取使用 base64, 原始資料最多 1 MiB. 寫入亦受宿主請求預算約束 (通常為包含 JSON 轉義的 96 KiB). 檔案刪除和 Shell 預設關閉; root 另需 allowShellRoot 開關與宿主 shell.root 授權. 這些能力需要匹配的 P3.4 宿主構建.
 - MCP 資源 (P3.5) 提供唯讀工作目錄檔案, 可瀏覽的宿主範例, 安裝 AutoJs6 離線文件外掛後的離線文件, 裝置資訊和最近主控台輸出, 遵守配對與分組開關. 文字和二進制讀取報告截斷狀態. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指引, 其他手機語言回退英語.
 - 連接方式: 透過 `adb forward` 的 USB 連接, 須明確開啟的區域網絡連接, 以及面向無 HTTP 傳輸用戶端的電腦端 stdio 橋接程式.
@@ -312,6 +312,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 _2026/10/11_
 
 - `新增` 設定頁客戶端設定提供 VS Code mcp.json 片段, 權杖由 VS Code 在首次啟動伺服器時提示輸入, 不寫入設定檔 (對話方塊提供 "複製權杖" 按鈕)
+- `新增` screen_capture 的 annotate 參數, 用於在截圖上標出最近一次 ui_dump / ui_find 的 #n 編號 (邊框與標籤), 結果的 annotation 欄位報告繪製數量
 - `優化` 有狀態 MCP 端點的事件串流支援斷線續傳: 事件帶 id, 協定 2025-11-25 及以上的客戶端先收到帶重連間隔的 priming 事件, 中斷的請求串流可憑 Last-Event-ID 經 GET 接回, 補發錯過的事件與最終結果 (每個會話有界保留)
 - `優化` device_info, screen_state, script_run 與 script_run_file 聲明輸出 schema (outputSchema), 客戶端可據此校驗結構化結果; 這些工具的錯誤結果只以文字給出錯誤碼與說明
 - `優化` 外掛程式中心圖示採用統一工作台調整後的尺寸, 位置, 明暗圖稿與圓形底色, 保留可重建原稿和參數

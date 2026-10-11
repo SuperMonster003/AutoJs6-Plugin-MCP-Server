@@ -8,7 +8,8 @@
     "v1.0.3": {
       "released_date": "2026/10/11",
       "feature": [
-        "Extrait VS Code mcp.json dans la configuration des clients de la page des paramètres: VS Code demande le jeton au premier démarrage du serveur, qui reste donc hors du fichier (la boîte de dialogue propose un bouton \"Copier le jeton\")"
+        "Extrait VS Code mcp.json dans la configuration des clients de la page des paramètres: VS Code demande le jeton au premier démarrage du serveur, qui reste donc hors du fichier (la boîte de dialogue propose un bouton \"Copier le jeton\")",
+        "L'option annotate de screen_capture, qui dessine sur l'image les références #n du dernier ui_dump / ui_find (cadres et étiquettes); le champ annotation du résultat indique combien ont été dessinées"
       ],
       "improvement": [
         "Flux d'événements reprenables sur le point de terminaison MCP avec état: les événements portent un id, les clients du protocole 2025-11-25 ou plus récent reçoivent d'abord un événement d'amorçage avec l'intervalle de reconnexion, et un flux de requête interrompu peut être repris par un GET portant Last-Event-ID, qui renvoie les événements manqués et le résultat final (rétention limitée par session)",

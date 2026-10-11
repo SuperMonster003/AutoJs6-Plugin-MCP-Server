@@ -96,7 +96,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
 
     private val info by lazy { this.context.mcpServerPluginRuntimeInfo() }
     private val uiTools = UiTools(nodeRefs, permissions = { toolPermissions.load() })
-    private val screenTools = ScreenTools()
+    private val screenTools = ScreenTools(nodeRefs = nodeRefs, annotator = AndroidImageAnnotator)
     private val fileTools = FileTools()
     private val deviceTools = DeviceTools()
     private val shellTools = ShellTools { toolPermissions.load() }

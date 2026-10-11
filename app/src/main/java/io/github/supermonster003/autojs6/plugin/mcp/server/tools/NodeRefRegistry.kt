@@ -83,6 +83,13 @@ class NodeRefRegistry(
         }
     }
 
+    /** The references of the current snapshot that have not expired, in number order; null before the first dump. */
+    fun live(): Registration? = synchronized(lock) {
+        val id = snapshotId ?: return null
+        val now = clock()
+        Registration(id, entries.values.filter { now - it.createdAt <= ttlMs })
+    }
+
     fun clear() = synchronized(lock) {
         entries.clear()
         snapshotId = null

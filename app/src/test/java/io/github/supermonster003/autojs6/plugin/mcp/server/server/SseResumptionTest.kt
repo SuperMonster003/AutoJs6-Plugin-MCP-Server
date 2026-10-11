@@ -26,8 +26,10 @@ import io.modelcontextprotocol.kotlin.sdk.types.ProgressNotificationParams
 import io.modelcontextprotocol.kotlin.sdk.types.RequestId
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
@@ -238,8 +240,21 @@ class SseResumptionTest {
         client.prepareGet(PATH) { getHeaders(sessionId, lastEventId = primingId.toString()) }.execute { resumed ->
             assertEquals(HttpStatusCode.OK, resumed.status)
             val body = resumed.bodyAsChannel()
-            server.sendToolListChanged(server.sessions.keys.single())
-            val event = withTimeout(5_000) { body.nextEvent() }
+            // The SDK registers the resumed stream only after its replay, a moment after the headers;
+            // a notification sent in between is stored but not delivered, so keep sending until one arrives.
+            val event = coroutineScope {
+                val sender = launch {
+                    while (true) {
+                        server.sendToolListChanged(server.sessions.keys.single())
+                        delay(200)
+                    }
+                }
+                try {
+                    withTimeout(5_000) { body.nextEvent() }
+                } finally {
+                    sender.cancel()
+                }
+            }
             assertEquals("notifications/tools/list_changed", event.json!!["method"]!!.jsonPrimitive.content)
             assertTrue(event.id!! > primingId)
         }

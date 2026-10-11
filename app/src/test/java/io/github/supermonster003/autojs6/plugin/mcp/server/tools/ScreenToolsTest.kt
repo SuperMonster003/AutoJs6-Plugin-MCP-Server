@@ -142,7 +142,7 @@ class ScreenToolsTest {
     @Test fun `invalid or unknown options and rectangles fail before capture`() = runBlocking {
         listOf(
             """{"scale":0.5,"maxWidth":100}""", """{"scale":0}""", """{"maxWidth":9000}""", """{"quality":0}""",
-            """{"format":"gif"}""", """{"annotate":true}""", """{"region":{"left":0,"top":0,"right":1}}""",
+            """{"format":"gif"}""", """{"annotate":"yes"}""", """{"region":{"left":0,"top":0,"right":1}}""",
             """{"region":{"left":1,"top":0,"right":1,"bottom":2}}""", """{"region":{"left":-1,"top":0,"right":1,"bottom":2}}""",
             """{"region":{"left":0,"top":0,"right":1,"bottom":2,"x":1}}""",
         ).forEach { args ->
@@ -162,6 +162,44 @@ class ScreenToolsTest {
         assertEquals(JsonPrimitive(true), result.structured["screenOn"])
         assertEquals(listOf("device.isScreenOn", "device.info"), host.calls.map { it.key })
         OutputSchemaTest.assertConforms(ToolCatalog.screenState, result.structured)
+    }
+
+    @Test fun `annotate draws the live references scaled into the image and reports them`() = runBlocking {
+        val refs = NodeRefRegistry()
+        refs.replace(listOf(
+            UiNodeInfo("android.widget.Button", "OK", "", "", Bounds(108, 216, 540, 432), clickable = true, enabled = true),
+            UiNodeInfo("android.widget.TextView", "hidden", "", "", Bounds(0, 0, 100, 100), clickable = false, enabled = true, visible = false),
+        ))
+        val drawn = mutableListOf<List<AnnotationMark>>()
+        val tools = ScreenTools(nodeRefs = refs, annotator = { image, mime, quality, marks ->
+            assertEquals("image/jpeg", mime)
+            assertEquals(70, quality)
+            drawn += marks
+            image + byteArrayOf(9)
+        })
+        val result = run(Host(), """{"annotate":true}""", tools)
+        // The 1080 px wide screen is scaled to the 100 px wide image.
+        assertEquals(listOf(AnnotationMark("#n1", 10, 20, 50, 40)), drawn.single())
+        assertArrayEquals(byteArrayOf(1, 2, 3, 9), Base64.decode(result.image!!.data))
+        assertEquals(JsonPrimitive(4), result.structured["bytes"])
+        assertEquals(json("""{"snapshotId":"s1","drawn":1,"skipped":1}"""), result.structured["annotation"])
+        assertEquals(JsonPrimitive(true), result.structured["requested"]!!.jsonObject["annotate"])
+    }
+
+    @Test fun `annotate without live references or with an undecodable image returns the image unchanged`() = runBlocking {
+        val none = run(Host(), """{"annotate":true}""", ScreenTools(nodeRefs = NodeRefRegistry(), annotator = { _, _, _, _ -> fail("nothing to draw"); null }))
+        assertArrayEquals(byteArrayOf(1, 2, 3), Base64.decode(none.image!!.data))
+        val hint = none.structured["annotation"]!!.jsonObject
+        assertEquals(JsonPrimitive(0), hint["drawn"])
+        assertTrue(hint["hint"]!!.jsonPrimitive.content.startsWith("no live node references: call ui_dump"))
+
+        val refs = NodeRefRegistry().apply { replace(listOf(UiNodeInfo("A", "", "", "", Bounds(0, 0, 540, 540), clickable = true, enabled = true))) }
+        val broken = run(Host(), """{"annotate":true}""", ScreenTools(nodeRefs = refs, annotator = { _, _, _, _ -> null }))
+        assertArrayEquals(byteArrayOf(1, 2, 3), Base64.decode(broken.image!!.data))
+        assertEquals(JsonPrimitive(0), broken.structured["annotation"]!!.jsonObject["drawn"])
+
+        val plain = run(Host(), "{}", ScreenTools(nodeRefs = refs, annotator = { _, _, _, _ -> fail("not requested"); null }))
+        assertNull(plain.structured["annotation"])
     }
 
     private suspend fun run(host: Host, args: String = "{}", tools: ScreenTools = ScreenTools()): ToolFlowResult =

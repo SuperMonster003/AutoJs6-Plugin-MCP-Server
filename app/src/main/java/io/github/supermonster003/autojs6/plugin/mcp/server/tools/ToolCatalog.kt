@@ -105,6 +105,7 @@ object ToolCatalog {
         const val FORMAT = "format"
         const val QUALITY = "quality"
         const val REGION = "region"
+        const val ANNOTATE = "annotate"
         const val DEFAULT_LONG_EDGE = 1280
         const val DEFAULT_QUALITY = 70
         const val MAX_WIDTH_LIMIT = 8192L
@@ -653,6 +654,7 @@ object ToolCatalog {
                 "Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. " +
                 "Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. " +
                 "Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. " +
+                "With annotate the #n references of the latest ui_dump / ui_find are drawn on the image. " +
                 "At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs.",
         group = ToolGroup.SCREEN,
         inputSchema = JsonSchemas.objectSchema(linkedMapOf(
@@ -666,6 +668,11 @@ object ToolCatalog {
             Screen.FORMAT to JsonSchemas.string("Image encoding", default = "jpeg", enum = Screen.FORMATS),
             Screen.QUALITY to JsonSchemas.integer("JPEG or WebP quality; PNG ignores quality", 1, 100, Screen.DEFAULT_QUALITY.toLong()),
             Screen.REGION to JsonSchemas.bounds("Crop in current screen pixels before scaling; right and bottom are exclusive"),
+            Screen.ANNOTATE to JsonSchemas.boolean(
+                "Draw the #n references of the latest ui_dump / ui_find on the image (a box and a label per node) so they can be matched " +
+                        "to what is visible; references expire after 60 s, the result's annotation field reports what was drawn",
+                default = false,
+            ),
         )),
         bridge = BridgeMethod("accessibility", "screenshot"),
         permissions = listOf("accessibility", "screen_capture", "image", "device"),

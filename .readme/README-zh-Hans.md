@@ -65,7 +65,7 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 - 手机设置页提供服务状态, USB 转发, 端口和局域网访问, 令牌显示/复制/轮换, 配对撤销, 工具分组和 root 权限, 开发者模式, 可复制的 Claude Code / Cursor / Codex / 通用 HTTP 配置及发行历史, 并跟随 AutoJs6 外观. 网络设置会重启运行中的监听器, 令牌和权限变更立即生效. 敏感信息窗口禁止截图.
 - 脚本执行: 在 AutoJs6 内运行文本或文件形式的 JavaScript, 列出与停止引擎, 读取最近的控制台输出.
 - 无障碍界面: 以紧凑文本格式导出节点树, 用 AutoJs6 选择器语法查找节点, 点击, 长按, 滚动, 设置文本, 以及触发返回和主屏幕等全局按键.
-- 截图分组 (P3.3): screen_capture 返回 MCP 图片, 支持裁剪, scale 或 maxWidth, JPEG / PNG / WebP 与质量参数. 默认 JPEG 质量 70, 最长边 1280 px. base64 超过 4 MiB 时降低质量或尺寸重试, 元数据说明调整情况. screen_state 返回亮屏状态, 尺寸, 方向和密度. 工具目录现有 37 项. MediaProjection 回退需要 2026-09-13 或之后构建的 AutoJs6 宿主及手机端授权, 宿主会话复用该授权.
+- 截图分组 (P3.3): screen_capture 返回 MCP 图片, 支持裁剪, scale 或 maxWidth, JPEG / PNG / WebP 与质量参数. 默认 JPEG 质量 70, 最长边 1280 px. base64 超过 4 MiB 时降低质量或尺寸重试, 元数据说明调整情况. screen_state 返回亮屏状态, 尺寸, 方向和密度. 工具目录现有 37 项. MediaProjection 回退需要 2026-09-13 或之后构建的 AutoJs6 宿主及手机端授权, 宿主会话复用该授权. annotate: true 时在截图上标出最近一次 ui_dump / ui_find 的 #n 编号 (每个节点一个边框和标签), 便于把编号与画面对应.
 - 工作目录工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用从 1 开始的行列号的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二进制读取使用 base64, 原始数据最多 1 MiB. 写入还受宿主请求预算约束 (通常为包含 JSON 转义的 96 KiB). 文件删除和 Shell 默认关闭; root 另需 allowShellRoot 开关与宿主 shell.root 授权. 这些能力需要匹配的 P3.4 宿主构建.
 - MCP 资源 (P3.5) 提供只读工作目录文件, 可浏览的宿主示例, 安装 AutoJs6 离线文档插件后的离线文档, 设备信息和最近控制台输出, 遵守配对与分组开关. 文本和二进制读取报告截断状态. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指导, 其他手机语言回退英语.
 - 连接方式: 通过 `adb forward` 的 USB 连接, 需显式开启的局域网连接, 以及面向无 HTTP 传输客户端的电脑端 stdio 桥接程序.
@@ -312,6 +312,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 _2026/10/11_
 
 - `新增` 设置页客户端配置提供 VS Code mcp.json 片段, 令牌由 VS Code 在首次启动服务器时提示输入, 不写入配置文件 (对话框提供 "复制令牌" 按钮)
+- `新增` screen_capture 的 annotate 参数, 用于在截图上标出最近一次 ui_dump / ui_find 的 #n 编号 (边框与标签), 结果的 annotation 字段报告绘制数量
 - `优化` 有状态 MCP 端点的事件流支持断线续传: 事件带 id, 协议 2025-11-25 及以上的客户端先收到带重连间隔的 priming 事件, 断开的请求流可凭 Last-Event-ID 经 GET 接回, 补发错过的事件与最终结果 (每个会话有界保留)
 - `优化` device_info, screen_state, script_run 与 script_run_file 声明输出 schema (outputSchema), 客户端可据此校验结构化结果; 这些工具的错误结果只以文本给出错误码与说明
 - `优化` 插件中心图标采用统一工作台调整后的尺寸, 位置, 亮暗图稿与圆形底色, 保留可重建原稿和参数

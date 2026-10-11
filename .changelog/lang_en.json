@@ -8,7 +8,8 @@
     "v1.0.3": {
       "released_date": "2026/10/11",
       "feature": [
-        "VS Code mcp.json snippet in the client configuration of the settings page: VS Code asks for the token when the server first starts, so the token stays out of the file (the dialog has a \"Copy token\" button)"
+        "VS Code mcp.json snippet in the client configuration of the settings page: VS Code asks for the token when the server first starts, so the token stays out of the file (the dialog has a \"Copy token\" button)",
+        "The annotate option of screen_capture, which draws the #n references of the latest ui_dump / ui_find on the image (boxes and labels); the annotation field of the result reports how many were drawn"
       ],
       "improvement": [
         "Resumable event streams on the stateful MCP endpoint: events carry ids, clients of protocol 2025-11-25 or newer first receive a priming event with the reconnection interval, and a dropped request stream can be resumed with a GET carrying Last-Event-ID, which replays the missed events and the final result (bounded retention per session)",

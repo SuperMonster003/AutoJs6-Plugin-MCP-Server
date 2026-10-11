@@ -27,8 +27,14 @@ import kotlin.math.roundToInt
  * descriptor bytes into MCP image content. Captures are serialized, including consent, and
  * their complete queue/consent/retry budget is bounded. The host reuses a live projection on
  * repeated requests and releases it with its session; no stale authorization flag is cached here.
+ * With `annotate`, the live `#n` references of [nodeRefs] are drawn on each captured image by
+ * [annotator] before its size is checked (roadmap P9).
  */
-class ScreenTools(private val clock: () -> Long = { System.nanoTime() / 1_000_000L }) : ToolFlows {
+class ScreenTools(
+    private val clock: () -> Long = { System.nanoTime() / 1_000_000L },
+    private val nodeRefs: NodeRefRegistry? = null,
+    private val annotator: ImageAnnotator? = null,
+) : ToolFlows {
 
     private val captureLock = Mutex()
 
@@ -68,6 +74,7 @@ class ScreenTools(private val clock: () -> Long = { System.nanoTime() / 1_000_00
             maxWidth = minOf(croppedWidth, (Screen.DEFAULT_LONG_EDGE.toDouble() * croppedWidth / maxOf(croppedWidth, croppedHeight)).roundToInt().coerceAtLeast(1))
         }
         var quality = requested.quality
+        val live = if (requested.annotate) nodeRefs?.live() else null
         var projection = false
         var captureAttempts = 0
         while (captureAttempts < Screen.MAX_ATTEMPTS) {
@@ -107,7 +114,14 @@ class ScreenTools(private val clock: () -> Long = { System.nanoTime() / 1_000_00
                     if (metadata.positiveInt("bytes") != payload.data.size) badHost("the screenshot byte count does not match its payload")
                     val outputWidth = metadata.positiveInt("width")
                     val outputHeight = metadata.positiveInt("height")
-                    val encodedBytes = base64Size(payload.data.size)
+                    var data = payload.data
+                    var annotation: JsonObject? = null
+                    if (requested.annotate) {
+                        val annotated = annotate(data, expectedMime, quality, live, width, requested.region, outputWidth, outputHeight)
+                        data = annotated.first
+                        annotation = annotated.second
+                    }
+                    val encodedBytes = base64Size(data.size)
                     if (encodedBytes <= McpServerContract.MAX_SCREENSHOT_ENCODED_BYTES) {
                         val result = buildJsonObject {
                             put("width", outputWidth)
@@ -115,16 +129,17 @@ class ScreenTools(private val clock: () -> Long = { System.nanoTime() / 1_000_00
                             put("format", requested.format)
                             put("mime", expectedMime)
                             put("quality", quality)
-                            put("bytes", payload.data.size)
+                            put("bytes", data.size)
                             put("encodedBytes", encodedBytes)
                             put("durationMs", (clock() - startedAt).coerceAtLeast(0))
                             put("source", if (projection) "media_projection" else "accessibility")
                             put("attempts", captureAttempts)
                             put("adjusted", captureAttempts > 1)
                             if (captureAttempts > 1) put("hint", "quality or dimensions were reduced to keep the base64 image within 4 MiB")
+                            annotation?.let { put("annotation", it) }
                             put("requested", requested.json)
                         }
-                        return ToolFlowResult(result, image = ImageContent(data = Base64.encode(payload.data), mimeType = expectedMime))
+                        return ToolFlowResult(result, image = ImageContent(data = Base64.encode(data), mimeType = expectedMime))
                     }
                 }
             }
@@ -140,6 +155,28 @@ class ScreenTools(private val clock: () -> Long = { System.nanoTime() / 1_000_00
             }
         }
         throw ToolFailureException(ToolFailure.limitExceeded("the screenshot still exceeds 4 MiB after $captureAttempts bounded attempts"))
+    }
+
+    /** The image with the live references drawn on it, and the `annotation` summary of the result. */
+    private fun annotate(
+        image: ByteArray, mime: String, quality: Int, live: NodeRefRegistry.Registration?, screenWidth: Int,
+        region: Region?, outputWidth: Int, outputHeight: Int,
+    ): Pair<ByteArray, JsonObject> {
+        if (live == null || live.entries.isEmpty()) {
+            return image to buildJsonObject {
+                live?.let { put("snapshotId", it.snapshotId) }
+                put("drawn", 0)
+                put("hint", "no live node references: call ui_dump (or ui_find) first; references expire after ${NodeRefRegistry.TTL_MS / 1000} s")
+            }
+        }
+        val layout = ScreenAnnotations.layout(live.entries, screenWidth, region?.let { Bounds(it.left, it.top, it.right, it.bottom) }, outputWidth, outputHeight)
+        val drawn = if (layout.marks.isEmpty()) image else annotator?.annotate(image, mime, quality, layout.marks)
+        return (drawn ?: image) to buildJsonObject {
+            put("snapshotId", live.snapshotId)
+            put("drawn", if (drawn == null) 0 else layout.marks.size)
+            put("skipped", layout.skipped)
+            if (drawn == null) put("hint", "the image could not be annotated; it is returned unchanged")
+        }
     }
 
     private suspend fun screenInfo(caller: BridgeCaller): JsonObject {
@@ -158,7 +195,9 @@ class ScreenTools(private val clock: () -> Long = { System.nanoTime() / 1_000_00
 
     private class Region(val left: Int, val top: Int, val right: Int, val bottom: Int, val json: JsonObject)
 
-    private class Options(val scale: Double?, val maxWidth: Int?, val format: String, val quality: Int, val region: Region?, val json: JsonObject) {
+    private class Options(
+        val scale: Double?, val maxWidth: Int?, val format: String, val quality: Int, val region: Region?, val annotate: Boolean, val json: JsonObject,
+    ) {
         companion object {
             fun parse(arguments: JsonObject): Options {
                 ToolArguments.validate(ToolCatalog.screenCapture, arguments)
@@ -180,6 +219,7 @@ class ScreenTools(private val clock: () -> Long = { System.nanoTime() / 1_000_00
                 }
                 return Options(scale, maxWidth, ToolArguments.string(arguments, Screen.FORMAT, "jpeg")!!,
                     (arguments[Screen.QUALITY] as? JsonPrimitive)?.doubleOrNull?.toInt() ?: Screen.DEFAULT_QUALITY, region,
+                    ToolArguments.boolean(arguments, Screen.ANNOTATE, false),
                     JsonObject(arguments.filterValues { it != JsonNull }))
             }
         }

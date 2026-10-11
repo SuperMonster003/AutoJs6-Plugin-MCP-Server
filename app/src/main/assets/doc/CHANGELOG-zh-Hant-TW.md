@@ -9,6 +9,7 @@
 ###### 2026/10/11
 
 * `新增` 設定頁用戶端設定提供 VS Code mcp.json 片段, 權杖由 VS Code 在首次啟動伺服器時提示輸入, 不寫入設定檔 (對話方塊提供 "複製權杖" 按鈕)
+* `新增` screen_capture 的 annotate 參數, 用於在螢幕截圖上標出最近一次 ui_dump / ui_find 的 #n 編號 (邊框與標籤), 結果的 annotation 欄位回報繪製數量
 * `優化` 有狀態 MCP 端點的事件串流支援斷線續傳: 事件帶 id, 協定 2025-11-25 以上版本的用戶端先收到帶重連間隔的 priming 事件, 中斷的請求串流可憑 Last-Event-ID 經 GET 接回, 補發錯過的事件與最終結果 (每個工作階段有界保留)
 * `優化` device_info, screen_state, script_run 與 script_run_file 宣告輸出 schema (outputSchema), 用戶端可據此驗證結構化結果; 這些工具的錯誤結果只以文字提供錯誤碼與說明
 * `優化` 外掛程式中心圖示採用統一工作台調整後的尺寸, 位置, 明暗圖稿與圓形底色, 保留可重建原稿和參數

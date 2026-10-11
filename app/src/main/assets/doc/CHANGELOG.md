@@ -9,6 +9,7 @@
 ###### 2026/10/11
 
 * `新增` 设置页客户端配置提供 VS Code mcp.json 片段, 令牌由 VS Code 在首次启动服务器时提示输入, 不写入配置文件 (对话框提供 "复制令牌" 按钮)
+* `新增` screen_capture 的 annotate 参数, 用于在截图上标出最近一次 ui_dump / ui_find 的 #n 编号 (边框与标签), 结果的 annotation 字段报告绘制数量
 * `优化` 有状态 MCP 端点的事件流支持断线续传: 事件带 id, 协议 2025-11-25 及以上的客户端先收到带重连间隔的 priming 事件, 断开的请求流可凭 Last-Event-ID 经 GET 接回, 补发错过的事件与最终结果 (每个会话有界保留)
 * `优化` device_info, screen_state, script_run 与 script_run_file 声明输出 schema (outputSchema), 客户端可据此校验结构化结果; 这些工具的错误结果只以文本给出错误码与说明
 * `优化` 插件中心图标采用统一工作台调整后的尺寸, 位置, 亮暗图稿与圆形底色, 保留可重建原稿和参数

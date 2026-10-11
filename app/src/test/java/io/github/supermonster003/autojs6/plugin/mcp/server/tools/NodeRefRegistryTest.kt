@@ -76,4 +76,18 @@ class NodeRefRegistryTest {
         registry.clear()
         assertEquals("none: 0 refs", registry.describe())
     }
+
+    @Test
+    fun `live lists the unexpired references of the current snapshot without dropping any`() {
+        assertNull(registry.live())
+        registry.replace(listOf(node("a")))
+        now += 50_000L
+        registry.append(listOf(node("b")))
+        assertEquals(listOf("#n1", "#n2"), registry.live()!!.refs)
+        now += 20_000L
+        val live = registry.live()!!
+        assertEquals("s1", live.snapshotId)
+        assertEquals(listOf("#n2"), live.refs)
+        assertEquals(2, registry.size)
+    }
 }
