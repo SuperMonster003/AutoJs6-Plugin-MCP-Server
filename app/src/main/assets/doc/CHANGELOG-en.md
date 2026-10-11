@@ -9,11 +9,13 @@
 ###### 2026/10/11
 
 * `Feature` VS Code mcp.json snippet in the client configuration of the settings page: VS Code asks for the token when the server first starts, so the token stays out of the file (the dialog has a "Copy token" button)
+* `Feature` The client configuration snippets and the token dialog on the settings page can show a QR code holding the same text as the "Copy" button (the token included when the text contains it; the window blocks screenshots)
 * `Feature` The annotate option of screen_capture, which draws the #n references of the latest ui_dump / ui_find on the image (boxes and labels); the annotation field of the result reports how many were drawn
 * `Improvement` Resumable event streams on the stateful MCP endpoint: events carry ids, clients of protocol 2025-11-25 or newer first receive a priming event with the reconnection interval, and a dropped request stream can be resumed with a GET carrying Last-Event-ID, which replays the missed events and the final result (bounded retention per session)
 * `Improvement` device_info, screen_state, script_run and script_run_file declare an output schema (outputSchema) that clients can validate their structured results against; errors of these tools carry the error code and message as text only
 * `Improvement` Plugin Center icons use the sizes, positions, light and dark artwork, and circular backgrounds adjusted in Icon Studio, retaining reproducible sources and parameters
 * `Improvement` Android App info icons share Icon Studio artwork and light/dark backgrounds while preserving transparent Plugin Center artwork and existing launcher choices
+* `Dependency` ZXing Core 3.5.4 (`com.google.zxing:core`) added to draw the settings page QR codes (encoder only, Apache 2.0)
 
 # v1.0.2
 

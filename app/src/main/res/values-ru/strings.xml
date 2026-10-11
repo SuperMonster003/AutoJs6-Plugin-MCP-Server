@@ -94,6 +94,10 @@
     <string name="settings_port">Порт</string>
     <string name="settings_port_hint">Введите порт от 1024 до 65535.</string>
     <string name="settings_port_value">Порт: %1$d</string>
+    <string name="settings_qr_hide">Скрыть QR-код</string>
+    <string name="settings_qr_hint">QR-код содержит текст выше, включая токен, если он в нём есть. Сканируйте его только своими устройствами.</string>
+    <string name="settings_qr_image">QR-код текста выше</string>
+    <string name="settings_qr_show">Показать QR-код</string>
     <string name="settings_release_history">История выпусков</string>
     <string name="settings_revoke">Отозвать сопряжение</string>
     <string name="settings_revoke_all">Отозвать все сопряжения</string>

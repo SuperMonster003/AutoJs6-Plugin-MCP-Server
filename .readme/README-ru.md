@@ -62,7 +62,7 @@ MCP Server превращает Android-устройство с AutoJs6 в се�
 
 Плагин предоставляет следующие возможности:
 
-- Настройки телефона для состояния сервера, USB, порта и LAN, просмотра/копирования/замены токена, отзыва сопряжений, групп инструментов и root, режима разработчика, копирования конфигураций Claude Code / Cursor / Codex / HTTP и истории выпусков с оформлением AutoJs6. Сеть применяется перезапуском сервера; токены и разрешения действуют сразу. Секретные окна блокируют снимки экрана.
+- Настройки телефона для состояния сервера, USB, порта и LAN, просмотра/копирования/замены токена, отзыва сопряжений, групп инструментов и root, режима разработчика, копирования конфигураций Claude Code / Cursor / Codex / VS Code / HTTP (также в виде QR-кода) и истории выпусков с оформлением AutoJs6. Сеть применяется перезапуском сервера; токены и разрешения действуют сразу. Секретные окна блокируют снимки экрана.
 - Выполнение скриптов: запуск JavaScript из текста или файла внутри AutoJs6, просмотр и остановка движков, чтение последнего вывода консоли.
 - Интерфейс специальных возможностей: выгрузка дерева узлов в компактном текстовом формате, поиск узлов с помощью синтаксиса селекторов AutoJs6, нажатие, долгое нажатие, прокрутка, ввод текста и глобальные клавиши, такие как Назад и Домой.
 - Группа снимков экрана (P3.3): screen_capture возвращает изображения MCP с обрезкой, scale или maxWidth, JPEG / PNG / WebP и выбором качества. По умолчанию JPEG, качество 70, длинная сторона 1280 px. При превышении 4 MiB base64 качество или размер уменьшаются, изменения отражаются в метаданных. screen_state сообщает состояние экрана, размеры, ориентацию и плотность. Каталог содержит 37 инструмента. Резервный путь MediaProjection требует AutoJs6, собранный 2026-09-13 или позже, и согласие на телефоне, повторно используемое сеансом хоста. С annotate: true на изображении рисуются ссылки #n последнего ui_dump / ui_find (рамка и подпись для каждого узла), чтобы сопоставить их с тем, что видно на экране.
@@ -101,7 +101,7 @@ MCP Server превращает Android-устройство с AutoJs6 в се�
 | `ui_press_key` | `ui` | вкл | Presses a global key through the accessibility service: back, home, recents, notifications (opens the notification shade), quick_settings, power_dialog, or lock_screen (Android 9 or later). |
 | `ui_swipe` | `ui_gesture` | выкл | Swipes one finger from (x1, y1) to (x2, y2) in device pixels over durationMs; take the coordinates from ui_dump bounds or a screenshot. Part of the ui_gesture group, which is off by default. |
 | `ui_gesture` | `ui_gesture` | выкл | Performs a free-path one-finger gesture through the given points over durationMs (at most 10 s): the first point is the touch down, the last the lift. Part of the ui_gesture group, which is off by default. |
-| `screen_capture` | `screen` | вкл | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
+| `screen_capture` | `screen` | вкл | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. With annotate the #n references of the latest ui_dump / ui_find are drawn on the image. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
 | `screen_state` | `screen` | вкл | Read whether the screen is on, its current width and height, orientation, rotation, and density. Does not request screen capture consent. |
 | `files_list` | `files` | вкл | Lists workspace files with metadata. Results are bounded and report truncation. |
 | `files_stat` | `files` | вкл | Returns existence, type, size, and modification time of a workspace path. |
@@ -312,11 +312,13 @@ default endpoint: http://127.0.0.1:9637/mcp
 _2026/10/11_
 
 - `Функция` Фрагмент VS Code mcp.json в настройке клиентов на странице настроек: VS Code запрашивает токен при первом запуске сервера, поэтому токен не попадает в файл (в диалоге есть кнопка "Копировать токен")
+- `Функция` Фрагменты конфигурации клиентов и диалог токена на странице настроек могут показывать QR-код с тем же текстом, что копирует кнопка "Копировать" (с токеном, если он есть в тексте; окно блокирует снимки экрана)
 - `Функция` Параметр annotate инструмента screen_capture, рисующий на изображении ссылки #n последнего ui_dump / ui_find (рамки и подписи); поле annotation результата сообщает, сколько их нарисовано
 - `Улучшение` Возобновляемые потоки событий на MCP-эндпоинте с состоянием: события получают id, клиенты протокола 2025-11-25 и новее сначала получают подготовительное событие с интервалом переподключения, а оборванный поток запроса можно возобновить запросом GET с Last-Event-ID, который повторно отправляет пропущенные события и итоговый результат (ограниченное хранение на сеанс)
 - `Улучшение` device_info, screen_state, script_run и script_run_file объявляют схему вывода (outputSchema), по которой клиенты могут проверять их структурированные результаты; ошибки этих инструментов передают код и сообщение только текстом
 - `Улучшение` Значки центра плагинов используют размеры, положение, светлые и тёмные изображения и круглые фоны, настроенные в Icon Studio, сохраняя исходники и параметры для воспроизведения
 - `Улучшение` Значки в сведениях о приложении Android используют изображения и светлый и тёмный фон Icon Studio, сохраняя прозрачные изображения центра плагинов и существующие варианты значков лаунчера
+- `Зависимость` Добавлен ZXing Core 3.5.4 (`com.google.zxing:core`) для QR-кодов страницы настроек (только кодировщик, Apache 2.0)
 
 #### v1.0.2
 

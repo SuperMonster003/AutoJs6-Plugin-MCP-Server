@@ -94,6 +94,10 @@
     <string name="settings_port">포트</string>
     <string name="settings_port_hint">1024부터 65535까지의 포트를 입력하세요.</string>
     <string name="settings_port_value">포트: %1$d</string>
+    <string name="settings_qr_hide">QR 코드 숨기기</string>
+    <string name="settings_qr_hint">QR 코드에는 위의 텍스트가 담기며, 텍스트에 토큰이 있으면 토큰도 담깁니다. 본인 기기로만 스캔하세요.</string>
+    <string name="settings_qr_image">위 텍스트의 QR 코드</string>
+    <string name="settings_qr_show">QR 코드 표시</string>
     <string name="settings_release_history">출시 기록</string>
     <string name="settings_revoke">페어링 해제</string>
     <string name="settings_revoke_all">모든 페어링 해제</string>

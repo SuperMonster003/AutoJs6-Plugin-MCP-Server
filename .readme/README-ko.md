@@ -62,7 +62,7 @@ MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]
 
 플러그인은 다음 기능을 제공합니다:
 
-- 서버 상태, USB 전달, 포트와 LAN, 토큰 표시/복사/교체, 페어링 해제, 도구 그룹과 root 권한, 개발자 모드, Claude Code / Cursor / Codex / 일반 HTTP 설정 복사, 출시 기록을 제공하며 AutoJs6 테마를 따릅니다. 네트워크 변경은 리스너를 재시작하고 토큰과 권한은 즉시 적용됩니다. 비밀 정보 창은 스크린샷을 차단합니다.
+- 서버 상태, USB 전달, 포트와 LAN, 토큰 표시/복사/교체, 페어링 해제, 도구 그룹과 root 권한, 개발자 모드, Claude Code / Cursor / Codex / VS Code / 일반 HTTP 설정 복사 (QR 코드 표시 가능), 출시 기록을 제공하며 AutoJs6 테마를 따릅니다. 네트워크 변경은 리스너를 재시작하고 토큰과 권한은 즉시 적용됩니다. 비밀 정보 창은 스크린샷을 차단합니다.
 - 스크립트 실행: AutoJs6 안에서 텍스트 또는 파일의 JavaScript를 실행하고, 엔진을 나열하거나 중지하며, 최근 콘솔 출력을 읽습니다.
 - 접근성 UI: 노드 트리를 간결한 텍스트 형식으로 덤프하고, AutoJs6 선택자 문법으로 노드를 찾고, 클릭, 길게 누르기, 스크롤, 텍스트 설정, 뒤로와 홈 같은 전역 키를 누릅니다.
 - 스크린샷 그룹 (P3.3): screen_capture는 자르기, scale 또는 maxWidth, JPEG / PNG / WebP, 품질 설정을 지원하는 MCP 이미지를 반환합니다. 기본값은 JPEG 품질 70, 긴 변 1280 px입니다. base64가 4 MiB를 초과하면 품질이나 크기를 낮춰 재시도하고 메타데이터에 변경을 표시합니다. screen_state는 화면 켜짐 상태, 크기, 방향, 밀도를 반환합니다. 도구 목록은 37개입니다. MediaProjection 대체 경로에는 2026-09-13 이후 빌드한 AutoJs6와 휴대전화의 승인이 필요하며 호스트 세션에서 승인을 재사용합니다. annotate: true 를 지정하면 최근 ui_dump / ui_find 의 #n 참조를 이미지에 그려 (노드마다 테두리와 라벨) 화면의 요소와 대응시킬 수 있습니다.
@@ -101,7 +101,7 @@ MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]
 | `ui_press_key` | `ui` | 켜짐 | Presses a global key through the accessibility service: back, home, recents, notifications (opens the notification shade), quick_settings, power_dialog, or lock_screen (Android 9 or later). |
 | `ui_swipe` | `ui_gesture` | 꺼짐 | Swipes one finger from (x1, y1) to (x2, y2) in device pixels over durationMs; take the coordinates from ui_dump bounds or a screenshot. Part of the ui_gesture group, which is off by default. |
 | `ui_gesture` | `ui_gesture` | 꺼짐 | Performs a free-path one-finger gesture through the given points over durationMs (at most 10 s): the first point is the touch down, the last the lift. Part of the ui_gesture group, which is off by default. |
-| `screen_capture` | `screen` | 켜짐 | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
+| `screen_capture` | `screen` | 켜짐 | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. With annotate the #n references of the latest ui_dump / ui_find are drawn on the image. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
 | `screen_state` | `screen` | 켜짐 | Read whether the screen is on, its current width and height, orientation, rotation, and density. Does not request screen capture consent. |
 | `files_list` | `files` | 켜짐 | Lists workspace files with metadata. Results are bounded and report truncation. |
 | `files_stat` | `files` | 켜짐 | Returns existence, type, size, and modification time of a workspace path. |
@@ -312,11 +312,13 @@ default endpoint: http://127.0.0.1:9637/mcp
 _2026/10/11_
 
 - `기능` 설정 페이지의 클라이언트 설정에 VS Code mcp.json 조각 제공: 서버를 처음 시작할 때 VS Code 가 토큰 입력을 요청하므로 토큰이 파일에 기록되지 않습니다 (대화 상자에 "토큰 복사" 버튼 제공)
+- `기능` 설정 페이지의 클라이언트 설정 스니펫과 토큰 대화상자에서 "복사" 버튼과 같은 텍스트의 QR 코드를 표시할 수 있음 (텍스트에 토큰이 있으면 포함, 창은 스크린샷 차단)
 - `기능` screen_capture 의 annotate 옵션, 최근 ui_dump / ui_find 의 #n 참조를 이미지에 그리며 (테두리와 라벨) 결과의 annotation 필드가 그린 개수를 알려 줌
 - `개선` 상태 유지 MCP 엔드포인트의 이벤트 스트림 재개 지원: 이벤트에 id 를 붙이고, 프로토콜 2025-11-25 이상 클라이언트에는 재연결 간격이 포함된 프라이밍 이벤트를 먼저 보내며, 끊긴 요청 스트림은 Last-Event-ID 를 담은 GET 으로 재개하여 놓친 이벤트와 최종 결과를 다시 받을 수 있음 (세션별로 제한된 보관)
 - `개선` device_info, screen_state, script_run, script_run_file 이 출력 스키마 (outputSchema) 를 선언하여 클라이언트가 구조화된 결과를 검증할 수 있음; 이 도구들의 오류 결과는 오류 코드와 메시지를 텍스트로만 전달함
 - `개선` 플러그인 센터 아이콘에 Icon Studio에서 조정한 크기, 위치, 밝은 이미지와 어두운 이미지 및 원형 배경을 적용하고 재생성 가능한 원본과 매개변수를 유지
 - `개선` Android 앱 정보 아이콘에 Icon Studio의 그림과 밝은 배경 및 어두운 배경을 사용하고 플러그인 센터의 투명 그림과 기존 런처 옵션을 유지
+- `의존성` 설정 페이지 QR 코드 생성을 위해 ZXing Core 3.5.4 (`com.google.zxing:core`) 추가 (인코더만, Apache 2.0)
 
 #### v1.0.2
 

@@ -218,6 +218,8 @@ dependencies {
     // The SSE session of a POST response (server/SseStreamableMount, roadmap P3.1); the SDK exposes it as an API dependency already.
     implementation(libs.ktor.server.sse)
     implementation(libs.mcp.kotlin.sdk.server)
+    // QR codes of the client configuration snippets on the settings page (roadmap P4 / P9); encoder only, no camera.
+    implementation(libs.zxing.core)
 
     testImplementation(libs.junit)
     // Runs the SDK transport behind the request gate on Ktor's test engine (roadmap P2.1).

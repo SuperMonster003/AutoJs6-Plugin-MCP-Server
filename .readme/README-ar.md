@@ -62,7 +62,7 @@
 
 توفر الإضافة القدرات التالية:
 
-- إعدادات الهاتف لحالة الخادم وUSB والمنفذ والشبكة المحلية وعرض الرمز ونسخه وتغييره وإلغاء الاقتران ومجموعات الأدوات وصلاحيات root ووضع المطور وإعدادات Claude Code / Cursor / Codex / HTTP القابلة للنسخ وسجل الإصدارات مع مظهر AutoJs6. تغييرات الشبكة تعيد تشغيل المستمع, وتطبق الرموز والأذونات فورا. نوافذ الأسرار تمنع لقطات الشاشة.
+- إعدادات الهاتف لحالة الخادم وUSB والمنفذ والشبكة المحلية وعرض الرمز ونسخه وتغييره وإلغاء الاقتران ومجموعات الأدوات وصلاحيات root ووضع المطور وإعدادات Claude Code / Cursor / Codex / VS Code / HTTP القابلة للنسخ (وكرمز QR أيضا) وسجل الإصدارات مع مظهر AutoJs6. تغييرات الشبكة تعيد تشغيل المستمع, وتطبق الرموز والأذونات فورا. نوافذ الأسرار تمنع لقطات الشاشة.
 - تنفيذ البرامج النصية: تشغيل JavaScript من نص أو من ملف داخل AutoJs6, وعرض المحركات وإيقافها, وقراءة مخرجات وحدة التحكم الأخيرة.
 - واجهة إمكانية الوصول: تفريغ شجرة العقد بتنسيق نصي مضغوط, والعثور على العقد بصيغة محددات AutoJs6, والنقر, والضغط المطول, والتمرير, وتعيين النص, والضغط على المفاتيح العامة مثل رجوع والشاشة الرئيسية.
 - مجموعة لقطات الشاشة (P3.3): تعيد screen_capture صور MCP مع القص وscale أو maxWidth وتنسيقات JPEG / PNG / WebP والتحكم في الجودة. الإعداد الافتراضي JPEG بجودة 70 وضلع أطول 1280 px. عند تجاوز base64 حجم 4 MiB تنخفض الجودة أو الأبعاد مع بيان التعديلات في البيانات الوصفية. تعرض screen_state حالة الشاشة والأبعاد والاتجاه والكثافة. يضم الدليل 37 أداة. يتطلب البديل MediaProjection إصدار AutoJs6 مبنيا في 2026-09-13 أو بعده وموافقة على الهاتف تعيد جلسة المضيف استخدامها. مع annotate: true ترسم مراجع #n الخاصة بآخر ui_dump / ui_find على الصورة (إطار وتسمية لكل عقدة) لمطابقتها مع ما يظهر على الشاشة.
@@ -101,7 +101,7 @@
 | `ui_press_key` | `ui` | مفعل | Presses a global key through the accessibility service: back, home, recents, notifications (opens the notification shade), quick_settings, power_dialog, or lock_screen (Android 9 or later). |
 | `ui_swipe` | `ui_gesture` | معطل | Swipes one finger from (x1, y1) to (x2, y2) in device pixels over durationMs; take the coordinates from ui_dump bounds or a screenshot. Part of the ui_gesture group, which is off by default. |
 | `ui_gesture` | `ui_gesture` | معطل | Performs a free-path one-finger gesture through the given points over durationMs (at most 10 s): the first point is the touch down, the last the lift. Part of the ui_gesture group, which is off by default. |
-| `screen_capture` | `screen` | مفعل | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
+| `screen_capture` | `screen` | مفعل | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. With annotate the #n references of the latest ui_dump / ui_find are drawn on the image. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
 | `screen_state` | `screen` | مفعل | Read whether the screen is on, its current width and height, orientation, rotation, and density. Does not request screen capture consent. |
 | `files_list` | `files` | مفعل | Lists workspace files with metadata. Results are bounded and report truncation. |
 | `files_stat` | `files` | مفعل | Returns existence, type, size, and modification time of a workspace path. |
@@ -312,11 +312,13 @@ default endpoint: http://127.0.0.1:9637/mcp
 _2026/10/11_
 
 - `ميزة` مقطع VS Code mcp.json في تكوين العملاء بصفحة الإعدادات: يطلب VS Code الرمز عند أول تشغيل للخادم فلا يُكتب الرمز في الملف (يوفر الحوار زر "نسخ الرمز")
+- `ميزة` يمكن لمقتطفات إعدادات العملاء ونافذة الرمز في صفحة الإعدادات عرض رمز QR يحمل النص نفسه الذي ينسخه زر "نسخ" (مع الرمز المميز عندما يتضمنه النص, والنافذة تمنع لقطات الشاشة)
 - `ميزة` خيار annotate في screen_capture لرسم مراجع #n الخاصة بآخر ui_dump / ui_find على الصورة (إطارات وتسميات), ويذكر الحقل annotation في النتيجة عدد ما رسم
 - `تحسين` دعم استئناف تدفقات الأحداث في نقطة نهاية MCP ذات الحالة: تحمل الأحداث معرفات, ويتلقى عملاء البروتوكول 2025-11-25 أو أحدث أولا حدث تهيئة مع فاصل إعادة الاتصال, ويمكن استئناف تدفق طلب منقطع بطلب GET يحمل Last-Event-ID يعيد إرسال الأحداث الفائتة والنتيجة النهائية (احتفاظ محدود لكل جلسة)
 - `تحسين` تعلن device_info و screen_state و script_run و script_run_file مخطط اخراج (outputSchema) يمكن للعملاء التحقق به من نتائجها المنظمة; وتحمل اخطاء هذه الادوات رمز الخطأ والرسالة نصا فقط
 - `تحسين` تستخدم أيقونات مركز الملحقات الأحجام والمواضع والصور الفاتحة والداكنة والخلفيات الدائرية المعدلة في Icon Studio مع الاحتفاظ بالمصادر والمعلمات لإعادة إنتاجها
 - `تحسين` تستخدم أيقونات معلومات التطبيق في Android صور Icon Studio وخلفياته الفاتحة والداكنة مع الحفاظ على الصور الشفافة في مركز الملحقات وخيارات المشغل الحالية
+- `تبعية` إضافة ZXing Core 3.5.4 (`com.google.zxing:core`) لرسم رموز QR في صفحة الإعدادات (المرمز فقط, Apache 2.0)
 
 #### v1.0.2
 

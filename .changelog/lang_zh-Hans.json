@@ -9,6 +9,7 @@
       "released_date": "2026/10/11",
       "feature": [
         "设置页客户端配置提供 VS Code mcp.json 片段, 令牌由 VS Code 在首次启动服务器时提示输入, 不写入配置文件 (对话框提供 \"复制令牌\" 按钮)",
+        "设置页的客户端配置片段与令牌对话框可显示二维码, 内容与 \"复制\" 按钮复制的文本相同 (含令牌时一并包含, 窗口禁止截图)",
         "screen_capture 的 annotate 参数, 用于在截图上标出最近一次 ui_dump / ui_find 的 #n 编号 (边框与标签), 结果的 annotation 字段报告绘制数量"
       ],
       "improvement": [
@@ -16,6 +17,9 @@
         "device_info, screen_state, script_run 与 script_run_file 声明输出 schema (outputSchema), 客户端可据此校验结构化结果; 这些工具的错误结果只以文本给出错误码与说明",
         "插件中心图标采用统一工作台调整后的尺寸, 位置, 亮暗图稿与圆形底色, 保留可重建原稿和参数",
         "Android 系统应用信息图标与图标工作台共用图稿和亮暗底色, 保留插件中心透明图稿及现有启动器选项"
+      ],
+      "dependency": [
+        "附加 ZXing Core 版本 3.5.4, 用于设置页二维码的生成 (仅编码器, Apache 2.0)"
       ]
     },
     "v1.0.2": {

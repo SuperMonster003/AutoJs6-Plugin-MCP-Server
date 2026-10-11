@@ -9,6 +9,7 @@
       "released_date": "2026/10/11",
       "feature": [
         "Fragmento VS Code mcp.json en la configuración de clientes de la página de ajustes: VS Code pide el token al iniciar el servidor por primera vez, por lo que el token no queda en el archivo (el diálogo incluye un botón \"Copiar token\")",
+        "Los fragmentos de configuración de clientes y el diálogo del token en la página de ajustes pueden mostrar un código QR con el mismo texto que copia el botón \"Copiar\" (con el token cuando el texto lo incluye; la ventana bloquea capturas)",
         "La opción annotate de screen_capture, que dibuja en la imagen las referencias #n del último ui_dump / ui_find (recuadros y etiquetas); el campo annotation del resultado indica cuántas se dibujaron"
       ],
       "improvement": [
@@ -16,6 +17,9 @@
         "device_info, screen_state, script_run y script_run_file declaran un esquema de salida (outputSchema) con el que los clientes pueden validar sus resultados estructurados; los errores de estas herramientas llevan el código y el mensaje solo como texto",
         "Los iconos del centro de plugins usan los tamaños, posiciones, imágenes claras y oscuras y fondos circulares ajustados en Icon Studio, conservando fuentes y parámetros reproducibles",
         "Los iconos de información de la aplicación de Android comparten las imágenes y los fondos claros y oscuros de Icon Studio, conservando las imágenes transparentes del centro de plugins y las opciones del lanzador"
+      ],
+      "dependency": [
+        "ZXing Core 3.5.4 (`com.google.zxing:core`) añadido para dibujar los códigos QR de la página de ajustes (solo codificador, Apache 2.0)"
       ]
     },
     "v1.0.2": {

@@ -94,6 +94,10 @@
     <string name="settings_port">Puerto</string>
     <string name="settings_port_hint">Introduce un puerto entre 1024 y 65535.</string>
     <string name="settings_port_value">Puerto: %1$d</string>
+    <string name="settings_qr_hide">Ocultar código QR</string>
+    <string name="settings_qr_hint">El código QR contiene el texto de arriba, incluido el token cuando forma parte de él. Deja que solo tus propios dispositivos lo escaneen.</string>
+    <string name="settings_qr_image">Código QR del texto de arriba</string>
+    <string name="settings_qr_show">Mostrar código QR</string>
     <string name="settings_release_history">Historial de versiones</string>
     <string name="settings_revoke">Revocar vinculación</string>
     <string name="settings_revoke_all">Revocar todas las vinculaciones</string>

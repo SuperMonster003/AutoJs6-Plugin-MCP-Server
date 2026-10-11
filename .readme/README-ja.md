@@ -62,7 +62,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 
 プラグインは以下の機能を提供します:
 
-- サーバー状態, USB 転送, ポートと LAN, トークンの表示/コピー/更新, ペアリング解除, ツールグループと root, 開発者モード, Claude Code / Cursor / Codex / 汎用 HTTP 設定のコピー, リリース履歴を提供し AutoJs6 の外観に追従します. ネットワーク変更はリスナーを再起動し, トークンと権限は即時反映します. 秘密情報の画面は撮影を防止します.
+- サーバー状態, USB 転送, ポートと LAN, トークンの表示/コピー/更新, ペアリング解除, ツールグループと root, 開発者モード, Claude Code / Cursor / Codex / VS Code / 汎用 HTTP 設定のコピー (QR コード表示も可), リリース履歴を提供し AutoJs6 の外観に追従します. ネットワーク変更はリスナーを再起動し, トークンと権限は即時反映します. 秘密情報の画面は撮影を防止します.
 - スクリプト実行: AutoJs6 内でテキストまたはファイルから JavaScript を実行し, エンジンの一覧表示と停止, 最近のコンソール出力の読み取りを行います.
 - アクセシビリティ UI: ノードツリーをコンパクトなテキスト形式で出力し, AutoJs6 のセレクター構文でノードを検索し, クリック, 長押し, スクロール, テキスト設定, 戻るやホームなどのグローバルキー操作を行います.
 - スクリーンショットグループ (P3.3): screen_capture は切り抜き, scale または maxWidth, JPEG / PNG / WebP, 品質指定に対応した MCP 画像を返します. 既定値は JPEG 品質 70, 長辺 1280 px です. base64 が 4 MiB を超える場合は品質やサイズを下げて再試行し, 変更をメタデータに記録します. screen_state は画面の点灯状態, サイズ, 向き, 密度を返します. ツール数は 37 になりました. MediaProjection のフォールバックには 2026-09-13 以降にビルドされた AutoJs6 と端末での許可が必要で, 許可はホストセッションで再利用されます. annotate: true を指定すると, 直近の ui_dump / ui_find の #n 参照を画像に描画し (ノードごとに枠とラベル), 画面上の要素と対応付けられます.
@@ -101,7 +101,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 | `ui_press_key` | `ui` | 有効 | Presses a global key through the accessibility service: back, home, recents, notifications (opens the notification shade), quick_settings, power_dialog, or lock_screen (Android 9 or later). |
 | `ui_swipe` | `ui_gesture` | 無効 | Swipes one finger from (x1, y1) to (x2, y2) in device pixels over durationMs; take the coordinates from ui_dump bounds or a screenshot. Part of the ui_gesture group, which is off by default. |
 | `ui_gesture` | `ui_gesture` | 無効 | Performs a free-path one-finger gesture through the given points over durationMs (at most 10 s): the first point is the touch down, the last the lift. Part of the ui_gesture group, which is off by default. |
-| `screen_capture` | `screen` | 有効 | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
+| `screen_capture` | `screen` | 有効 | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. With annotate the #n references of the latest ui_dump / ui_find are drawn on the image. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
 | `screen_state` | `screen` | 有効 | Read whether the screen is on, its current width and height, orientation, rotation, and density. Does not request screen capture consent. |
 | `files_list` | `files` | 有効 | Lists workspace files with metadata. Results are bounded and report truncation. |
 | `files_stat` | `files` | 有効 | Returns existence, type, size, and modification time of a workspace path. |
@@ -312,11 +312,13 @@ default endpoint: http://127.0.0.1:9637/mcp
 _2026/10/11_
 
 - `機能` 設定ページのクライアント設定に VS Code mcp.json の断片を追加: トークンはサーバーの初回起動時に VS Code が入力を求めるため, ファイルには書き込まれません (ダイアログに "トークンをコピー" ボタンあり)
+- `機能` 設定ページのクライアント設定スニペットとトークンのダイアログで, "コピー" ボタンと同じテキストの QR コードを表示可能 (テキストにトークンがあれば含む. ウィンドウはスクリーンショットを防止)
 - `機能` screen_capture の annotate オプション. 直近の ui_dump / ui_find の #n 参照を画像に描画 (枠とラベル) し, 結果の annotation フィールドで描画数を報告
 - `改善` ステートフル MCP エンドポイントのイベントストリームが再開に対応: イベントに id を付与し, プロトコル 2025-11-25 以降のクライアントには再接続間隔付きのプライミングイベントを最初に送信. 切断されたリクエストストリームは Last-Event-ID 付きの GET で再開でき, 取りこぼしたイベントと最終結果を再送 (セッションごとに上限付きで保持)
 - `改善` device_info, screen_state, script_run, script_run_file が出力スキーマ (outputSchema) を宣言し, クライアントが構造化結果を検証可能に. これらのツールのエラー結果はエラーコードとメッセージをテキストのみで返す
 - `改善` プラグインセンターのアイコンに Icon Studio で調整したサイズ, 位置, 明暗の図稿と円形背景を適用し, 再生成可能な原稿とパラメーターを保持
 - `改善` Android のアプリ情報アイコンに Icon Studio と共通の図案と明暗の背景色を使用し, プラグインセンターの透明な図案と既存のランチャー設定を維持
+- `依存関係` 設定ページの QR コード描画のため ZXing Core 3.5.4 (`com.google.zxing:core`) を追加 (エンコーダーのみ, Apache 2.0)
 
 #### v1.0.2
 

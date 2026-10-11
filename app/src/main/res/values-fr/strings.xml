@@ -94,6 +94,10 @@
     <string name="settings_port">Port</string>
     <string name="settings_port_hint">Saisissez un port entre 1024 et 65535.</string>
     <string name="settings_port_value">Port: %1$d</string>
+    <string name="settings_qr_hide">Masquer le code QR</string>
+    <string name="settings_qr_hint">Le code QR contient le texte ci-dessus, jeton compris s\'il en fait partie. Ne le laissez scanner que par vos propres appareils.</string>
+    <string name="settings_qr_image">Code QR du texte ci-dessus</string>
+    <string name="settings_qr_show">Afficher le code QR</string>
     <string name="settings_release_history">Historique des versions</string>
     <string name="settings_revoke">Révoquer l\'association</string>
     <string name="settings_revoke_all">Révoquer toutes les associations</string>

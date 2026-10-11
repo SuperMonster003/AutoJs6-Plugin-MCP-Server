@@ -94,6 +94,10 @@
     <string name="settings_port">連接埠</string>
     <string name="settings_port_hint">請輸入 1024 至 65535 之間的連接埠.</string>
     <string name="settings_port_value">連接埠: %1$d</string>
+    <string name="settings_qr_hide">隱藏 QR 碼</string>
+    <string name="settings_qr_hint">QR 碼包含上方文字, 文字中有權杖時也包含權杖. 只讓你自己的裝置掃描.</string>
+    <string name="settings_qr_image">上方文字的 QR 碼</string>
+    <string name="settings_qr_show">顯示 QR 碼</string>
     <string name="settings_release_history">發行歷史</string>
     <string name="settings_revoke">撤銷配對</string>
     <string name="settings_revoke_all">撤銷全部配對</string>

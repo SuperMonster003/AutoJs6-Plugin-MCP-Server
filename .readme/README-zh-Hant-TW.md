@@ -62,7 +62,7 @@ MCP Server 讓執行 AutoJs6 的 Android 裝置成為一台 [Model Context Proto
 
 外掛程式提供以下能力:
 
-- 手機設定頁提供服務狀態, USB 轉發, 連接埠與區域網路存取, 權杖顯示/複製/輪換, 配對撤銷, 工具群組與 root 權限, 開發者模式, 可複製的 Claude Code / Cursor / Codex / 通用 HTTP 設定及發行歷史, 並跟隨 AutoJs6 外觀. 網路設定會重新啟動執行中的監聽器, 權杖與權限變更立即生效. 敏感資訊視窗禁止截圖.
+- 手機設定頁提供服務狀態, USB 轉發, 連接埠與區域網路存取, 權杖顯示/複製/輪換, 配對撤銷, 工具群組與 root 權限, 開發者模式, 可複製 (也可顯示為 QR 碼) 的 Claude Code / Cursor / Codex / VS Code / 通用 HTTP 設定及發行歷史, 並跟隨 AutoJs6 外觀. 網路設定會重新啟動執行中的監聽器, 權杖與權限變更立即生效. 敏感資訊視窗禁止截圖.
 - 指令碼執行: 在 AutoJs6 內執行文字或檔案形式的 JavaScript, 列出與停止引擎, 讀取最近的主控台輸出.
 - 無障礙介面: 以精簡文字格式匯出節點樹, 用 AutoJs6 選擇器語法尋找節點, 點擊, 長按, 捲動, 設定文字, 以及觸發返回和主畫面等全域按鍵.
 - 螢幕擷取群組 (P3.3): screen_capture 傳回 MCP 圖片, 支援裁切, scale 或 maxWidth, JPEG / PNG / WebP 與品質參數. 預設 JPEG 品質 70, 最長邊 1280 px. base64 超過 4 MiB 時降低品質或尺寸重試, 中繼資料說明調整情況. screen_state 傳回亮屏狀態, 尺寸, 方向和密度. 工具目錄現有 37 項. MediaProjection 備援需要 2026-09-13 或之後建置的 AutoJs6 主程式及手機端授權, 主程式工作階段重用該授權. annotate: true 時在螢幕截圖上標出最近一次 ui_dump / ui_find 的 #n 編號 (每個節點一個邊框和標籤), 方便把編號與畫面對應.
@@ -101,7 +101,7 @@ MCP Server 讓執行 AutoJs6 的 Android 裝置成為一台 [Model Context Proto
 | `ui_press_key` | `ui` | 開 | Presses a global key through the accessibility service: back, home, recents, notifications (opens the notification shade), quick_settings, power_dialog, or lock_screen (Android 9 or later). |
 | `ui_swipe` | `ui_gesture` | 關 | Swipes one finger from (x1, y1) to (x2, y2) in device pixels over durationMs; take the coordinates from ui_dump bounds or a screenshot. Part of the ui_gesture group, which is off by default. |
 | `ui_gesture` | `ui_gesture` | 關 | Performs a free-path one-finger gesture through the given points over durationMs (at most 10 s): the first point is the touch down, the last the lift. Part of the ui_gesture group, which is off by default. |
-| `screen_capture` | `screen` | 開 | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
+| `screen_capture` | `screen` | 開 | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. With annotate the #n references of the latest ui_dump / ui_find are drawn on the image. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
 | `screen_state` | `screen` | 開 | Read whether the screen is on, its current width and height, orientation, rotation, and density. Does not request screen capture consent. |
 | `files_list` | `files` | 開 | Lists workspace files with metadata. Results are bounded and report truncation. |
 | `files_stat` | `files` | 開 | Returns existence, type, size, and modification time of a workspace path. |
@@ -312,11 +312,13 @@ default endpoint: http://127.0.0.1:9637/mcp
 _2026/10/11_
 
 - `新增` 設定頁用戶端設定提供 VS Code mcp.json 片段, 權杖由 VS Code 在首次啟動伺服器時提示輸入, 不寫入設定檔 (對話方塊提供 "複製權杖" 按鈕)
+- `新增` 設定頁的用戶端設定片段與權杖對話框可顯示 QR 碼, 內容與 "複製" 按鈕複製的文字相同 (含權杖時一併包含, 視窗禁止截圖)
 - `新增` screen_capture 的 annotate 參數, 用於在螢幕截圖上標出最近一次 ui_dump / ui_find 的 #n 編號 (邊框與標籤), 結果的 annotation 欄位回報繪製數量
 - `優化` 有狀態 MCP 端點的事件串流支援斷線續傳: 事件帶 id, 協定 2025-11-25 以上版本的用戶端先收到帶重連間隔的 priming 事件, 中斷的請求串流可憑 Last-Event-ID 經 GET 接回, 補發錯過的事件與最終結果 (每個工作階段有界保留)
 - `優化` device_info, screen_state, script_run 與 script_run_file 宣告輸出 schema (outputSchema), 用戶端可據此驗證結構化結果; 這些工具的錯誤結果只以文字提供錯誤碼與說明
 - `優化` 外掛程式中心圖示採用統一工作台調整後的尺寸, 位置, 明暗圖稿與圓形底色, 保留可重建原稿和參數
 - `優化` Android 系統應用程式資訊圖示與圖示工作台共用圖稿及明暗底色, 保留外掛程式中心透明圖稿與現有啟動器選項
+- `相依性` 附加 ZXing Core 版本 3.5.4, 用於設定頁 QR 碼的產生 (僅編碼器, Apache 2.0)
 
 #### v1.0.2
 

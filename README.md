@@ -62,7 +62,7 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 
 插件提供以下能力:
 
-- 手机设置页提供服务状态, USB 转发, 端口和局域网访问, 令牌显示/复制/轮换, 配对撤销, 工具分组和 root 权限, 开发者模式, 可复制的 Claude Code / Cursor / Codex / 通用 HTTP 配置及发行历史, 并跟随 AutoJs6 外观. 网络设置会重启运行中的监听器, 令牌和权限变更立即生效. 敏感信息窗口禁止截图.
+- 手机设置页提供服务状态, USB 转发, 端口和局域网访问, 令牌显示/复制/轮换, 配对撤销, 工具分组和 root 权限, 开发者模式, 可复制 (也可显示为二维码) 的 Claude Code / Cursor / Codex / VS Code / 通用 HTTP 配置及发行历史, 并跟随 AutoJs6 外观. 网络设置会重启运行中的监听器, 令牌和权限变更立即生效. 敏感信息窗口禁止截图.
 - 脚本执行: 在 AutoJs6 内运行文本或文件形式的 JavaScript, 列出与停止引擎, 读取最近的控制台输出.
 - 无障碍界面: 以紧凑文本格式导出节点树, 用 AutoJs6 选择器语法查找节点, 点击, 长按, 滚动, 设置文本, 以及触发返回和主屏幕等全局按键.
 - 截图分组 (P3.3): screen_capture 返回 MCP 图片, 支持裁剪, scale 或 maxWidth, JPEG / PNG / WebP 与质量参数. 默认 JPEG 质量 70, 最长边 1280 px. base64 超过 4 MiB 时降低质量或尺寸重试, 元数据说明调整情况. screen_state 返回亮屏状态, 尺寸, 方向和密度. 工具目录现有 37 项. MediaProjection 回退需要 2026-09-13 或之后构建的 AutoJs6 宿主及手机端授权, 宿主会话复用该授权. annotate: true 时在截图上标出最近一次 ui_dump / ui_find 的 #n 编号 (每个节点一个边框和标签), 便于把编号与画面对应.
@@ -101,7 +101,7 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 | `ui_press_key` | `ui` | 开 | Presses a global key through the accessibility service: back, home, recents, notifications (opens the notification shade), quick_settings, power_dialog, or lock_screen (Android 9 or later). |
 | `ui_swipe` | `ui_gesture` | 关 | Swipes one finger from (x1, y1) to (x2, y2) in device pixels over durationMs; take the coordinates from ui_dump bounds or a screenshot. Part of the ui_gesture group, which is off by default. |
 | `ui_gesture` | `ui_gesture` | 关 | Performs a free-path one-finger gesture through the given points over durationMs (at most 10 s): the first point is the touch down, the last the lift. Part of the ui_gesture group, which is off by default. |
-| `screen_capture` | `screen` | 开 | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
+| `screen_capture` | `screen` | 开 | Capture the phone screen as an MCP image with dimensions, size, duration and capture source. Uses accessibility on Android 11+ and falls back to MediaProjection, which requires consent on the phone the first time. Defaults to JPEG quality 70 and a longest edge of 1280 pixels. Choose scale or maxWidth to override the size. Images above the 4 MiB base64 limit are retried at lower quality or smaller dimensions; metadata reports adjustments. With annotate the #n references of the latest ui_dump / ui_find are drawn on the image. At most 30 captures per minute per client; a RATE_LIMITED result names the wait in retryAfterMs. |
 | `screen_state` | `screen` | 开 | Read whether the screen is on, its current width and height, orientation, rotation, and density. Does not request screen capture consent. |
 | `files_list` | `files` | 开 | Lists workspace files with metadata. Results are bounded and report truncation. |
 | `files_stat` | `files` | 开 | Returns existence, type, size, and modification time of a workspace path. |
@@ -312,11 +312,13 @@ default endpoint: http://127.0.0.1:9637/mcp
 _2026/10/11_
 
 - `新增` 设置页客户端配置提供 VS Code mcp.json 片段, 令牌由 VS Code 在首次启动服务器时提示输入, 不写入配置文件 (对话框提供 "复制令牌" 按钮)
+- `新增` 设置页的客户端配置片段与令牌对话框可显示二维码, 内容与 "复制" 按钮复制的文本相同 (含令牌时一并包含, 窗口禁止截图)
 - `新增` screen_capture 的 annotate 参数, 用于在截图上标出最近一次 ui_dump / ui_find 的 #n 编号 (边框与标签), 结果的 annotation 字段报告绘制数量
 - `优化` 有状态 MCP 端点的事件流支持断线续传: 事件带 id, 协议 2025-11-25 及以上的客户端先收到带重连间隔的 priming 事件, 断开的请求流可凭 Last-Event-ID 经 GET 接回, 补发错过的事件与最终结果 (每个会话有界保留)
 - `优化` device_info, screen_state, script_run 与 script_run_file 声明输出 schema (outputSchema), 客户端可据此校验结构化结果; 这些工具的错误结果只以文本给出错误码与说明
 - `优化` 插件中心图标采用统一工作台调整后的尺寸, 位置, 亮暗图稿与圆形底色, 保留可重建原稿和参数
 - `优化` Android 系统应用信息图标与图标工作台共用图稿和亮暗底色, 保留插件中心透明图稿及现有启动器选项
+- `依赖` 附加 ZXing Core 版本 3.5.4, 用于设置页二维码的生成 (仅编码器, Apache 2.0)
 
 #### v1.0.2
 

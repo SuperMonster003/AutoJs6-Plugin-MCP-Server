@@ -94,6 +94,10 @@
     <string name="settings_port">端口</string>
     <string name="settings_port_hint">请输入 1024 至 65535 之间的端口.</string>
     <string name="settings_port_value">端口: %1$d</string>
+    <string name="settings_qr_hide">隐藏二维码</string>
+    <string name="settings_qr_hint">二维码包含上方文本, 文本中有令牌时也包含令牌. 只让你自己的设备扫描.</string>
+    <string name="settings_qr_image">上方文本的二维码</string>
+    <string name="settings_qr_show">显示二维码</string>
     <string name="settings_release_history">发行历史</string>
     <string name="settings_revoke">撤销配对</string>
     <string name="settings_revoke_all">撤销全部配对</string>

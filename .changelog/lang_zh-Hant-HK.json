@@ -9,6 +9,7 @@
       "released_date": "2026/10/11",
       "feature": [
         "設定頁客戶端設定提供 VS Code mcp.json 片段, 權杖由 VS Code 在首次啟動伺服器時提示輸入, 不寫入設定檔 (對話方塊提供 \"複製權杖\" 按鈕)",
+        "設定頁的客戶端設定片段與權杖對話框可顯示二維碼, 內容與 \"複製\" 按鈕複製的文字相同 (含權杖時一併包含, 視窗禁止截圖)",
         "screen_capture 的 annotate 參數, 用於在截圖上標出最近一次 ui_dump / ui_find 的 #n 編號 (邊框與標籤), 結果的 annotation 欄位報告繪製數量"
       ],
       "improvement": [
@@ -16,6 +17,9 @@
         "device_info, screen_state, script_run 與 script_run_file 聲明輸出 schema (outputSchema), 客戶端可據此校驗結構化結果; 這些工具的錯誤結果只以文字給出錯誤碼與說明",
         "外掛程式中心圖示採用統一工作台調整後的尺寸, 位置, 明暗圖稿與圓形底色, 保留可重建原稿和參數",
         "Android 系統應用程式資訊圖示與圖示工作台共用圖稿及明暗底色, 保留外掛程式中心透明圖稿與現有啟動器選項"
+      ],
+      "dependency": [
+        "附加 ZXing Core 版本 3.5.4, 用於設定頁二維碼的產生 (僅編碼器, Apache 2.0)"
       ]
     },
     "v1.0.2": {

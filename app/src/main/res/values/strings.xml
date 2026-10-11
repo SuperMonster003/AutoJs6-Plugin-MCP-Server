@@ -94,6 +94,10 @@
     <string name="settings_port">Port</string>
     <string name="settings_port_hint">Enter a port from 1024 to 65535.</string>
     <string name="settings_port_value">Port: %1$d</string>
+    <string name="settings_qr_hide">Hide QR code</string>
+    <string name="settings_qr_hint">The QR code holds the text above, including the token when it is part of it. Let only your own devices scan it.</string>
+    <string name="settings_qr_image">QR code of the text above</string>
+    <string name="settings_qr_show">Show QR code</string>
     <string name="settings_release_history">Release history</string>
     <string name="settings_revoke">Revoke pairing</string>
     <string name="settings_revoke_all">Revoke all pairings</string>

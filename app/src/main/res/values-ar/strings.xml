@@ -94,6 +94,10 @@
     <string name="settings_port">المنفذ</string>
     <string name="settings_port_hint">أدخل منفذا من 1024 إلى 65535.</string>
     <string name="settings_port_value">المنفذ: %1$d</string>
+    <string name="settings_qr_hide">إخفاء رمز QR</string>
+    <string name="settings_qr_hint">يحتوي رمز QR على النص أعلاه, بما في ذلك الرمز المميز إذا كان جزءا منه. لا تسمح بمسحه إلا لأجهزتك.</string>
+    <string name="settings_qr_image">رمز QR للنص أعلاه</string>
+    <string name="settings_qr_show">إظهار رمز QR</string>
     <string name="settings_release_history">سجل الإصدارات</string>
     <string name="settings_revoke">إلغاء الاقتران</string>
     <string name="settings_revoke_all">إلغاء كل الاقترانات</string>

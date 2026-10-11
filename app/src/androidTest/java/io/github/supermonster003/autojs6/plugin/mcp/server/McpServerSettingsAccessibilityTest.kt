@@ -1,12 +1,13 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server
 
-import android.app.Activity
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.view.KeyEvent
 import android.view.View
@@ -15,17 +16,23 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.Switch
 import android.widget.TextView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.DecodeHintType
+import com.google.zxing.RGBLuminanceSource
+import com.google.zxing.common.HybridBinarizer
+import com.google.zxing.qrcode.QRCodeReader
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.*
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.*
 import io.github.supermonster003.autojs6.plugin.mcp.server.ui.*
+import java.util.concurrent.TimeUnit
 import org.junit.*
 import org.junit.Assert.*
 import org.junit.runner.RunWith
-import java.util.concurrent.TimeUnit
 
 /**
  * Accessibility labels, keyboard navigation and the clipboard path of the settings page (roadmap P4).
@@ -173,6 +180,30 @@ class McpServerSettingsAccessibilityTest {
             assertTrue("the token clip is marked sensitive", onMain { clipboard.primaryClip?.description?.extras?.getBoolean(ClipDescription.EXTRA_IS_SENSITIVE) == true })
         }
         if (Build.VERSION.SDK_INT >= 28) onMain { clipboard.clearPrimaryClip() }
+        onMain { settings.secretDialog?.dismiss() }
+    }
+
+    @Test fun theSnippetQrCodeShowsTheSameTextAndIsClearedWhenHidden() {
+        val settings = launch()
+        awaitLoaded(settings)
+        val config = ServerConfigStore(context).load()
+        val expected = ClientConfigSnippet.create(McpClient.CLAUDE_CODE, "http://127.0.0.1:${config.port}/mcp", TokenStore(context).current()).text
+        onMain { click(settings, R.string.settings_client_claude) }
+        await("snippet dialog") { onMain { settings.secretDialog?.isShowing == true } }
+        val dialogViews = { onMain { views(settings.secretDialog!!.window!!.decorView) } }
+        val image = dialogViews().filterIsInstance<ImageView>().single { it.contentDescription == settings.getString(R.string.settings_qr_image) }
+        assertEquals(View.GONE, onMain { image.visibility })
+        onMain { views(settings.secretDialog!!.window!!.decorView).filterIsInstance<Button>().single { it.text.toString() == settings.getString(R.string.settings_qr_show) }.performClick() }
+        await("QR code shown") { onMain { image.visibility == View.VISIBLE && image.drawable != null } }
+        val bitmap = onMain { (image.drawable as BitmapDrawable).bitmap }
+        val pixels = IntArray(bitmap.width * bitmap.height).also { bitmap.getPixels(it, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height) }
+        val decoded = QRCodeReader().decode(
+            BinaryBitmap(HybridBinarizer(RGBLuminanceSource(bitmap.width, bitmap.height, pixels))),
+            mapOf(DecodeHintType.PURE_BARCODE to true, DecodeHintType.CHARACTER_SET to "UTF-8"),
+        ).text
+        assertEquals(expected, decoded)
+        onMain { views(settings.secretDialog!!.window!!.decorView).filterIsInstance<Button>().single { it.text.toString() == settings.getString(R.string.settings_qr_hide) }.performClick() }
+        await("QR code hidden and released") { onMain { image.visibility == View.GONE && image.drawable == null } }
         onMain { settings.secretDialog?.dismiss() }
     }
 

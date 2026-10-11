@@ -21,6 +21,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Switch
@@ -357,12 +358,36 @@ class McpServerSettingsActivity : SettingsPageActivity() {
             if (Build.VERSION.SDK_INT >= 26) importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
             if (Build.VERSION.SDK_INT >= 30) importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
         }
+        // The QR code carries the same text; it is drawn only on request and cleared with the dialog.
+        val qrImage = ImageView(this).apply {
+            visibility = View.GONE
+            adjustViewBounds = true
+            contentDescription = getString(R.string.settings_qr_image)
+            setPadding(0, dp(8), 0, 0)
+        }
+        val qrHint = label(getString(R.string.settings_qr_hint), box).apply { setTextColor(secondary); visibility = View.GONE }
+        if (ClientConfigQr.fits(text)) {
+            box.addView(qrImage, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+            lateinit var toggle: Button
+            toggle = button(R.string.settings_qr_show, box) {
+                val showing = qrImage.visibility == View.VISIBLE
+                if (showing) {
+                    qrImage.setImageDrawable(null)
+                } else {
+                    val size = (minOf(resources.displayMetrics.widthPixels, resources.displayMetrics.heightPixels) * 0.7f).toInt()
+                    qrImage.setImageBitmap(ClientConfigQr.bitmap(text, size))
+                }
+                qrImage.visibility = if (showing) View.GONE else View.VISIBLE
+                qrHint.visibility = qrImage.visibility
+                toggle.setText(if (showing) R.string.settings_qr_show else R.string.settings_qr_hide)
+            }
+        }
         val builder = AlertDialog.Builder(this).setTitle(title).setView(ScrollView(this).apply { addView(box) })
             .setNegativeButton(android.R.string.cancel, null).setPositiveButton(R.string.settings_copy) { _, _ -> copy(text, true) }
         if (extraCopy != null) builder.setNeutralButton(extraCopy.first) { _, _ -> copy(extraCopy.second, true) }
         secretDialog = builder.create().also { popup ->
             popup.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-            popup.setOnDismissListener { secret.text = "" }
+            popup.setOnDismissListener { secret.text = ""; qrImage.setImageDrawable(null) }
             popup.show()
             applyDialogTheme(popup)
         }

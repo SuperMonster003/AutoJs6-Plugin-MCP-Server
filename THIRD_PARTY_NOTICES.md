@@ -55,6 +55,14 @@ own licenses. Runtime dependencies are added to this list in the same commit tha
 - Source: <https://www.slf4j.org>
 - License: MIT License
 
+## ZXing
+
+- Component: `com.google.zxing:core` 3.5.4 (QR code encoder for the client configuration snippets on the settings page; no camera or decoder use at run time)
+- Source: <https://github.com/zxing/zxing>, Maven Central
+- SHA-256: `71de5d89341b5fcf5dd89da7f44e84d825d0e084cdf3ec77c9abe26b0f0ceb13` (`core-3.5.4.jar`; SHA-1 `955fcd6bcd0723ddfb8ee6ed502d5fdf0e9676a9` matches Maven Central)
+- License: Apache License 2.0
+- The JVM and instrumentation tests also use its decoder (`QRCodeReader`) to read the generated codes back
+
 ## Test-only dependencies
 
 These libraries are used by the JVM and instrumentation test source sets only and are not shipped

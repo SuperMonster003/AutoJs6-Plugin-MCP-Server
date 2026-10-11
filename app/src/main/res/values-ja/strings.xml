@@ -94,6 +94,10 @@
     <string name="settings_port">ポート</string>
     <string name="settings_port_hint">1024 から 65535 のポートを入力してください.</string>
     <string name="settings_port_value">ポート: %1$d</string>
+    <string name="settings_qr_hide">QR コードを隠す</string>
+    <string name="settings_qr_hint">QR コードには上のテキストが含まれ, トークンを含む場合はトークンも含まれます. 自分のデバイスだけで読み取ってください.</string>
+    <string name="settings_qr_image">上のテキストの QR コード</string>
+    <string name="settings_qr_show">QR コードを表示</string>
     <string name="settings_release_history">リリース履歴</string>
     <string name="settings_revoke">ペアリングを解除</string>
     <string name="settings_revoke_all">すべてのペアリングを解除</string>
