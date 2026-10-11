@@ -15,6 +15,7 @@ evidence should only depend on these files.
 | `screenshot_rate.py` | Scenario: 31 captures in a row, the 31st `RATE_LIMITED` with `retryAfterMs`, then a capture after the wait (roadmap P6 / P9) |
 | `token_rotation.py` | Scenario: lifecycle S5, the token rotated on the settings page while a session is live (roadmap P6 / P9) |
 | `lifecycle.py` | Scenario: the P6 lifecycle matrix S1 - S6 with kills from adb and `ACTION:` prompts for the on-screen steps (roadmap P6 / P9) |
+| `privileged.py` | Scenario: `device_ensure_accessibility` while the AutoJs6 accessibility service is off (the host's root, secure settings or Shizuku strategy), then `shell_exec id` without and with `root: true`; reports only the uid names (roadmap P3.4 / P9) |
 | `bridge_reopen.py` | Scenario: the stdio bridge (`autojs6-mcp-bridge`) across a listener restart; each `--bridge` command runs once, so an old and a new bridge can be compared (roadmap P9) |
 | `test_evidence.py` | Offline checks of the parsing and redaction logic |
 
@@ -59,6 +60,7 @@ py tools/evidence/ui_chain.py --serial <serial>
 py tools/evidence/screenshot_rate.py --serial <serial>
 py tools/evidence/token_rotation.py --serial <serial>   # then rotate the token on the settings page
 py tools/evidence/lifecycle.py --serial <serial> [--only S1 S2 ...]   # follow the ACTION lines on stderr
+py tools/evidence/privileged.py --serial <serial>   # switch the Shell group and "Allow root" on when asked
 ```
 
 `docs_resources.py` options: `--hold-seconds` (host session hold, default 240),
@@ -77,3 +79,9 @@ drawer switched on: holding a host session runs the host instrumentation, which 
 AutoJs6 process and stops its accessibility service until it is switched on again. On MIUI the
 host took more than a minute to rebind the plugin after the helpers, hence the 180 s
 `rebind_timeout` of `evidence_session`.
+
+`privileged.py` needs a listener the drawer switched on and restores
+`enabled_accessibility_services` afterwards (`--keep-accessibility` leaves it). The host tries its
+strategies in a fixed order (root, secure settings, Shizuku), each behind its own host setting; to
+prove the Shizuku path on a phone that also has root, switch the other two off in the AutoJs6
+settings for the run and back on afterwards.

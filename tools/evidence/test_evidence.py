@@ -12,6 +12,7 @@ from bridge_reopen import SESSION_ID, call_facts  # noqa: E402
 from device import Device, scrub  # noqa: E402
 from docs_resources import content_facts, find_png, index_facts  # noqa: E402
 from mcp_client import PAIRING_REQUIRED, McpError, decode_messages, parse_sse  # noqa: E402
+from privileged import uid_name  # noqa: E402
 
 TOKEN = "Abc_" + "x" * 39
 
@@ -93,6 +94,12 @@ class EvidenceToolTest(unittest.TestCase):
         self.assertEqual("the phone no longer knew session <id> (its listener restarted); opened session <id>",
                          SESSION_ID.sub(r"\1<id>", line))
         self.assertEqual("The phone's MCP session ended", SESSION_ID.sub(r"\1<id>", "The phone's MCP session ended"))
+
+    def test_privileged_reports_keep_only_the_uid_name(self):
+        self.assertEqual("0(root)", uid_name("uid=0(root) gid=0(root) groups=0(root) context=u:r:magisk:s0\n"))
+        self.assertEqual("10670(u0_a670)", uid_name("uid=10670(u0_a670) gid=10670(u0_a670) groups=3003(inet)"))
+        self.assertIsNone(uid_name("permission denied"))
+        self.assertIsNone(uid_name(None))
 
 
 if __name__ == "__main__":

@@ -81,6 +81,47 @@ with the current token (`device_ping` 66 ms); the token was then rotated on the 
 
 This completes S5 on API 31, which the P6 run could not drive.
 
+## Root Shell and Shizuku auto-enable (P3.4)
+
+`tools/evidence/privileged.py` on Sony XQ-DQ72 (Android 13, API 33), which has both root and
+Shizuku 13.6.0 (plugin 1.0.3 build 95, same host build). The listener was switched on in the
+drawer; the Shell group and "Allow root" were switched on in the plugin settings for the run and
+off again afterwards. The AutoJs6 accessibility service was off before each run, and the script
+restored `enabled_accessibility_services` afterwards.
+
+| Run | `device_ensure_accessibility` | `shell_exec id` | `shell_exec id, root: true` |
+| --- | --- | --- | --- |
+| Host defaults (root strategy first) | enabled, 268 ms, service running and operational | `uid=10670(u0_a670)`, 163 ms | `uid=0(root)`, 150 ms |
+| Root and secure settings strategies off in the host settings | enabled through Shizuku, 202 ms | `uid=10670(u0_a670)`, 154 ms | `uid=0(root)`, 160 ms |
+
+The host settings were restored after the second run. With the separate "Allow root" switch off,
+`root: true` answers `TOOL_DISABLED` before reaching the host (covered by the JVM and fake broker
+tests of P3.4).
+
+## Android 17 local network permission (1.0.2)
+
+Samsung SM-F971B (Android 17, API 37), a rented remote device (adb over a tunnel, screenshots need
+`screencap -d <display id>` on this foldable), plugin 1.0.3 build 95, host 6.8.0 debug build with
+commit `f4fbed4079`. Fresh install of both:
+
+| Step | Result |
+| --- | --- |
+| Drawer before the switch is used | "Activation required" (the host change of that commit) |
+| Activation, then "Enable plugin and start the server?" | "ENABLE PLUGIN" opens the host's local network guide ("Nearby devices" for the plugin) |
+| "AUTHORIZE" -> system dialog "Allow" | plugin `ACCESS_LOCAL_NETWORK: granted=true`; AutoJs6 itself stays `granted=false` (the grant belongs to the plugin) |
+| Server | started; `device_ping` 848 ms, `device_info` 814 ms over the tunnel, protocol 2025-11-25 |
+| "Allow local network connections" -> confirmation -> OK | listener rebinds from `127.0.0.1:9637` to `*:9637`; requests over loopback keep working |
+| LAN addresses | none, the device has no Wi-Fi interface (only `lo`); the page says "No local network address yet. Connect the phone to Wi-Fi." and the endpoint list stays loopback |
+| LAN off, server stopped on the settings page | back to `127.0.0.1:9637`, then the port closed and the drawer switch off |
+
+The same drawer hint was checked on Sony G8441 (API 28) first: with AutoJs6 running while the
+plugin was installed, and with AutoJs6 started after the install; activation then cleared it as
+before. The main AutoJs6 settings page no longer repeats the drawer's "Local network permission" switch
+(same host commit). Not covered: a client on the same Wi-Fi (no Wi-Fi on the rented device) and the
+daily LAN reminder (notifications were not allowed for the plugin on this device: the system
+recorded its notifications as blocked). When the permission is already granted, the settings
+page button "Allow nearby devices" opens the plugin's app info page.
+
 ## Lifecycle matrix on API 28
 
 `tools/evidence/lifecycle.py` ran S1 - S6 on Sony G8441 (Android 9, API 28), the phone the P6 run
