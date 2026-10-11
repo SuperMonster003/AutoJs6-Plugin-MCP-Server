@@ -89,6 +89,7 @@
     <string name="settings_network_hint">로컬 네트워크 접근은 기본적으로 꺼져 있습니다. 포트나 네트워크 변경 시 실행 중인 리스너가 다시 시작되며 클라이언트 재연결이 필요할 수 있습니다.</string>
     <string name="settings_no_clients">페어링된 클라이언트 없음</string>
     <string name="settings_notifications">알림 설정</string>
+    <string name="settings_notifications_off">MCP Server 알림이 꺼져 있어 컴퓨터의 페어링 요청은 이 페이지를 열어 둔 동안에만 표시됩니다. 알림을 허용하면 어느 화면에서든 요청을 확인할 수 있습니다.</string>
     <string name="settings_open_host">AutoJs6 열기</string>
     <string name="settings_paired_clients">페어링된 클라이언트</string>
     <string name="settings_port">포트</string>

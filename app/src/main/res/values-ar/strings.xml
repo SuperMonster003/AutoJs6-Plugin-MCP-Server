@@ -89,6 +89,7 @@
     <string name="settings_network_hint">الوصول عبر الشبكة المحلية معطل افتراضيا. تغيير المنفذ أو الشبكة يعيد تشغيل المستمع النشط. قد يحتاج العملاء إلى إعادة الاتصال.</string>
     <string name="settings_no_clients">لا يوجد عملاء مقترنون</string>
     <string name="settings_notifications">الإشعارات</string>
+    <string name="settings_notifications_off">إشعارات MCP Server متوقفة, لذلك لا يظهر طلب الاقتران من الكمبيوتر إلا أثناء فتح هذه الصفحة. اسمح بالإشعارات لتأكيد الطلبات من أي مكان.</string>
     <string name="settings_open_host">فتح AutoJs6</string>
     <string name="settings_paired_clients">العملاء المقترنون</string>
     <string name="settings_port">المنفذ</string>

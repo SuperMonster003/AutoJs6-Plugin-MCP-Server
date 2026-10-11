@@ -89,6 +89,7 @@
     <string name="settings_network_hint">El acceso de red local está desactivado por defecto. Cambiar el puerto o la red reinicia el servidor activo. Puede ser necesario reconectar los clientes.</string>
     <string name="settings_no_clients">No hay clientes vinculados</string>
     <string name="settings_notifications">Notificaciones</string>
+    <string name="settings_notifications_off">Las notificaciones de MCP Server están desactivadas, así que una solicitud de emparejamiento desde un ordenador solo aparece mientras esta página está abierta. Permite las notificaciones para confirmar solicitudes desde cualquier pantalla.</string>
     <string name="settings_open_host">Abrir AutoJs6</string>
     <string name="settings_paired_clients">Clientes vinculados</string>
     <string name="settings_port">Puerto</string>

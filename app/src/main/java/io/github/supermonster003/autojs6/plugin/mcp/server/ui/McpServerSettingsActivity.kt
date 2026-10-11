@@ -37,6 +37,7 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.server.BackgroundRest
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.LanAddressWatcher
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.McpHttpServer
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.PairedClient
+import io.github.supermonster003.autojs6.plugin.mcp.server.server.PairingCoordinator
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.ServerStatus
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.*
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.*
@@ -61,6 +62,8 @@ class McpServerSettingsActivity : SettingsPageActivity() {
     private var resumed = false
     private var reading = false
     private var rendering = false
+    /** Set on resume: the first render with a running listener asks it to re-show a pending pairing prompt. */
+    private var pairingNudge = false
     internal var dialog: AlertDialog? = null
         private set
     internal var secretDialog: AlertDialog? = null
@@ -72,6 +75,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
     private lateinit var idleStopButton: Button
     private lateinit var restrictedHint: TextView
     private lateinit var batteryButton: Button
+    private lateinit var notificationsHint: TextView
     private lateinit var tokenText: TextView
     private lateinit var lan: Switch
     private lateinit var lanAddressText: TextView
@@ -102,6 +106,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
             restrictedHint = label(getString(R.string.settings_background_restricted), box).apply { visibility = View.GONE }
             batteryButton = button(R.string.settings_battery_settings, box, ::batterySettings).apply { visibility = View.GONE }
             button(R.string.settings_open_host, box, ::openHost)
+            notificationsHint = label(getString(R.string.settings_notifications_off), box).apply { visibility = View.GONE }
             button(R.string.settings_notifications, box, ::notifications)
         }
         card(R.string.settings_network).also { box ->
@@ -185,6 +190,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
         super.onResume()
         if (HostAppearance.read(this) != appearance) { recreate(); return }
         resumed = true
+        pairingNudge = true
         main.post(refresh)
     }
 
@@ -243,6 +249,12 @@ class McpServerSettingsActivity : SettingsPageActivity() {
             idleStopButton.text = if (config.idleStopMinutes > 0) getString(R.string.settings_idle_stop_value, config.idleStopMinutes) else getString(R.string.settings_idle_stop_off)
             restrictedHint.visibility = if (snapshot.restricted) View.VISIBLE else View.GONE
             batteryButton.visibility = restrictedHint.visibility
+            notificationsHint.visibility = if (pairingNotificationsOff()) View.VISIBLE else View.GONE
+            if (pairingNudge) {
+                pairingNudge = false
+                // A prompt the listener could not start from the background can be shown now that this page is visible.
+                if (status.state == C.STATE_RUNNING) McpSettingsReceiver.send(this, McpSettingsReceiver.SHOW_PENDING_PAIRING)
+            }
             portButton.text = getString(R.string.settings_port_value, config.port)
             val lanOn = config.bindScope == BindScope.LAN
             lan.isChecked = lanOn
@@ -410,6 +422,14 @@ class McpServerSettingsActivity : SettingsPageActivity() {
     private fun openHost() {
         val intent = packageManager.getLaunchIntentForPackage(McpServerPlugin.HOST_PACKAGE_NAME)
         if (intent == null || runCatching { startActivity(intent); true }.getOrDefault(false).not()) toast(R.string.settings_host_unavailable)
+    }
+
+    /** True when pairing requests cannot reach the user as a notification (app or pairing channel switched off, or no permission). */
+    private fun pairingNotificationsOff(): Boolean {
+        val manager = getSystemService(NotificationManager::class.java) ?: return false
+        if (!manager.areNotificationsEnabled()) return true
+        return Build.VERSION.SDK_INT >= 26 &&
+            manager.getNotificationChannel(PairingCoordinator.CHANNEL_ID)?.importance == NotificationManager.IMPORTANCE_NONE
     }
 
     private fun notifications() {

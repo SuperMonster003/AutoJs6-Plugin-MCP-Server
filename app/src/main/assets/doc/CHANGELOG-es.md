@@ -9,6 +9,7 @@
 ###### 2026/10/11
 
 * `Corrección` La barra de estado de las páginas de ajustes e historial de versiones no tomaba el color del tema en Android 15 y posteriores (solo la barra de herramientas)
+* `Corrección` Las solicitudes de emparejamiento desde un ordenador podían no aparecer en el teléfono en Android 14 y posteriores si las notificaciones no estaban permitidas (ahora la página de ajustes muestra la solicitud pendiente al abrirse e indica que las notificaciones están desactivadas)
 
 # v1.0.3
 

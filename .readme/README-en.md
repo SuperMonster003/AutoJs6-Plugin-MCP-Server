@@ -312,6 +312,7 @@ The plugin's plans and progress are maintained as a checkable list in ROADMAP.md
 _2026/10/11_
 
 - `Fix` The status bar of the settings and release history pages did not take the theme color on Android 15 and later (only the toolbar did)
+- `Fix` Pairing requests from a computer could stay invisible on the phone on Android 14 and later when notifications were not allowed (the settings page now shows a pending request when it opens and points out that notifications are off)
 
 #### v1.0.3
 

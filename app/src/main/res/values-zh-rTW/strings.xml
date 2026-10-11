@@ -89,6 +89,7 @@
     <string name="settings_network_hint">區域網路存取預設關閉. 修改連接埠或監聽範圍會重新啟動執行中的監聽器, 用戶端可能需要重新連線.</string>
     <string name="settings_no_clients">暫無已配對用戶端</string>
     <string name="settings_notifications">通知設定</string>
+    <string name="settings_notifications_off">MCP Server 的通知已關閉, 來自電腦的配對請求只會在開啟本頁時出現. 允許通知後可在任何畫面確認請求.</string>
     <string name="settings_open_host">開啟 AutoJs6</string>
     <string name="settings_paired_clients">已配對用戶端</string>
     <string name="settings_port">連接埠</string>

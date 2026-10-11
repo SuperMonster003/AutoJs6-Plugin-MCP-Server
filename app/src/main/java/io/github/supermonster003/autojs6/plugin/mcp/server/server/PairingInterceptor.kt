@@ -81,7 +81,8 @@ fun Application.installPairingGate(server: Server, gate: PairingGate) {
                 calls.ids,
                 calls.batch,
                 McpErrors.PAIRING_REQUIRED,
-                "${McpErrors.CODE_PAIRING_REQUIRED}: confirm \"${identity.name}\" on the phone within ${(decision.expiresAt - gate.now()).coerceAtLeast(0) / 1000} s, then retry",
+                "${McpErrors.CODE_PAIRING_REQUIRED}: confirm \"${identity.name}\" on the phone within ${(decision.expiresAt - gate.now()).coerceAtLeast(0) / 1000} s, then retry " +
+                    "(if no prompt appears, open the MCP Server settings page on the phone)",
                 buildJsonObject {
                     put("code", McpErrors.CODE_PAIRING_REQUIRED)
                     put("fingerprint", decision.fingerprint)

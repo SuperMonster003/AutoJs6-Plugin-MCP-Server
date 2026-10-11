@@ -89,6 +89,7 @@
     <string name="settings_network_hint">局域网访问默认关闭. 修改端口或监听范围会重启正在运行的监听器, 客户端可能需要重新连接.</string>
     <string name="settings_no_clients">暂无已配对客户端</string>
     <string name="settings_notifications">通知设置</string>
+    <string name="settings_notifications_off">MCP Server 的通知已关闭, 来自电脑的配对请求只会在打开本页时出现. 允许通知后可在任何界面确认请求.</string>
     <string name="settings_open_host">打开 AutoJs6</string>
     <string name="settings_paired_clients">已配对客户端</string>
     <string name="settings_port">端口</string>

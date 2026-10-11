@@ -56,6 +56,9 @@ class PairingCoordinator(context: Context, private val tokenTail: () -> String) 
 
     private val settledListeners = CopyOnWriteArrayList<(String) -> Unit>()
 
+    /** Fingerprints [showPending] already put in front again; only touched on the main thread. */
+    private val reshown = mutableSetOf<String>()
+
     init {
         clearStaleNotifications()
     }
@@ -98,6 +101,23 @@ class PairingCoordinator(context: Context, private val tokenTail: () -> String) 
                 }.onFailure { Log.w(TAG, "Confirmation dialog could not be started (${it.javaClass.simpleName}); the notification remains") }
             }
             handler.postDelayed({ settle(request.client.fingerprint) }, (request.expiresAt - gate.now()).coerceAtLeast(0L))
+        }
+    }
+
+    /**
+     * Starts the confirmation for the newest pending request again. Android 14+ (and some earlier
+     * OEM builds) blocks the start in [onPairingRequested] while no window of this app is visible,
+     * and without notification permission nothing else reaches the user, so the settings page asks
+     * for the dialog when it comes to the foreground (roadmap P9).
+     */
+    fun showPending() {
+        handler.post {
+            if (!::gate.isInitialized || isKeyguardLocked()) return@post
+            val request = nextToReshow(gate.pendingRequests(), gate.now(), reshown) ?: return@post
+            reshown += request.client.fingerprint
+            runCatching {
+                context.startActivity(PairingConfirmActivity.intent(context, request, tokenTail()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }.onFailure { Log.w(TAG, "Pending confirmation could not be shown (${it.javaClass.simpleName})") }
         }
     }
 
@@ -165,7 +185,10 @@ class PairingCoordinator(context: Context, private val tokenTail: () -> String) 
 
     private fun settle(fingerprint: String) {
         notifications.cancel(TAG_PAIRING, notificationId(fingerprint))
-        handler.post { settledListeners.forEach { it(fingerprint) } }
+        handler.post {
+            reshown -= fingerprint
+            settledListeners.forEach { it(fingerprint) }
+        }
     }
 
     /** Cancels pairing notifications whose requests died with a previous listener process. */
@@ -189,6 +212,13 @@ class PairingCoordinator(context: Context, private val tokenTail: () -> String) 
         private const val TAG = "PairingCoordinator"
         private const val TAG_PAIRING = "${McpServerPlugin.PACKAGE_NAME}.pairing"
         private const val NOTIFICATION_BASE = 0x50410000
+
+        /**
+         * The newest unexpired request not re-shown yet. Each request is re-shown once, so a dialog
+         * dismissed without a decision does not reopen on every return to the settings page.
+         */
+        internal fun nextToReshow(pending: List<PairingRequest>, now: Long, reshown: Set<String>): PairingRequest? =
+            pending.filter { it.expiresAt > now && it.client.fingerprint !in reshown }.maxByOrNull { it.expiresAt }
 
         /** The coordinator of the running listener in the `:mcp_server` process; null while stopped. */
         @Volatile

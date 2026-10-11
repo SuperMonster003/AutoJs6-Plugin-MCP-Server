@@ -89,6 +89,7 @@
     <string name="settings_network_hint">Доступ из локальной сети выключен по умолчанию. Изменение порта или сети перезапускает активный сервер. Клиентам может потребоваться переподключение.</string>
     <string name="settings_no_clients">Нет сопряженных клиентов</string>
     <string name="settings_notifications">Уведомления</string>
+    <string name="settings_notifications_off">Уведомления MCP Server отключены, поэтому запрос сопряжения с компьютера появляется, только пока открыта эта страница. Разрешите уведомления, чтобы подтверждать запросы с любого экрана.</string>
     <string name="settings_open_host">Открыть AutoJs6</string>
     <string name="settings_paired_clients">Сопряженные клиенты</string>
     <string name="settings_port">Порт</string>

@@ -8,7 +8,8 @@
     "v1.0.4": {
       "released_date": "2026/10/11",
       "fix": [
-        "The status bar of the settings and release history pages did not take the theme color on Android 15 and later (only the toolbar did)"
+        "The status bar of the settings and release history pages did not take the theme color on Android 15 and later (only the toolbar did)",
+        "Pairing requests from a computer could stay invisible on the phone on Android 14 and later when notifications were not allowed (the settings page now shows a pending request when it opens and points out that notifications are off)"
       ]
     },
     "v1.0.3": {
