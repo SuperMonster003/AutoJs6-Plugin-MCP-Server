@@ -484,7 +484,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 - [ ] (插件, 可选) 为结构稳定的工具声明 `outputSchema` (如 `device_info`, `screen_state`, `script_run`), 与现有 `structuredContent` 保持一致 (P2.3 偏差: 目前没有工具声明). 注意 (2026-10-11 复核): `ToolSpec` 已能输出 `outputSchema`; TS SDK 客户端 (1.32.1 `Client.callTool`) 只要结果带 `structuredContent` 就按 `outputSchema` 校验, `isError` 结果也不例外, 而插件的错误结果带 `structuredContent.error`, 直接声明会把工具错误变成客户端的协议错误; 须让 schema 同时接受错误形状, 或在声明了 schema 的工具的错误结果中省略 `structuredContent`, 并以真实客户端验证.
 - [ ] (插件, 可选) `screen_capture(annotate: true)`: 在截图上叠加最近一次 `ui_dump` 的 `#n` 编号 (P3.3 可选项, P6 未承接).
 - [ ] (插件, 可选) 设置页客户端配置片段的二维码 (P4 可选项).
-- [ ] (宿主) 为 `McpServerSessionController` 的重绑路径增加测试缝, 让假插件覆盖 1 / 3 / 9 s 退避与插件死亡后的可用性检查 (P1.2 的 `McpServerPluginHostTest` 未做, P6 一致性测试应用因宿主钉死正式包名而不覆盖); 是否加缝由维护者决定.
+- [x] (宿主) 为 `McpServerSessionController` 的重绑路径增加测试缝, 让假插件覆盖 1 / 3 / 9 s 退避与插件死亡后的可用性检查 (P1.2 的 `McpServerPluginHostTest` 未做, P6 一致性测试应用因宿主钉死正式包名而不覆盖); 是否加缝由维护者决定. (维护者 2026-10-11 决定加缝. SOURCE: 宿主 `9530fda638`: 构造参数新增 `openServer` / `linkDeath` / `unlinkDeath` / `sleep`, 默认即 `McpServerPluginHost.openServer`, `linkToDeath` / `unlinkToDeath` 与 `delay`, 沿用已有 `brokerFactory` / `pluginAvailable` 的函数注入风格, 公共行为不变. BINDER / DEVICE: 新增 `McpServerSessionControllerRebindTest` 6 项 (假插件死亡后按 1000 ms 退避重绑成功且再次死亡从第 1 次重新计数; 连续失败时请求 1000 / 3000 / 9000 ms 后 `STOPPED(plugin_died)` 且共打开 4 次; 死亡时插件已不可用则不重绑并提示 "stopped outside AutoJs6"; 退避期间变为不可用同样不重绑; 退避期间 `close` 取消重绑; `close` 后的死亡通知不触发重绑), 与真实插件的 `McpServerPluginRoundTripTest` 一起在 Sony G8441 API 28 与 Redmi 22120RN86C API 33 上 10/10 通过, G8441 再连跑 2 次通过; 2026-10-11)
 - [x] (宿主) 复核 `UiObject.kt` 中另一处没有 handler 的 `GlobalActionAutomator` (脚本线程; P3.2 只修复了 bridge 路径). (SOURCE: 宿主 `02140e1d66`. 复核结论: 不是来自脚本查询的节点 (如 `auto.registerEvent` 回调的 `source`) 调用 `UiObject.clickBounds()` 时走无 handler 路径, 在调用线程上准备并运行 Looper, 手势结束后 `quit()`: 脚本线程上排队的回调在手势中途重入执行且线程的 Looper 被结束, 主线程上则抛出 `Main thread not allowed to quit.`. 修复: 无 handler 的 automator 改为在共享的回调线程 (`HandlerThread`) 上等待结果, 与有 handler 的路径一致, 删除临时 Looper 分支; 新增 internal `GestureDispatcher` 测试缝 (`AccessibilityService.dispatchGesture` 为 final), 公共构造函数不变; 更新 `NodeBridgeProtocol` / `AccessibilityBridge` 的过时注释; changelog v6.8.0 既有的 `clickBounds` 修复条目 10 语言合并为最终行为, README 发行历史同步 (离线生成, 日期戳保持 2026/10/02). BINDER / DEVICE: 新增 `GlobalActionAutomatorDeviceTest` (脚本式 Looper 线程连续两次点按后 Looper 仍运行, 主线程点按返回结果, 结果不在调用线程上回调); 旧路径加同一测试缝后在 Xiaomi 23046RP50C API 35 上 2/2 失败 (`IllegalStateException: Main thread not allowed to quit.`, 重入的第一次点按返回 false), 修复后 Xiaomi 23046RP50C API 35 与 Sony G8441 API 28 均 2/2 通过, Xiaomi 连跑 3 次通过; 2026-10-11)
 - [ ] (发布) 1.0.3: 本地已有图标工作台图稿与系统应用图标, 共享 Gradle 插件 1.9.0, 设置页 VS Code 片段, SSE 断线续传; 按 P7 第 5 - 6 项的验证顺序与索引流程发布.
 - [ ] (发布) 宿主 6.8.0 公开发布后的回归: 用公开宿主与官方索引安装的插件在两台设备重跑 P2 验收的端到端, 核对 README 与插件中心说明中的宿主要求.
@@ -1121,3 +1121,9 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 设备: Xiaomi 23046RP50C 与 Sony G8441 已安装含该修复的宿主 debug 构建与 androidTest APK (保留数据).
 - 记录: `outputSchema` 可选项补充了 TS SDK 客户端对错误结果同样校验 `structuredContent` 的约束.
 - 推送 (同日再续): 维护者同意只推送桥接仓库. 首次推送因提交使用全局 gmail 邮箱被 GitHub 邮箱隐私限制拒绝; 按宿主与插件仓库的约定为桥接仓库设置仓库级 noreply `user.email`, 把 4 个未发布提交的作者 / 提交者改为 noreply (保留作者时间) 后推送成功, 提交号变为 `5efd708` / `404917d` / `022a6aa` / `dc64ad7`; 首次 CI 6/6 通过. 宿主与插件仓库保持本地.
+
+### 2026-10-11: 维护者决策与宿主重绑测试缝
+
+- 决策: 维护者选择为重绑路径加测试缝, 实施三个插件可选项 (outputSchema, 截图编号标注, 设置页二维码), 允许执行三类未做的真机项 (第三方应用 UI 全链路, 生命周期矩阵补测, ColorOS 激活与整机重启), 并只推送桥接仓库.
+- 完成: 宿主 `9530fda638` (本地提交未推送) 与 P9 对应条目.
+- 设备: Xiaomi 23046RP50C 在本轮测试时 adb shell 持续返回 `error: closed` (此前前台为系统更新器), 改用 Redmi 22120RN86C 验证; Sony XQ-DQ72 也暂时从 adb 列表消失.
