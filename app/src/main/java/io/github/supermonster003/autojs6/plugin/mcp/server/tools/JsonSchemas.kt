@@ -57,6 +57,29 @@ object JsonSchemas {
         })
     }
 
+    /**
+     * The `outputSchema` of a tool (roadmap P9): an open object, so that fields a newer AutoJs6 adds
+     * stay valid, whose [required] names only what every successful result carries. A tool with an
+     * output schema answers errors without `structuredContent` (see [ToolResults.forSpec]).
+     */
+    fun outputSchema(properties: Map<String, JsonObject>, required: List<String> = emptyList()): JsonObject = buildJsonObject {
+        put("type", "object")
+        put("properties", JsonObject(properties))
+        if (required.isNotEmpty()) put("required", JsonArray(required.map { JsonPrimitive(it) }))
+    }
+
+    /** A JSON number (integer or fraction). */
+    fun number(description: String): JsonObject = buildJsonObject {
+        put("type", "number")
+        put("description", description)
+    }
+
+    /** An object whose members are not described further. */
+    fun openObject(description: String): JsonObject = buildJsonObject {
+        put("type", "object")
+        put("description", description)
+    }
+
     /** An array schema; [items] is the schema of every element. */
     fun array(description: String, items: JsonObject, minItems: Int? = null, maxItems: Int? = null): JsonObject = buildJsonObject {
         put("type", "array")

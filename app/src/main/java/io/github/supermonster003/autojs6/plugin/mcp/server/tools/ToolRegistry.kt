@@ -105,7 +105,7 @@ class ToolRegistry(
     }
 
     private fun register(server: Server, spec: ToolSpec) {
-        server.addTool(spec.toSdkTool()) { request -> executor.execute(spec, this, request) }
+        server.addTool(spec.toSdkTool()) { request -> ToolResults.forSpec(spec, executor.execute(spec, this, request)) }
         registered += spec.name
     }
 }

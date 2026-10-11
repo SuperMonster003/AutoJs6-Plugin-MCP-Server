@@ -12,6 +12,7 @@
       ],
       "improvement": [
         "Resumable event streams on the stateful MCP endpoint: events carry ids, clients of protocol 2025-11-25 or newer first receive a priming event with the reconnection interval, and a dropped request stream can be resumed with a GET carrying Last-Event-ID, which replays the missed events and the final result (bounded retention per session)",
+        "device_info, screen_state, script_run and script_run_file declare an output schema (outputSchema) that clients can validate their structured results against; errors of these tools carry the error code and message as text only",
         "Plugin Center icons use the sizes, positions, light and dark artwork, and circular backgrounds adjusted in Icon Studio, retaining reproducible sources and parameters",
         "Android App info icons share Icon Studio artwork and light/dark backgrounds while preserving transparent Plugin Center artwork and existing launcher choices"
       ]

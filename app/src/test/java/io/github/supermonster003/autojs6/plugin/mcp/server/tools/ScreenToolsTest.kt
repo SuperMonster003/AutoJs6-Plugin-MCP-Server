@@ -161,6 +161,7 @@ class ScreenToolsTest {
         assertEquals(JsonPrimitive(480), result.structured["densityDpi"])
         assertEquals(JsonPrimitive(true), result.structured["screenOn"])
         assertEquals(listOf("device.isScreenOn", "device.info"), host.calls.map { it.key })
+        OutputSchemaTest.assertConforms(ToolCatalog.screenState, result.structured)
     }
 
     private suspend fun run(host: Host, args: String = "{}", tools: ScreenTools = ScreenTools()): ToolFlowResult =

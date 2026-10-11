@@ -313,6 +313,7 @@ _2026/10/11_
 
 - `Fonctionnalité` Extrait VS Code mcp.json dans la configuration des clients de la page des paramètres: VS Code demande le jeton au premier démarrage du serveur, qui reste donc hors du fichier (la boîte de dialogue propose un bouton "Copier le jeton")
 - `Amélioration` Flux d'événements reprenables sur le point de terminaison MCP avec état: les événements portent un id, les clients du protocole 2025-11-25 ou plus récent reçoivent d'abord un événement d'amorçage avec l'intervalle de reconnexion, et un flux de requête interrompu peut être repris par un GET portant Last-Event-ID, qui renvoie les événements manqués et le résultat final (rétention limitée par session)
+- `Amélioration` device_info, screen_state, script_run et script_run_file déclarent un schéma de sortie (outputSchema) avec lequel les clients peuvent valider leurs résultats structurés; les erreurs de ces outils portent le code et le message uniquement sous forme de texte
 - `Amélioration` Les icônes du centre de plugins utilisent les tailles, positions, images claires et sombres et fonds circulaires réglés dans Icon Studio, avec les sources et paramètres permettant de les reproduire
 - `Amélioration` Les icônes des informations d'application Android utilisent les illustrations et les fonds clairs et sombres d'Icon Studio, en conservant les images transparentes du centre de plugins et les choix du lanceur
 

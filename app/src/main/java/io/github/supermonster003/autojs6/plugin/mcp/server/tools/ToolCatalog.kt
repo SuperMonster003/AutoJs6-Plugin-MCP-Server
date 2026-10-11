@@ -224,6 +224,61 @@ object ToolCatalog {
             "the exception with its line when the script threw, and the newest console lines. A script still " +
             "running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output."
 
+    // Output schemas (roadmap P9) for the tools whose structured result is stable; see JsonSchemas.outputSchema.
+
+    private val deviceInfoOutput: JsonObject = JsonSchemas.outputSchema(
+        linkedMapOf(
+            "schema" to JsonSchemas.string("Result schema id, autojs6-bridge-device-info-v1"),
+            "build" to JsonSchemas.openObject("Android build: brand, manufacturer, model, sdkInt, release, abis and more"),
+            "screen" to JsonSchemas.openObject("Screen size in pixels (following rotation), density, rotation, brightness"),
+            "battery" to JsonSchemas.openObject("Battery percent, charging state and temperature, when available"),
+            "memory" to JsonSchemas.openObject("Total and available memory in bytes"),
+            "host" to JsonSchemas.openObject("AutoJs6 package, version and process"),
+            "accessibility" to JsonSchemas.openObject("Whether the AutoJs6 accessibility service is running and operational"),
+            "screenOn" to JsonSchemas.boolean("Whether the screen is on"),
+            "locale" to JsonSchemas.string("Device locale tag"),
+            "timeZone" to JsonSchemas.string("Device time zone id"),
+            "uptimeMs" to JsonSchemas.integer("Milliseconds since boot"),
+            "now" to JsonSchemas.integer("Device time, milliseconds since the epoch"),
+        ),
+    )
+
+    private val screenStateOutput: JsonObject = JsonSchemas.outputSchema(
+        linkedMapOf(
+            "screenOn" to JsonSchemas.boolean("Whether the screen is on"),
+            "width" to JsonSchemas.integer("Current width in pixels, following rotation"),
+            "height" to JsonSchemas.integer("Current height in pixels, following rotation"),
+            "orientation" to JsonSchemas.string("Derived from width and height", enum = listOf("portrait", "landscape")),
+            "rotation" to JsonSchemas.integer("Display rotation constant (0 to 3)"),
+            "rotationDegrees" to JsonSchemas.integer("Display rotation in degrees"),
+            "density" to JsonSchemas.number("Logical density factor"),
+            "densityDpi" to JsonSchemas.integer("Density in dots per inch"),
+        ),
+        required = listOf("screenOn", "width", "height", "orientation"),
+    )
+
+    private val scriptRunOutput: JsonObject = JsonSchemas.outputSchema(
+        linkedMapOf(
+            "executionId" to JsonSchemas.integer("Id for script_stop, script_list and console_tail"),
+            "name" to JsonSchemas.string("Script name in the AutoJs6 task list"),
+            "engine" to JsonSchemas.string("Engine that runs the script"),
+            "workingDirectory" to JsonSchemas.string("Working directory of the script"),
+            "status" to JsonSchemas.string(
+                "finished, error (the script threw; see exception) or running (still running after the wait, or not waited for)",
+                enum = listOf(ScriptRunTool.STATUS_FINISHED, ScriptRunTool.STATUS_ERROR, ScriptRunTool.STATUS_RUNNING),
+            ),
+            "waited" to JsonSchemas.boolean("Whether the call waited for the script"),
+            "waitMs" to JsonSchemas.integer("How long the call was willing to wait"),
+            "durationMs" to JsonSchemas.integer("How long the call waited"),
+            "exception" to JsonSchemas.openObject("For status error: message and, when known, line"),
+            "console" to JsonSchemas.array("Newest console lines of the script", JsonSchemas.openObject("id, level, levelName, time and text")),
+            "consoleCount" to JsonSchemas.integer("Console lines the script printed"),
+            "consoleTruncated" to JsonSchemas.boolean("Whether older console lines were left out"),
+            "hint" to JsonSchemas.string("For status running: how to stop or follow the script"),
+        ),
+        required = listOf("status"),
+    )
+
     val devicePing: ToolSpec = ToolSpec(
         name = DEVICE_PING,
         title = "Device ping",
@@ -242,6 +297,7 @@ object ToolCatalog {
                 "(schema autojs6-bridge-device-info-v1). No hardware identifiers.",
         inputSchema = JsonSchemas.objectSchema(),
         group = ToolGroup.DEVICE,
+        outputSchema = deviceInfoOutput,
         bridge = BridgeMethod("device", "info"),
         permissions = listOf("device"),
         timeoutMs = 10_000L,
@@ -265,6 +321,7 @@ object ToolCatalog {
             required = listOf(ScriptRun.SOURCE),
         ),
         group = ToolGroup.SCRIPT,
+        outputSchema = scriptRunOutput,
         bridge = BridgeMethod("engines", "execScript"),
         permissions = listOf("engines", "engines.exec"),
         timeoutMs = ScriptRun.DEFAULT_TIMEOUT_MS,
@@ -287,6 +344,7 @@ object ToolCatalog {
             required = listOf(ScriptRun.PATH),
         ),
         group = ToolGroup.SCRIPT,
+        outputSchema = scriptRunOutput,
         bridge = BridgeMethod("engines", "execScriptFile"),
         permissions = listOf("engines", "engines.exec"),
         timeoutMs = ScriptRun.DEFAULT_TIMEOUT_MS,
@@ -621,6 +679,7 @@ object ToolCatalog {
         description = "Read whether the screen is on, its current width and height, orientation, rotation, and density. Does not request screen capture consent.",
         group = ToolGroup.SCREEN,
         inputSchema = JsonSchemas.objectSchema(),
+        outputSchema = screenStateOutput,
         bridge = BridgeMethod("device", "isScreenOn"),
         permissions = listOf("device"),
         hints = ToolHints(readOnly = true, idempotent = true),

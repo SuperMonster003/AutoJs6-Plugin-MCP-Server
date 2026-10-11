@@ -1,6 +1,7 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server.server
 
 import io.github.supermonster003.autojs6.plugin.mcp.server.bridge.ToolFailure
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolCatalog
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolResults
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
@@ -51,7 +52,7 @@ fun Application.installToolGate(gate: ToolGate) {
         val document = buildJsonObject {
             put("jsonrpc", "2.0")
             put("id", id)
-            put("result", ToolResults.failureJson(failure))
+            put("result", ToolResults.failureJson(failure, structured = ToolCatalog.byName[name]?.outputSchema == null))
         }
         call.respondText(document.toString(), ContentType.Application.Json, HttpStatusCode.OK)
         finish()

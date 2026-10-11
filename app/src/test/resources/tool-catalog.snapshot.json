@@ -43,6 +43,59 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "type": "string",
+          "description": "Result schema id, autojs6-bridge-device-info-v1"
+        },
+        "build": {
+          "type": "object",
+          "description": "Android build: brand, manufacturer, model, sdkInt, release, abis and more"
+        },
+        "screen": {
+          "type": "object",
+          "description": "Screen size in pixels (following rotation), density, rotation, brightness"
+        },
+        "battery": {
+          "type": "object",
+          "description": "Battery percent, charging state and temperature, when available"
+        },
+        "memory": {
+          "type": "object",
+          "description": "Total and available memory in bytes"
+        },
+        "host": {
+          "type": "object",
+          "description": "AutoJs6 package, version and process"
+        },
+        "accessibility": {
+          "type": "object",
+          "description": "Whether the AutoJs6 accessibility service is running and operational"
+        },
+        "screenOn": {
+          "type": "boolean",
+          "description": "Whether the screen is on"
+        },
+        "locale": {
+          "type": "string",
+          "description": "Device locale tag"
+        },
+        "timeZone": {
+          "type": "string",
+          "description": "Device time zone id"
+        },
+        "uptimeMs": {
+          "type": "integer",
+          "description": "Milliseconds since boot"
+        },
+        "now": {
+          "type": "integer",
+          "description": "Device time, milliseconds since the epoch"
+        }
+      }
     }
   },
   {
@@ -133,6 +186,75 @@
         "source"
       ],
       "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "executionId": {
+          "type": "integer",
+          "description": "Id for script_stop, script_list and console_tail"
+        },
+        "name": {
+          "type": "string",
+          "description": "Script name in the AutoJs6 task list"
+        },
+        "engine": {
+          "type": "string",
+          "description": "Engine that runs the script"
+        },
+        "workingDirectory": {
+          "type": "string",
+          "description": "Working directory of the script"
+        },
+        "status": {
+          "type": "string",
+          "description": "finished, error (the script threw; see exception) or running (still running after the wait, or not waited for)",
+          "enum": [
+            "finished",
+            "error",
+            "running"
+          ]
+        },
+        "waited": {
+          "type": "boolean",
+          "description": "Whether the call waited for the script"
+        },
+        "waitMs": {
+          "type": "integer",
+          "description": "How long the call was willing to wait"
+        },
+        "durationMs": {
+          "type": "integer",
+          "description": "How long the call waited"
+        },
+        "exception": {
+          "type": "object",
+          "description": "For status error: message and, when known, line"
+        },
+        "console": {
+          "type": "array",
+          "description": "Newest console lines of the script",
+          "items": {
+            "type": "object",
+            "description": "id, level, levelName, time and text"
+          }
+        },
+        "consoleCount": {
+          "type": "integer",
+          "description": "Console lines the script printed"
+        },
+        "consoleTruncated": {
+          "type": "boolean",
+          "description": "Whether older console lines were left out"
+        },
+        "hint": {
+          "type": "string",
+          "description": "For status running: how to stop or follow the script"
+        }
+      },
+      "required": [
+        "status"
+      ]
     }
   },
   {
@@ -217,6 +339,75 @@
         "path"
       ],
       "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "executionId": {
+          "type": "integer",
+          "description": "Id for script_stop, script_list and console_tail"
+        },
+        "name": {
+          "type": "string",
+          "description": "Script name in the AutoJs6 task list"
+        },
+        "engine": {
+          "type": "string",
+          "description": "Engine that runs the script"
+        },
+        "workingDirectory": {
+          "type": "string",
+          "description": "Working directory of the script"
+        },
+        "status": {
+          "type": "string",
+          "description": "finished, error (the script threw; see exception) or running (still running after the wait, or not waited for)",
+          "enum": [
+            "finished",
+            "error",
+            "running"
+          ]
+        },
+        "waited": {
+          "type": "boolean",
+          "description": "Whether the call waited for the script"
+        },
+        "waitMs": {
+          "type": "integer",
+          "description": "How long the call was willing to wait"
+        },
+        "durationMs": {
+          "type": "integer",
+          "description": "How long the call waited"
+        },
+        "exception": {
+          "type": "object",
+          "description": "For status error: message and, when known, line"
+        },
+        "console": {
+          "type": "array",
+          "description": "Newest console lines of the script",
+          "items": {
+            "type": "object",
+            "description": "id, level, levelName, time and text"
+          }
+        },
+        "consoleCount": {
+          "type": "integer",
+          "description": "Console lines the script printed"
+        },
+        "consoleTruncated": {
+          "type": "boolean",
+          "description": "Whether older console lines were left out"
+        },
+        "hint": {
+          "type": "string",
+          "description": "For status running: how to stop or follow the script"
+        }
+      },
+      "required": [
+        "status"
+      ]
     }
   },
   {
@@ -1848,6 +2039,53 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "screenOn": {
+          "type": "boolean",
+          "description": "Whether the screen is on"
+        },
+        "width": {
+          "type": "integer",
+          "description": "Current width in pixels, following rotation"
+        },
+        "height": {
+          "type": "integer",
+          "description": "Current height in pixels, following rotation"
+        },
+        "orientation": {
+          "type": "string",
+          "description": "Derived from width and height",
+          "enum": [
+            "portrait",
+            "landscape"
+          ]
+        },
+        "rotation": {
+          "type": "integer",
+          "description": "Display rotation constant (0 to 3)"
+        },
+        "rotationDegrees": {
+          "type": "integer",
+          "description": "Display rotation in degrees"
+        },
+        "density": {
+          "type": "number",
+          "description": "Logical density factor"
+        },
+        "densityDpi": {
+          "type": "integer",
+          "description": "Density in dots per inch"
+        }
+      },
+      "required": [
+        "screenOn",
+        "width",
+        "height",
+        "orientation"
+      ]
     }
   },
   {

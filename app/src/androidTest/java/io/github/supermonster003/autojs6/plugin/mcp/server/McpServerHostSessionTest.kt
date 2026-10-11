@@ -178,7 +178,8 @@ class McpServerHostSessionTest {
         assertTrue(failed.getBoolean("isError"))
         val failedText = failed.getJSONArray("content").getJSONObject(0).getString("text")
         assertTrue(failedText, failedText.startsWith("HOST_ERROR: ScriptError: fail please"))
-        assertEquals("HOST_ERROR", failed.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
+        // script_run declares an output schema, so its errors carry the text only (roadmap P9).
+        assertFalse(failed.toString(), failed.has("structuredContent"))
 
         val invalid = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN, """{"source":"x","timeoutMs":5}"""), sessionId).result()
         assertTrue(invalid.getBoolean("isError"))
@@ -428,6 +429,7 @@ class McpServerHostSessionTest {
         assertTrue(info.getBoolean("isError"))
         val text = info.getJSONArray("content").getJSONObject(0).getString("text")
         assertTrue(text, text.startsWith("HOST_UNAVAILABLE: AutoJs6 is not connected to the MCP server"))
+        assertFalse(info.toString(), info.has("structuredContent"))
         assertFalse(runtime.statusSnapshot().hostAvailable)
         Log.i(TAG, "without a host session: $text")
     }
