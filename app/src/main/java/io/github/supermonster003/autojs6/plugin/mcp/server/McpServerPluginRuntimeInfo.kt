@@ -1,5 +1,6 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server
 
+import io.github.supermonster003.autojs6.plugin.mcp.server.host.HostContractVersion
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolCatalog
 import io.modelcontextprotocol.kotlin.sdk.types.SUPPORTED_PROTOCOL_VERSIONS
 import org.autojs.plugin.mcp.server.api.McpServerContract
@@ -18,6 +19,8 @@ data class McpServerPluginRuntimeInfo(
     val versionName: String,
     val versionCode: Long,
     val versionDate: String,
+    /** `versionCode` of the installed AutoJs6 host, null when it is missing; picks [contractVersion]. */
+    val hostVersionCode: Long? = null,
 ) {
     val author: String get() = McpServerPlugin.AUTHOR
     val id: String get() = McpServerPlugin.ID
@@ -29,8 +32,11 @@ data class McpServerPluginRuntimeInfo(
 
     val requiresHostVersion: Long get() = McpServerPlugin.REQUIRED_HOST_VERSION
 
-    /** The control-plane contract version this build implements (`mcpServerContractVersion`). */
-    val contractVersion: Int get() = McpServerContract.CONTRACT_VERSION
+    /**
+     * The control-plane contract version declared to the installed host (`mcpServerContractVersion`):
+     * 2 for hosts that accept it, otherwise 1 (roadmap P10). The plugin implements both.
+     */
+    val contractVersion: Int get() = HostContractVersion.forHostVersion(hostVersionCode)
 
     /** The tool groups the catalog uses, in the D6 order (`mcpServerToolGroups`). */
     val toolGroups: List<String> get() = ToolCatalog.groups.map { it.id }

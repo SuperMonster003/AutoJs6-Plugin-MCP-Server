@@ -13,7 +13,10 @@ import android.os.IBinder
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.autojs.plugin.common.api.IPluginInfoProvider
+import io.github.supermonster003.autojs6.plugin.mcp.server.host.HostContractVersion
 import org.autojs.plugin.common.api.PluginCapabilityKeys
+import org.autojs.plugin.host.capability.api.IHostCapabilityBroker
+import org.autojs.plugin.host.capability.api.IHostCapabilityCallback
 import org.autojs.plugin.mcp.server.api.IMcpHostCapabilityBroker
 import org.autojs.plugin.mcp.server.api.IMcpHostCapabilityCallback
 import org.autojs.plugin.mcp.server.api.IMcpServerPlugin
@@ -138,12 +141,20 @@ class McpServerPluginContractTest {
             } catch (expected: SecurityException) {
                 assertTrue(expected.message.orEmpty(), expected.message.orEmpty().contains("AutoJs6"))
             }
+            try {
+                plugin.openServerV2(Bundle(), NoopSharedBroker(), null)
+                fail("openServerV2 must refuse a caller that is not the AutoJs6 host")
+            } catch (expected: SecurityException) {
+                assertTrue(expected.message.orEmpty(), expected.message.orEmpty().contains("AutoJs6"))
+            }
         }
     }
 
     private fun assertCapabilities(capabilities: Bundle) {
         assertEquals(McpServerPlugin.REQUIRED_HOST_VERSION, capabilities.getLong(PluginCapabilityKeys.REQUIRES_HOST_VERSION))
-        assertEquals(McpServerContract.CONTRACT_VERSION, capabilities.getInt(McpServerCapabilityKeys.CONTRACT_VERSION))
+        // Version 2 only for an installed host that accepts it (roadmap P10); the emulators of CI have no host.
+        assertEquals(HostContractVersion.forHostVersion(installedHostVersionCode()), capabilities.getInt(McpServerCapabilityKeys.CONTRACT_VERSION))
+        assertTrue(McpServerContract.supportsContractVersion(capabilities.getInt(McpServerCapabilityKeys.CONTRACT_VERSION)))
         assertArrayEquals(arrayOf("script", "ui", "ui_gesture", "screen", "files", "files_delete", "device", "shell"), capabilities.getStringArray(McpServerCapabilityKeys.TOOL_GROUPS))
         val protocolVersions = requireNotNull(capabilities.getStringArray(McpServerCapabilityKeys.PROTOCOL_VERSIONS))
         assertTrue(protocolVersions.contains("2025-06-18"))
@@ -154,6 +165,19 @@ class McpServerPluginContractTest {
         override fun getBrokerInfo(): Bundle = Bundle()
         override fun dispatch(request: Bundle?, callback: IMcpHostCapabilityCallback?) = Unit
         override fun destroy(reason: Bundle?) = Unit
+    }
+
+    private class NoopSharedBroker : IHostCapabilityBroker.Stub() {
+        override fun getBrokerInfo(): Bundle = Bundle()
+        override fun dispatch(request: Bundle?, callback: IHostCapabilityCallback?) = Unit
+        override fun destroy(reason: Bundle?) = Unit
+    }
+
+    private fun installedHostVersionCode(): Long? = try {
+        val info = context.packageManager.getPackageInfo(McpServerPlugin.HOST_PACKAGE_NAME, 0)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) info.longVersionCode else @Suppress("DEPRECATION") info.versionCode.toLong()
+    } catch (_: PackageManager.NameNotFoundException) {
+        null
     }
 
     private fun discoverSingleService(action: String, expectedClassName: String): ServiceInfo {

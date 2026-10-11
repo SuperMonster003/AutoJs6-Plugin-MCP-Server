@@ -41,6 +41,8 @@ class SessionConfigTest {
         assertEquals(BindScope.LAN, config.bindScope)
         assertEquals("AutoJs6", config.hostLabel)
         assertNull(SessionConfig.fromValues(1, null, null, null, "   ").hostLabel)
+        // openServerV2 sends version 2 with the same keys (roadmap P10).
+        assertEquals(9700, SessionConfig.fromValues(2, 9700, null, null, null).port)
     }
 
     @Test
@@ -49,7 +51,8 @@ class SessionConfigTest {
         assertTrue(rejected { SessionConfig.fromValues(null, null, "bluetooth", null, null) }.startsWith("invalid_config: unknown bind scope"))
         assertTrue(rejected { SessionConfig.fromValues(null, null, null, "dual", null) }.startsWith("invalid_config: protocol mode dual is not supported"))
         assertTrue(rejected { SessionConfig.fromValues(null, null, null, null, "x".repeat(65)) }.startsWith("invalid_config: host label exceeds 64"))
-        assertTrue(rejected { SessionConfig.fromValues(2, null, null, null, null) }.startsWith("unsupported_contract: contract version 2"))
+        assertTrue(rejected { SessionConfig.fromValues(3, null, null, null, null) }.startsWith("unsupported_contract: contract version 3"))
+        assertTrue(rejected { SessionConfig.fromValues(0, null, null, null, null) }.startsWith("unsupported_contract: contract version 0"))
     }
 
     @Test

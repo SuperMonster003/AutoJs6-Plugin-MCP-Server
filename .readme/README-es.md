@@ -52,7 +52,7 @@ El servidor se ejecuta dentro del propio proceso del plugin y se alcanza mediant
 
 ******
 
-Versión 1.0.4: 37 herramientas (33 activadas por defecto), recursos y plantillas MCP, un interruptor en el panel de AutoJs6 y una página de ajustes del complemento. Requiere AutoJs6 6.8.0 (compilación 5279) o posterior; los recursos opcionales autojs6://docs/ necesitan además el plugin AutoJs6 Offline Docs y un anfitrión con sus métodos de retransmisión. El progreso y las evidencias se registran en [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Versión 1.1.0: 37 herramientas (33 activadas por defecto), recursos y plantillas MCP, un interruptor en el panel de AutoJs6 y una página de ajustes del complemento. Requiere AutoJs6 6.8.0 (compilación 5279) o posterior; los recursos opcionales autojs6://docs/ necesitan además el plugin AutoJs6 Offline Docs y un anfitrión con sus métodos de retransmisión. El progreso y las evidencias se registran en [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -307,12 +307,14 @@ Los planes y el progreso del plugin se mantienen como una lista verificable en R
 
 ******
 
-#### v1.0.4
+#### v1.1.0
 
 _2026/10/11_
 
 - `Corrección` La barra de estado de las páginas de ajustes e historial de versiones no tomaba el color del tema en Android 15 y posteriores (solo la barra de herramientas)
 - `Corrección` Las solicitudes de emparejamiento desde un ordenador podían no aparecer en el teléfono en Android 14 y posteriores si las notificaciones no estaban permitidas (ahora la página de ajustes muestra la solicitud pendiente al abrirse e indica que las notificaciones están desactivadas)
+- `Mejora` AutoJs6 6.8.0 a partir de la compilación 5283 se conecta al plugin mediante la interfaz de capacidades que AutoJs6 comparte con sus otros plugins (contrato MCP versión 2); las compilaciones anteriores siguen usando la interfaz original, por lo que la versión requerida de AutoJs6 no cambia
+- `Dependencia` Archivos de la API de plugins de AutoJs6 actualizados a la compilación del anfitrión 6.8.0 / 5329, con `host-capability-api.aar` (módulo `plugin-api/host-capability-api` de AutoJs6, MPL 2.0) añadido; todos con el hash fijado en `locks/host-api-aars.lock`
 
 #### v1.0.3
 

@@ -16,6 +16,7 @@ evidence should only depend on these files.
 | `token_rotation.py` | Scenario: lifecycle S5, the token rotated on the settings page while a session is live (roadmap P6 / P9) |
 | `lifecycle.py` | Scenario: the P6 lifecycle matrix S1 - S6 with kills from adb and `ACTION:` prompts for the on-screen steps (roadmap P6 / P9) |
 | `privileged.py` | Scenario: `device_ensure_accessibility` while the AutoJs6 accessibility service is off (the host's root, secure settings or Shizuku strategy), then `shell_exec id` without and with `root: true`; reports only the uid names (roadmap P3.4 / P9) |
+| `contract_v2.py` | Scenario: the host contract version the installed host chose (`openServerV2` from host build 5283 on, `openServer` before), read from `dumpsys` and the plugin log, then tools through that broker, a descriptor payload included when the accessibility service runs (roadmap P10) |
 | `bridge_reopen.py` | Scenario: the stdio bridge (`autojs6-mcp-bridge`) across a listener restart; each `--bridge` command runs once, so an old and a new bridge can be compared (roadmap P9) |
 | `test_evidence.py` | Offline checks of the parsing and redaction logic |
 

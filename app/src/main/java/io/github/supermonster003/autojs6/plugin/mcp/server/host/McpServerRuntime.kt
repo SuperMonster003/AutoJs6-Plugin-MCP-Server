@@ -47,6 +47,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import org.autojs.plugin.host.capability.api.IHostCapabilityBroker
 import org.autojs.plugin.mcp.server.api.IMcpHostCapabilityBroker
 import org.autojs.plugin.mcp.server.api.IMcpServerCallback
 import org.autojs.plugin.mcp.server.api.McpServerContract
@@ -263,21 +264,40 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
 
     // ------------------------------------------------------------------ host session
 
-    /**
-     * `IMcpServerPlugin.openServer`: attaches the host broker, starts the listener with the host's
-     * port and scope on top of the stored configuration, and returns the session Binder at once;
-     * the status follows through the callback. A session whose host is still alive is refused
-     * with `already_open`; one whose host died or that was closed is replaced.
-     */
+    /** `IMcpServerPlugin.openServer` (contract version 1); see the transport overload. */
     internal fun openSession(
         configBundle: Bundle?,
         broker: IMcpHostCapabilityBroker,
         callback: IMcpServerCallback?,
         callerUid: Int,
         verifier: HostCallerVerifier? = null,
+    ): HostSession = openSession(configBundle, BinderBridgeTransport.of(broker), HostContractVersion.V1, callback, callerUid, verifier)
+
+    /** `IMcpServerPlugin.openServerV2` (contract version 2, roadmap P10); see the transport overload. */
+    internal fun openSessionV2(
+        configBundle: Bundle?,
+        broker: IHostCapabilityBroker,
+        callback: IMcpServerCallback?,
+        callerUid: Int,
+        verifier: HostCallerVerifier? = null,
+    ): HostSession = openSession(configBundle, BinderBridgeTransport.of(broker), HostContractVersion.V2, callback, callerUid, verifier)
+
+    /**
+     * Attaches the host broker, starts the listener with the host's port and scope on top of the
+     * stored configuration, and returns the session Binder at once; the status follows through
+     * the callback. A session whose host is still alive is refused with `already_open`; one whose
+     * host died or that was closed is replaced. Both contract versions end here: they differ only
+     * in the broker interface behind [transport] and the version the session reports.
+     */
+    private fun openSession(
+        configBundle: Bundle?,
+        transport: BinderBridgeTransport,
+        contractVersion: Int,
+        callback: IMcpServerCallback?,
+        callerUid: Int,
+        verifier: HostCallerVerifier?,
     ): HostSession {
         val config = HostBundles.sessionConfig(configBundle)
-        val transport = BinderBridgeTransport(broker)
         val replaced: HostSession?
         val session: HostSession
         synchronized(lock) {
@@ -287,12 +307,12 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
             }
             replaced = previous
             val bridge = HostBridgeClient(transport, onDeath = ::onHostDied)
-            session = HostSession(this, "plugin-" + UUID.randomUUID().toString(), callerUid, config, callback, bridge, verifier)
+            session = HostSession(this, "plugin-" + UUID.randomUUID().toString(), callerUid, contractVersion, config, callback, bridge, verifier)
             this.session = session
         }
         replaced?.detach()
         val grant = transport.brokerInfo
-        Log.i(TAG, "Session ${session.id} opened by uid $callerUid: broker ${grant.brokerId ?: "?"} v${grant.brokerVersion}, ${grant.methods.size} granted methods, ${grant.maxConcurrentCalls} concurrent calls, host label ${config.hostLabel ?: "-"}")
+        Log.i(TAG, "Session ${session.id} (contract v$contractVersion) opened by uid $callerUid: broker ${grant.brokerId ?: "?"} v${grant.brokerVersion}, ${grant.methods.size} granted methods, ${grant.maxConcurrentCalls} concurrent calls, host label ${config.hostLabel ?: "-"}")
         lifecycle.execute {
             if (this.session !== session || !session.isOpen) return@execute
             val status = start(listenerConfig(config))
@@ -530,7 +550,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
             out.println("hostSession: none")
         } else {
             val grant = current.bridge.info
-            out.println("hostSession: ${current.id} uid=${current.ownerUid} open=${current.isOpen} host=${current.bridge.availability.id} broker=${grant.brokerId ?: "?"} methods=${grant.methods.size} calls=${current.bridge.callCount}")
+            out.println("hostSession: ${current.id} uid=${current.ownerUid} contract=v${current.contractVersion} open=${current.isOpen} host=${current.bridge.availability.id} broker=${grant.brokerId ?: "?"} methods=${grant.methods.size} calls=${current.bridge.callCount}")
         }
         out.println("toolGroups: ${ToolCatalog.summary(toolPermissions.load())}")
         out.println("tools: ${registry.enabledNames.joinToString(",")}")

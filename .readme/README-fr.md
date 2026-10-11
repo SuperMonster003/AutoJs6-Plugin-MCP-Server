@@ -52,7 +52,7 @@ Le serveur s'exécute dans le processus propre du plugin et est joignable via un
 
 ******
 
-Version 1.0.4: 37 outils (33 activés par défaut), ressources et invites MCP, un bouton dans le volet AutoJs6 et une page de paramètres du plugin. Nécessite AutoJs6 6.8.0 (build 5279) ou plus récent; les ressources optionnelles autojs6://docs/ demandent aussi le plugin AutoJs6 Offline Docs et un hôte doté de ses méthodes de relais. L'avancement et les preuves sont consignés dans [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Version 1.1.0: 37 outils (33 activés par défaut), ressources et invites MCP, un bouton dans le volet AutoJs6 et une page de paramètres du plugin. Nécessite AutoJs6 6.8.0 (build 5279) ou plus récent; les ressources optionnelles autojs6://docs/ demandent aussi le plugin AutoJs6 Offline Docs et un hôte doté de ses méthodes de relais. L'avancement et les preuves sont consignés dans [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -307,12 +307,14 @@ Les plans et l'avancement du plugin sont tenus sous forme de liste cochable dans
 
 ******
 
-#### v1.0.4
+#### v1.1.0
 
 _2026/10/11_
 
 - `Correctif` La barre d'état des pages des paramètres et de l'historique des versions ne prenait pas la couleur du thème sur Android 15 et ultérieur (seule la barre d'outils la prenait)
 - `Correctif` Les demandes d'appairage depuis un ordinateur pouvaient ne pas apparaître du tout sur le téléphone sous Android 14 et ultérieur si les notifications n'étaient pas autorisées (la page des paramètres affiche désormais la demande en attente à son ouverture et signale que les notifications sont désactivées)
+- `Amélioration` AutoJs6 6.8.0 à partir du build 5283 se connecte au plugin par l'interface de capacités qu'AutoJs6 partage avec ses autres plugins (contrat MCP version 2); les builds antérieurs gardent l'interface d'origine, la version d'AutoJs6 requise ne change donc pas
+- `Dépendance` Fichiers de l'API des plugins AutoJs6 mis à jour vers le build de l'hôte 6.8.0 / 5329, avec l'ajout de `host-capability-api.aar` (module `plugin-api/host-capability-api` d'AutoJs6, MPL 2.0); empreintes verrouillées dans `locks/host-api-aars.lock`
 
 #### v1.0.3
 

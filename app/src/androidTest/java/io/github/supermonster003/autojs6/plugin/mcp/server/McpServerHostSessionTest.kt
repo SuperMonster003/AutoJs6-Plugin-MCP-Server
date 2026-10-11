@@ -6,6 +6,7 @@ import android.os.Process
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import io.github.supermonster003.autojs6.plugin.mcp.server.host.HostContractVersion
 import io.github.supermonster003.autojs6.plugin.mcp.server.host.McpServerRuntime
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.McpErrors
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.McpHttpServer
@@ -16,6 +17,8 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolCatalog
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolGroup
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolPermissionStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolPermissions
+import org.autojs.plugin.host.capability.api.IHostCapabilityBroker
+import org.autojs.plugin.host.capability.api.IHostCapabilityCallback
 import org.autojs.plugin.mcp.server.api.IMcpHostCapabilityBroker
 import org.autojs.plugin.mcp.server.api.IMcpHostCapabilityCallback
 import org.autojs.plugin.mcp.server.api.IMcpServerCallback
@@ -93,7 +96,7 @@ class McpServerHostSessionTest {
         assertEquals(PORT, running.getInt(McpServerContract.KEY_STATUS_PORT))
         assertEquals(McpServerContract.BIND_SCOPE_LOOPBACK, running.getString(McpServerContract.KEY_STATUS_BIND_SCOPE))
         assertEquals(McpServerContract.PROTOCOL_MODE_STATEFUL, running.getString(McpServerContract.KEY_STATUS_PROTOCOL_MODE))
-        assertEquals(McpServerContract.CONTRACT_VERSION, running.getInt(McpServerContract.KEY_CONTRACT_VERSION))
+        assertEquals(HostContractVersion.V1, running.getInt(McpServerContract.KEY_CONTRACT_VERSION))
         assertTrue(running.getBoolean(McpServerContract.KEY_STATUS_HOST_AVAILABLE))
         assertTrue(running.getLong(McpServerContract.KEY_STATUS_STARTED_AT) > 0L)
         assertTrue("the host callback must have seen a running status", callback.statuses.any { it.getString(McpServerContract.KEY_STATUS_STATE) == McpServerContract.STATE_RUNNING })
@@ -572,6 +575,49 @@ class McpServerHostSessionTest {
         session.close()
     }
 
+    /**
+     * Contract version 2 (roadmap P10): `openServerV2` hands over the shared host capability
+     * broker. The same fake host logic answers through it, so the round trip proves that requests,
+     * client names, replies, and descriptor payloads travel unchanged and that the session reports
+     * version 2 in its status and event Bundles.
+     */
+    @Test
+    fun openServerV2ServesTheCatalogThroughTheSharedBroker() {
+        val core = FakeBroker()
+        val callback = RecordingCallback()
+        val session = runtime.openSessionV2(configBundle(PORT, HostContractVersion.V2), SharedBroker(core), callback, Process.myUid())
+
+        val running = awaitStatus(session) { it.getString(McpServerContract.KEY_STATUS_STATE) == McpServerContract.STATE_RUNNING }
+        assertEquals(HostContractVersion.V2, running.getInt(McpServerContract.KEY_CONTRACT_VERSION))
+        assertTrue(running.getBoolean(McpServerContract.KEY_STATUS_HOST_AVAILABLE))
+        awaitCondition("host probe") { core.requests.any { it.getString("method") == "info" } }
+
+        val init = post(initializeRequest(), sessionId = null)
+        assertEquals(200, init.status)
+        val sessionId = init.header("mcp-session-id")
+        post(initializedNotification(), sessionId)
+        val held = post(toolsCallRequest(ToolCatalog.DEVICE_INFO), sessionId).json().getJSONObject("error")
+        assertEquals(McpErrors.PAIRING_REQUIRED, held.getInt("code"))
+        assertTrue(runtime.server.pairingGate!!.approve(held.getJSONObject("data").getString("fingerprint")))
+        awaitCondition("client_paired event") {
+            callback.events.any { it.getString(McpServerContract.KEY_EVENT_TYPE) == McpServerContract.EVENT_CLIENT_PAIRED && it.getInt(McpServerContract.KEY_CONTRACT_VERSION) == HostContractVersion.V2 }
+        }
+
+        val info = post(toolsCallRequest(ToolCatalog.DEVICE_INFO), sessionId).result()
+        assertFalse(info.optBoolean("isError"))
+        assertEquals("autojs6-bridge-device-info-v1", info.getJSONObject("structuredContent").getString("schema"))
+        assertEquals("info", core.requests.last().getString("method"))
+        assertEquals(CLIENT_NAME, core.clientNames.last())
+
+        // A JSON result moved into a descriptor arrives through the shared callback as well.
+        val read = post(toolsCallRequest(ToolCatalog.FILES_READ, """{"path":"large.bin","encoding":"base64"}"""), sessionId).result()
+        assertFalse(read.toString().take(300), read.optBoolean("isError"))
+        assertEquals(1024 * 1024, android.util.Base64.decode(read.getJSONObject("structuredContent").getString("content"), android.util.Base64.DEFAULT).size)
+        assertEquals("read", core.requests.last().getString("method"))
+        Log.i(TAG, "openServerV2 -> running, device_info and files_read through the shared broker")
+        session.close()
+    }
+
     private class FakeBroker : IMcpHostCapabilityBroker.Stub() {
 
         val requests = CopyOnWriteArrayList<JSONObject>()
@@ -770,6 +816,22 @@ class McpServerHostSessionTest {
             .put("editable", className.endsWith("EditText")).put("focused", false).put("selected", false).put("longClickable", false)
     }
 
+    /** The shared broker of `openServerV2` in front of the same fake host: only the Binder interfaces differ. */
+    private class SharedBroker(private val core: FakeBroker) : IHostCapabilityBroker.Stub() {
+
+        override fun getBrokerInfo(): Bundle = core.brokerInfo.apply { putInt(McpServerContract.KEY_CONTRACT_VERSION, 1) }
+
+        override fun dispatch(request: Bundle?, callback: IHostCapabilityCallback?) {
+            core.dispatch(request, object : IMcpHostCapabilityCallback.Stub() {
+                override fun onResponse(response: Bundle?) {
+                    callback?.onResponse(response)
+                }
+            })
+        }
+
+        override fun destroy(reason: Bundle?) = Unit
+    }
+
     private class RecordingCallback : IMcpServerCallback.Stub() {
 
         val statuses = CopyOnWriteArrayList<Bundle>()
@@ -786,8 +848,9 @@ class McpServerHostSessionTest {
 
     // ------------------------------------------------------------------ helpers
 
-    private fun configBundle(port: Int): Bundle = Bundle().apply {
-        putInt(McpServerContract.KEY_CONTRACT_VERSION, McpServerContract.CONTRACT_VERSION)
+    /** The host sends version 1 with `openServer` and version 2 with `openServerV2`. */
+    private fun configBundle(port: Int, contractVersion: Int = HostContractVersion.V1): Bundle = Bundle().apply {
+        putInt(McpServerContract.KEY_CONTRACT_VERSION, contractVersion)
         putInt(McpServerContract.KEY_SERVER_CONFIG_PORT, port)
         putString(McpServerContract.KEY_SERVER_CONFIG_BIND_SCOPE, McpServerContract.BIND_SCOPE_LOOPBACK)
         putString(McpServerContract.KEY_SERVER_CONFIG_PROTOCOL_MODE, McpServerContract.PROTOCOL_MODE_STATEFUL)

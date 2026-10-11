@@ -1,6 +1,8 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server
 
 import android.content.Context
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import org.autojs.plugin.common.api.PluginCapabilityKeys
@@ -10,11 +12,10 @@ import org.autojs.plugin.mcp.server.api.McpServerCapabilityKeys
 /** Collects the installed package version and the localized metadata of this plugin. */
 internal fun Context.mcpServerPluginRuntimeInfo(): McpServerPluginRuntimeInfo {
     val packageInfo = packageManager.getPackageInfo(packageName, 0)
-    val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        packageInfo.longVersionCode
-    } else {
-        @Suppress("DEPRECATION")
-        packageInfo.versionCode.toLong()
+    val hostPackageInfo = try {
+        packageManager.getPackageInfo(McpServerPlugin.HOST_PACKAGE_NAME, 0)
+    } catch (_: PackageManager.NameNotFoundException) {
+        null
     }
     return McpServerPluginRuntimeInfo(
         name = getString(R.string.app_name),
@@ -23,10 +24,19 @@ internal fun Context.mcpServerPluginRuntimeInfo(): McpServerPluginRuntimeInfo {
             .bufferedReader()
             .use { it.readText() },
         versionName = packageInfo.versionName.orEmpty(),
-        versionCode = versionCode,
+        versionCode = packageInfo.versionCodeCompat,
         versionDate = getString(R.string.plugin_version_date),
+        hostVersionCode = hostPackageInfo?.versionCodeCompat,
     )
 }
+
+private val PackageInfo.versionCodeCompat: Long
+    get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        longVersionCode
+    } else {
+        @Suppress("DEPRECATION")
+        versionCode.toLong()
+    }
 
 /** Maps the pure-data view onto the host contract parcelable. */
 internal fun McpServerPluginRuntimeInfo.toPluginInfo(): PluginInfo {

@@ -1,5 +1,6 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server
 
+import io.github.supermonster003.autojs6.plugin.mcp.server.host.HostContractVersion
 import org.autojs.plugin.common.api.PluginActions
 import org.autojs.plugin.mcp.server.api.McpServerCapabilityKeys
 import org.autojs.plugin.mcp.server.api.McpServerContract
@@ -54,10 +55,24 @@ class McpServerPluginRuntimeInfoTest {
     }
 
     @Test
+    fun `contract version 2 is declared only to hosts that accept it`() {
+        fun info(host: Long?) = McpServerPluginRuntimeInfo("MCP Server", "d", null, "1.1.0", 1L, "Oct 11, 2026", hostVersionCode = host)
+
+        assertEquals(1, info(null).contractVersion)
+        assertEquals(1, info(McpServerPlugin.REQUIRED_HOST_VERSION).contractVersion)
+        assertEquals(1, info(HostContractVersion.V2_MIN_HOST_VERSION - 1).contractVersion)
+        assertEquals(2, info(HostContractVersion.V2_MIN_HOST_VERSION).contractVersion)
+        assertEquals(2, info(5329L).contractVersion)
+        // Whatever is declared, the bundled contract accepts it, so the host's validation agrees.
+        listOf(null, 5282L, 5283L).forEach { assertTrue(McpServerContract.supportsContractVersion(info(it).contractVersion)) }
+        assertEquals(2, McpServerContract.MAX_CONTRACT_VERSION)
+    }
+
+    @Test
     fun `capabilities describe the contract the host validates`() {
         val info = McpServerPluginRuntimeInfo("MCP Server", "d", null, "1.0.0", 1L, "Sep 10, 2026")
 
-        assertEquals(McpServerContract.CONTRACT_VERSION, info.contractVersion)
+        assertEquals(1, info.contractVersion)
         assertEquals(1, info.settingsVersion)
         assertEquals("mcpServerSettingsVersion", McpServerCapabilityKeys.SETTINGS_VERSION)
         assertEquals("mcpServerUserStopped", McpServerCapabilityKeys.USER_STOPPED)

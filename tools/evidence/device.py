@@ -116,7 +116,10 @@ class Device:
             elif line.startswith("hostSession:"):
                 host = re.search(r"host=(\S+)", line)
                 methods = re.search(r"methods=(\d+)", line)
+                contract = re.search(r"contract=v(\d+)", line)
                 state["host"] = host.group(1) if host else "none"
+                if contract:
+                    state["contract"] = int(contract.group(1))
                 state["grantedMethods"] = int(methods.group(1)) if methods else 0
             elif FINGERPRINT_PATTERN.match(line.split(" ")[0]) and '"' in line:
                 fingerprint, rest = line.split(" ", 1)

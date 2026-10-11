@@ -4,12 +4,14 @@
 
 ******
 
-# v1.0.4
+# v1.1.0
 
 ###### 2026/10/11
 
 * `Fix` The status bar of the settings and release history pages did not take the theme color on Android 15 and later (only the toolbar did)
 * `Fix` Pairing requests from a computer could stay invisible on the phone on Android 14 and later when notifications were not allowed (the settings page now shows a pending request when it opens and points out that notifications are off)
+* `Improvement` AutoJs6 6.8.0 build 5283 and later connect to the plugin through the capability interface AutoJs6 shares with its other plugins (MCP contract version 2); earlier builds keep the original interface, so the required AutoJs6 version stays the same
+* `Dependency` AutoJs6 plugin API files updated to host build 6.8.0 / 5329, with `host-capability-api.aar` (AutoJs6 module `plugin-api/host-capability-api`, MPL 2.0) added; all hash-locked in `locks/host-api-aars.lock`
 
 # v1.0.3
 

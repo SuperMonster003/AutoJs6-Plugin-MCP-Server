@@ -5,40 +5,56 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.ParcelFileDescriptor
 import android.os.RemoteException
+import org.autojs.plugin.host.capability.api.IHostCapabilityBroker
+import org.autojs.plugin.host.capability.api.IHostCapabilityCallback
 import org.autojs.plugin.mcp.server.api.IMcpHostCapabilityBroker
 import org.autojs.plugin.mcp.server.api.IMcpHostCapabilityCallback
 import org.autojs.plugin.mcp.server.api.McpServerContract
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * The Binder side of [HostBridgeClient] (roadmap P2.3): one `IMcpHostCapabilityBroker` of the
- * host, its broker info read once at attach time, and one callback Stub per in-flight request.
- * The Stubs stay referenced until the host answers, because the host only holds a weak proxy.
+ * The Binder side of [HostBridgeClient] (roadmap P2.3): one capability broker of the host, its
+ * broker info read once at attach time, and one callback Stub per in-flight request. The Stubs
+ * stay referenced until the host answers, because the host only holds a weak proxy.
+ *
+ * Contract version 1 hands over an `IMcpHostCapabilityBroker`, version 2 the shared
+ * `IHostCapabilityBroker` (roadmap P10). Both carry the same Bundle keys and JSON envelopes, so
+ * only the Binder interfaces differ and [of] picks the adapter.
  */
-class BinderBridgeTransport(private val broker: IMcpHostCapabilityBroker) : BridgeTransport {
+class BinderBridgeTransport private constructor(private val broker: Broker) : BridgeTransport {
 
-    override val brokerInfo: BrokerInfo = brokerInfoFromBundle(runCatching { broker.brokerInfo }.getOrNull())
+    /** The few Binder calls the transport makes, independent of the contract version. */
+    private interface Broker {
+        val info: Bundle?
+        val binder: IBinder
 
-    private val callbacks = ConcurrentHashMap<String, IMcpHostCapabilityCallback.Stub>()
+        /** A callback Stub of this contract version that hands its single answer to [forward]. */
+        fun newCallback(forward: (Bundle?) -> Unit): IBinder
+
+        /** Dispatches [request]; [callback] comes from [newCallback]. */
+        fun dispatch(request: Bundle, callback: IBinder)
+    }
+
+    override val brokerInfo: BrokerInfo = brokerInfoFromBundle(runCatching { broker.info }.getOrNull())
+
+    private val callbacks = ConcurrentHashMap<String, IBinder>()
 
     @Volatile
     private var deathRecipient: IBinder.DeathRecipient? = null
 
     /** Whether the host process that owns the broker still answers a ping. */
     val isAlive: Boolean
-        get() = runCatching { broker.asBinder().pingBinder() }.getOrDefault(false)
+        get() = runCatching { broker.binder.pingBinder() }.getOrDefault(false)
 
     override fun dispatch(request: BridgeRequest, clientName: String?, onReply: (BridgeReply) -> Unit) {
         val bundle = Bundle().apply {
-            putInt(McpServerContract.KEY_CONTRACT_VERSION, McpServerContract.CONTRACT_VERSION)
+            putInt(McpServerContract.KEY_CONTRACT_VERSION, DISPATCH_CONTRACT_VERSION)
             putString(McpServerContract.KEY_BRIDGE_REQUEST_JSON, request.toJson())
             clientName?.take(McpServerContract.MAX_CLIENT_NAME_BYTES)?.let { putString(McpServerContract.KEY_BRIDGE_CLIENT_NAME, it) }
         }
-        val callback = object : IMcpHostCapabilityCallback.Stub() {
-            override fun onResponse(response: Bundle?) {
-                callbacks.remove(request.id)
-                onReply(replyOf(response))
-            }
+        val callback = broker.newCallback { response ->
+            callbacks.remove(request.id)
+            onReply(replyOf(response))
         }
         callbacks[request.id] = callback
         try {
@@ -52,7 +68,7 @@ class BinderBridgeTransport(private val broker: IMcpHostCapabilityBroker) : Brid
     override fun linkToDeath(onDeath: () -> Unit): Boolean {
         val recipient = IBinder.DeathRecipient { onDeath() }
         return try {
-            broker.asBinder().linkToDeath(recipient, 0)
+            broker.binder.linkToDeath(recipient, 0)
             deathRecipient = recipient
             true
         } catch (_: RemoteException) {
@@ -61,7 +77,7 @@ class BinderBridgeTransport(private val broker: IMcpHostCapabilityBroker) : Brid
     }
 
     override fun unlinkToDeath() {
-        deathRecipient?.let { recipient -> runCatching { broker.asBinder().unlinkToDeath(recipient, 0) } }
+        deathRecipient?.let { recipient -> runCatching { broker.binder.unlinkToDeath(recipient, 0) } }
         deathRecipient = null
     }
 
@@ -91,6 +107,35 @@ class BinderBridgeTransport(private val broker: IMcpHostCapabilityBroker) : Brid
             errorMessage = bundle.getString(McpServerContract.KEY_BRIDGE_ERROR_MESSAGE),
             payload = payload,
         )
+    }
+
+    companion object {
+
+        /**
+         * The data-plane version sent with every dispatch. Both brokers speak version 1 and the
+         * host does not read the key; it stays for parity with the released v1 envelope.
+         */
+        const val DISPATCH_CONTRACT_VERSION = 1
+
+        /** Contract version 1: the MCP-specific broker of `openServer`. */
+        fun of(broker: IMcpHostCapabilityBroker): BinderBridgeTransport = BinderBridgeTransport(object : Broker {
+            override val info: Bundle? get() = broker.brokerInfo
+            override val binder: IBinder get() = broker.asBinder()
+            override fun newCallback(forward: (Bundle?) -> Unit): IBinder = object : IMcpHostCapabilityCallback.Stub() {
+                override fun onResponse(response: Bundle?) = forward(response)
+            }
+            override fun dispatch(request: Bundle, callback: IBinder) = broker.dispatch(request, callback as IMcpHostCapabilityCallback)
+        })
+
+        /** Contract version 2: the shared host capability broker of `openServerV2`. */
+        fun of(broker: IHostCapabilityBroker): BinderBridgeTransport = BinderBridgeTransport(object : Broker {
+            override val info: Bundle? get() = broker.brokerInfo
+            override val binder: IBinder get() = broker.asBinder()
+            override fun newCallback(forward: (Bundle?) -> Unit): IBinder = object : IHostCapabilityCallback.Stub() {
+                override fun onResponse(response: Bundle?) = forward(response)
+            }
+            override fun dispatch(request: Bundle, callback: IBinder) = broker.dispatch(request, callback as IHostCapabilityCallback)
+        })
     }
 }
 

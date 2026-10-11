@@ -4,12 +4,14 @@
 
 ******
 
-# v1.0.4
+# v1.1.0
 
 ###### 2026/10/11
 
 * `Corrección` La barra de estado de las páginas de ajustes e historial de versiones no tomaba el color del tema en Android 15 y posteriores (solo la barra de herramientas)
 * `Corrección` Las solicitudes de emparejamiento desde un ordenador podían no aparecer en el teléfono en Android 14 y posteriores si las notificaciones no estaban permitidas (ahora la página de ajustes muestra la solicitud pendiente al abrirse e indica que las notificaciones están desactivadas)
+* `Mejora` AutoJs6 6.8.0 a partir de la compilación 5283 se conecta al plugin mediante la interfaz de capacidades que AutoJs6 comparte con sus otros plugins (contrato MCP versión 2); las compilaciones anteriores siguen usando la interfaz original, por lo que la versión requerida de AutoJs6 no cambia
+* `Dependencia` Archivos de la API de plugins de AutoJs6 actualizados a la compilación del anfitrión 6.8.0 / 5329, con `host-capability-api.aar` (módulo `plugin-api/host-capability-api` de AutoJs6, MPL 2.0) añadido; todos con el hash fijado en `locks/host-api-aars.lock`
 
 # v1.0.3
 

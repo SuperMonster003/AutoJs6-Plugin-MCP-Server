@@ -65,7 +65,7 @@ require(hostApiLockFile.isFile) {
     "Missing host API lock: ${hostApiLockFile.relativeTo(rootProject.projectDir)}"
 }
 val hostApiLock = hostApiLockFile.loadUniqueLock()
-val hostApiIds = listOf("common-plugin-api", "mcp-server-api")
+val hostApiIds = listOf("common-plugin-api", "host-capability-api", "mcp-server-api")
 val expectedHostApiLockKeys = setOf("format") + hostApiIds.flatMap { id -> listOf("$id.file", "$id.sha256") }
 require(hostApiLock.stringPropertyNames() == expectedHostApiLockKeys) {
     "Host API AAR lock must contain exactly these keys: ${expectedHostApiLockKeys.sorted()}"
@@ -98,6 +98,7 @@ fun lockedHostApiAar(id: String): File {
 }
 
 val commonPluginApiAar = lockedHostApiAar("common-plugin-api")
+val hostCapabilityApiAar = lockedHostApiAar("host-capability-api")
 val mcpServerApiAar = lockedHostApiAar("mcp-server-api")
 
 android {
@@ -208,6 +209,8 @@ androidComponents {
 
 dependencies {
     implementation(files(commonPluginApiAar))
+    // Shared host capability data plane used by MCP contract v2 (host module plugin-api/host-capability-api, roadmap P10).
+    implementation(files(hostCapabilityApiAar))
     // Binder contract between AutoJs6 and this plugin (host module plugin-api/mcp-server-api, roadmap P1.1 / P2.3).
     implementation(files(mcpServerApiAar))
 

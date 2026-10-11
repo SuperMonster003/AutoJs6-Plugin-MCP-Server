@@ -12,12 +12,14 @@ import org.autojs.plugin.mcp.server.api.IMcpServerSession
  * One open `IMcpServerSession` (roadmap P2.3): the host's view of the listener. Every method is
  * a Binder call from the host; the [verifier] (absent only in the in-process tests) confirms the
  * caller is still the host UID that opened the session. Status and events flow back through the
- * host's oneway [callback]; a dead callback is ignored, the next `openServer` replaces the session.
+ * host's oneway [callback]; a dead callback is ignored, the next open replaces the session.
  */
 internal class HostSession(
     private val runtime: McpServerRuntime,
     val id: String,
     val ownerUid: Int,
+    /** The control-plane version the host opened the session with (`openServer` 1, `openServerV2` 2). */
+    val contractVersion: Int,
     @Volatile var config: SessionConfig,
     private val callback: IMcpServerCallback?,
     val bridge: HostBridgeClient,
@@ -34,7 +36,7 @@ internal class HostSession(
 
     override fun getStatus(): Bundle {
         verify()
-        return HostBundles.status(runtime.statusSnapshot())
+        return HostBundles.status(runtime.statusSnapshot(), contractVersion)
     }
 
     override fun updateConfig(config: Bundle?) {
@@ -57,7 +59,7 @@ internal class HostSession(
         if (!isOpen) return
         val target = callback ?: return
         try {
-            target.onStatus(HostBundles.status(runtime.statusSnapshot()))
+            target.onStatus(HostBundles.status(runtime.statusSnapshot(), contractVersion))
         } catch (error: RemoteException) {
             Log.w(TAG, "Status not delivered to the host (${error.javaClass.simpleName})")
         }
@@ -67,7 +69,7 @@ internal class HostSession(
         if (!isOpen) return
         val target = callback ?: return
         try {
-            target.onEvent(HostBundles.event(type, text, clientName, toolName, System.currentTimeMillis()))
+            target.onEvent(HostBundles.event(type, text, clientName, toolName, System.currentTimeMillis(), contractVersion))
         } catch (error: RemoteException) {
             Log.w(TAG, "Event $type not delivered to the host (${error.javaClass.simpleName})")
         }

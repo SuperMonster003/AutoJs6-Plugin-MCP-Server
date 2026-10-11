@@ -6,14 +6,16 @@ plugin. Gradle never resolves host artifacts from sibling repositories or from `
 Before any Gradle configuration, stage the audited **release** artifact named exactly:
 
 - `common-plugin-api.aar`
+- `host-capability-api.aar` (host module `plugin-api/host-capability-api`, the shared capability data plane of MCP contract version 2; staged in P10)
 - `mcp-server-api.aar` (host module `plugin-api/mcp-server-api`, the Binder contract of roadmap P1.1; staged in P2.3)
 
 Record the lowercase SHA-256 of every staged artifact in `../locks/host-api-aars.lock`.
 `app/build.gradle.kts` rejects missing files, debug artifacts, placeholder hashes, extra lock
 entries, and digest mismatches during configuration.
 
-Both artifacts are release builds of the host modules; `mcp-server-api.aar` depends on
-`common-plugin-api.aar` (the `PluginInfo` parcelable), so the two must come from the same host
-contract line. When the host contract changes, restage both and extend the lock file in the same commit.
+All artifacts are release builds of the host modules; `mcp-server-api.aar` depends on
+`common-plugin-api.aar` (the `PluginInfo` parcelable) and on `host-capability-api.aar` (the broker
+of `openServerV2`), so the three must come from the same host build. When the host contract
+changes, restage all of them and update the lock file in the same commit.
 
 Do not commit locally assembled debug AARs or rename debug outputs to bypass this policy.

@@ -52,7 +52,7 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 
 ******
 
-版本 1.0.4: 37 个工具 (默认启用 33 个), MCP 资源与提示, AutoJs6 抽屉开关和插件设置页. 需要 AutoJs6 6.8.0 (构建 5279) 或更高版本; 可选的 autojs6://docs/ 资源还需要 AutoJs6 离线文档插件以及带转读方法的宿主. 进度与证据记录在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+版本 1.1.0: 37 个工具 (默认启用 33 个), MCP 资源与提示, AutoJs6 抽屉开关和插件设置页. 需要 AutoJs6 6.8.0 (构建 5279) 或更高版本; 可选的 autojs6://docs/ 资源还需要 AutoJs6 离线文档插件以及带转读方法的宿主. 进度与证据记录在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -307,12 +307,14 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 ******
 
-#### v1.0.4
+#### v1.1.0
 
 _2026/10/11_
 
 - `修复` 设置页与发行历史页的状态栏在 Android 15 及以上未跟随主题色 (仅标题栏着色) 的问题
 - `修复` Android 14 及以上未允许通知时, 来自电脑的配对请求在手机上可能完全不可见的问题 (现在打开设置页会显示待确认的请求并提示通知已关闭)
+- `优化` AutoJs6 6.8.0 构建 5283 及以上会通过 AutoJs6 与其他插件共用的能力接口连接本插件 (MCP 契约版本 2); 更早的构建继续使用原接口, 因此所需的 AutoJs6 版本不变
+- `依赖` 更新 AutoJs6 插件接口文件至宿主构建 6.8.0/5329, 并附加 host-capability-api 本地模块 (MPL 2.0, 锁定文件哈希)
 
 #### v1.0.3
 

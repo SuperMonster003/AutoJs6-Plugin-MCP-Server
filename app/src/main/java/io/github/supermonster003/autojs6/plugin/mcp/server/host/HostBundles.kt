@@ -15,8 +15,9 @@ internal object HostBundles {
         useSavedSettings = bundle?.getBoolean(McpServerContract.KEY_SERVER_CONFIG_USE_SAVED_SETTINGS, false) ?: false,
     )
 
-    fun status(status: SessionStatus): Bundle = Bundle().apply {
-        putInt(McpServerContract.KEY_CONTRACT_VERSION, McpServerContract.CONTRACT_VERSION)
+    /** [contractVersion] is the version the session was opened with; the keys are the same for both. */
+    fun status(status: SessionStatus, contractVersion: Int): Bundle = Bundle().apply {
+        putInt(McpServerContract.KEY_CONTRACT_VERSION, contractVersion)
         putString(McpServerContract.KEY_STATUS_STATE, status.state)
         putStringArray(McpServerContract.KEY_STATUS_ENDPOINTS, status.endpoints.toTypedArray())
         putInt(McpServerContract.KEY_STATUS_PORT, status.port)
@@ -30,8 +31,8 @@ internal object HostBundles {
         status.lastError?.let { putString(McpServerContract.KEY_STATUS_LAST_ERROR, it.take(McpServerContract.MAX_ERROR_MESSAGE_BYTES)) }
     }
 
-    fun event(type: String, text: String?, clientName: String?, toolName: String?, timestamp: Long): Bundle = Bundle().apply {
-        putInt(McpServerContract.KEY_CONTRACT_VERSION, McpServerContract.CONTRACT_VERSION)
+    fun event(type: String, text: String?, clientName: String?, toolName: String?, timestamp: Long, contractVersion: Int): Bundle = Bundle().apply {
+        putInt(McpServerContract.KEY_CONTRACT_VERSION, contractVersion)
         putString(McpServerContract.KEY_EVENT_TYPE, type)
         text?.let { putString(McpServerContract.KEY_EVENT_TEXT, it.take(McpServerContract.MAX_EVENT_TEXT_BYTES)) }
         putLong(McpServerContract.KEY_EVENT_TIMESTAMP, timestamp)

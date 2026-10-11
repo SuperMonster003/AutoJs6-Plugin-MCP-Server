@@ -57,7 +57,7 @@ class EvidenceToolTest(unittest.TestCase):
             f"    token: {TOKEN}",
             "    pairedClients: 1",
             '      764b6eef6d1edd433a6d1c53 "Visual Studio Code" loopback firstPairedAt=1 lastSeenAt=1',
-            "    hostSession: plugin-1 uid=1 open=true host=available broker=b methods=61 calls=1",
+            "    hostSession: plugin-1 uid=1 contract=v2 open=true host=available broker=b methods=61 calls=1",
         ]))
         state = device.plugin_state()
         self.assertNotIn(TOKEN, json.dumps(state))
@@ -65,6 +65,7 @@ class EvidenceToolTest(unittest.TestCase):
         self.assertEqual(9700, state["port"])
         self.assertEqual("available", state["host"])
         self.assertEqual(61, state["grantedMethods"])
+        self.assertEqual(2, state["contract"])
         self.assertEqual([{"fingerprint": "764b6eef6d1edd433a6d1c53", "name": "Visual Studio Code"}], state["pairedClients"])
         self.assertEqual(9637, FakeDevice("hostSession: none").plugin_state()["port"])
 

@@ -5,11 +5,17 @@
   "changelog_label_improvement": "優化",
   "changelog_label_dependency": "依賴",
   "$data": {
-    "v1.0.4": {
+    "v1.1.0": {
       "released_date": "2026/10/11",
       "fix": [
         "設定頁與發行歷史頁的狀態列在 Android 15 或以上未跟隨主題色 (僅標題列著色) 的問題",
         "Android 14 或以上未允許通知時, 來自電腦的配對請求在手機上可能完全看不到的問題 (現在開啟設定頁會顯示待確認的請求並提示通知已關閉)"
+      ],
+      "improvement": [
+        "AutoJs6 6.8.0 建置 5283 或以上會透過 AutoJs6 與其他插件共用的能力介面連接本插件 (MCP 契約版本 2); 更早的建置繼續使用原介面, 因此所需的 AutoJs6 版本不變"
+      ],
+      "dependency": [
+        "更新 AutoJs6 插件介面檔案至主程式建置 6.8.0/5329, 並附加 host-capability-api 本機模組 (MPL 2.0, 鎖定檔案雜湊)"
       ]
     },
     "v1.0.3": {

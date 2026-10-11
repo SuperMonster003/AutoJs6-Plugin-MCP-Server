@@ -9,7 +9,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  * info"). Pure so tests and the pure client can use it; [BinderBridgeTransport] reads the Bundle.
  */
 data class BrokerInfo(
-    val contractVersion: Int = McpServerContract.CONTRACT_VERSION,
+    /** The broker's own version key; both brokers report data-plane version 1, not the MCP control-plane version. */
+    val contractVersion: Int = McpServerContract.HOST_CAPABILITY_BROKER_CONTRACT_VERSION,
     val brokerVersion: Int = McpServerContract.HOST_CAPABILITY_BROKER_CONTRACT_VERSION,
     val brokerId: String? = null,
     val engineInfoJson: String? = null,
@@ -73,7 +74,7 @@ class BridgeReply(
 
 /**
  * The Binder boundary of [HostBridgeClient], abstracted so the client and its tests stay pure:
- * [BinderBridgeTransport] talks to `IMcpHostCapabilityBroker`, the JVM tests use a fake.
+ * [BinderBridgeTransport] talks to the host broker of either contract version, the JVM tests use a fake.
  */
 interface BridgeTransport {
 

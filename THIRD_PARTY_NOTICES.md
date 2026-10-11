@@ -7,15 +7,22 @@ own licenses. Runtime dependencies are added to this list in the same commit tha
 ## AutoJs6 common plugin API
 
 - Component: `common-plugin-api.aar` (Binder contract shared by AutoJs6 and its plugins)
-- Source: <https://github.com/SuperMonster003/AutoJs6> (`plugin-api/common-plugin-api`), host build 5280 (6.8.0), commit `e1aa3f813dc1415eca9a7e89781f5d26be26cb53`, release build paired with `mcp-server-api.aar`
-- SHA-256: `59706b9fdb76a2312d295d9ad48b3bfe96d1da899cf76434e96ef646a673f400` (pinned in `locks/host-api-aars.lock`)
+- Source: <https://github.com/SuperMonster003/AutoJs6> (`plugin-api/common-plugin-api`), host build 5329 (6.8.0), commit `03b37ef76a53dee59601515b3576e05417794369`, release build staged with `host-capability-api.aar` and `mcp-server-api.aar`
+- SHA-256: `ed7a71942ffb67255ebad8d8a2c912b01c4a3cdd8aad497baba0687b4072032a` (pinned in `locks/host-api-aars.lock`)
+- License: Mozilla Public License 2.0
+
+## AutoJs6 host capability API
+
+- Component: `host-capability-api.aar` (shared host capability data plane: `IHostCapabilityBroker`, `IHostCapabilityCallback`, and `HostCapabilityContract`; used by MCP contract version 2)
+- Source: <https://github.com/SuperMonster003/AutoJs6> (`plugin-api/host-capability-api`), host build 5329 (6.8.0), commit `03b37ef76a53dee59601515b3576e05417794369`, data-plane contract version 1
+- SHA-256: `23024fd981b7846936ef59f595f4da2208adf38d7c2d35594c20c7dfc1a86bd1` (pinned in `locks/host-api-aars.lock`)
 - License: Mozilla Public License 2.0
 
 ## AutoJs6 MCP Server plugin API
 
 - Component: `mcp-server-api.aar` (Binder contract between AutoJs6 and this plugin: `IMcpServerPlugin`, `IMcpServerSession`, `IMcpServerCallback`, `IMcpHostCapabilityBroker`, `IMcpHostCapabilityCallback`, and `McpServerContract`)
-- Source: <https://github.com/SuperMonster003/AutoJs6> (`plugin-api/mcp-server-api`), host build 5280 (6.8.0), commit `e1aa3f813dc1415eca9a7e89781f5d26be26cb53`, P4 settings extension (optional version 1, unchanged AIDL order)
-- SHA-256: `6ee668b2d883be7bc5c2be88b1b7787da0f7e1072410b0d5d2efca1df9a43400` (pinned in `locks/host-api-aars.lock`)
+- Source: <https://github.com/SuperMonster003/AutoJs6> (`plugin-api/mcp-server-api`), host build 5329 (6.8.0), commit `03b37ef76a53dee59601515b3576e05417794369`, contract version 2 (`openServerV2` appended; version 1 transactions unchanged)
+- SHA-256: `296d47416ce3787b3cf0ba49f464842ac376478558d77e36b4cdcf8d553f21f2` (pinned in `locks/host-api-aars.lock`)
 - License: Mozilla Public License 2.0
 
 ## Kotlin standard library
