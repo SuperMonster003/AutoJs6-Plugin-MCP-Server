@@ -75,7 +75,14 @@ abstract class SettingsPageActivity : Activity() {
             if (Build.VERSION.SDK_INT >= 26) isKeyboardNavigationCluster = false
         }
         backButton = (0 until toolbar.childCount).map(toolbar::getChildAt).filterIsInstance<ImageButton>().firstOrNull()?.apply { id = View.generateViewId() }
-        root.addView(toolbar, LinearLayout.LayoutParams(-1, -2))
+        // Edge-to-edge windows (enforced from target SDK 35) ignore statusBarColor; the app bar
+        // takes the status bar inset itself so the theme color reaches under the status bar.
+        val appBar = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(appearance.primary)
+            addView(toolbar, LinearLayout.LayoutParams(-1, -2))
+        }
+        root.addView(appBar, LinearLayout.LayoutParams(-1, -2))
         content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(8), dp(16), dp(24)) }
         root.addView(ScrollView(this).apply { isFillViewport = true; addView(content) }, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root)
@@ -83,7 +90,7 @@ abstract class SettingsPageActivity : Activity() {
         window.statusBarColor = appearance.primary
         @Suppress("DEPRECATION")
         window.navigationBarColor = if (Build.VERSION.SDK_INT < 26) 0xff141414.toInt() else pageBackground
-        val lightStatus = if (Build.VERSION.SDK_INT >= 35) !appearance.dark else Color.luminance(appearance.primary) > .179
+        val lightStatus = Color.luminance(appearance.primary) > .179
         if (Build.VERSION.SDK_INT >= 30) {
             val flags = (if (lightStatus) WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS else 0) or
                 (if (!appearance.dark) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0)
@@ -95,13 +102,14 @@ abstract class SettingsPageActivity : Activity() {
                 (if (Build.VERSION.SDK_INT >= 26 && !appearance.dark) View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR else 0)
         }
         root.setOnApplyWindowInsetsListener { view, insets ->
-            if (Build.VERSION.SDK_INT >= 30) {
-                val bars = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
-                view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            val (left, top, right, bottom) = if (Build.VERSION.SDK_INT >= 30) {
+                insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout()).let { listOf(it.left, it.top, it.right, it.bottom) }
             } else {
                 @Suppress("DEPRECATION")
-                view.setPadding(insets.systemWindowInsetLeft, insets.systemWindowInsetTop, insets.systemWindowInsetRight, insets.systemWindowInsetBottom)
+                listOf(insets.systemWindowInsetLeft, insets.systemWindowInsetTop, insets.systemWindowInsetRight, insets.systemWindowInsetBottom)
             }
+            view.setPadding(left, 0, right, bottom)
+            appBar.setPadding(0, top, 0, 0)
             insets
         }
     }

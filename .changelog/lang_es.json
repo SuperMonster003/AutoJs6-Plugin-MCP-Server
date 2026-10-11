@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Mejora",
   "changelog_label_dependency": "Dependencia",
   "$data": {
+    "v1.0.4": {
+      "released_date": "2026/10/11",
+      "fix": [
+        "La barra de estado de las páginas de ajustes e historial de versiones no tomaba el color del tema en Android 15 y posteriores (solo la barra de herramientas)"
+      ]
+    },
     "v1.0.3": {
       "released_date": "2026/10/11",
       "feature": [

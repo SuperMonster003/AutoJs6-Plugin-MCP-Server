@@ -5,6 +5,12 @@
   "changelog_label_improvement": "تحسين",
   "changelog_label_dependency": "تبعية",
   "$data": {
+    "v1.0.4": {
+      "released_date": "2026/10/11",
+      "fix": [
+        "شريط الحالة في صفحتي الإعدادات وسجل الإصدارات لم يكن يأخذ لون السمة في Android 15 وما بعده (كان شريط الأدوات فقط يأخذه)"
+      ]
+    },
     "v1.0.3": {
       "released_date": "2026/10/11",
       "feature": [

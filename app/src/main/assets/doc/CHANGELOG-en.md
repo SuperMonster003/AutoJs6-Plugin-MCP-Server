@@ -4,6 +4,12 @@
 
 ******
 
+# v1.0.4
+
+###### 2026/10/11
+
+* `Fix` The status bar of the settings and release history pages did not take the theme color on Android 15 and later (only the toolbar did)
+
 # v1.0.3
 
 ###### 2026/10/11

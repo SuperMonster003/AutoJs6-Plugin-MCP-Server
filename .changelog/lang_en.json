@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Improvement",
   "changelog_label_dependency": "Dependency",
   "$data": {
+    "v1.0.4": {
+      "released_date": "2026/10/11",
+      "fix": [
+        "The status bar of the settings and release history pages did not take the theme color on Android 15 and later (only the toolbar did)"
+      ]
+    },
     "v1.0.3": {
       "released_date": "2026/10/11",
       "feature": [

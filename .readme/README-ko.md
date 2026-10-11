@@ -52,7 +52,7 @@ MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]
 
 ******
 
-버전 1.0.3: 도구 37개 (기본 활성화 33개), MCP 리소스와 프롬프트, AutoJs6 서랍 스위치와 플러그인 설정 페이지. AutoJs6 6.8.0 (빌드 5279) 이상이 필요합니다. 선택적 autojs6://docs/ 리소스에는 AutoJs6 오프라인 문서 플러그인과 중계 메서드를 갖춘 호스트도 필요합니다. 진행 상황과 증거는 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) 에 기록합니다.
+버전 1.0.4: 도구 37개 (기본 활성화 33개), MCP 리소스와 프롬프트, AutoJs6 서랍 스위치와 플러그인 설정 페이지. AutoJs6 6.8.0 (빌드 5279) 이상이 필요합니다. 선택적 autojs6://docs/ 리소스에는 AutoJs6 오프라인 문서 플러그인과 중계 메서드를 갖춘 호스트도 필요합니다. 진행 상황과 증거는 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) 에 기록합니다.
 
 ******
 
@@ -307,6 +307,12 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 ******
 
+#### v1.0.4
+
+_2026/10/11_
+
+- `수정` Android 15 이상에서 설정 페이지와 릴리스 기록 페이지의 상태 표시줄에 테마 색상이 적용되지 않던 문제 (툴바에만 적용됨)
+
 #### v1.0.3
 
 _2026/10/11_
@@ -328,16 +334,6 @@ _2026/09/19_
 - `수정` 공유 빌드 플러그인 1.8.3을 통해 AGP 9.1의 SDK XML v4 파싱 경고 및 JVM 단위 테스트 조립 작업에서 APK 네이티브 라이브러리 정렬 검사가 잘못 실행되는 문제 해결
 - `개선` Android 17 로컬 네트워크 권한 요청을 플러그인 센터의 활성화 흐름과 설정으로 통합하고 런처 권한 페이지 제거; 권한이 없으면 비활성 상태를 유지하고 자동 시작을 조용히 건너뜀
 - `개선` Android 17 (SDK 37) 대응 및 플러그인별 로컬 네트워크 권한 설정과 복구 안내 제공
-
-#### v1.0.1
-
-_2026/09/16_
-
-- `기능` 선택적 오프라인 문서 리소스: AutoJs6 오프라인 문서 플러그인이 설치되어 있고 호스트가 app.listDocs / app.readDoc 로 중계하면 resources/list 에 autojs6://docs/ (하위 URI 를 담은 색인) 와 문서 페이지별 autojs6://docs/{+path} 리소스가 추가되고 resources/templates/list 에 docs 템플릿이 추가됩니다. 플러그인이 없거나 이 메서드가 없는 호스트에서는 아무것도 나열되지 않으며 _meta.docsCatalogStatus 가 이유를 알려 줍니다
-- `개선` compileSdk 를 37 (Android 17) 로 올리며, targetSdk 는 대상 버전에 의존하는 동작을 검증할 때까지 36 으로 유지
-- `개선` MCP 적합성 (P6): 두 기기에서 공식 @modelcontextprotocol/conformance 스위트 0.1.16 을 상태 유지 /mcp 경로에 대해 실행했습니다. 32 개 서버 시나리오 중 9 개 통과 (initialize, ping, tools/list, 텍스트와 오류 도구 결과, resources/list, prompts/list, 동시 SSE 스트림, DNS rebinding 보호); 18 개는 스위트에 딸린 참조 픽스처 (test_* 도구, 프롬프트, test:// 리소스. 이 서버는 알 수 없는 도구 결과, -32602 또는 isError 로 응답합니다) 를 호출하고, 5 개는 이 서버가 선언하지 않는 기능 (logging, completions, 리소스 구독) 이 필요합니다. 루프백 Origin 헤더는 스위트가 기대하는 대로 이제 모든 모드에서 허용됩니다. CORS 헤더와 프리플라이트 응답은 여전히 개발자 모드로 제한됩니다. 2026-07-28 무상태 모델에는 라우트가 없습니다 (Roadmap D9). 자세한 내용은 docs/dev/p6-conformance.md.
-- `개선` 보안 감사 (P6): 체크리스트 7 개 항목 (토큰 저장, 로그 비식별화, 내보낸 구성 요소, 평문 범위, 로컬 네트워크 기본 꺼짐, 페어링 취소, 도구 그룹 기본 꺼짐) 을 코드와 두 기기에서 검증하여 docs/dev/p6-security-audit.md 에 기록했고, README 보안 절이 이 경계를 설명합니다. 평문 HTTP 는 앱 전체 usesCleartextTraffic 플래그 대신 네트워크 보안 구성으로 루프백 주소에 한정됩니다. 플러그인은 클라이언트 연결을 열지 않으며 리스너에는 이 플래그가 필요 없습니다.
-- `개선` 성능 기준선 (P6): API 24 에뮬레이터, Sony 휴대폰 (API 33), Xiaomi Pad (API 35) 에서 ui_dump 50 / 200 / 400 노드, screen_capture 세 가지 크기, script_run 왕복, 동시 요청 4 건을 측정하여 임계값 없는 참고치로 docs/dev/p6-performance-baseline.md 에 기록했습니다. 플러그인만 응답하는 호출은 에뮬레이터와 휴대폰에서 약 20 ms, ui_dump 는 노드당 약 0.05 ms 증가하며, 접근성 스크린샷 경로는 100 ms 이내에 응답하지만 API 24 의 MediaProjection 경로는 캡처당 약 1.35 s 가 걸리고, 동시 요청 4 건은 호스트의 동시 호출 상한 4 안에서 단일 왕복의 1.0-1.8 배로 완료됩니다.
 
 ##### 더 많은 릴리스 기록
 

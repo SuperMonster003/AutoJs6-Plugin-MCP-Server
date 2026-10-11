@@ -5,6 +5,12 @@
   "changelog_label_improvement": "優化",
   "changelog_label_dependency": "相依性",
   "$data": {
+    "v1.0.4": {
+      "released_date": "2026/10/11",
+      "fix": [
+        "設定頁與發行歷史頁的狀態列在 Android 15 以上版本未跟隨主題色 (僅標題列著色) 的問題"
+      ]
+    },
     "v1.0.3": {
       "released_date": "2026/10/11",
       "feature": [

@@ -52,7 +52,7 @@ Le serveur s'exécute dans le processus propre du plugin et est joignable via un
 
 ******
 
-Version 1.0.3: 37 outils (33 activés par défaut), ressources et invites MCP, un bouton dans le volet AutoJs6 et une page de paramètres du plugin. Nécessite AutoJs6 6.8.0 (build 5279) ou plus récent; les ressources optionnelles autojs6://docs/ demandent aussi le plugin AutoJs6 Offline Docs et un hôte doté de ses méthodes de relais. L'avancement et les preuves sont consignés dans [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Version 1.0.4: 37 outils (33 activés par défaut), ressources et invites MCP, un bouton dans le volet AutoJs6 et une page de paramètres du plugin. Nécessite AutoJs6 6.8.0 (build 5279) ou plus récent; les ressources optionnelles autojs6://docs/ demandent aussi le plugin AutoJs6 Offline Docs et un hôte doté de ses méthodes de relais. L'avancement et les preuves sont consignés dans [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -307,6 +307,12 @@ Les plans et l'avancement du plugin sont tenus sous forme de liste cochable dans
 
 ******
 
+#### v1.0.4
+
+_2026/10/11_
+
+- `Correctif` La barre d'état des pages des paramètres et de l'historique des versions ne prenait pas la couleur du thème sur Android 15 et ultérieur (seule la barre d'outils la prenait)
+
 #### v1.0.3
 
 _2026/10/11_
@@ -328,16 +334,6 @@ _2026/09/19_
 - `Correctif` Avertissements de lecture SDK XML v4 avec AGP 9.1 et contrôles d'alignement natif des APK déclenchés par erreur lors de l'assemblage des tests unitaires JVM, avec les plugins de compilation partagés 1.8.3
 - `Amélioration` Autorisation du réseau local sous Android 17 intégrée au parcours activation et aux paramètres du plugin, sans page du lanceur; sans autorisation, le plugin reste désactivé et le démarrage automatique est silencieux
 - `Amélioration` Cibler Android 17 (SDK 37) avec des autorisations réseau local propres au plugin et une aide à la récupération
-
-#### v1.0.1
-
-_2026/09/16_
-
-- `Fonctionnalité` Ressources de documentation hors ligne optionnelles: lorsque le plugin AutoJs6 Offline Docs est installé et que l'hôte le relaie via app.listDocs / app.readDoc, resources/list ajoute autojs6://docs/ (un index avec les URI enfants) et une ressource autojs6://docs/{+path} par page de documentation, et resources/templates/list ajoute le modèle docs; sans le plugin, ou sur un hôte dépourvu de ces méthodes, rien n'est listé et _meta.docsCatalogStatus en donne la raison
-- `Amélioration` compileSdk passe à 37 (Android 17) ; targetSdk reste à 36 jusqu'à la vérification du comportement dépendant de la cible
-- `Amélioration` Conformité MCP (P6): la suite officielle @modelcontextprotocol/conformance 0.1.16 a été exécutée sur deux appareils contre le chemin /mcp avec état. 9 de ses 32 scénarios serveur passent (initialize, ping, tools/list, résultats d'outil texte et erreur, resources/list, prompts/list, flux SSE concurrents, protection contre le DNS rebinding); 18 appellent les fixtures de référence de la suite elle-même (outils test_*, prompts et ressources test://, auxquels ce serveur répond par un résultat d'outil inconnu, -32602 ou isError) et 5 exigent des capacités que le serveur ne déclare pas (logging, completions, abonnements aux ressources). L'en-tête Origin de bouclage est désormais accepté dans tous les modes, comme la suite l'attend; les en-têtes CORS et les réponses preflight restent réservés au mode développeur. Le modèle sans état 2026-07-28 n'a pas de route (Roadmap D9). Détails dans docs/dev/p6-conformance.md.
-- `Amélioration` Audit de sécurité (P6): les sept points de la liste (stockage du jeton, expurgation des journaux, composants exportés, portée du trafic en clair, réseau local désactivé par défaut, révocation des appairages, groupes d'outils désactivés par défaut) sont vérifiés dans le code et sur deux appareils dans docs/dev/p6-security-audit.md, et la section sécurité du README décrit désormais ces limites. Le HTTP en clair est limité aux adresses de bouclage par une configuration de sécurité réseau au lieu du drapeau usesCleartextTraffic de toute l'application ; le plugin n'ouvre aucune connexion cliente et l'écouteur n'a pas besoin de ce drapeau.
-- `Amélioration` Référence de performance (P6): ui_dump à 50 / 200 / 400 noeuds, screen_capture en trois tailles, les allers-retours de script_run et quatre requêtes simultanées ont été chronométrés sur un émulateur API 24, un téléphone Sony (API 33) et une Xiaomi Pad (API 35) et consignés dans docs/dev/p6-performance-baseline.md comme référence sans seuils. Un appel traité par le seul plugin répond en 20 ms environ sur l'émulateur et le téléphone, ui_dump croît d'environ 0,05 ms par noeud, la capture par accessibilité répond en moins de 100 ms alors que la voie MediaProjection sur API 24 prend environ 1,35 s par capture, et quatre requêtes simultanées se terminent en 1,0 à 1,8 fois un aller-retour dans la limite de quatre appels simultanés de l'hôte.
 
 ##### Pour plus d'historique des versions
 

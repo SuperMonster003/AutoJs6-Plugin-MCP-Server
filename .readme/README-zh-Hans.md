@@ -52,7 +52,7 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 
 ******
 
-版本 1.0.3: 37 个工具 (默认启用 33 个), MCP 资源与提示, AutoJs6 抽屉开关和插件设置页. 需要 AutoJs6 6.8.0 (构建 5279) 或更高版本; 可选的 autojs6://docs/ 资源还需要 AutoJs6 离线文档插件以及带转读方法的宿主. 进度与证据记录在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+版本 1.0.4: 37 个工具 (默认启用 33 个), MCP 资源与提示, AutoJs6 抽屉开关和插件设置页. 需要 AutoJs6 6.8.0 (构建 5279) 或更高版本; 可选的 autojs6://docs/ 资源还需要 AutoJs6 离线文档插件以及带转读方法的宿主. 进度与证据记录在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -307,6 +307,12 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 ******
 
+#### v1.0.4
+
+_2026/10/11_
+
+- `修复` 设置页与发行历史页的状态栏在 Android 15 及以上未跟随主题色 (仅标题栏着色) 的问题
+
 #### v1.0.3
 
 _2026/10/11_
@@ -328,16 +334,6 @@ _2026/09/19_
 - `修复` AGP 9.1 构建时的 SDK XML v4 解析警告, 以及 JVM 单元测试误触发 APK 原生库对齐检查的问题 (共享构建插件 1.8.3)
 - `优化` Android 17 本地网络授权移至插件中心启用流程及插件设置, 移除启动器授权页面 (未授权时保持关闭并跳过自动启动)
 - `优化` 适配 Android 17 (SDK 37), 提供插件独立的本地网络权限控制及恢复引导
-
-#### v1.0.1
-
-_2026/09/16_
-
-- `新增` MCP 资源支持浏览及读取 AutoJs6 离线文档, 提供文档索引与页面资源 (需要安装 Offline Docs 插件, 且宿主支持 app.listDocs/app.readDoc)
-- `优化` compileSdk 升级至 37 (Android 17), targetSdk 保持 36
-- `优化` 有状态 MCP 端点接受回环 Origin, CORS 及预检仍仅在开发者模式下开放 (一致性验证范围参阅 docs/dev/p6-conformance.md)
-- `优化` 明文 HTTP 的客户端网络配置收窄至回环地址, 并补充令牌, 配对及工具权限说明 (参阅 docs/dev/p6-security-audit.md)
-- `优化` 补充 UI 查询, 截图, 脚本执行及并发请求的性能基线, 区分无障碍截图与 MediaProjection 路径 (参阅 docs/dev/p6-performance-baseline.md, 结果仅供参考)
 
 ##### 更多发行历史
 

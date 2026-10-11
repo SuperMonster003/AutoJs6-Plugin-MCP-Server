@@ -4,6 +4,12 @@
 
 ******
 
+# v1.0.4
+
+###### 2026/10/11
+
+* `Correctif` La barre d'état des pages des paramètres et de l'historique des versions ne prenait pas la couleur du thème sur Android 15 et ultérieur (seule la barre d'outils la prenait)
+
 # v1.0.3
 
 ###### 2026/10/11

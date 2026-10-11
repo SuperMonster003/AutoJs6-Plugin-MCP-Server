@@ -52,7 +52,7 @@ The server runs inside the plugin's own process and is reached through a single 
 
 ******
 
-Version 1.0.3: 37 tools (33 enabled by default), MCP resources and prompts, an AutoJs6 drawer switch and a plugin settings page. Requires AutoJs6 6.8.0 (build 5279) or later; the optional autojs6://docs/ resources also need the AutoJs6 Offline Docs plugin and a host with its relay methods. Progress and evidence are tracked in [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Version 1.0.4: 37 tools (33 enabled by default), MCP resources and prompts, an AutoJs6 drawer switch and a plugin settings page. Requires AutoJs6 6.8.0 (build 5279) or later; the optional autojs6://docs/ resources also need the AutoJs6 Offline Docs plugin and a host with its relay methods. Progress and evidence are tracked in [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -307,6 +307,12 @@ The plugin's plans and progress are maintained as a checkable list in ROADMAP.md
 
 ******
 
+#### v1.0.4
+
+_2026/10/11_
+
+- `Fix` The status bar of the settings and release history pages did not take the theme color on Android 15 and later (only the toolbar did)
+
 #### v1.0.3
 
 _2026/10/11_
@@ -328,16 +334,6 @@ _2026/09/19_
 - `Fix` SDK XML v4 parsing warnings with AGP 9.1 and APK native alignment checks incorrectly triggered by JVM unit-test assembly tasks, using shared build plugins 1.8.3
 - `Improvement` Android 17 local network authorization moves to plugin-center enablement and plugin settings, with no launcher permission page; missing permission keeps the plugin disabled and automatic startup silent
 - `Improvement` Target Android 17 (SDK 37) with separate local network permission controls and recovery guidance
-
-#### v1.0.1
-
-_2026/09/16_
-
-- `Feature` Optional offline documentation resources: when the AutoJs6 Offline Docs plugin is installed and the host relays it through app.listDocs / app.readDoc, resources/list adds autojs6://docs/ (an index with child URIs) and one autojs6://docs/{+path} resource per documentation page, and resources/templates/list adds the docs template; without the plugin, or on a host without these methods, nothing is listed and _meta.docsCatalogStatus tells why
-- `Improvement` Raise compileSdk to 37 (Android 17); targetSdk stays at 36 until the behavior that depends on the target is verified
-- `Improvement` MCP conformance (P6): the official @modelcontextprotocol/conformance suite 0.1.16 was run against the stateful /mcp path on two devices. 9 of its 32 server scenarios pass (initialize, ping, tools/list, text and error tool results, resources/list, prompts/list, concurrent SSE streams, DNS rebinding protection); 18 call the suite's own reference fixtures (test_* tools, prompts and test:// resources, which this server answers with an unknown-tool result, -32602 or isError) and 5 need capabilities the server does not declare (logging, completions, resource subscriptions). A loopback Origin header is now accepted in every mode, as the suite expects; CORS headers and preflight answers stay limited to developer mode. The stateless 2026-07-28 model has no route (Roadmap D9). Details in docs/dev/p6-conformance.md.
-- `Improvement` Security audit (P6): the seven checklist items (token storage, log redaction, exported components, cleartext scope, local network off by default, pairing revocation, default-off tool groups) are verified in the code and on two devices in docs/dev/p6-security-audit.md, and the README security section now states these boundaries. Cleartext HTTP is limited to loopback addresses by a network security configuration instead of the app-wide usesCleartextTraffic flag; the plugin opens no client connections and the listener does not need the flag.
-- `Improvement` Performance baseline (P6): ui_dump at 50 / 200 / 400 nodes, screen_capture at three sizes, script_run round trips and four concurrent requests were timed on an API 24 emulator, a Sony phone (API 33) and a Xiaomi Pad (API 35) and recorded in docs/dev/p6-performance-baseline.md as a reference without thresholds. A plugin-only call answers in about 20 ms on the emulator and the phone, ui_dump grows by about 0.05 ms per node, the accessibility screenshot path answers within 100 ms while the MediaProjection path on API 24 takes about 1.35 s per capture, and four concurrent requests complete in 1.0-1.8 times one round trip within the host's limit of four concurrent calls.
 
 ##### For more release history
 
