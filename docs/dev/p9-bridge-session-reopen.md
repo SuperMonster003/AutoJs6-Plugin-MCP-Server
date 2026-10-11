@@ -1,6 +1,6 @@
 # P9: the stdio bridge across a listener restart
 
-Date: 2026-10-11. Bridge `autojs6-mcp-bridge` 0.1.1 (local, commit `fac564f` in AutoJs6-MCP-Bridge,
+Date: 2026-10-11. Bridge `autojs6-mcp-bridge` 0.1.1 (commit `022a6aa` in AutoJs6-MCP-Bridge, pushed,
 not yet on npm), plugin 1.0.3 (build 84), host AutoJs6 6.8.0 / 5328.
 
 ## Problem
@@ -68,13 +68,13 @@ treats it as the user's decision (`McpServerSessionController.stopForUnavailable
 lifecycle matrix); the drawer switch had to be turned on again. `run-as <plugin> kill` is refused
 by SELinux on Android 12. The scenario therefore uses the instrumentation restart.
 
-A rerun with the build of `90005cc` (`@modelcontextprotocol/sdk` 1.32.1, Node.js 22 required) gave
+A rerun with the build of `dc64ad7` (`@modelcontextprotocol/sdk` 1.32.1, Node.js 22 required) gave
 the same result: the first `device_ping` after the restart succeeded in 354 ms including the new
 session, with `notifications/tools/list_changed` before the answer.
 
 ## Remaining
 
-Pushing the bridge commits, the first CI run on GitHub and publishing 0.1.1 to npm need the
-maintainer (npm two-factor authentication); until then
+The bridge commits are pushed and the first CI run passed (Ubuntu and Windows, Node.js 22, 24 and
+26). Publishing 0.1.1 to npm needs the maintainer (npm two-factor authentication); until then
 Claude Desktop setups that run `npx autojs6-mcp-bridge` keep 0.1.0 and need the server restarted in
 the client after a listener restart.
