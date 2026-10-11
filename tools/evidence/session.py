@@ -15,7 +15,7 @@ from mcp_client import McpClient
 
 @contextmanager
 def evidence_session(device: Device, report: dict, client_name: str, hold_seconds: int = 240,
-                     token_source: str = "auto", keep_pairing: bool = False) -> Iterator[McpClient]:
+                     token_source: str = "auto", keep_pairing: bool = False, rebind_timeout: float = 180) -> Iterator[McpClient]:
     was_running = device.plugin_state()["running"]
     progress("reading the token")
     token, source = device.read_token(token_source)
@@ -26,8 +26,9 @@ def evidence_session(device: Device, report: dict, client_name: str, hold_second
         pairing = device.pre_pair(client_name)
         report["pairing"] = {"method": "EvidenceHelperTest#pairClient", "fingerprint": pairing}
     if was_running:
+        # MIUI took more than a minute to let the host rebind after the helpers (2026-10-11).
         progress("waiting for the host to rebind the restarted listener")
-        device.wait_listener_with_host()
+        device.wait_listener_with_host(timeout=rebind_timeout)
     try:
         with device.host_session(hold_seconds) as session:
             report["hostSession"] = {"source": session["source"], "grantedMethods": session.get("grantedMethods")}

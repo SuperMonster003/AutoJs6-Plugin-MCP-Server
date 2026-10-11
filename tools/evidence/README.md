@@ -11,6 +11,9 @@ evidence should only depend on these files.
 | `session.py` | The common frame of a scenario: token, evidence pairing, held host session, forward, MCP session, revocation |
 | `docs_resources.py` | Scenario: offline docs resources on a device (roadmap P3.5 optional item) |
 | `sse_resume.py` | Scenario: SSE resumption with `Last-Event-ID` mid-run and after the end, unknown ids (roadmap P9, SEP-1699) |
+| `ui_chain.py` | Scenario: the UI tools on the system Settings app, dump -> find -> click -> wait -> set_text -> scroll -> back (roadmap P3.2 / P9) |
+| `screenshot_rate.py` | Scenario: 31 captures in a row, the 31st `RATE_LIMITED` with `retryAfterMs`, then a capture after the wait (roadmap P6 / P9) |
+| `token_rotation.py` | Scenario: lifecycle S5, the token rotated on the settings page while a session is live (roadmap P6 / P9) |
 | `bridge_reopen.py` | Scenario: the stdio bridge (`autojs6-mcp-bridge`) across a listener restart; each `--bridge` command runs once, so an old and a new bridge can be compared (roadmap P9) |
 | `test_evidence.py` | Offline checks of the parsing and redaction logic |
 
@@ -51,6 +54,9 @@ py -m unittest discover -s tools/evidence
 py tools/evidence/docs_resources.py --serial <serial>
 py tools/evidence/sse_resume.py --serial <serial>
 py tools/evidence/bridge_reopen.py --serial <serial> --bridge "node ../AutoJs6-MCP-Bridge/dist/cli.js"
+py tools/evidence/ui_chain.py --serial <serial>
+py tools/evidence/screenshot_rate.py --serial <serial>
+py tools/evidence/token_rotation.py --serial <serial>   # then rotate the token on the settings page
 ```
 
 `docs_resources.py` options: `--hold-seconds` (host session hold, default 240),
@@ -63,3 +69,9 @@ is an `am instrument` run of `EvidenceHelperTest#pairClient`, which restarts the
 an update. Do not restart it with `am force-stop`: the host treats that as the user's decision and
 leaves the server off until the drawer switch is turned on again. Write `--bridge` commands with
 forward slashes; the token reaches the bridge only through `AUTOJS6_MCP_TOKEN` in its environment.
+
+`ui_chain.py` and every scenario that needs the AutoJs6 accessibility service need a listener the
+drawer switched on: holding a host session runs the host instrumentation, which restarts the
+AutoJs6 process and stops its accessibility service until it is switched on again. On MIUI the
+host took more than a minute to rebind the plugin after the helpers, hence the 180 s
+`rebind_timeout` of `evidence_session`.
