@@ -1305,4 +1305,5 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 补充决策 D38 - D42 (维护者经两轮选择拍板): P11 工具改为单工具加 `image` 参数, 读屏幕的识别共用截图配额, 1.1.1 并入 1.2.0, OpenCV 与图片量化在 P12 中另提供插件进程内的工具服务 (OpenCV 解耦路线图 D1 / D8 的有意例外), 已登记脚本采用目录加执行两个工具. 另按默认处理: 共享存储不含外置 SD 卡, 宿主新增方法只服务插件会话.
 - 关联记录: 宿主 OpenCV 解耦路线图, OpenCV 插件, Agent 与四个试点插件的路线图各加一条指向本路线图的说明.
 - 设备现状 (只读查询, 当日): 未被借用的 Sony XQ-AT72 / XQ-DQ72 装有 OpenCV 与 MediaInfo (前者另有 OpenCC), emulator-5586 (API 33) 只装 Rapid OCR PP-OCRv6, 适合 "只装 Rapid" 的验收; 这几台都没有 ML Kit OCR, 条码, 拼音与 Pinyin4j 插件, 真机验收前需要安装.
+- 设备补记 (当日, 3-Maple Image 会话归还设备后只读查询): Xiaomi 23046RP50C (`968e9f18`, API 35) 与 Redmi 22120RN86C (`bek749scrwv4wo8h`, API 33) 已装齐 P11 所需插件 (ML Kit OCR, Paddle OCR 多个变体, Rapid OCR v3 / v6, ML Kit Barcode, Pinyin, Pinyin4j, OpenCV, MediaInfo) 与 P12 的四个试点 (OpenCC, YOLO NCNN, Image-Quantization, Archive Manager), 可作为两台验收设备; Sony G8441 (`BH900ASK9E`, API 28) 只有 OpenCV, Image-Quantization 与 Archive Manager. 上一条 "真机验收前需要安装" 只适用于前述几台.
 - 结论: P11 宿主侧可以开工; 插件侧的第一步是 D40 的版本调整.
