@@ -25,7 +25,7 @@ evidence should only depend on these files.
 - Python 3.10 or newer and `adb` on the PATH (or `ADB=<path>`); several devices may be connected,
   every command takes `--serial`.
 - Token and pairing helpers: the plugin debug build and its androidTest APK
-  (`:app:assembleDebug :app:assembleDebugAndroidTest`) installed on the device; they run the opt-in
+  (`:app:assembleDebug :app:assembleDebugAndroidTest`) from the same build installed on the device; they run the opt-in
   `EvidenceHelperTest` (`reportToken`, `pairClient`, `revokePairing`). `am instrument` force-stops
   the whole plugin package when it starts and ends, so the scenarios call these helpers before a
   host session is held, and a pending pairing prompt cannot be answered from there: the evidence
@@ -33,6 +33,10 @@ evidence should only depend on these files.
   covered by the pairing evidence of roadmap P2.2 and P5. Without the androidTest APK, switch
   developer mode on in the plugin settings (the token is then read from `dumpsys`) or set
   `AUTOJS6_MCP_TOKEN`, and allow the pairing on the phone.
+  The helpers check that the installed plugin is debuggable before starting instrumentation.
+  A leftover androidTest APK beside a release plugin is not a compatible pair. Automatic token
+  selection and session setup skip that runner and use the release-compatible paths above;
+  scenarios that explicitly require a helper still need both debug APKs.
 - Host session: if the listener is not already running with the host attached, the host
   androidTest APK holds one through `McpServerPluginRoundTripTest` and
   `setprop debug.autojs6.mcp.hold <seconds>`. That test enables the plugin for the run and restores
@@ -49,6 +53,45 @@ evidence should only depend on these files.
 - Every change to the device is undone in `finally` blocks: forwards are removed, the hold property
   is reset, a disabled package is enabled again and the evidence client's pairing is revoked unless
   `--keep-pairing` is given.
+
+## Debug test APK against a release app
+
+On 2026-10-11, Sony XQ-DQ72 (API 33, `QV770340J7`) recorded three crashes of MCP Server
+1.0.3 / 168 at 14:52:33, 14:52:47 and 14:52:59 (UTC+08:00). Every stack started in
+`AppComponentFactoryRegistry.instantiateApplication`, called by `MonitoringInstrumentation`
+and `AndroidJUnitRunner`, and failed to resolve `kotlin.jvm.internal.Intrinsics` before any
+MCP application code ran.
+
+Read-only inspection on 2026-10-14 found:
+
+- The release app was last updated at 14:51:32 on 2026-10-11. Its APK matched the local
+  `autojs6-plugin-mcp-server-v1.0.3-4f5b5fd7.apk` byte for byte (SHA-256
+  `bd444519a88c0b5a83e8bb1db1a1a0a2110108de85defd954d1fa9e77cae0949`).
+- The separate debug test APK was last updated at 12:55:36 that day and still registered
+  `AndroidJUnitRunner` for this package. Its SHA-256 was
+  `3f61f8f8d31ed19cf2130554409e936bcfb9e70295f84e0eaaedd6f7ec5f6f20`.
+- The test DEX referenced `kotlin.jvm.internal.Intrinsics.checkNotNullParameter` without
+  defining `Intrinsics`. The release DEX neither defined nor referenced that original name;
+  R8 had optimized the application independently. The current debug APK defines that name.
+- The current `releaseRuntimeClasspath` resolves `kotlin-stdlib:2.4.0`; the Kotlin/SDK/Ktor
+  dependency declarations and R8 settings have not changed since `v1.0.3`.
+
+This is an incompatible instrumentation/app pair, not evidence that the release app omitted
+its Kotlin runtime. This debug test APK expects unoptimized application classes and cannot be
+reused against this independently minified release APK. Adding a stdlib dependency or a blanket
+Kotlin keep rule to the release build does not correct the mismatched test setup.
+
+Install the debug app and its matching androidTest APK together when using these helpers.
+For release acceptance, use the public MCP endpoint with an environment or developer-mode
+token and confirm pairing on the phone. A test APK that is no longer needed can be removed
+separately by uninstalling `io.github.supermonster003.autojs6.plugin.mcp.server.test`.
+The crash report identifies the runner startup failure but does not identify which command
+or scenario invoked it. The preflight added after this investigation prevents the evidence
+helpers from starting that incompatible runner; the affected phone was verified with read-only
+ADB calls and its installed packages and app data were preserved.
+
+References: [Android instrumentation build types](https://developer.android.com/studio/test/advanced-test-setup#change_the_test_build_type),
+[R8 optimization](https://developer.android.com/topic/performance/app-optimization/enable-app-optimization).
 
 ## Usage
 

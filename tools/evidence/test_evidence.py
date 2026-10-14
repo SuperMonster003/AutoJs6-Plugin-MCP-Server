@@ -2,17 +2,21 @@
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import sys
 import unittest
+from contextlib import nullcontext
+from unittest.mock import patch
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from bridge_reopen import SESSION_ID, call_facts  # noqa: E402
-from device import Device, scrub  # noqa: E402
+from device import PLUGIN_PACKAGE, PLUGIN_TEST_RUNNER, Device, DeviceError, scrub  # noqa: E402
 from docs_resources import content_facts, find_png, index_facts  # noqa: E402
 from mcp_client import PAIRING_REQUIRED, McpError, decode_messages, parse_sse  # noqa: E402
 from privileged import uid_name  # noqa: E402
+from session import evidence_session  # noqa: E402
 
 TOKEN = "Abc_" + "x" * 39
 
@@ -24,6 +28,93 @@ class FakeDevice(Device):
 
     def shell(self, *args, timeout=120, check=True):
         return self.dumpsys if args[:2] == ("dumpsys", "activity") else ""
+
+
+class InstrumentationDevice(Device):
+    def __init__(self, flags: str, test_installed: bool = True, app_installed: bool = True):
+        super().__init__("FAKE")
+        self.flags = flags
+        self.test_installed = test_installed
+        self.app_installed = app_installed
+        self.commands = []
+
+    def shell(self, *args, timeout=120, check=True):
+        self.commands.append(args)
+        if args == ("dumpsys", "package", PLUGIN_PACKAGE):
+            return f"    versionCode=168\n    versionName=1.0.3\n    {self.flags}\n" if self.app_installed else ""
+        if args[:3] == ("pm", "list", "packages"):
+            return f"package:{PLUGIN_PACKAGE}\n"
+        if args == ("pm", "list", "instrumentation"):
+            return f"instrumentation:{PLUGIN_TEST_RUNNER} (target={PLUGIN_PACKAGE})" if self.test_installed else ""
+        if args[:2] == ("dumpsys", "activity"):
+            return f"    token: {TOKEN}\n"
+        if args[:2] == ("am", "instrument"):
+            return f"INSTRUMENTATION_STATUS: mcpEvidenceToken={TOKEN}\nOK (1 test)\n"
+        raise AssertionError(f"unexpected adb command: {args}")
+
+    def instrument_commands(self):
+        return [args for args in self.commands if args[:2] == ("am", "instrument")]
+
+
+class InstrumentationCompatibilityTest(unittest.TestCase):
+    def test_package_flags_accept_both_android_formats_and_exact_flag_names(self):
+        for flags, expected in [("pkgFlags=[ DEBUGGABLE HAS_CODE ]", True),
+                                ("flags=[ HAS_CODE DEBUGGABLE ]", True),
+                                ("pkgFlags=[ HAS_CODE ]", False),
+                                ("pkgFlags=[ NOT_DEBUGGABLE HAS_CODE ]", False),
+                                ("", False)]:
+            with self.subTest(flags=flags):
+                self.assertEqual(expected, InstrumentationDevice(flags).package(PLUGIN_PACKAGE)["debuggable"])
+
+    def test_release_app_with_leftover_test_apk_is_rejected_before_instrumentation(self):
+        device = InstrumentationDevice("pkgFlags=[ HAS_CODE ]")
+        for call in [lambda: device.read_token("instrumentation"),
+                     lambda: device.pre_pair("evidence-client"),
+                     lambda: device.revoke_pairing("0" * 24)]:
+            with self.assertRaisesRegex(DeviceError, "debug build and its matching androidTest APK"):
+                call()
+        self.assertEqual([], device.instrument_commands())
+
+    def test_missing_app_or_test_apk_is_rejected_before_instrumentation(self):
+        for installed in [{"app_installed": False}, {"test_installed": False}]:
+            with self.subTest(installed=installed):
+                device = InstrumentationDevice("pkgFlags=[ DEBUGGABLE HAS_CODE ]", **installed)
+                with self.assertRaises(DeviceError):
+                    device.read_token("instrumentation")
+                self.assertEqual([], device.instrument_commands())
+
+    def test_debug_app_still_reads_token_through_helper(self):
+        device = InstrumentationDevice("pkgFlags=[ DEBUGGABLE HAS_CODE ]")
+        self.assertEqual((TOKEN, "instrumentation"), device.read_token("instrumentation"))
+        self.assertEqual(1, len(device.instrument_commands()))
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_auto_uses_dumpsys_on_release_without_starting_leftover_test_runner(self):
+        device = InstrumentationDevice("pkgFlags=[ HAS_CODE ]")
+        self.assertEqual((TOKEN, "dumpsys"), device.read_token())
+        self.assertEqual([], device.instrument_commands())
+
+    @patch.dict(os.environ, {"AUTOJS6_MCP_TOKEN": TOKEN}, clear=True)
+    def test_auto_uses_environment_on_release_without_starting_test_runner(self):
+        device = InstrumentationDevice("pkgFlags=[ HAS_CODE ]")
+        self.assertEqual((TOKEN, "env"), device.read_token())
+        self.assertEqual([], device.instrument_commands())
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_release_session_uses_phone_pairing_even_with_leftover_test_apk(self):
+        device = InstrumentationDevice("pkgFlags=[ HAS_CODE ]")
+        report = {}
+        host = {"source": "existing", "port": 9637, "grantedMethods": 61}
+        with patch.object(device, "host_session", return_value=nullcontext(host)), \
+                patch.object(device, "forward", return_value=nullcontext(19637)), \
+                patch("session.McpClient") as client_type:
+            client = client_type.return_value.__enter__.return_value
+            client.initialize.return_value = {"protocolVersion": "2025-11-25", "serverInfo": {"version": "1.0.3"}}
+            with evidence_session(device, report, "evidence-client") as connected:
+                self.assertIs(client, connected)
+        self.assertEqual("dumpsys", report["tokenSource"])
+        self.assertNotIn("pairing", report)
+        self.assertEqual([], device.instrument_commands())
 
 
 class EvidenceToolTest(unittest.TestCase):

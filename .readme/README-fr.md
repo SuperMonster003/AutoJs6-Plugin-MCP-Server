@@ -309,8 +309,9 @@ Les plans et l'avancement du plugin sont tenus sous forme de liste cochable dans
 
 #### v1.1.1
 
-_2026/10/12_
+_2026/10/14_
 
+- `Correctif` Les scripts de collecte de preuves sur appareil lançaient un APK de test de débogage restant contre la version de production et faisaient planter le processus de l'application
 - `Amélioration` Avec AutoJs6 6.8.0 build 5333 ou ultérieur, l'avis de notifications désactivées de la page des paramètres indique que les demandes d'appairage apparaissent aussi lorsque AutoJs6 est au premier plan
 
 #### v1.1.0

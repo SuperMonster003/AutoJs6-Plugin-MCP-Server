@@ -6,7 +6,10 @@
   "changelog_label_dependency": "의존성",
   "$data": {
     "v1.1.1": {
-      "released_date": "2026/10/12",
+      "released_date": "2026/10/14",
+      "fix": [
+        "기기 검증 스크립트가 릴리스 앱에 남아 있는 디버그 테스트 APK를 실행하여 앱 프로세스가 중단되는 문제"
+      ],
       "improvement": [
         "AutoJs6 6.8.0 빌드 5333 이상에서는 설정 페이지의 알림 꺼짐 안내가 AutoJs6가 앞에 표시된 동안에도 페어링 요청이 나타난다고 알려 줌"
       ]

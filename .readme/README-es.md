@@ -309,8 +309,9 @@ Los planes y el progreso del plugin se mantienen como una lista verificable en R
 
 #### v1.1.1
 
-_2026/10/12_
+_2026/10/14_
 
+- `Corrección` Los scripts de pruebas en dispositivos iniciaban un APK de prueba de depuración residual contra la versión de lanzamiento y provocaban el cierre del proceso de la aplicación
 - `Mejora` Con AutoJs6 6.8.0 compilación 5333 o posterior, el aviso de notificaciones desactivadas de la página de ajustes indica que las solicitudes de emparejamiento también aparecen mientras AutoJs6 está en primer plano
 
 #### v1.1.0

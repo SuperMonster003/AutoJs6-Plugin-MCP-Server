@@ -9,7 +9,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Iterator
 
-from device import PLUGIN_TEST_RUNNER, Device, progress
+from device import Device, progress
 from mcp_client import McpClient
 
 
@@ -21,7 +21,7 @@ def evidence_session(device: Device, report: dict, client_name: str, hold_second
     token, source = device.read_token(token_source)
     report["tokenSource"] = source
     pairing = None
-    if source != "env" and device.has_instrumentation(PLUGIN_TEST_RUNNER):
+    if source != "env" and device.has_debug_plugin_helpers():
         progress(f"pre-pairing {client_name}")
         pairing = device.pre_pair(client_name)
         report["pairing"] = {"method": "EvidenceHelperTest#pairClient", "fingerprint": pairing}

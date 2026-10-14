@@ -81,11 +81,11 @@ class Device:
         if not code:
             return None
         name = re.search(r"versionName=(\S+)", out)
-        flags = re.search(r"\bflags=\[([^\]]*)\]", out)
+        flags = re.search(r"^\s*(?:pkgFlags|flags)=\[([^\]]*)\]", out, re.M)
         return {
             "versionName": name.group(1) if name else None,
             "versionCode": int(code.group(1)),
-            "debuggable": bool(flags and "DEBUGGABLE" in flags.group(1)),
+            "debuggable": bool(flags and "DEBUGGABLE" in flags.group(1).split()),
             "enabled": self.is_enabled(package),
         }
 
@@ -152,9 +152,18 @@ class Device:
 
     # Instrumentation helpers -------------------------------------------------------------------
 
-    def _helper(self, method: str, argument: str, value: str) -> str:
+    def has_debug_plugin_helpers(self) -> bool:
+        """A leftover debug test APK cannot use the classes R8 renamed in a release app."""
         if not self.has_instrumentation(PLUGIN_TEST_RUNNER):
-            raise DeviceError("the plugin androidTest APK is not installed (needed for EvidenceHelperTest)")
+            return False
+        package = self.package(PLUGIN_PACKAGE)
+        return bool(package and package["debuggable"])
+
+    def _helper(self, method: str, argument: str, value: str) -> str:
+        if not self.has_debug_plugin_helpers():
+            raise DeviceError("EvidenceHelperTest requires the plugin debug build and its matching androidTest APK; "
+                              "do not run the debug test APK against a release build. For release evidence, use "
+                              "AUTOJS6_MCP_TOKEN or developer-mode dumpsys and confirm pairing on the phone")
         out = self.shell("am", "instrument", "-w", "-r", "-e", argument, value, "-e", "class",
                          f"{EVIDENCE_HELPER}#{method}", PLUGIN_TEST_RUNNER, timeout=120)
         # INSTRUMENTATION_CODE is -1 even after a failure, so only the JUnit summary counts.
@@ -167,7 +176,7 @@ class Device:
         candidates = []
         if method in ("auto", "env") and os.environ.get("AUTOJS6_MCP_TOKEN"):
             candidates.append(("env", lambda: os.environ["AUTOJS6_MCP_TOKEN"]))
-        if method in ("auto", "instrumentation") and self.has_instrumentation(PLUGIN_TEST_RUNNER):
+        if method == "instrumentation" or (method == "auto" and self.has_debug_plugin_helpers()):
             def from_helper() -> str | None:
                 out = self._helper("reportToken", "mcpEvidenceToken", "true")
                 match = re.search(r"mcpEvidenceToken=(\S+)", out)
@@ -183,10 +192,12 @@ class Device:
             try:
                 token = read()
             except DeviceError:
+                if method == "instrumentation":
+                    raise
                 continue
             if token and TOKEN_PATTERN.fullmatch(token):
                 return token, source
-        raise DeviceError("no token source worked: install the plugin androidTest APK, switch developer mode on, "
+        raise DeviceError("no token source worked: install the plugin debug build and its matching androidTest APK, switch developer mode on, "
                           "or set AUTOJS6_MCP_TOKEN")
 
     def pre_pair(self, client_name: str) -> str:

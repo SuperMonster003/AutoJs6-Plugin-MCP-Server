@@ -1188,3 +1188,10 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 宿主 (本地提交, 未推送): `d0794b0747` 插件中心把因临时故障连不上的插件改为挂起, 下次连上或在抽屉激活后自动恢复 (OnePlus 实测强行停止后挂起, 抽屉激活一次即恢复并开启监听器); `6b3ae51de6` MCP Server 绑定打开 `BIND_ALLOW_ACTIVITY_STARTS`, AutoJs6 可见时插件的配对对话框可直接弹出 (OnePlus 5331 `BAL_BLOCK` -> 5332 `BAL_ALLOW_VISIBLE_WINDOW`, 桌面时仍拦截).
 - 依赖评估: SDK 仍为 0.15.0; Ktor 3.6.0 会经 content-negotiation 带入约 20 个用不到的模块, 且一个 testApplication 续传用例挂起, 暂不升级, 待 SDK 跟进.
 - P10 全部条目完成. 设备: OnePlus OPD2413 的宿主为本地调试构建 5332, 插件为 1.1.0 release (178), 监听器运行, 无测试配对, 开发者模式关闭.
+
+### 2026-10-14: Sony 1.0.3 的 instrumentation 启动崩溃排查
+
+- 设备实际序列号 `QV770340J7` (用户报告为 `QV77340J7`), Sony XQ-DQ72 / API 33. DropBox 保留 2026-10-11 14:52:33, 14:52:47, 14:52:59 三次同栈崩溃, 均为 MCP Server 1.0.3 / 168 的主进程. 首帧 `androidx.test.platform.app.AppComponentFactoryRegistry.instantiateApplication`, 上层为 `MonitoringInstrumentation` / `AndroidJUnitRunner`; MCP 代码尚未执行, 缺少原名 `kotlin.jvm.internal.Intrinsics`.
+- APK 取证: 主包最后更新于 2026-10-11 14:51:32, 拉取的 APK 与本地发布件 `autojs6-plugin-mcp-server-v1.0.3-4f5b5fd7.apk` SHA-256 一致. 留存的调试测试包最后更新于同日 12:55:36, DEX 引用原名 `Intrinsics` 但不定义该类; release DEX 既不定义也不引用该原名, 当前 debug APK 定义该类. 当前 release 运行时依赖解析到 `kotlin-stdlib:2.4.0`, 相关依赖声明与 R8 设置相比 v1.0.3 未变. 结论为调试测试 APK 与独立混淆的发布主包混用, 不能据此认定发布包漏打标准库. 完整哈希与处理方法见 `tools/evidence/README.md`.
+- 取证工具: `Device.package` 同时读取 Android 的 `pkgFlags` / `flags` 格式; `EvidenceHelperTest` 调用前要求已安装主包为 debuggable 且测试 runner 存在, 不满足时在 `am instrument` 之前报错. 自动读取令牌及建立会话跳过发布版旁残留的测试包, 保留环境变量 / 开发者模式令牌与手机确认配对路径. 显式使用 instrumentation 时保留明确错误. 日志不输出令牌.
+- 验证: Python 取证工具测试 14/14 (新增 7 项, 含发布版拒绝, 缺少 APK, debug 正常读取, 环境变量 / dumpsys 回退及会话不启动残留 runner); 受影响真机以只允许 `pm` / `dumpsys` / `getprop` 的只读封装确认 1.0.3 / 168 + 残留 runner 被提前拒绝; Gradle `:app:dependencyInsight --configuration releaseRuntimeClasspath --dependency kotlin-stdlib` 成功. 本次只修改 Python 工具与说明, 未改 Android 运行时代码, 依赖或 R8 规则, 未执行 APK 构建和 instrumentation, 未更换设备安装包或清除数据. 原始崩溃日志, APK 与预检结果保留在 Git 忽略的 `.bak/mcp-crash-20261014/`.

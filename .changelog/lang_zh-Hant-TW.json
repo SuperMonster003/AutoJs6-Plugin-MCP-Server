@@ -6,7 +6,10 @@
   "changelog_label_dependency": "相依性",
   "$data": {
     "v1.1.1": {
-      "released_date": "2026/10/12",
+      "released_date": "2026/10/14",
+      "fix": [
+        "實機取證指令碼在正式版旁留有偵錯測試套件時誤啟動測試並導致應用程式程序崩潰的問題"
+      ],
       "improvement": [
         "AutoJs6 6.8.0 建置 5333 以上時, 設定頁的通知關閉提示會說明配對請求在 AutoJs6 位於前景時同樣會出現"
       ]
