@@ -30,7 +30,7 @@ MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平
 | 宿主契约 | 插件 1.1.0 同时实现 MCP 契约 v1 (`openServer` + `IMcpHostCapabilityBroker`) 与 v2 (`openServerV2` + 共享 `IHostCapabilityBroker`), 按已安装宿主的 versionCode 声明版本 (>= 5283 声明 2, 否则 1), 宿主据此分流; 1.1.0 要求宿主 5298, 受支持的宿主都走 v2, 对更旧的宿主声明 1 只为让其读取元数据并显示宿主要求; 已发布的 1.0.3 及更早版本只有 v1 | 文首两条迁移记录; P10 |
 | MCP 协议 | 有状态 Streamable HTTP (`/mcp`, 带请求的 POST 以 SSE 应答), 协商 2024-11-05 至 2025-11-25; 事件流支持断线续传 (事件 id, 2025-11-25 客户端的 priming + `retry: 1000`, `Last-Event-ID`; 本地 1.0.3); 2026-07-28 无状态模型未实现 (D9), kotlin-sdk 0.15.0 截至 2026-10-10 仍为最新版 | D9; docs/dev/p6-conformance.md |
 | 能力面 | 37 个工具 / 8 个分组 (默认可见 33 个, `ui_gesture` / `files_delete` / `shell` 默认关闭), 资源 (工作目录, 示例, 设备, 控制台, 可选离线文档), 3 个提示 | 附录 A; `app/src/test/resources/tool-catalog.snapshot.json` |
-| 阶段 | P0 - P7 完成 (P5.2 / P5.3 于 2026-10-10 复核时重新打开, 同日补测 VS Code 与 Claude Desktop 后关闭); P8 可选, 未启动; P9 (1.0.x 补完) 与 P10 (1.1.0 契约 v2) 为 2026-10-10 新增; P10 于 2026-10-11 开始实施并于同日全部完成: 契约 v2, 节点引用迁移与文档同步随 1.1.0 发布, 宿主在前台时的配对确认由宿主本地提交解决, 依赖评估结论为暂不升级 Ktor; P11 (1.2.0 插件能力工具) 于 2026-10-15 新增, 决策 D23 - D28 已定, 尚未实施 | 第 5 节阶段总览 |
+| 阶段 | P0 - P7 完成 (P5.2 / P5.3 于 2026-10-10 复核时重新打开, 同日补测 VS Code 与 Claude Desktop 后关闭); P8 可选, 未启动; P9 (1.0.x 补完) 与 P10 (1.1.0 契约 v2) 为 2026-10-10 新增; P10 于 2026-10-11 开始实施并于同日全部完成: 契约 v2, 节点引用迁移与文档同步随 1.1.0 发布, 宿主在前台时的配对确认由宿主本地提交解决, 依赖评估结论为暂不升级 Ktor; P11 (1.2.0 插件能力工具) 与 P12 (1.3.0 插件自描述工具契约) 于 2026-10-15 新增, 决策 D23 - D37 已定, 尚未实施 | 第 5 节阶段总览 |
 | 客户端实测 | 有真实结果: Claude Code 2.1.257 / 2.1.270 (HTTP, 以及经桥接程序的 stdio), Codex CLI 0.154.0-alpha.6.2, MCP Inspector CLI 2.5.0 / 2.6.0, VS Code 1.138 Copilot Chat (HTTP), Claude Desktop 2.9939.4.0 (经桥接程序的 stdio), Cursor CLI 2026.10.01 (HTTP, WSL); 未验证: Cursor IDE 界面, Cline, Gemini CLI | docs/dev/p5-client-matrix.md; docs/dev/p7-public-release.md |
 | PC 桥接程序 | `autojs6-mcp-bridge@0.1.0` (npm, 2026-09-15), 独立仓库 `AutoJs6-MCP-Bridge` (D19); 不是 APK 插件, 不进入插件中心; 维护者 2026-10-10 确认保留独立仓库 | D19; P5.3 |
 | 已知限制 | HyperOS / MIUI 默认限制侧载应用后台, 息屏用电池约 1 分钟后前台服务可能被停止 (设置页有提示); Ktor CIO 空闲时每 500 ms 唤醒一次; 每客户端 20 请求 / s 与 30 次截图 / min 上限; API 24 / 25 截图走 MediaProjection, 监听器重启后需重新同意 | docs/dev/p6-battery-and-residency.md, p6-rate-limits.md, p6-performance-baseline.md |
@@ -40,7 +40,7 @@ MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平
 
 ## 1. 固定决策
 
-以下决策已由维护者确认 (D1-D8 于 2026-09-07, 附录 C 的 Q1-Q7 同日拍板并回填为 D10 / D15 / D16 / D19-D22), 后续阶段不再重新讨论; D9-D18 为据此派生的技术决策, 其中未被 Q1-Q7 覆盖的部分进入 P0 前可推翻, 之后视同固定. D23-D28 是 P11 (插件能力工具) 的设计决策, 维护者于 2026-10-15 经多轮选择拍板.
+以下决策已由维护者确认 (D1-D8 于 2026-09-07, 附录 C 的 Q1-Q7 同日拍板并回填为 D10 / D15 / D16 / D19-D22), 后续阶段不再重新讨论; D9-D18 为据此派生的技术决策, 其中未被 Q1-Q7 覆盖的部分进入 P0 前可推翻, 之后视同固定. D23-D28 是 P11 (插件能力工具) 的设计决策, D29-D37 是 P12 (插件自描述工具契约) 的设计决策, 维护者均于 2026-10-15 经多轮选择拍板.
 
 | 编号 | 决策 | 含义 |
 | --- | --- | --- |
@@ -72,6 +72,15 @@ MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平
 | D26 | 路径范围: 工作目录 + 共享存储只读 | 相对路径一律指工作目录. 插件设置新增 "允许读取共享存储" (单独持久化, 默认关闭, 与 `allowShellRoot` 同一处理方式); 开启后绝对路径可以指向共享存储 (`/storage/emulated/0` 下除 `Android/data` 与 `Android/obb` 以外的全部目录), 且只读: 识别与媒体工具可以读取, `files_list` / `files_stat` 可以列出 (含修改时间, 便于找最新截图), `files_read` / `files_write` / `files_rename` / `files_delete` 等仍只限工作目录. 宿主强制 + 插件预检: 宿主对插件会话 (`backend=plugin`, 即 MCP 与 Agent) 的 `image.readImage`, `mediainfo.*` 等接受路径的方法以及共享存储列目录按 canonical 路径检查范围, 共享存储只在请求声明新权限令牌 (暂名 `files.shared_read`) 且 grant 包含该令牌时放行; 插件用 `WorkspacePath` 预检以给出清晰错误. Node 脚本 (非插件会话) 行为不变. (2026-10-15) |
 | D27 | 按插件家族分组, 未安装时隐藏 | 插件工具按插件家族分组, 每组一个开关, 默认开启 (只读工具, 风险与默认开启的 `screen` 组相当): 第一批 `ocr` (ML Kit / Paddle / Rapid OCR), `barcode`, `opencv` (找图, 找色, 模板匹配), `pinyin`, `pinyin4j`, `mediainfo`, 以后的家族各自一组. 对应插件未安装, 未启用或版本不兼容时, 工具不出现在 `tools/list`, 状态变化后发 `notifications/tools/list_changed`. `device_info` (及资源 `autojs6://device/info`) 列出各插件家族与离线文档插件的状态 (可用 / 未安装 / 已停用 / 版本不兼容) 和安装提示, 让模型可以提示用户去插件中心安装. (2026-10-15) |
 | D28 | 软探测, 宿主改动并入 6.8.0 | `REQUIRED_HOST_VERSION` 保持 5298, MCP 契约版本不变; 插件工具只在宿主 grant 的方法列表 (`grantMethods`) 包含所需方法且宿主报告其可用时出现, 旧宿主上只是看不到这些工具 (沿用 "先读能力再调用, 不靠异常猜版本"). D23 - D27 涉及的宿主改动 (新方法, grant 扩充, 路径范围, 状态上报, `ocr.*` 默认自动选择) 并入尚未公开发布的宿主 6.8.0, changelog 写在 6.8.0 条目下. (2026-10-15) |
+| D29 | 自描述工具经宿主桥接层提供 | 宿主新增桥接模块 (暂名 `plugin_tools`: `list` / `invoke` / `cancel`), MCP 与 Agent 经各自的 grant 使用, 宿主只实现一次; 另给脚本提供 API (D35). 调用一律经宿主转发 (D2 / D17): MCP 插件虽与宿主同签名, 技术上能直接绑定其他插件, 但不这样做. (2026-10-15) |
+| D30 | 独立契约模块, 目录经 Binder 返回 | 新建 `plugin-api/plugin-tool-api`, AIDL 暂名 `IPluginToolProvider` (目录, 调用, 取消); 插件新增一个带新 action 的服务即可加入, 按需参与, 不改现有各家族 AIDL, 契约版本从 1 起独立演进 (只在末尾追加). 目录是插件经 Binder 返回的 JSON (与 `IExplorerActionPlugin.getActionCatalog` 同一先例), 宿主按 (包名, versionCode) 缓存, 包变化时刷新, 列出工具不必每次唤醒插件; 插件可以按设备情况 (如模型是否就绪) 调整目录. (2026-10-15) |
+| D31 | 参数 Schema 用较完整的子集, 宿主校验 | 允许封闭对象, 嵌套对象, 标量与对象数组, `oneOf`, `enum` / `default` / 范围 / 长度; 宿主在载入目录时校验 schema 本身, 在调用时校验参数. 宿主定义两种特殊类型 (图片, 文件), 只能用作顶层参数, 以控制宿主解析的复杂度. (2026-10-15) |
+| D32 | 图片与二进制经宿主中转 | 输入: 图片参数接受 `"screen"` 或路径, 宿主按 D23 截屏, 或按 D26 检查范围后读文件, 以 ParcelFileDescriptor 交给插件 (与现有 OCR / 条码 / YOLO AIDL 相同), 插件不需要存储权限. 输出: 插件经 ParcelFileDescriptor 返回, 宿主写入调用方指定的工作目录路径并返回路径 (写入只限工作目录, 与 D26 一致), 图片较小时 MCP 可另附 image 内容供模型预览; 大小沿用 8 MiB 描述符上限. (2026-10-15) |
+| D33 | 命名与共享家族 | 工具名为 `<插件短名>_<工具名>`; 短名由插件在目录中声明, 宿主校验唯一且不与内置分组或 P11 的插件家族重名, 短名同时作为 D27 的插件家族分组; 完整名称须让 `mcp__autojs6__` 前缀加工具名不超过 64 字符. 契约 v1 预留 "共享家族": 宿主白名单中的家族短名 (如 `ocr`) 允许多个 OFFICIAL 插件声明同名工具, 由宿主按自动顺序或调用参数 (如 `engine`) 选择提供者, 供以后迁移 P11 内置工具时保持工具名不变; P12 只预留字段与规则, 不实现选择逻辑. (2026-10-15) |
+| D34 | 信任与风险开关 | 面向模型的消费方 (MCP, Agent): OFFICIAL 与 TRUSTED 插件的工具自动可用; USER_GRANTED 插件的工具须在消费方设置里逐个开启, 默认关闭 (工具描述由插件作者撰写并直接进入模型上下文, 有描述投毒风险). 宿主按信任级别强制, 消费方开关只能收窄. 插件为每个工具声明风险 (只读 / 写入 / 破坏性 / 联网): 每个插件一个分组开关, 只读工具随分组默认开启, 写入, 破坏性与联网工具归入该插件一个默认关闭的子开关, 并映射为 MCP 注解 (`readOnlyHint` / `destructiveHint` / `openWorldHint`). 不在手机上逐次确认, 由 MCP 客户端按注解自行确认. 脚本 API 的调用方是用户自己编写的脚本, 默认可调用所有已授权插件的工具 (实施前可调整). (2026-10-15) |
+| D35 | 脚本 API 挂在 `plugins` 下 | `plugins.tools.list()` 列出工具 (含 schema), `plugins.tools.call(name, args)` 同步调用, 另配 Promise 版本; 沿用现有 `plugins` 模块, d.ts 可以静态声明. 按宿主约定同步文档, d.ts, 离线文档与 Ace 补全. (2026-10-15) |
+| D36 | 试点, 封版与迁移 | 首批试点: Hanzi-CC (OpenCC), Yolo-NCNN, Image-Quantization (须先改为在插件进程提供服务; 目前是加载进宿主进程的原生库), Stack-Archive. 四个试点接入并稳定后封版契约 v1, 再对第三方公开 (协议文档, AAR, Garage 示例), 公开前可以自由调整契约. P11 的内置工具在 P12 稳定后迁移为插件自描述 (依赖 D33 的共享家族), 工具名保持不变. (2026-10-15) |
+| D37 | 版本 | P12 的宿主改动同样并入 6.8.0, 6.8.0 的公开发布因此等待 P11 与 P12. MCP 插件继续软探测 (D28), 不提高最低宿主版本; 插件版本默认 P11 为 1.2.0, P12 为 1.3.0, 实际版本号发布时定. (2026-10-15) |
 
 由 D2 / D10 派生的硬约束:
 
@@ -234,6 +243,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 | P9 | 1.0.x 补完: 重新打开的客户端验收, 各阶段遗留候选项与未执行的真机项, 取证脚本入库, 宿主公开发布后回归, 远端同步 | 全部 | P7 |
 | P10 | 1.1.0: 迁移到宿主 MCP 契约 v2 (共享能力数据面) 与宿主侧节点快照引用 | 插件 (宿主只读同步 AAR) | 宿主 v2 契约 (已就绪) |
 | P11 | 1.2.0: 官方插件能力作为 MCP 工具 (OCR, 条码, OpenCV 找图找色, 拼音, MediaInfo), 软探测, 共享存储只读开关; 已登记脚本为可选项 | 宿主 (6.8.0) + 插件 | P10; 决策 D23 - D28 |
+| P12 | 1.3.0: 插件自描述工具契约 (宿主桥接层, MCP / Agent / 脚本 API), 试点 OpenCC, YOLO, 图片量化, 压缩包 | 宿主 (6.8.0) + 试点插件 + 插件 | P11 的路径范围与截屏句柄; 决策 D29 - D37 |
 
 建议会话切分: P0 一次会话; P1 一到两次 (契约 + 代理为一次, bridge 新方法 + 注册为一次); P2 两次 (传输与鉴权; 目录与前台服务); P3 按工具组各一次; P4 一次; P5 两次 (路径与矩阵; 桥接程序); P6 一到两次; P7 一次.
 
@@ -529,7 +539,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 2026-10-15 盘点 (48 个插件目录):
 
 - 第一批 (宿主桥接层已有模块, 只需扩充 grant 与工具目录): ML Kit OCR, Paddle OCR v3 - v6, Rapid OCR v3 / v6 (`ocr` 模块与 `accessibility.readScreenText`), ML Kit Barcode (`barcode`), MediaInfo (`mediainfo`), Pinyin (`pinyin`), Pinyin4j (`pinyin4j`), OpenCV (`image` 的 `findImage` / `matchTemplate` / `findColor` / `findMultiColors`). 现状: MCP 默认 grant (`HostCapabilityGrant.DEFAULT_METHODS`) 一个都不含; `ocr` / `barcode` 只接受会话内的图像句柄; 桥接层 `ocr.*` 未指定引擎时固定为 ML Kit; `image.readImage` 与 `mediainfo.*` 接受任意绝对路径.
-- 第二批 (宿主能调用插件, 但桥接层没有模块): Hanzi-CC (OpenCC), Yolo-NCNN, Image-Quantization, Stack-Archive (不打开界面的压缩包会话), DEX / R8 编译 (价值待定). 不在 1.2.0 内; 接入方式 (宿主逐个补桥接模块, 或插件自描述契约) 另行决定, 期间可用下面可选的已登记脚本包装.
+- 第二批 (宿主能调用插件, 但桥接层没有模块): Hanzi-CC (OpenCC), Yolo-NCNN, Image-Quantization, Stack-Archive (不打开界面的压缩包会话), DEX / R8 编译 (价值待定). 不在 1.2.0 内; 改走 P12 的插件自描述契约 (2026-10-15 决定), 期间可用下面可选的已登记脚本包装.
 - 不做成工具: 播放器, 编辑器, 预览器, 取色器, 终端, Compose 设计器, 图片编辑, EPUB 阅读, APK / File Inspector (目前只有界面入口), 邮件 (账户与外发), Stone AI / Stove Agent (MCP 客户端本身就是模型), 各语言运行时.
 
 宿主 (6.8.0):
@@ -554,6 +564,38 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 - [ ] (发布) 1.2.0: 宿主 6.8.0 公开发布后按 P7 第 5 - 6 项的验证顺序与索引流程发布; 开发中的 1.1.1 条目先单独发布还是并入 1.2.0, 由维护者在发布时决定.
 
 验收条件: 含本阶段改动的宿主与插件 1.2.0 在两台设备完成上述真机项; 只装 Paddle 或 Rapid 的设备上 OCR 工具可用; 旧宿主上插件工具隐藏且默认的 33 个工具不受影响; 共享存储开关关闭时绝对路径一律被拒绝, 插件预检与宿主检查各验证一次.
+
+---
+
+## P12: 1.3.0 插件自描述工具契约
+
+目标: 让插件自己声明能提供哪些工具 (名称, 描述, 参数, 风险), 宿主汇总并统一转发调用, MCP, Agent 与脚本都能使用. 第二批插件 (OpenCC, YOLO 等) 由此接入, 不必再由宿主逐个补桥接模块, 新增工具只需发布插件新版. 做法由 D29 - D37 固定 (维护者 2026-10-15 经多轮选择拍板). 只有适合做成工具的插件需要实现契约, 其余插件不受影响. 宿主改动并入 6.8.0, MCP 插件目标版本 1.3.0.
+
+宿主 (6.8.0):
+
+- [ ] (宿主) 契约模块 `plugin-api/plugin-tool-api` (D30): AIDL 暂名 `IPluginToolProvider` (取目录, 调用, 取消) 与 oneway 回调 (最终结果, 输出描述符; 进度回调预留, 桥接层 v1 只转发最终结果); `PluginToolContract` 集中服务 action (暂名 `org.autojs.plugin.TOOL_PROVIDER`), 键, 上限与 `CONTRACT_VERSION = 1`; 目录 JSON 字段 (短名, 可选的共享家族, 工具名, 标题, 英文描述, 参数 schema, 可选输出 schema, 风险, 超时, 并发上限); 契约测试冻结 AIDL 顺序与 oneway 标志; 协议文档 `docs/dev/plugin-tool-protocol-v1.md`.
+- [ ] (宿主) 发现与目录缓存 (D30 / D33 / D34): 基于 `AidlPluginHost` 的提供者宿主 (新 action), 目录按 (包名, versionCode) 缓存, 包变化时刷新; 只收录已启用, 已授权且宿主版本兼容的插件, 记录信任级别; 短名唯一, 不得与内置分组和 P11 插件家族重名, 冲突的目录整体拒绝并给出诊断; 共享家族字段只对白名单家族与 OFFICIAL 插件生效 (P12 只校验, 不做提供者选择).
+- [ ] (宿主) Schema 校验 (D31): 纯 Kotlin 实现可单测, 载入目录时校验 schema 本身 (不合规的工具单独剔除), 调用时校验参数; 图片 / 文件特殊类型只能作为顶层参数; 评估自研子集与现成库 (APK 体积, R8, Android 兼容) 后决定.
+- [ ] (宿主) 桥接模块 `plugin_tools` (暂名, D29 / D32 / D34): `list` (按调用方 grant 与信任过滤后的工具与 schema), `invoke`, `cancel`; 图片参数 `"screen"` 走 D23 的截屏, 路径按 D26 检查范围后以描述符交给插件; 二进制输出写入调用方指定的工作目录路径; 超时取插件声明值并受 grant 上限约束; USER_GRANTED 插件的工具只在请求声明对应权限令牌 (暂名) 且 grant 包含它时放行, 由消费方的开关决定是否声明. MCP 默认 grant 加入该模块与令牌; Agent grant 是否加入由 Agent 路线图决定.
+- [ ] (宿主) 脚本 API (D35): `plugins.tools.list()` / `plugins.tools.call(name, args)` 与 Promise 版本; 图片参数在脚本中是否另外接受图像对象, 实施时决定; 同步 AutoJs6 文档, d.ts, 离线文档与 Ace 补全 (按宿主 AGENTS.md 的关联项目流程).
+- [ ] (宿主) changelog 6.8.0 (10 语言); 协议文档与 `docs/dev/host-capability-contract-v1.md` 记录新模块与令牌.
+
+试点插件 (各自仓库, D36):
+
+- [ ] (插件: Hanzi-CC) 声明 `opencc` 工具 (如转换, 列出可用配置), 先走通目录, 调用, 校验与脚本 API 的主链路.
+- [ ] (插件: Yolo-NCNN) 声明 `yolo` 检测工具 (图片参数, 模型, 阈值, 结构化结果), 验证图片特殊类型, 模型加载耗时与超时.
+- [ ] (插件: Image-Quantization) 先把量化改为在插件进程提供服务 (目前由宿主 `ImageQuantPluginHost` 加载进宿主进程运行), 再声明量化工具: 输入图片, 输出 PNG 写入工作目录, 验证二进制输出.
+- [ ] (插件: Stack-Archive) 声明压缩包工具: 列出内容 (只读), 解压到工作目录 (写入, 归入默认关闭的子开关), 验证文件输入, 风险分级与子开关.
+
+MCP 插件 (1.3.0):
+
+- [ ] (插件) 自描述工具接入 (D33 / D34): 经 `plugin_tools.list` 生成 MCP 工具 (名称, 描述, schema, 注解), 按短名分组, 只读工具随分组默认开启, 写入 / 破坏性 / 联网工具在默认关闭的子开关下; USER_GRANTED 插件逐个开启 (默认关闭); 刷新与 `tools/list_changed` 沿用 P11 的软探测; `device_info` 列出自描述插件的状态; 图片参数接受 `"screen"` 或路径, 二进制输出返回路径并可附小图预览; 目录快照只覆盖内置工具, 动态部分另测.
+- [ ] (测试) 宿主 JVM: 目录解析, 短名冲突, 共享家族保留规则, schema 校验, 特殊类型解析, 信任过滤, grant. 宿主 instrumentation: 假提供者 APK 的 Binder 往返 (目录, 调用, 取消, 描述符输入与输出, 超时, 提供者进程死亡). 真机: 四个试点各经 MCP 与脚本 API 完成调用; USER_GRANTED 的假提供者默认不可见, 开启后可见; 旧宿主上自描述工具不出现.
+- [ ] (文档) MCP README / 插件说明 / changelog 10 语言, 附录 A 补充自描述工具的生成规则与错误码, AGENTS.md 第 9 节加入相应约束.
+- [ ] (发布) 四个试点稳定后封版契约 v1, 再对第三方公开 (协议文档, AAR, Garage 示例); 宿主 6.8.0 公开发布后发布 MCP 1.3.0.
+- [ ] (后续, 不计入本阶段验收) P11 内置工具迁移为插件自描述 (D36): OCR (三个插件声明共享家族 `ocr`, 宿主按 D25 选择提供者, 实现 D33 预留的选择逻辑), 条码, OpenCV, 拼音, MediaInfo; 工具名保持不变, MCP 删除对应的内置实现.
+
+验收条件: 四个试点经 MCP 与脚本 API 在两台设备上完成真机调用; USER_GRANTED 提供者默认不可见; 旧宿主上自描述工具隐藏且其余工具不受影响; 契约测试冻结 AIDL 顺序与目录键.
 
 ---
 
@@ -1242,4 +1284,10 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 
 - 背景: 维护者提出把各插件的能力纳入 MCP. 盘点 48 个插件目录: 宿主桥接层已有 `ocr` / `barcode` / `mediainfo` / `pinyin` / `pinyin4j` 模块及依赖 OpenCV 的 `image` 方法, 但 MCP 默认 grant 一个都不含, 插件能力目前只能经 `script_run` 间接调用; 分类见 P11 开头.
 - 决策: 维护者经四轮选择拍板 D23 - D28: 屏幕识别在宿主内截屏 (OCR 复用 `accessibility.readScreenText`, 其余识别用宿主新增的通用截屏句柄), 图片只认手机上的文件, 桥接层 `ocr.*` 缺省改为自动选择且工具只暴露 `engine`, 工作目录加默认关闭的共享存储只读 (`files_list` / `files_stat` 可列) 并由宿主强制, 插件工具按插件家族分组且未安装时隐藏并在 `device_info` 中列出 (含离线文档), 软探测且宿主改动并入 6.8.0. 已登记脚本作为 P11 的可选项.
+- 本次只修改路线图, 未改代码与宿主.
+
+### 2026-10-15: P12 插件自描述工具契约的设计决策
+
+- 背景: P11 记录后, 维护者确认 "已登记脚本" 与 "插件自描述契约" 可以并存, 并要求把后者设计成 P12. 前置核对: `org.autojs.permission.PLUGIN` 为 signature 级, 信任分 OFFICIAL / TRUSTED / USER_GRANTED 三级, 现有家族 AIDL 传图都用 ParcelFileDescriptor, `IExplorerActionPlugin.getActionCatalog` 是 "插件经 Binder 返回目录" 的先例.
+- 决策: 维护者经五轮选择拍板 D29 - D37: 宿主桥接层统一提供并另给脚本 API (`plugins.tools`), 独立契约模块 + 新服务, 目录经 Binder 返回并由宿主缓存, 较完整的 schema 子集由宿主校验, 图片与二进制经宿主中转 (输出写入工作目录), `<插件短名>_<工具名>` 命名并在 v1 预留共享家族, 官方与受信插件自动可用而用户授权插件需手动开启, 按插件分组且高风险工具单列默认关闭的子开关, 不在手机上逐次确认, 试点为 OpenCC / YOLO / 图片量化 / 压缩包, 试点稳定后封版并对第三方公开, P11 内置工具在 P12 稳定后迁移, 宿主改动同样并入 6.8.0.
 - 本次只修改路线图, 未改代码与宿主.
