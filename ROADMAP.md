@@ -30,7 +30,7 @@ MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平
 | 宿主契约 | 插件 1.1.0 同时实现 MCP 契约 v1 (`openServer` + `IMcpHostCapabilityBroker`) 与 v2 (`openServerV2` + 共享 `IHostCapabilityBroker`), 按已安装宿主的 versionCode 声明版本 (>= 5283 声明 2, 否则 1), 宿主据此分流; 1.1.0 要求宿主 5298, 受支持的宿主都走 v2, 对更旧的宿主声明 1 只为让其读取元数据并显示宿主要求; 已发布的 1.0.3 及更早版本只有 v1 | 文首两条迁移记录; P10 |
 | MCP 协议 | 有状态 Streamable HTTP (`/mcp`, 带请求的 POST 以 SSE 应答), 协商 2024-11-05 至 2025-11-25; 事件流支持断线续传 (事件 id, 2025-11-25 客户端的 priming + `retry: 1000`, `Last-Event-ID`; 本地 1.0.3); 2026-07-28 无状态模型未实现 (D9), kotlin-sdk 0.15.0 截至 2026-10-10 仍为最新版 | D9; docs/dev/p6-conformance.md |
 | 能力面 | 37 个工具 / 8 个分组 (默认可见 33 个, `ui_gesture` / `files_delete` / `shell` 默认关闭), 资源 (工作目录, 示例, 设备, 控制台, 可选离线文档), 3 个提示 | 附录 A; `app/src/test/resources/tool-catalog.snapshot.json` |
-| 阶段 | P0 - P7 完成 (P5.2 / P5.3 于 2026-10-10 复核时重新打开, 同日补测 VS Code 与 Claude Desktop 后关闭); P8 可选, 未启动; P9 (1.0.x 补完) 与 P10 (1.1.0 契约 v2) 为 2026-10-10 新增; P10 于 2026-10-11 开始实施并于同日全部完成: 契约 v2, 节点引用迁移与文档同步随 1.1.0 发布, 宿主在前台时的配对确认由宿主本地提交解决, 依赖评估结论为暂不升级 Ktor | 第 5 节阶段总览 |
+| 阶段 | P0 - P7 完成 (P5.2 / P5.3 于 2026-10-10 复核时重新打开, 同日补测 VS Code 与 Claude Desktop 后关闭); P8 可选, 未启动; P9 (1.0.x 补完) 与 P10 (1.1.0 契约 v2) 为 2026-10-10 新增; P10 于 2026-10-11 开始实施并于同日全部完成: 契约 v2, 节点引用迁移与文档同步随 1.1.0 发布, 宿主在前台时的配对确认由宿主本地提交解决, 依赖评估结论为暂不升级 Ktor; P11 (1.2.0 插件能力工具) 于 2026-10-15 新增, 决策 D23 - D28 已定, 尚未实施 | 第 5 节阶段总览 |
 | 客户端实测 | 有真实结果: Claude Code 2.1.257 / 2.1.270 (HTTP, 以及经桥接程序的 stdio), Codex CLI 0.154.0-alpha.6.2, MCP Inspector CLI 2.5.0 / 2.6.0, VS Code 1.138 Copilot Chat (HTTP), Claude Desktop 2.9939.4.0 (经桥接程序的 stdio), Cursor CLI 2026.10.01 (HTTP, WSL); 未验证: Cursor IDE 界面, Cline, Gemini CLI | docs/dev/p5-client-matrix.md; docs/dev/p7-public-release.md |
 | PC 桥接程序 | `autojs6-mcp-bridge@0.1.0` (npm, 2026-09-15), 独立仓库 `AutoJs6-MCP-Bridge` (D19); 不是 APK 插件, 不进入插件中心; 维护者 2026-10-10 确认保留独立仓库 | D19; P5.3 |
 | 已知限制 | HyperOS / MIUI 默认限制侧载应用后台, 息屏用电池约 1 分钟后前台服务可能被停止 (设置页有提示); Ktor CIO 空闲时每 500 ms 唤醒一次; 每客户端 20 请求 / s 与 30 次截图 / min 上限; API 24 / 25 截图走 MediaProjection, 监听器重启后需重新同意 | docs/dev/p6-battery-and-residency.md, p6-rate-limits.md, p6-performance-baseline.md |
@@ -40,7 +40,7 @@ MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平
 
 ## 1. 固定决策
 
-以下决策已由维护者确认 (D1-D8 于 2026-09-07, 附录 C 的 Q1-Q7 同日拍板并回填为 D10 / D15 / D16 / D19-D22), 后续阶段不再重新讨论; D9-D18 为据此派生的技术决策, 其中未被 Q1-Q7 覆盖的部分进入 P0 前可推翻, 之后视同固定.
+以下决策已由维护者确认 (D1-D8 于 2026-09-07, 附录 C 的 Q1-Q7 同日拍板并回填为 D10 / D15 / D16 / D19-D22), 后续阶段不再重新讨论; D9-D18 为据此派生的技术决策, 其中未被 Q1-Q7 覆盖的部分进入 P0 前可推翻, 之后视同固定. D23-D28 是 P11 (插件能力工具) 的设计决策, 维护者于 2026-10-15 经多轮选择拍板.
 
 | 编号 | 决策 | 含义 |
 | --- | --- | --- |
@@ -66,6 +66,12 @@ MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平
 | D20 | 示例与离线文档资源的来源 | 示例脚本经宿主 bridge 新增只读方法 `app.listSamples` / `app.readSample` 暴露 (P1.3 顺带); 离线文档资源为可选项: 安装了 `AutoJs6-Plugin-Offline-Docs` 时由宿主转读, 未安装时 `resources/list` 不列出 `autojs6://docs/`. (Q5, 2026-09-07) |
 | D21 | 不实现 MCP Tasks 扩展 | 长脚本用同步等待 + 进度通知 + `script_stop` 覆盖; Tasks 扩展待客户端普遍支持后再评估. (Q6, 2026-09-07) |
 | D22 | 坐标点击归入 `ui_gesture` 组 | `ui_click` / `ui_long_click` 的 `nodeRef` / `selector` 形式属 `ui` 组 (默认开); 坐标形式在 `ui_gesture` 组关闭时返回 `TOOL_DISABLED` 并提示改用节点引用. 默认配置下模型只能点击可定位的节点. (Q7, 2026-09-07) |
+| D23 | 屏幕识别在宿主内截屏 | OCR 的屏幕工具复用宿主 `accessibility.readScreenText` (截屏与识别在宿主内一步完成, API 30+ 优先免授权的无障碍截图, 失败回退 MediaProjection). 条码, 找图, 找色以及以后的 YOLO 等基于图像句柄的识别, 使用宿主新增的通用方法 (暂名 `accessibility.captureScreenImage`): 用同一截图策略把屏幕登记为会话内的图像句柄, 插件在一次工具调用内完成 "截屏 -> 识别 -> `image.recycle`", 图片不离开宿主进程; 以后增加识别类型无需再改宿主截屏. 不使用只走 MediaProjection (首次需要用户同意录屏) 的 `image.captureScreen`. (2026-10-15) |
+| D24 | 图片来源只认手机上的文件 | 除屏幕外, 识别工具只接受手机上的图片路径 (范围见 D26), 由宿主 `image.readImage` 读入为句柄后识别. 不接受 base64, 不做电脑到手机的图片上传: 电脑端模型自己能看图, 手机端识别的价值在手机屏幕与手机文件; 共享能力契约 "请求方向不接受描述符" 的规则保持不变. (2026-10-15) |
+| D25 | OCR 引擎自动选择 | 宿主桥接层 `ocr.*` 未指定 `engine` / `engineId` 时改为自动选择 (按 ML Kit -> Paddle -> Rapid 检查已启用的插件), 与 Rhino 的 `ocr.mode = auto` 及 `accessibility.readScreenText` 一致; 装有 ML Kit 的现有 Node 脚本行为不变, 只装 Paddle 或 Rapid 时由报错变为可用. OCR 工具只向模型暴露可选参数 `engine` (`auto` / `mlkit` / `paddle` / `rapid`, 默认 `auto`), 不暴露 variant 与 profile; 所选引擎不可用时返回明确错误与安装提示. (2026-10-15) |
+| D26 | 路径范围: 工作目录 + 共享存储只读 | 相对路径一律指工作目录. 插件设置新增 "允许读取共享存储" (单独持久化, 默认关闭, 与 `allowShellRoot` 同一处理方式); 开启后绝对路径可以指向共享存储 (`/storage/emulated/0` 下除 `Android/data` 与 `Android/obb` 以外的全部目录), 且只读: 识别与媒体工具可以读取, `files_list` / `files_stat` 可以列出 (含修改时间, 便于找最新截图), `files_read` / `files_write` / `files_rename` / `files_delete` 等仍只限工作目录. 宿主强制 + 插件预检: 宿主对插件会话 (`backend=plugin`, 即 MCP 与 Agent) 的 `image.readImage`, `mediainfo.*` 等接受路径的方法以及共享存储列目录按 canonical 路径检查范围, 共享存储只在请求声明新权限令牌 (暂名 `files.shared_read`) 且 grant 包含该令牌时放行; 插件用 `WorkspacePath` 预检以给出清晰错误. Node 脚本 (非插件会话) 行为不变. (2026-10-15) |
+| D27 | 按插件家族分组, 未安装时隐藏 | 插件工具按插件家族分组, 每组一个开关, 默认开启 (只读工具, 风险与默认开启的 `screen` 组相当): 第一批 `ocr` (ML Kit / Paddle / Rapid OCR), `barcode`, `opencv` (找图, 找色, 模板匹配), `pinyin`, `pinyin4j`, `mediainfo`, 以后的家族各自一组. 对应插件未安装, 未启用或版本不兼容时, 工具不出现在 `tools/list`, 状态变化后发 `notifications/tools/list_changed`. `device_info` (及资源 `autojs6://device/info`) 列出各插件家族与离线文档插件的状态 (可用 / 未安装 / 已停用 / 版本不兼容) 和安装提示, 让模型可以提示用户去插件中心安装. (2026-10-15) |
+| D28 | 软探测, 宿主改动并入 6.8.0 | `REQUIRED_HOST_VERSION` 保持 5298, MCP 契约版本不变; 插件工具只在宿主 grant 的方法列表 (`grantMethods`) 包含所需方法且宿主报告其可用时出现, 旧宿主上只是看不到这些工具 (沿用 "先读能力再调用, 不靠异常猜版本"). D23 - D27 涉及的宿主改动 (新方法, grant 扩充, 路径范围, 状态上报, `ocr.*` 默认自动选择) 并入尚未公开发布的宿主 6.8.0, changelog 写在 6.8.0 条目下. (2026-10-15) |
 
 由 D2 / D10 派生的硬约束:
 
@@ -227,6 +233,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 | P8 (可选) | 公网隧道 + OAuth 2.1 (Claude.ai / Desktop 连接器) | 插件 + 文档 | P7 |
 | P9 | 1.0.x 补完: 重新打开的客户端验收, 各阶段遗留候选项与未执行的真机项, 取证脚本入库, 宿主公开发布后回归, 远端同步 | 全部 | P7 |
 | P10 | 1.1.0: 迁移到宿主 MCP 契约 v2 (共享能力数据面) 与宿主侧节点快照引用 | 插件 (宿主只读同步 AAR) | 宿主 v2 契约 (已就绪) |
+| P11 | 1.2.0: 官方插件能力作为 MCP 工具 (OCR, 条码, OpenCV 找图找色, 拼音, MediaInfo), 软探测, 共享存储只读开关; 已登记脚本为可选项 | 宿主 (6.8.0) + 插件 | P10; 决策 D23 - D28 |
 
 建议会话切分: P0 一次会话; P1 一到两次 (契约 + 代理为一次, bridge 新方法 + 注册为一次); P2 两次 (传输与鉴权; 目录与前台服务); P3 按工具组各一次; P4 一次; P5 两次 (路径与矩阵; 桥接程序); P6 一到两次; P7 一次.
 
@@ -512,6 +519,41 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 - [x] (评估) 依赖: kotlin-sdk 0.15.0 截至 2026-10-10 仍为最新, D9 的无状态模型继续等待; Ktor 3.6.0 已发布, 随 SDK 升级一并评估 (SDK 以 Ktor 3.5.1 构建). (EVAL 2026-10-11: Maven Central 上 `kotlin-sdk` / `kotlin-sdk-server` 仍为 0.15.0 (2026-07-28), D9 继续等待. 试将 Ktor BOM 提到 3.6.0 (2026-09-16 发布): `ktor-server-content-negotiation` 3.6.0 新依赖 `ktor-server-routing-openapi`, release 运行时类路径因此多出约 20 个插件用不到的模块 (`ktor-server-auth` / `-auth-api-key` / `-sessions` / `-csrf`, `ktor-openapi-schema`, `ktor-client-core`, `kaml`, `snakeyaml-engine-kmp`, `okio`, `urlencoder-lib`, `kotlinx-datetime`, `kotlinx-coroutines-slf4j`); R8 之后 release APK 只大 7363 字节 (1777386 -> 1784749), 但第三方声明需随之扩充; 单元测试 259 / 260, `SseResumptionTest.theStandaloneStreamResumesThroughTheSdkAndStaysOpen` (基于 testApplication 的独立流续传) 挂起 1 分钟超时, 疑为 3.6.0 测试宿主的流式响应行为变化 (KTOR-8705), 基于真实 CIO 引擎的续传用例均通过. 3.6.0 与插件相关的 CIO 修复 (KTOR-9761 空闲超时取消时请求处理泄漏, KTOR-9731 `Connection: close` 响应不完整, KTOR-8355 错误百分号编码导致 500) 在插件中未观察到. 结论: 维持 Ktor 3.5.1 (与 SDK 一致), 版本文件已还原; SDK 发布基于 Ktor 3.6.x 的版本时一并升级, 届时重看该测试, 依赖清单与第三方声明.)
 
 验收条件: 新旧宿主各一台设备完成 P2 验收的端到端; 节点引用迁移后 P3.2 的 dump -> click -> set_text -> scroll -> back 全链路通过; 契约版本与 AAR 锁一致. (2026-10-11: 新宿主 (5328 / 5329) 的端到端与 P3.2 全链路已通过, AAR 锁与契约版本一致; "旧宿主" 一项由节点引用迁移前的构建在 AVD 宿主 5282 上走 v1 完成, 1.1.0 按维护者决定提高宿主要求后, 旧宿主不再受支持.)
+
+---
+
+## P11: 1.2.0 插件能力工具
+
+目标: 把已安装的官方插件能力作为一等 MCP 工具提供, 模型不必再经 `script_run` 编写脚本调用 `ocr` / `barcode` 等 API, 也能知道手机上装了哪些插件. 做法由 D23 - D28 固定 (维护者 2026-10-15 经多轮选择拍板). 宿主改动并入 6.8.0, 插件目标版本 1.2.0.
+
+2026-10-15 盘点 (48 个插件目录):
+
+- 第一批 (宿主桥接层已有模块, 只需扩充 grant 与工具目录): ML Kit OCR, Paddle OCR v3 - v6, Rapid OCR v3 / v6 (`ocr` 模块与 `accessibility.readScreenText`), ML Kit Barcode (`barcode`), MediaInfo (`mediainfo`), Pinyin (`pinyin`), Pinyin4j (`pinyin4j`), OpenCV (`image` 的 `findImage` / `matchTemplate` / `findColor` / `findMultiColors`). 现状: MCP 默认 grant (`HostCapabilityGrant.DEFAULT_METHODS`) 一个都不含; `ocr` / `barcode` 只接受会话内的图像句柄; 桥接层 `ocr.*` 未指定引擎时固定为 ML Kit; `image.readImage` 与 `mediainfo.*` 接受任意绝对路径.
+- 第二批 (宿主能调用插件, 但桥接层没有模块): Hanzi-CC (OpenCC), Yolo-NCNN, Image-Quantization, Stack-Archive (不打开界面的压缩包会话), DEX / R8 编译 (价值待定). 不在 1.2.0 内; 接入方式 (宿主逐个补桥接模块, 或插件自描述契约) 另行决定, 期间可用下面可选的已登记脚本包装.
+- 不做成工具: 播放器, 编辑器, 预览器, 取色器, 终端, Compose 设计器, 图片编辑, EPUB 阅读, APK / File Inspector (目前只有界面入口), 邮件 (账户与外发), Stone AI / Stove Agent (MCP 客户端本身就是模型), 各语言运行时.
+
+宿主 (6.8.0):
+
+- [ ] (宿主) `ocr.*` 未指定引擎时自动选择 (D25): `dispatchOcr` 不再把缺省引擎固定为 `mlkit-ocr`, 改用与 `accessibility.readScreenText` 相同的自动选择; 显式 `engine` / `engineId` / `variant` 仍按原规则过滤. 测试覆盖只装 Paddle, 只装 Rapid, 三者都装三种情形; 宿主 changelog 6.8.0 (10 语言); 检查 Node 文档与声明中是否写过 "默认 ML Kit".
+- [ ] (宿主) 通用截屏句柄 (D23): 新增 `accessibility.captureScreenImage` (暂名), 截图策略与 `NodeBridgeScreenText.capture` 相同 (API 30+ 无障碍截图, 失败回退 MediaProjection), 结果登记为会话内图像句柄, 声明 `accessibility` + `screen_capture` + `image`. 一并评估会话图像句柄上限 (当前 `maxImageHandles = 4`): 找图同时占用屏幕与模板两个句柄, 并发调用可能触顶.
+- [ ] (宿主) 插件会话的路径范围 (D26): `backend=plugin` 时 `image.readImage`, `mediainfo.*` 等接受路径的方法按 canonical 路径限制在工作目录; 请求声明 `files.shared_read` (暂名) 且 grant 包含它时, 额外允许共享存储只读 (排除 `Android/data`, `Android/obb`); `files.list` / `files.stat` 在同一令牌下接受共享存储的绝对路径, 其余 `files.*` 不变; 宿主没有存储权限时返回 `permission-denied` 与提示. Node 脚本行为不变.
+- [ ] (宿主) 插件家族状态上报 (D27 / D28): `getBrokerInfo` 的 `availableOptionalMethods` 按已启用的插件补充各家族方法 (沿用 `accessibility.readScreenText` 的先例); 另提供只读方法 (暂名 `app.pluginCapabilities`) 返回各家族与离线文档插件的状态 (`available` / `not_installed` / `disabled` / `incompatible`) 及插件中心入口, 状态随插件安装, 启用, 更新而变化.
+- [ ] (宿主) MCP 默认 grant 扩充 (D28): `HostCapabilityGrant.DEFAULT_METHODS` 加入 `accessibility.readScreenText`, 通用截屏句柄方法, `ocr.*`, `barcode.*`, `image.readImage`, `image.findImage` / `matchTemplate` / `findColor` / `findMultiColors`, `pinyin.*`, `pinyin4j.*`, `mediainfo.*` 与状态方法; `DEFAULT_PERMISSIONS` 加入 `ocr`, `barcode`, `pinyin`, `pinyin4j`, `media.metadata` (以 `NodeBridgePermissionManifest` 为准) 与 `files.shared_read`. Agent 的 grant 不随之变化. 同步 grant 测试与 `McpServerPluginRoundTripTest`, 宿主协议文档 `docs/dev/mcp-server-protocol-v1.md` 与 `docs/dev/host-capability-contract-v1.md` 记录新方法与令牌.
+
+插件 (1.2.0):
+
+- [ ] (插件) 软探测与动态目录 (D27 / D28): `ToolGroup` 增加插件家族分组 (默认开启); `ToolRegistry` 刷新时读取宿主 grant 与可用状态 (短时缓存), 只注册宿主已授权且对应插件可用的工具, 状态变化时发 `tools/list_changed`; 设置页分组开关 10 语言; 目录快照与 `ToolCatalogTest` 同步.
+- [ ] (插件) OCR 工具 (D23 / D24 / D25): `ocr_screen` (可选 `region`, `engine`) 映射 `accessibility.readScreenText`; `ocr_image` (`path`, 可选 `region`, `engine`) 在一次调用内执行 `image.readImage` -> `ocr.recognize` -> `image.recycle` (回收放在 finally); `engine` 映射到宿主引擎 id (`mlkit-ocr` / `paddle-ocr` / `rapid-ocr`); 新错误码 (暂名 `PLUGIN_NOT_AVAILABLE`) 写入附录 A.5.
+- [ ] (插件) 条码与 OpenCV 工具 (D23 / D24): 条码的屏幕与图片两种来源; 找图 (模板图片来自路径), 找色, 多点找色, 同样支持屏幕或图片; 句柄在 finally 回收, 超出宿主句柄上限时排队或返回明确错误.
+- [ ] (插件) 文本与媒体工具: `pinyin` / `pinyin4j` 的转换工具 (纯文本参数, 只暴露常用选项), `mediainfo` 读取 (路径按 D26).
+- [ ] (插件) 共享存储只读开关 (D26): 设置页开关 (默认关闭, 10 语言, 说明开启后模型可以读取相册与下载目录等), 单独持久化并在每次调用时重新读取; `WorkspacePath` 预检 (相对路径为工作目录, 绝对路径只在开关开启时允许且须在共享存储范围内); 开关开启时请求声明 `files.shared_read`; `files_list` / `files_stat` 接受共享存储绝对路径.
+- [ ] (插件) `device_info` 插件能力状态 (D27): 结果新增各插件家族与离线文档插件的状态和安装提示; 宿主状态方法不可用时省略该字段, `outputSchema` 为开放对象, 无需改 `required`.
+- [ ] (插件, 可选) 已登记脚本: 接入宿主 `agent.listScripts` / `agent.readManifest` / `agent.execRegistered` (宿主 `docs/dev/agent-script-manifest-v1.md`), 让用户用 `@agent` 注释或 `project.json` 把脚本变成带参数说明的工具, 可用来包装第二批插件 (Hanzi-CC, Yolo-NCNN 等). 形态 (目录 + 执行两个工具, 或每个脚本生成一个工具) 实施前由维护者决定; 需要宿主 grant 加入 `agent.*` 及其权限令牌. 不阻塞 1.2.0 的其余条目.
+- [ ] (测试) JVM: 目录快照, 动态注册 (grant 与可用状态的各种组合), 路径预检, 引擎映射, 错误映射. instrumentation: `McpServerHostSessionTest` 的假宿主覆盖插件工具的桥接信封, 句柄回收, 工具隐藏与出现. 真机: 至少两台设备 (其中一台只装 Paddle 或 Rapid OCR) 走屏幕 OCR, 图片 OCR, 屏幕条码, 找图, 共享存储开关开与关, 安装 / 停用插件后的 `tools/list_changed`; 旧宿主上插件工具不出现, 其余工具正常.
+- [ ] (文档) README / 插件说明 / changelog 10 语言, 附录 A 的工具表, grant 方法全集与错误码, AGENTS.md 第 9 节新增插件能力工具的约束.
+- [ ] (发布) 1.2.0: 宿主 6.8.0 公开发布后按 P7 第 5 - 6 项的验证顺序与索引流程发布; 开发中的 1.1.1 条目先单独发布还是并入 1.2.0, 由维护者在发布时决定.
+
+验收条件: 含本阶段改动的宿主与插件 1.2.0 在两台设备完成上述真机项; 只装 Paddle 或 Rapid 的设备上 OCR 工具可用; 旧宿主上插件工具隐藏且默认的 33 个工具不受影响; 共享存储开关关闭时绝对路径一律被拒绝, 插件预检与宿主检查各验证一次.
 
 ---
 
@@ -1195,3 +1237,9 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - APK 取证: 主包最后更新于 2026-10-11 14:51:32, 拉取的 APK 与本地发布件 `autojs6-plugin-mcp-server-v1.0.3-4f5b5fd7.apk` SHA-256 一致. 留存的调试测试包最后更新于同日 12:55:36, DEX 引用原名 `Intrinsics` 但不定义该类; release DEX 既不定义也不引用该原名, 当前 debug APK 定义该类. 当前 release 运行时依赖解析到 `kotlin-stdlib:2.4.0`, 相关依赖声明与 R8 设置相比 v1.0.3 未变. 结论为调试测试 APK 与独立混淆的发布主包混用, 不能据此认定发布包漏打标准库. 完整哈希与处理方法见 `tools/evidence/README.md`.
 - 取证工具: `Device.package` 同时读取 Android 的 `pkgFlags` / `flags` 格式; `EvidenceHelperTest` 调用前要求已安装主包为 debuggable 且测试 runner 存在, 不满足时在 `am instrument` 之前报错. 自动读取令牌及建立会话跳过发布版旁残留的测试包, 保留环境变量 / 开发者模式令牌与手机确认配对路径. 显式使用 instrumentation 时保留明确错误. 日志不输出令牌.
 - 验证: Python 取证工具测试 14/14 (新增 7 项, 含发布版拒绝, 缺少 APK, debug 正常读取, 环境变量 / dumpsys 回退及会话不启动残留 runner); 受影响真机以只允许 `pm` / `dumpsys` / `getprop` 的只读封装确认 1.0.3 / 168 + 残留 runner 被提前拒绝; Gradle `:app:dependencyInsight --configuration releaseRuntimeClasspath --dependency kotlin-stdlib` 成功. 本次只修改 Python 工具与说明, 未改 Android 运行时代码, 依赖或 R8 规则, 未执行 APK 构建和 instrumentation, 未更换设备安装包或清除数据. 原始崩溃日志, APK 与预检结果保留在 Git 忽略的 `.bak/mcp-crash-20261014/`.
+
+### 2026-10-15: P11 插件能力工具的设计决策
+
+- 背景: 维护者提出把各插件的能力纳入 MCP. 盘点 48 个插件目录: 宿主桥接层已有 `ocr` / `barcode` / `mediainfo` / `pinyin` / `pinyin4j` 模块及依赖 OpenCV 的 `image` 方法, 但 MCP 默认 grant 一个都不含, 插件能力目前只能经 `script_run` 间接调用; 分类见 P11 开头.
+- 决策: 维护者经四轮选择拍板 D23 - D28: 屏幕识别在宿主内截屏 (OCR 复用 `accessibility.readScreenText`, 其余识别用宿主新增的通用截屏句柄), 图片只认手机上的文件, 桥接层 `ocr.*` 缺省改为自动选择且工具只暴露 `engine`, 工作目录加默认关闭的共享存储只读 (`files_list` / `files_stat` 可列) 并由宿主强制, 插件工具按插件家族分组且未安装时隐藏并在 `device_info` 中列出 (含离线文档), 软探测且宿主改动并入 6.8.0. 已登记脚本作为 P11 的可选项.
+- 本次只修改路线图, 未改代码与宿主.
