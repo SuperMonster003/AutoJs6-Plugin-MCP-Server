@@ -191,3 +191,9 @@ file is `INVALID_ARGUMENTS` ("target does not exist").
 
 Tests: `PinyinToolsTest` and `MediaInfoToolsTest` (JVM), the plugin family case of `McpServerHostSessionTest` (fake broker). Device scenario:
 `tools/evidence/p11_text_tools.py` (a one-second WAV fixture written through `script_run`; needs "All files access" for the media checks).
+
+## Shared screenshot window (D39)
+
+Every tool with an `image` argument counts a `"screen"` call against the per-client window of 30 screenshots per minute that
+`screen_capture` uses; files are not counted. The rate limiter decides this from the JSON-RPC body before the call reaches the tool
+gate (`RateLimiter.countsAsScreenshot`); details and evidence in `docs/dev/p6-rate-limits.md` (P11 addendum).

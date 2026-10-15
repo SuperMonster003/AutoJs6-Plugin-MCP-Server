@@ -8,7 +8,7 @@
     "v1.2.0": {
       "released_date": "2026/10/15",
       "feature": [
-        "6 個插件工具分組開關 (OCR 文字識別, 條碼識別, OpenCV 找圖找色, Pinyin 與 Pinyin4j 拼音轉換, MediaInfo 媒體信息): 這些分組的工具只在對應的 AutoJs6 插件已安裝並啟用時出現在客戶端的工具列表中, 安裝, 卸載或更新插件後列表自動更新, 調用插件缺失的工具會說明原因 (PLUGIN_UNAVAILABLE)",
+        "6 個插件工具分組開關 (OCR 文字識別, 條碼識別, OpenCV 找圖找色, Pinyin 與 Pinyin4j 拼音轉換, MediaInfo 媒體信息): 這些分組的工具只在對應的 AutoJs6 插件已安裝並啟用時出現在客戶端的工具列表中, 安裝, 卸載或更新插件後列表自動更新, 調用插件缺失的工具會說明原因 (PLUGIN_UNAVAILABLE); 讀取屏幕的識別調用 (image 為 \"screen\") 與 screen_capture 共用每個客戶端每分鐘 30 次的截屏上限, 識別手機上的圖片文件不計入",
         "ocr_recognize 工具, 用於識別手機屏幕或手機上圖片文件中的文字 (需要已安裝並啟用 ML Kit, Paddle OCR 或 Rapid OCR 插件): image 為 \"screen\" 時在 AutoJs6 內截屏並識別, 為工作目錄內的路徑時讀取文件後識別; 可選 region 裁切與 engine 指定引擎 (默認自動選擇); 結果附文字, 置信度與座標 (大圖按原圖像素返回), 圖片不離開手機",
         "barcode_detect 工具, 用於識別手機屏幕或手機上圖片文件中的條碼與二維碼 (需要已安裝並啟用 ML Kit Barcode 插件): image 為 \"screen\" 時在 AutoJs6 內截屏後識別, 為工作目錄內的路徑時讀取文件後識別; 可選 formats 限定碼制, region 裁切與 maxResults 數量上限; 結果附內容, 碼制與座標 (大圖按原圖像素返回), 圖片不離開手機",
         "opencv_find_image, opencv_find_color 與 opencv_find_multi_colors 工具, 用於在手機屏幕或手機上的圖片文件中找圖, 找色與多點找色 (需要已安裝並啟用 OpenCV 插件): 找圖的模板是工作目錄內的圖片, 結果附每處匹配的範圍, 中心與相似度; 找色返回第一個符合的像素座標; 均可用 region 限定範圍, 圖片不離開手機",

@@ -8,7 +8,7 @@
 
 ###### 2026/10/15
 
-* `新增` 6 个插件工具分组开关 (OCR 文字识别, 条码识别, OpenCV 找图找色, Pinyin 与 Pinyin4j 拼音转换, MediaInfo 媒体信息): 这些分组的工具只在对应的 AutoJs6 插件已安装并启用时出现在客户端的工具列表中, 安装, 卸载或更新插件后列表自动更新, 调用插件缺失的工具会说明原因 (PLUGIN_UNAVAILABLE)
+* `新增` 6 个插件工具分组开关 (OCR 文字识别, 条码识别, OpenCV 找图找色, Pinyin 与 Pinyin4j 拼音转换, MediaInfo 媒体信息): 这些分组的工具只在对应的 AutoJs6 插件已安装并启用时出现在客户端的工具列表中, 安装, 卸载或更新插件后列表自动更新, 调用插件缺失的工具会说明原因 (PLUGIN_UNAVAILABLE); 读取屏幕的识别调用 (image 为 "screen") 与 screen_capture 共用每个客户端每分钟 30 次的截图上限, 识别手机上的图片文件不计入
 * `新增` ocr_recognize 工具, 用于识别手机屏幕或手机上图片文件中的文字 (需要已安装并启用 ML Kit, Paddle OCR 或 Rapid OCR 插件): image 为 "screen" 时在 AutoJs6 内截屏并识别, 为工作目录内的路径时读取文件后识别; 可选 region 裁切与 engine 指定引擎 (默认自动选择); 结果附文字, 置信度与坐标 (大图按原图像素返回), 图片不离开手机
 * `新增` barcode_detect 工具, 用于识别手机屏幕或手机上图片文件中的条码与二维码 (需要已安装并启用 ML Kit Barcode 插件): image 为 "screen" 时在 AutoJs6 内截屏后识别, 为工作目录内的路径时读取文件后识别; 可选 formats 限定码制, region 裁切与 maxResults 数量上限; 结果附内容, 码制与坐标 (大图按原图像素返回), 图片不离开手机
 * `新增` opencv_find_image, opencv_find_color 与 opencv_find_multi_colors 工具, 用于在手机屏幕或手机上的图片文件中找图, 找色与多点找色 (需要已安装并启用 OpenCV 插件): 找图的模板是工作目录内的图片, 结果附每处匹配的范围, 中心与相似度; 找色返回第一个符合的像素坐标; 均可用 region 限定范围, 图片不离开手机

@@ -120,6 +120,8 @@ object ToolCatalog {
         const val READ_TIMEOUT_MS = 30_000L
         /** Releasing a handle afterwards; a failure here is not reported. */
         const val RECYCLE_TIMEOUT_MS = 5_000L
+        /** The last sentence of every tool description with an `image` argument (roadmap P11 D39, see RateLimiter.countsAsScreenshot). */
+        const val SCREEN_QUOTA_NOTE = "Reading the screen counts against the limit of 30 screenshots per minute per client that screen_capture also uses."
         /** Description of the `image` argument. */
         const val IMAGE_DESCRIPTION = "\"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal"
     }
@@ -871,7 +873,7 @@ object ToolCatalog {
                 "takes the first enabled one in ML Kit, Paddle, Rapid order. Returns the recognized lines as text and, as structured content, " +
                 "items with text, confidence and bounds (file bounds are in the file's own pixels even when AutoJs6 downscaled the image to read it). " +
                 "The screenshot is taken and recognized inside AutoJs6; no image leaves the phone. A first Paddle call loads its model and can take " +
-                "tens of seconds; timeoutMs defaults to 60 s. This tool exists only while an OCR plugin is installed and enabled in AutoJs6.",
+                "tens of seconds; timeoutMs defaults to 60 s. This tool exists only while an OCR plugin is installed and enabled in AutoJs6. " + Images.SCREEN_QUOTA_NOTE,
         group = ToolGroup.OCR,
         inputSchema = JsonSchemas.objectSchema(
             linkedMapOf(
@@ -901,7 +903,7 @@ object ToolCatalog {
                 "formats limits the symbologies (all by default); region crops before detection, in screen pixels or file pixels. Returns one line " +
                 "per code (format and raw value) and, as structured content, items with rawValue, displayValue, format, valueType, bounds and " +
                 "cornerPoints (file coordinates are in the file's own pixels even when AutoJs6 downscaled the image to read it). The screenshot " +
-                "stays inside AutoJs6; no image leaves the phone. This tool exists only while the barcode plugin is installed and enabled in AutoJs6.",
+                "stays inside AutoJs6; no image leaves the phone. This tool exists only while the barcode plugin is installed and enabled in AutoJs6. " + Images.SCREEN_QUOTA_NOTE,
         group = ToolGroup.BARCODE,
         inputSchema = JsonSchemas.objectSchema(
             linkedMapOf(
@@ -934,7 +936,7 @@ object ToolCatalog {
                 "working directory; template is the path of the image to look for, at the same pixel scale as image (for the screen, cut from a " +
                 "full-resolution screenshot). threshold is the lowest similarity accepted (0..1); region limits the search, in screen pixels or file " +
                 "pixels; maxResults caps the matches, best first and without overlaps. Returns bounds, center and score of each match; screen " +
-                "coordinates are device pixels. This tool exists only while the OpenCV plugin is installed and enabled in AutoJs6.",
+                "coordinates are device pixels. This tool exists only while the OpenCV plugin is installed and enabled in AutoJs6. " + Images.SCREEN_QUOTA_NOTE,
         group = ToolGroup.OPENCV,
         inputSchema = JsonSchemas.objectSchema(
             linkedMapOf(
@@ -962,7 +964,7 @@ object ToolCatalog {
                 "\"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory. color is #RRGGBB or #RGB; threshold " +
                 "is the difference allowed in each of the red, green and blue channels; region limits the search, in screen pixels or file pixels. " +
                 "Pixels are searched row by row from the top left. Returns found and the point; screen coordinates are device pixels. This tool " +
-                "exists only while the OpenCV plugin is installed and enabled in AutoJs6.",
+                "exists only while the OpenCV plugin is installed and enabled in AutoJs6. " + Images.SCREEN_QUOTA_NOTE,
         group = ToolGroup.OPENCV,
         inputSchema = JsonSchemas.objectSchema(
             linkedMapOf(
@@ -990,7 +992,7 @@ object ToolCatalog {
                 "or a POSIX path relative to the AutoJs6 working directory. color is the color of the point itself (#RRGGBB or #RGB); points lists " +
                 "the neighbors as {x, y, color}, with x and y relative to that point in the pixels of image. threshold is the difference allowed in " +
                 "each RGB channel for color and the average difference allowed for the neighbors; region limits where the point may lie. Returns " +
-                "found and the point; screen coordinates are device pixels. This tool exists only while the OpenCV plugin is installed and enabled in AutoJs6.",
+                "found and the point; screen coordinates are device pixels. This tool exists only while the OpenCV plugin is installed and enabled in AutoJs6. " + Images.SCREEN_QUOTA_NOTE,
         group = ToolGroup.OPENCV,
         inputSchema = JsonSchemas.objectSchema(
             linkedMapOf(

@@ -143,6 +143,16 @@ data class ToolFailure(
             retryAfterMs = retryAfterMs,
         )
 
+        /** A recognition tool with `image: "screen"` over the screenshot window it shares with `screen_capture` (roadmap P11 D39). */
+        fun screenReadRateLimited(toolName: String, limit: Int, windowMs: Long, retryAfterMs: Long): ToolFailure = ToolFailure(
+            ToolErrorCodes.RATE_LIMITED,
+            "$toolName with image \"screen\" takes a screenshot, and screenshots are limited to $limit per ${windowMs / 1_000L} s per client " +
+                    "together with screen_capture",
+            "wait ${retryAfterMs} ms before reading the screen again, or pass an image file",
+            category = BridgeError.CATEGORY_RATE_LIMITED,
+            retryAfterMs = retryAfterMs,
+        )
+
         fun internal(message: String): ToolFailure = ToolFailure(ToolErrorCodes.HOST_ERROR, message)
 
         /** Maps the host's error category onto the plugin codes of appendix A.5. */

@@ -33,15 +33,16 @@ import org.junit.Test
 /**
  * The rate limiter behind the request gate on Ktor's test engine (roadmap P6): the per-second
  * request window answers `429` with `Retry-After` and a JSON-RPC `RATE_LIMITED` error, the
- * per-minute screenshot window answers a `tools/call` of `screen_capture` as an `isError` tool
- * result with `retryAfterMs`, and both recover once the window moved on.
+ * per-minute screenshot window answers a `tools/call` of `screen_capture` (or of a recognition tool
+ * with `image: "screen"`) as an `isError` tool result with `retryAfterMs`, and both recover once the
+ * window moved on.
  */
 class RateLimitInterceptorTest {
 
     private var now = 5_000_000L
 
     private fun server(): Server = McpServerFactory.create("1.0.0-test").also { server ->
-        listOf("screen_capture", "device_ping").forEach { name ->
+        listOf("screen_capture", "device_ping", "ocr_recognize", "barcode_detect").forEach { name ->
             server.addTool(name = name, description = "Test tool $name") {
                 CallToolResult(content = listOf(TextContent(text = "ok $name")))
             }
@@ -128,6 +129,39 @@ class RateLimitInterceptorTest {
     }
 
     @Test
+    fun recognitionOfTheScreenSharesTheScreenshotWindowAndFilesDoNotCount() = testApplication {
+        mount(RateLimits(requestsPerWindow = 100, requestWindowMs = 1_000L, screenshotsPerWindow = 3, screenshotWindowMs = 60_000L))
+        val sessionId = post(INITIALIZE, sessionId = null).headers[SESSION_HEADER]
+        assertEquals(HttpStatusCode.Accepted, post(INITIALIZED, sessionId).status)
+        fun isError(document: JsonObject) = document["result"]!!.jsonObject["isError"]?.jsonPrimitive?.boolean == true
+
+        // Roadmap P11 D39: screen_capture and image "screen" draw from one window; image files and other tools do not.
+        assertFalse(isError(post(toolsCall("screen_capture", id = 20), sessionId).bodyJson()))
+        assertFalse(isError(post(toolsCall("ocr_recognize", id = 21, arguments = """{"image":"screen"}"""), sessionId).bodyJson()))
+        assertFalse(isError(post(toolsCall("barcode_detect", id = 22, arguments = """{"image":"photos/a.png"}"""), sessionId).bodyJson()))
+        assertFalse(isError(post(toolsCall("barcode_detect", id = 23, arguments = """{"image":"screen"}"""), sessionId).bodyJson()))
+        now += 10_000
+        val refused = post(toolsCall("ocr_recognize", id = 24, arguments = """{"image":"screen"}"""), sessionId)
+        assertEquals(HttpStatusCode.OK, refused.status)
+        val document = refused.bodyJson()
+        assertEquals(24, document["id"]!!.jsonPrimitive.int)
+        assertTrue(isError(document))
+        val error = document["result"]!!.jsonObject["structuredContent"]!!.jsonObject["error"]!!.jsonObject
+        assertEquals("RATE_LIMITED", error["code"]!!.jsonPrimitive.content)
+        assertEquals(50_000L, error["retryAfterMs"]!!.jsonPrimitive.long)
+        assertEquals(
+            "ocr_recognize with image \"screen\" takes a screenshot, and screenshots are limited to 3 per 60 s per client together with screen_capture",
+            error["message"]!!.jsonPrimitive.content,
+        )
+        assertEquals("wait 50000 ms before reading the screen again, or pass an image file", error["hint"]!!.jsonPrimitive.content)
+        assertTrue("screen_capture is refused as well", isError(post(toolsCall("screen_capture", id = 25), sessionId).bodyJson()))
+        assertFalse("an image file still works", isError(post(toolsCall("ocr_recognize", id = 26, arguments = """{"image":"pics/a.png"}"""), sessionId).bodyJson()))
+
+        now += 50_000
+        assertFalse("the oldest capture left the window", isError(post(toolsCall("barcode_detect", id = 27, arguments = """{"image":"screen"}"""), sessionId).bodyJson()))
+    }
+
+    @Test
     fun anInventedSessionIdDoesNotOpenAFreshWindow() = testApplication {
         mount(RateLimits(requestsPerWindow = 2, requestWindowMs = 1_000L))
         assertEquals(HttpStatusCode.OK, post(INITIALIZE, sessionId = null).status)
@@ -161,8 +195,8 @@ class RateLimitInterceptorTest {
         return document
     }
 
-    private fun toolsCall(name: String, id: Int): String =
-        """{"jsonrpc":"2.0","id":$id,"method":"tools/call","params":{"name":"$name","arguments":{}}}"""
+    private fun toolsCall(name: String, id: Int, arguments: String = "{}"): String =
+        """{"jsonrpc":"2.0","id":$id,"method":"tools/call","params":{"name":"$name","arguments":$arguments}}"""
 
     private companion object {
         const val PATH = "/mcp"

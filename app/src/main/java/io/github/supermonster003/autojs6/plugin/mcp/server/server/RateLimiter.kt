@@ -1,6 +1,10 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server.server
 
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolCatalog
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolCatalog.Images
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * The per-client ceilings of the listener (roadmap P6): how many requests a client may send per
@@ -108,7 +112,25 @@ class RateLimiter(
 
     companion object {
 
-        /** Tools that count against the screenshot window. */
+        /** Tools that always take a screenshot and count against the screenshot window. */
         val SCREENSHOT_TOOLS: Set<String> = setOf(ToolCatalog.SCREEN_CAPTURE)
+
+        /**
+         * Tools that take a screenshot when their `image` argument is `"screen"` (roadmap P11 D39): the
+         * plugin-family recognition tools share the screenshot window with `screen_capture`, so that
+         * recognizing the screen cannot watch it faster than capturing it. A file path is not counted.
+         */
+        val SCREEN_IMAGE_TOOLS: Set<String> = ToolCatalog.all
+            .filter { spec -> spec.group.isPluginFamily && Images.IMAGE in spec.properties }
+            .map { it.name }
+            .toSet()
+
+        /** Whether a `tools/call` of [name] with [arguments] counts against the screenshot window. */
+        fun countsAsScreenshot(name: String, arguments: JsonElement?): Boolean = when (name) {
+            in SCREENSHOT_TOOLS -> true
+            in SCREEN_IMAGE_TOOLS -> ((arguments as? JsonObject)?.get(Images.IMAGE) as? JsonPrimitive)
+                ?.takeIf { it.isString }?.content?.trim() == Images.SCREEN
+            else -> false
+        }
     }
 }

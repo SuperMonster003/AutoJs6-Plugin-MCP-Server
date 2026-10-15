@@ -17,6 +17,7 @@ import io.ktor.server.response.respondText
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -32,11 +33,16 @@ import kotlinx.serialization.json.put
  * or the `User-Agent` before `initialize`) together with the remote address; an invented
  * `Mcp-Session-Id` therefore does not open a fresh window. A request over the per-second limit
  * is answered with `429`, a `Retry-After` header and a JSON-RPC `RATE_LIMITED` error whose
- * `data.retryAfterMs` says when to retry. A `tools/call` of a screenshot tool over the per-minute
- * limit is answered as a tool result with `isError` and the `RATE_LIMITED` code, so the model
- * reads the wait time instead of losing the transport.
+ * `data.retryAfterMs` says when to retry. A `tools/call` that takes a screenshot (`screen_capture`,
+ * or a recognition tool with `image: "screen"`, roadmap P11 D39; see [RateLimiter.countsAsScreenshot])
+ * over the per-minute limit is answered as a tool result with `isError` and the `RATE_LIMITED`
+ * code, so the model reads the wait time instead of losing the transport.
  */
-fun Application.installRateLimit(server: Server, limiter: RateLimiter, screenshotTools: Set<String> = RateLimiter.SCREENSHOT_TOOLS) {
+fun Application.installRateLimit(
+    server: Server,
+    limiter: RateLimiter,
+    countsAsScreenshot: (name: String, arguments: JsonElement?) -> Boolean = RateLimiter::countsAsScreenshot,
+) {
     intercept(ApplicationCallPipeline.Plugins) {
         val identity = resolveIdentity(server, call.request.header(SESSION_HEADER), call.request.header(HttpHeaders.UserAgent), call.request.origin.remoteHost)
         val key = "${identity.name}@${call.request.origin.remoteHost}"
@@ -64,12 +70,16 @@ fun Application.installRateLimit(server: Server, limiter: RateLimiter, screensho
         }
 
         if (body == null || calls == null || calls.ids.isEmpty()) return@intercept
-        val screenshotCalls = screenshotCallsOf(body, screenshotTools)
+        val screenshotCalls = screenshotCallsOf(body, countsAsScreenshot)
         if (screenshotCalls.isEmpty()) return@intercept
         for (screenshot in screenshotCalls) {
             val shot = limiter.acquireScreenshot(key)
             if (shot.allowed) continue
-            val failure = ToolFailure.rateLimited(screenshot.name, shot.limit, shot.windowMs, shot.retryAfterMs)
+            val failure = if (screenshot.name in RateLimiter.SCREENSHOT_TOOLS) {
+                ToolFailure.rateLimited(screenshot.name, shot.limit, shot.windowMs, shot.retryAfterMs)
+            } else {
+                ToolFailure.screenReadRateLimited(screenshot.name, shot.limit, shot.windowMs, shot.retryAfterMs)
+            }
             val document = buildJsonObject {
                 put("jsonrpc", "2.0")
                 put("id", screenshot.id)
@@ -82,10 +92,10 @@ fun Application.installRateLimit(server: Server, limiter: RateLimiter, screensho
     }
 }
 
-private class ScreenshotCall(val id: kotlinx.serialization.json.JsonElement, val name: String)
+private class ScreenshotCall(val id: JsonElement, val name: String)
 
-/** The `tools/call` requests of [body] whose tool is one of [tools], in body order. */
-private fun screenshotCallsOf(body: ByteArray, tools: Set<String>): List<ScreenshotCall> {
+/** The `tools/call` requests of [body] that take a screenshot by [countsAsScreenshot], in body order. */
+private fun screenshotCallsOf(body: ByteArray, countsAsScreenshot: (String, JsonElement?) -> Boolean): List<ScreenshotCall> {
     val root = runCatching { Json.parseToJsonElement(String(body, Charsets.UTF_8)) }.getOrNull() ?: return emptyList()
     val elements = when (root) {
         is JsonArray -> root
@@ -96,8 +106,9 @@ private fun screenshotCallsOf(body: ByteArray, tools: Set<String>): List<Screens
         val id = request["id"] ?: return@mapNotNull null
         val method = runCatching { request["method"]?.jsonPrimitive?.contentOrNull }.getOrNull() ?: return@mapNotNull null
         if (method != METHOD_TOOLS_CALL) return@mapNotNull null
-        val name = runCatching { (request["params"] as? JsonObject)?.get("name")?.jsonPrimitive?.contentOrNull }.getOrNull() ?: return@mapNotNull null
-        if (name in tools) ScreenshotCall(id, name) else null
+        val params = request["params"] as? JsonObject
+        val name = runCatching { params?.get("name")?.jsonPrimitive?.contentOrNull }.getOrNull() ?: return@mapNotNull null
+        if (countsAsScreenshot(name, params?.get("arguments"))) ScreenshotCall(id, name) else null
     }
 }
 

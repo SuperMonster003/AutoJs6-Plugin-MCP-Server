@@ -1,5 +1,7 @@
 package io.github.supermonster003.autojs6.plugin.mcp.server.server
 
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolCatalog
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -87,6 +89,24 @@ class RateLimiterTest {
     }
 
     @Test
+    fun screenReadingRecognitionCallsCountAsScreenshotsButFilesDoNot() {
+        fun counts(name: String, arguments: String?) = RateLimiter.countsAsScreenshot(name, arguments?.let { Json.parseToJsonElement(it) })
+        assertTrue(counts("screen_capture", null))
+        assertTrue(counts("screen_capture", """{"maxWidth":64}"""))
+        assertTrue(counts("ocr_recognize", """{"image":"screen"}"""))
+        assertTrue(counts("barcode_detect", """{"image":" screen "}"""))
+        assertTrue(counts("opencv_find_image", """{"image":"screen","template":"t.png"}"""))
+        assertTrue(counts("opencv_find_multi_colors", """{"image":"screen","color":"#FFF","points":[]}"""))
+        assertFalse(counts("ocr_recognize", """{"image":"pics/screen.png"}"""))
+        assertFalse(counts("opencv_find_image", """{"image":"a.png","template":"screen"}"""))
+        assertFalse(counts("ocr_recognize", """{"image":"SCREEN"}"""))
+        assertFalse(counts("ocr_recognize", """{"image":true}"""))
+        assertFalse(counts("ocr_recognize", null))
+        assertFalse(counts("pinyin_convert", """{"text":"screen","image":"screen"}"""))
+        assertFalse(counts("device_ping", """{"image":"screen"}"""))
+    }
+
+    @Test
     fun defaultsMatchTheRoadmapAndRejectNonsense() {
         val defaults = RateLimits()
         assertEquals(20, defaults.requestsPerWindow)
@@ -94,6 +114,11 @@ class RateLimiterTest {
         assertEquals(30, defaults.screenshotsPerWindow)
         assertEquals(60_000L, defaults.screenshotWindowMs)
         assertEquals(setOf("screen_capture"), RateLimiter.SCREENSHOT_TOOLS)
+        assertEquals(setOf("ocr_recognize", "barcode_detect", "opencv_find_image", "opencv_find_color", "opencv_find_multi_colors"), RateLimiter.SCREEN_IMAGE_TOOLS)
+        assertTrue(ToolCatalog.Images.SCREEN_QUOTA_NOTE.contains("${RateLimits.SCREENSHOTS_PER_MINUTE} screenshots per minute"))
+        RateLimiter.SCREEN_IMAGE_TOOLS.forEach { name ->
+            assertTrue(name, ToolCatalog.byName.getValue(name).description.endsWith(ToolCatalog.Images.SCREEN_QUOTA_NOTE))
+        }
         assertTrue(runCatching { RateLimits(requestsPerWindow = 0) }.isFailure)
         assertTrue(runCatching { RateLimits(screenshotWindowMs = 0) }.isFailure)
     }

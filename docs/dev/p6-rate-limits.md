@@ -67,3 +67,21 @@ calls would need the host's capture consent and would take real screenshots.
   requests per second in normal use; 20 per second leaves headroom for
   `ui_wait_for` style polling while keeping a runaway loop from starving the
   host. The bridge's error table already names the `429` case.
+
+## P11 addendum: the shared screenshot window (D39, 2026-10-15)
+
+The plugin-family recognition tools take a screenshot inside AutoJs6 when their `image` argument is
+`"screen"` (`ocr_recognize`, `barcode_detect`, `opencv_find_image`, `opencv_find_color`,
+`opencv_find_multi_colors`; `RateLimiter.SCREEN_IMAGE_TOOLS` is every plugin-family row with an `image`
+property). Such a call draws from the same per-client window of 30 per 60 s as `screen_capture`
+(`RateLimiter.countsAsScreenshot`, which the interceptor now asks instead of matching tool names), so
+recognizing the screen cannot watch it faster than capturing it. An image file is not counted, nor is
+`"SCREEN"` or a path that merely contains the word. A refused recognition answers `RATE_LIMITED` with
+`retryAfterMs`, the message "<tool> with image "screen" takes a screenshot, and screenshots are limited
+to 30 per 60 s per client together with screen_capture" and the hint to wait or pass an image file;
+`screen_capture` keeps its own wording. The five tool descriptions end with the same note.
+
+Tests: `RateLimiterTest.screenReadingRecognitionCallsCountAsScreenshotsButFilesDoNot`,
+`RateLimitInterceptorTest.recognitionOfTheScreenSharesTheScreenshotWindowAndFilesDoNotCount`. Device:
+`tools/evidence/p11_screen_quota.py` (30 interleaved `screen_capture` / `opencv_find_color` /
+`barcode_detect` screen calls, the 31st refused, a file call not counted, recovery after the wait).
