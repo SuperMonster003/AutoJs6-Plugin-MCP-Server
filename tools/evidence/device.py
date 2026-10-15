@@ -25,6 +25,7 @@ PLUGIN_TEST_RUNNER = f"{PLUGIN_PACKAGE}.test/androidx.test.runner.AndroidJUnitRu
 EVIDENCE_HELPER = f"{PLUGIN_PACKAGE}.EvidenceHelperTest"
 HOST_PACKAGE = "org.autojs.autojs6"
 HOST_TEST_RUNNER = f"{HOST_PACKAGE}.test/androidx.test.runner.AndroidJUnitRunner"
+HOST_A11Y_SERVICE = f"{HOST_PACKAGE}/org.autojs.autojs.core.accessibility.AccessibilityServiceUsher"
 HOST_ROUND_TRIP = "org.autojs.autojs.core.plugin.mcp.McpServerPluginRoundTripTest#openServerReachesRunningWithTheHostAttachedAndStopsCleanly"
 HOST_HOLD_PROPERTY = "debug.autojs6.mcp.hold"
 DEFAULT_PORT = 9637
@@ -223,7 +224,8 @@ class Device:
 
         An already running listener with the host attached is reused as it is. Otherwise the host
         instrumentation opens a session on the default port, holds it for `hold_seconds`, then stops
-        and closes it; the test also restores the plugin enable state it changed.
+        and closes it; the test also restores the plugin enable state it changed. The instrumentation
+        restarts the host process, which leaves its accessibility service crashed; see `rebind_host_accessibility`.
         """
         state = self.plugin_state()
         if state["running"] and state.get("host") == "available":
@@ -254,6 +256,28 @@ class Device:
             else:
                 process.kill()
             self.shell("setprop", HOST_HOLD_PROPERTY, "0", check=False)
+
+    def host_accessibility_crashed(self) -> bool:
+        crashed = next((line for line in self.shell("dumpsys", "accessibility", check=False).splitlines() if "Crashed services" in line), "")
+        return HOST_A11Y_SERVICE in crashed
+
+    def rebind_host_accessibility(self, settle: float = 2.0) -> bool:
+        """Switches the AutoJs6 accessibility service off and on again so that it binds to the running host process.
+
+        A held host session restarts the host process, which leaves the service in "Crashed services"
+        (MIUI included); toggling the secure setting rebinds it (2026-10-15, Xiaomi 23046RP50C). The
+        setting ends as it was. Returns whether the service is enabled and no longer crashed.
+        """
+        current = self.shell("settings", "get", "secure", "enabled_accessibility_services").strip()
+        services = [s for s in current.split(":") if s and s != "null"]
+        if HOST_A11Y_SERVICE not in services:
+            return False
+        others = ":".join(s for s in services if s != HOST_A11Y_SERVICE)
+        self.shell("settings", "put", "secure", "enabled_accessibility_services", others or "null")
+        time.sleep(settle)
+        self.shell("settings", "put", "secure", "enabled_accessibility_services", current)
+        time.sleep(settle)
+        return not self.host_accessibility_crashed()
 
     # Package state -----------------------------------------------------------------------------
 

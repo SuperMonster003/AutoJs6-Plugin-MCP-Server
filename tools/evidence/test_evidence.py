@@ -4,8 +4,10 @@ from __future__ import annotations
 import json
 import os
 import pathlib
+import struct
 import sys
 import unittest
+import zlib
 from contextlib import nullcontext
 from unittest.mock import patch
 
@@ -14,6 +16,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from bridge_reopen import SESSION_ID, call_facts  # noqa: E402
 from device import PLUGIN_PACKAGE, PLUGIN_TEST_RUNNER, Device, DeviceError, scrub  # noqa: E402
 from docs_resources import content_facts, find_png, index_facts  # noqa: E402
+import image_fixtures as fx  # noqa: E402
 from mcp_client import PAIRING_REQUIRED, McpError, decode_messages, parse_sse  # noqa: E402
 from privileged import uid_name  # noqa: E402
 from session import evidence_session  # noqa: E402
@@ -192,6 +195,73 @@ class EvidenceToolTest(unittest.TestCase):
         self.assertEqual("10670(u0_a670)", uid_name("uid=10670(u0_a670) gid=10670(u0_a670) groups=3003(inet)"))
         self.assertIsNone(uid_name("permission denied"))
         self.assertIsNone(uid_name(None))
+
+
+class ImageFixtureTest(unittest.TestCase):
+    def test_png_round_trip_keeps_every_pixel(self):
+        canvas = fx.Canvas(7, 5)
+        canvas.fill(2, 1, 5, 4, fx.RED)
+        canvas.fill(0, 4, 7, 5, fx.BLUE)
+        width, height, rows = fx.decode_png(canvas.png())
+        self.assertEqual((7, 5), (width, height))
+        self.assertEqual(fx.RED, fx.pixel(rows, 2, 1))
+        self.assertEqual(fx.WHITE, fx.pixel(rows, 5, 1))
+        self.assertEqual(fx.BLUE, fx.pixel(rows, 6, 4))
+        self.assertEqual("#FF0000", fx.hex_color(fx.pixel(rows, 4, 3)))
+
+    def test_decoder_undoes_every_filter_type_of_an_rgba_png(self):
+        # Rows of 2 RGBA pixels, each row stored with a different filter (0 none, 1 sub, 2 up, 3 average, 4 Paeth).
+        source = [bytes([10 * y + x for x in range(8)]) for y in range(5)]
+
+        def paeth(a, b, c):
+            p = a + b - c
+            pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+            return a if pa <= pb and pa <= pc else b if pb <= pc else c
+
+        raw, previous = b"", bytes(8)
+        for kind, row in enumerate(source):
+            out = bytearray()
+            for i, value in enumerate(row):
+                left = row[i - 4] if i >= 4 else 0
+                up = previous[i]
+                up_left = previous[i - 4] if i >= 4 else 0
+                predictor = [0, left, up, (left + up) // 2, paeth(left, up, up_left)][kind]
+                out.append((value - predictor) & 0xFF)
+            raw += bytes([kind]) + bytes(out)
+            previous = row
+        png = fx.encode_png(2, 5, b"")
+        header = bytearray(png[:33])
+        header[25] = 6  # color type RGBA
+        header[29:33] = struct.pack(">I", zlib.crc32(bytes(header[12:29])) & 0xFFFFFFFF)
+        idat = zlib.compress(raw)
+        png = bytes(header) + struct.pack(">I", len(idat)) + b"IDAT" + idat + struct.pack(">I", zlib.crc32(b"IDAT" + idat) & 0xFFFFFFFF) + png[-12:]
+        width, height, rows = fx.decode_png(png)
+        self.assertEqual((2, 5), (width, height))
+        for y, row in enumerate(source):
+            self.assertEqual((row[0], row[1], row[2]), fx.pixel(rows, 0, y))
+            self.assertEqual((row[4], row[5], row[6]), fx.pixel(rows, 1, y))
+
+    def test_ean13_symbol_follows_the_module_tables(self):
+        self.assertEqual(1, fx.ean13_check_digit("400638133393"))
+        modules = fx.ean13_modules()
+        self.assertEqual(95, len(modules))
+        self.assertTrue(modules.startswith("101") and modules.endswith("101") and modules[45:50] == "01010")
+        # First digit 4 selects the parity LGLLGG; digit 0 in L is 0001101, digit 0 in G is 0100111.
+        self.assertEqual("0001101", modules[3:10])
+        self.assertEqual("0100111", modules[10:17])
+        with self.assertRaises(ValueError):
+            fx.ean13_modules("4006381333932")
+        self.assertEqual((95 + 22) * 4, fx.ean13(4, 10).width)
+
+    def test_fixture_facts_point_at_the_drawn_content(self):
+        files = fx.fixtures()
+        _w, _h, rows = fx.decode_png(files["colors.png"]["png"])
+        self.assertEqual(fx.RED, fx.pixel(rows, *files["colors.png"]["red"]))
+        self.assertEqual(fx.BLUE, fx.pixel(rows, 620, 100))
+        self.assertEqual((450, 150), files["ean13.png"]["center"])
+        self.assertEqual((2468, 500), files["ean13-5000.png"]["center"])
+        self.assertEqual((330, 140), files["scene.png"]["center"])
+        self.assertTrue(all(len(f["png"]) < 48 * 1024 for f in files.values()), {k: len(f["png"]) for k, f in files.items()})
 
 
 if __name__ == "__main__":
