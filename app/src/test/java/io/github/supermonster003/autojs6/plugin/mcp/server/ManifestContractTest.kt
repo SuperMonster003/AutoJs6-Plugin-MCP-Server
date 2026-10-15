@@ -23,13 +23,17 @@ class ManifestContractTest {
     }
 
     @Test
-    fun `manifest declares the plugin permission and queries the host package`() {
+    fun `manifest declares the plugin permission and queries the host and the plugins`() {
         val permissions = manifest.children("uses-permission").map { it.androidAttribute("name") }
         assertTrue(PLUGIN_PERMISSION in permissions)
         assertTrue("android.permission.INTERNET" in permissions)
 
-        val queried = manifest.child("queries").children("package").map { it.androidAttribute("name") }
+        val queries = manifest.child("queries")
+        val queried = queries.children("package").map { it.androidAttribute("name") }
         assertEquals(listOf(McpServerPlugin.HOST_PACKAGE_NAME), queried)
+        // The plugins themselves become visible through their wake activities, so their package broadcasts arrive (P11 D28).
+        val intents = queries.children("intent").map { intent -> intent.children("action").map { it.androidAttribute("name") } }
+        assertEquals(listOf(listOf("org.autojs.plugin.action.WAKE")), intents)
     }
 
     @Test

@@ -18,6 +18,15 @@
 
     <queries>
         <package android:name="org.autojs.autojs6" />
+        <!--
+            Every AutoJs6 plugin declares a wake activity for this action. Seeing those packages lets
+            the listener receive their install, removal and enable / disable broadcasts (package
+            visibility, Android 11+), so the tool list of the plugin-family groups follows them
+            without waiting for a request (roadmap P11 D28).
+        -->
+        <intent>
+            <action android:name="org.autojs.plugin.action.WAKE" />
+        </intent>
     </queries>
 
     <!--
