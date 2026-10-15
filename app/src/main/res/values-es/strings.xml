@@ -62,10 +62,16 @@
     <string name="settings_developer_warning">Activar acceso del navegador local para MCP Inspector y lectura del token por adb? La autenticación y la vinculación siguen siendo necesarias. El servidor se reiniciará.</string>
     <string name="settings_failed">No se puede iniciar. Comprueba el puerto y la red.</string>
     <string name="settings_generic_hint">Usa esta entrada HTTP en un cliente compatible con JSON mcpServers y cabeceras Authorization.</string>
+    <string name="settings_group_barcode">Reconocimiento de códigos de barras (plugin Barcode)</string>
     <string name="settings_group_delete">Eliminación de archivos</string>
     <string name="settings_group_device">Dispositivo y aplicaciones</string>
     <string name="settings_group_files">Archivos del espacio de trabajo</string>
     <string name="settings_group_gestures">Gestos por coordenadas</string>
+    <string name="settings_group_mediainfo">Metadatos multimedia (plugin MediaInfo)</string>
+    <string name="settings_group_ocr">Reconocimiento de texto (plugins OCR)</string>
+    <string name="settings_group_opencv">Búsqueda de imágenes y colores (plugin OpenCV)</string>
+    <string name="settings_group_pinyin">Conversión a pinyin (plugin Pinyin)</string>
+    <string name="settings_group_pinyin4j">Conversión a pinyin (plugin Pinyin4j)</string>
     <string name="settings_group_screen">Capturas de pantalla</string>
     <string name="settings_group_script">Scripts y consola</string>
     <string name="settings_group_shell">Comandos Shell</string>
@@ -93,6 +99,7 @@
     <string name="settings_notifications_off_host">Las notificaciones de MCP Server están desactivadas, así que una solicitud de emparejamiento desde un ordenador solo aparece mientras esta página o AutoJs6 están en primer plano. Permite las notificaciones para confirmar solicitudes desde cualquier pantalla.</string>
     <string name="settings_open_host">Abrir AutoJs6</string>
     <string name="settings_paired_clients">Clientes vinculados</string>
+    <string name="settings_plugin_groups_hint">Los grupos siguientes necesitan un plugin de AutoJs6. Sus herramientas solo aparecen en la lista de herramientas del cliente mientras el plugin correspondiente está instalado y habilitado en AutoJs6.</string>
     <string name="settings_port">Puerto</string>
     <string name="settings_port_hint">Introduce un puerto entre 1024 y 65535.</string>
     <string name="settings_port_value">Puerto: %1$d</string>

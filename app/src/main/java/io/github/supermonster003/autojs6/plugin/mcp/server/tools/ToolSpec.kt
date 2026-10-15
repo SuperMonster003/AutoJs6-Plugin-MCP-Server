@@ -43,6 +43,11 @@ data class ToolSpec(
     val timeoutMs: Long = McpServerContract.DEFAULT_TOOL_TIMEOUT_MS,
     val maxTimeoutMs: Long = timeoutMs,
     val hints: ToolHints = ToolHints(),
+    /**
+     * Every host method the tool may call (a flow calls several); defaults to [bridge]. For a
+     * plugin-family group the registry lists the tool only while the session grant covers all of them.
+     */
+    val hostMethods: List<BridgeMethod> = listOfNotNull(bridge),
 ) {
 
     val defaultEnabled: Boolean
@@ -88,6 +93,7 @@ data class ToolSpec(
         put("permissions", JsonArray(permissions.map { JsonPrimitive(it) }))
         put("timeoutMs", timeoutMs)
         put("maxTimeoutMs", maxTimeoutMs)
+        if (hostMethods != listOfNotNull(bridge)) put("hostMethods", JsonArray(hostMethods.map { JsonPrimitive(it.key) }))
         put("annotations", buildJsonObject {
             put("readOnlyHint", hints.readOnly)
             put("destructiveHint", hints.destructive)

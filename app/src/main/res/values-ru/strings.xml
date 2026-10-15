@@ -62,10 +62,16 @@
     <string name="settings_developer_warning">Включить локальный браузер для MCP Inspector и чтение токена через adb? Проверка токена и сопряжение остаются обязательными. Сервер будет перезапущен.</string>
     <string name="settings_failed">Не удалось запустить. Проверьте порт и сеть.</string>
     <string name="settings_generic_hint">Используйте эту запись HTTP в клиенте с поддержкой JSON mcpServers и заголовков Authorization.</string>
+    <string name="settings_group_barcode">Распознавание штрихкодов (плагин Barcode)</string>
     <string name="settings_group_delete">Удаление файлов</string>
     <string name="settings_group_device">Устройство и приложения</string>
     <string name="settings_group_files">Файлы рабочей области</string>
     <string name="settings_group_gestures">Жесты по координатам</string>
+    <string name="settings_group_mediainfo">Метаданные медиафайлов (плагин MediaInfo)</string>
+    <string name="settings_group_ocr">Распознавание текста (плагины OCR)</string>
+    <string name="settings_group_opencv">Поиск изображений и цветов (плагин OpenCV)</string>
+    <string name="settings_group_pinyin">Преобразование в пиньинь (плагин Pinyin)</string>
+    <string name="settings_group_pinyin4j">Преобразование в пиньинь (плагин Pinyin4j)</string>
     <string name="settings_group_screen">Снимки экрана</string>
     <string name="settings_group_script">Скрипты и консоль</string>
     <string name="settings_group_shell">Команды Shell</string>
@@ -93,6 +99,7 @@
     <string name="settings_notifications_off_host">Уведомления MCP Server отключены, поэтому запрос сопряжения с компьютера появляется, только пока на переднем плане эта страница или AutoJs6. Разрешите уведомления, чтобы подтверждать запросы с любого экрана.</string>
     <string name="settings_open_host">Открыть AutoJs6</string>
     <string name="settings_paired_clients">Сопряженные клиенты</string>
+    <string name="settings_plugin_groups_hint">Группам ниже нужен плагин AutoJs6. Их инструменты появляются в списке инструментов клиента только пока соответствующий плагин установлен и включен в AutoJs6.</string>
     <string name="settings_port">Порт</string>
     <string name="settings_port_hint">Введите порт от 1024 до 65535.</string>
     <string name="settings_port_value">Порт: %1$d</string>

@@ -62,10 +62,16 @@
     <string name="settings_developer_warning">MCP Inspector의 로컬 브라우저 접근과 adb 진단 토큰 읽기를 허용할까요? 인증과 페어링은 계속 필요합니다. 리스너 재시작으로 적용됩니다.</string>
     <string name="settings_failed">시작할 수 없습니다. 포트와 네트워크를 확인하세요.</string>
     <string name="settings_generic_hint">mcpServers JSON과 Authorization 헤더를 지원하는 클라이언트에서 이 HTTP 서버 항목을 사용하세요.</string>
+    <string name="settings_group_barcode">바코드 인식 (Barcode 플러그인)</string>
     <string name="settings_group_delete">파일 삭제</string>
     <string name="settings_group_device">기기 및 앱</string>
     <string name="settings_group_files">작업 공간 파일</string>
     <string name="settings_group_gestures">좌표 제스처</string>
+    <string name="settings_group_mediainfo">미디어 정보 (MediaInfo 플러그인)</string>
+    <string name="settings_group_ocr">문자 인식 (OCR 플러그인)</string>
+    <string name="settings_group_opencv">이미지 및 색상 찾기 (OpenCV 플러그인)</string>
+    <string name="settings_group_pinyin">병음 변환 (Pinyin 플러그인)</string>
+    <string name="settings_group_pinyin4j">병음 변환 (Pinyin4j 플러그인)</string>
     <string name="settings_group_screen">스크린샷</string>
     <string name="settings_group_script">스크립트 및 콘솔</string>
     <string name="settings_group_shell">Shell 명령</string>
@@ -93,6 +99,7 @@
     <string name="settings_notifications_off_host">MCP Server 알림이 꺼져 있어 컴퓨터의 페어링 요청은 이 페이지나 AutoJs6가 앞에 표시된 동안에만 나타납니다. 알림을 허용하면 어느 화면에서든 요청을 확인할 수 있습니다.</string>
     <string name="settings_open_host">AutoJs6 열기</string>
     <string name="settings_paired_clients">페어링된 클라이언트</string>
+    <string name="settings_plugin_groups_hint">아래 그룹은 AutoJs6 플러그인이 필요합니다. 해당 플러그인이 AutoJs6에 설치되어 활성화된 동안에만 그 도구가 클라이언트 도구 목록에 나타납니다.</string>
     <string name="settings_port">포트</string>
     <string name="settings_port_hint">1024부터 65535까지의 포트를 입력하세요.</string>
     <string name="settings_port_value">포트: %1$d</string>

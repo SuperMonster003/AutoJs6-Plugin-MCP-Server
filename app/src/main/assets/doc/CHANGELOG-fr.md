@@ -8,6 +8,7 @@
 
 ###### 2026/10/15
 
+* `Fonctionnalité` Six groupes d'outils de plugins avec leurs propres interrupteurs (reconnaissance de texte OCR, reconnaissance de codes-barres, recherche d'images et de couleurs OpenCV, conversion en pinyin Pinyin et Pinyin4j, métadonnées multimédia MediaInfo): leurs outils n'apparaissent dans la liste d'outils du client que lorsque le plugin AutoJs6 correspondant est installé et activé, la liste se met à jour après l'installation, la suppression ou la mise à jour d'un plugin, et l'appel d'un outil dont le plugin manque en explique la raison (PLUGIN_UNAVAILABLE)
 * `Correctif` Les scripts de collecte de preuves sur appareil lançaient un APK de test de débogage restant contre la version de production et faisaient planter le processus de l'application
 * `Amélioration` Avec AutoJs6 6.8.0 build 5333 ou ultérieur, l'avis de notifications désactivées de la page des paramètres indique que les demandes d'appairage apparaissent aussi lorsque AutoJs6 est au premier plan
 

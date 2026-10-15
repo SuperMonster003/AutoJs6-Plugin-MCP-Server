@@ -156,6 +156,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
         card(R.string.settings_tools).also { box ->
             label(getString(R.string.settings_tools_hint), box).setTextColor(secondary)
             ToolGroup.entries.forEach { group ->
+                if (group == ToolGroup.PLUGIN_FAMILIES.firstOrNull()) label(getString(R.string.settings_plugin_groups_hint), box).setTextColor(secondary)
                 val title = groupTitle(group)
                 groupSwitches[group] = toggle(title, box) { enabled ->
                     val save = { work { groups.update { it.with(group, enabled) }; McpSettingsReceiver.send(this, McpSettingsReceiver.REFRESH) } }
@@ -468,6 +469,12 @@ class McpServerSettingsActivity : SettingsPageActivity() {
             ToolGroup.FILES_DELETE -> R.string.settings_group_delete
             ToolGroup.DEVICE -> R.string.settings_group_device
             ToolGroup.SHELL -> R.string.settings_group_shell
+            ToolGroup.OCR -> R.string.settings_group_ocr
+            ToolGroup.BARCODE -> R.string.settings_group_barcode
+            ToolGroup.OPENCV -> R.string.settings_group_opencv
+            ToolGroup.PINYIN -> R.string.settings_group_pinyin
+            ToolGroup.PINYIN4J -> R.string.settings_group_pinyin4j
+            ToolGroup.MEDIAINFO -> R.string.settings_group_mediainfo
         }
         private fun clientTitle(client: McpClient): Int = when (client) {
             McpClient.CLAUDE_CODE -> R.string.settings_client_claude

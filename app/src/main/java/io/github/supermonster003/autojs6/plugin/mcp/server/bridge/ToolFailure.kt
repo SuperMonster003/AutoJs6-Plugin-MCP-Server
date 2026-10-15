@@ -8,6 +8,9 @@ import kotlinx.serialization.json.put
 object ToolErrorCodes {
 
     const val TOOL_DISABLED = "TOOL_DISABLED"
+
+    /** A plugin-family tool (roadmap P11 D27) whose AutoJs6 plugin is not installed, disabled, or incompatible. */
+    const val PLUGIN_UNAVAILABLE = "PLUGIN_UNAVAILABLE"
     const val HOST_UNAVAILABLE = "HOST_UNAVAILABLE"
     const val A11Y_SERVICE_NOT_RUNNING = "A11Y_SERVICE_NOT_RUNNING"
     const val NODE_REF_STALE = "NODE_REF_STALE"
@@ -67,11 +70,23 @@ data class ToolFailure(
         const val HINT_TIMEOUT = "raise timeoutMs or split the work into smaller calls"
         const val HINT_RATE = "retry after a short pause"
         const val HINT_LIMIT = "reduce the request or result size, or wait for running calls to finish"
+        const val HINT_PLUGIN = "install and enable the plugin in the AutoJs6 plugin center, then call tools/list again; " +
+                "device_info lists the plugin families and their state"
 
         fun toolDisabled(toolName: String, groupId: String): ToolFailure = ToolFailure(
             ToolErrorCodes.TOOL_DISABLED,
             "tool $toolName is switched off by the $groupId group",
             "enable the group in the plugin settings on the phone",
+        )
+
+        /** A plugin-family tool whose family the host reports as anything but available (roadmap P11 D27). */
+        fun pluginUnavailable(toolName: String, family: String, state: String, detail: String?): ToolFailure = ToolFailure(
+            ToolErrorCodes.PLUGIN_UNAVAILABLE,
+            buildString {
+                append("tool ").append(toolName).append(" needs the ").append(family).append(" plugin family, which is ").append(state)
+                detail?.takeIf { it.isNotBlank() }?.let { append(": ").append(it) }
+            },
+            HINT_PLUGIN,
         )
 
         fun hostUnavailable(detail: String? = null): ToolFailure = ToolFailure(

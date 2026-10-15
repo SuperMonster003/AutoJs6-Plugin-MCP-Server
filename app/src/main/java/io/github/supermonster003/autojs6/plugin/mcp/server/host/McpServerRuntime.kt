@@ -27,6 +27,7 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerLifecycle
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerStatusStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.CatalogToolExecutor
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.HostSnapshots
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.PluginFamilyProbe
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolCatalog
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolPermissionStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolRegistry
@@ -102,9 +103,16 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
     private val deviceTools = DeviceTools()
     private val shellTools = ShellTools { toolPermissions.load() }
 
+    /** Soft probe of the plugin families behind the plugin-family tool groups (roadmap P11 D27 / D28). */
+    val pluginFamilies: PluginFamilyProbe = PluginFamilyProbe({ bridge })
+
+    /** Package changes while the listener runs re-probe the families and may change the tool list. */
+    private val packageWatcher = PackageChangeWatcher(this.context, mainHandler) { refreshPluginTools("package change") }
+
     val registry: ToolRegistry = ToolRegistry(
         catalog = ToolCatalog.all,
         permissions = { toolPermissions.load() },
+        availability = { pluginFamilies.current() },
         executor = CatalogToolExecutor(
             bridge = { bridge },
             local = mapOf(ToolCatalog.DEVICE_PING to { DevicePingTool.payload(this.context, info) }),
@@ -196,6 +204,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
             ensureForeground()
             scheduleIdleStop()
             warnIfBackgroundRestricted()
+            packageWatcher.start()
         } else {
             activeConfig = null
         }
@@ -211,6 +220,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
         }
         activeConfig = null
         mainHandler.removeCallbacks(idleStopTask)
+        packageWatcher.stop()
         server.stop()
         nodeRefs.clear()
         leaveForeground()
@@ -321,7 +331,10 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
             ServerStatusStore(context).save(statusSnapshot())
             session.publishStatus()
             refreshNotification()
-            if (status.isRunning) probeHost(session)
+            if (status.isRunning) {
+                probeHost(session)
+                refreshPluginTools("session opened")
+            }
         }
         return session
     }
@@ -373,6 +386,23 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
         }
         session.detach()
         refreshNotification()
+        refreshPluginTools("session closed")
+    }
+
+    /**
+     * Drops the plugin-family probe cache and re-registers the tools; a changed list reaches the
+     * connected clients as `notifications/tools/list_changed` without waiting for their next request.
+     */
+    private fun refreshPluginTools(cause: String) {
+        pluginFamilies.invalidate()
+        if (!server.isRunning) return
+        scope.launch {
+            try {
+                if (registry.refresh()) Log.i(TAG, "Tool list changed ($cause): ${registry.enabledNames.size} tools; plugin families ${pluginFamilies.last.describe()}")
+            } catch (error: Exception) {
+                Log.w(TAG, "Tool list refresh failed after $cause (${error.javaClass.simpleName})")
+            }
+        }
     }
 
     /** stop/close keep their synchronous Binder contract, ordered after any queued startup. */
@@ -414,6 +444,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
         Log.w(TAG, "AutoJs6 died; session ${current.id} is degraded until the host opens a new one")
         refreshNotification()
         ServerStatusStore(context).save(statusSnapshot())
+        refreshPluginTools("host died")
     }
 
     /** One `device.info` round trip after attach, which also proves the P1 Binder path in the log. */
@@ -555,6 +586,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
             out.println("hostSession: ${current.id} uid=${current.ownerUid} contract=v${current.contractVersion} open=${current.isOpen} host=${current.bridge.availability.id} broker=${grant.brokerId ?: "?"} methods=${grant.methods.size} calls=${current.bridge.callCount}")
         }
         out.println("toolGroups: ${ToolCatalog.summary(toolPermissions.load())}")
+        out.println("pluginFamilies: ${pluginFamilies.last.describe()} probes=${pluginFamilies.probeCount}")
         out.println("tools: ${registry.enabledNames.joinToString(",")}")
         out.println("nodeRefs: ${nodeRefs.describe()}")
     }

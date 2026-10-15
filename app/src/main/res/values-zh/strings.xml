@@ -62,10 +62,16 @@
     <string name="settings_developer_warning">启用 MCP Inspector 的本机浏览器访问, 并允许 adb 诊断读取令牌? 仍需鉴权和配对. 监听器重启后生效.</string>
     <string name="settings_failed">启动失败. 请检查端口和网络.</string>
     <string name="settings_generic_hint">在支持 mcpServers JSON 和 Authorization 请求头的客户端中使用此 HTTP 服务器条目.</string>
+    <string name="settings_group_barcode">条码识别 (Barcode 插件)</string>
     <string name="settings_group_delete">文件删除</string>
     <string name="settings_group_device">设备和应用</string>
     <string name="settings_group_files">工作区文件</string>
     <string name="settings_group_gestures">坐标手势</string>
+    <string name="settings_group_mediainfo">媒体信息 (MediaInfo 插件)</string>
+    <string name="settings_group_ocr">文字识别 (OCR 插件)</string>
+    <string name="settings_group_opencv">找图找色 (OpenCV 插件)</string>
+    <string name="settings_group_pinyin">拼音转换 (Pinyin 插件)</string>
+    <string name="settings_group_pinyin4j">拼音转换 (Pinyin4j 插件)</string>
     <string name="settings_group_screen">屏幕截图</string>
     <string name="settings_group_script">脚本和控制台</string>
     <string name="settings_group_shell">Shell 命令</string>
@@ -93,6 +99,7 @@
     <string name="settings_notifications_off_host">MCP Server 的通知已关闭, 来自电脑的配对请求只会在本页或 AutoJs6 位于前台时出现. 允许通知后可在任何界面确认请求.</string>
     <string name="settings_open_host">打开 AutoJs6</string>
     <string name="settings_paired_clients">已配对客户端</string>
+    <string name="settings_plugin_groups_hint">以下分组需要 AutoJs6 插件. 其工具只在对应插件已在 AutoJs6 中安装并启用时出现在客户端工具列表中.</string>
     <string name="settings_port">端口</string>
     <string name="settings_port_hint">请输入 1024 至 65535 之间的端口.</string>
     <string name="settings_port_value">端口: %1$d</string>

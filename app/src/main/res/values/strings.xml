@@ -62,10 +62,16 @@
     <string name="settings_developer_warning">Enable local browser access for MCP Inspector and token access through adb diagnostics? Authentication and pairing remain required. Restarting the listener applies the change.</string>
     <string name="settings_failed">Cannot start. Check the port and network.</string>
     <string name="settings_generic_hint">Use this HTTP server entry in a client that supports mcpServers JSON and Authorization headers.</string>
+    <string name="settings_group_barcode">Barcode recognition (Barcode plugin)</string>
     <string name="settings_group_delete">File deletion</string>
     <string name="settings_group_device">Device and apps</string>
     <string name="settings_group_files">Workspace files</string>
     <string name="settings_group_gestures">Coordinate gestures</string>
+    <string name="settings_group_mediainfo">Media metadata (MediaInfo plugin)</string>
+    <string name="settings_group_ocr">Text recognition (OCR plugins)</string>
+    <string name="settings_group_opencv">Image and color search (OpenCV plugin)</string>
+    <string name="settings_group_pinyin">Pinyin conversion (Pinyin plugin)</string>
+    <string name="settings_group_pinyin4j">Pinyin conversion (Pinyin4j plugin)</string>
     <string name="settings_group_screen">Screenshots</string>
     <string name="settings_group_script">Scripts and console</string>
     <string name="settings_group_shell">Shell commands</string>
@@ -93,6 +99,7 @@
     <string name="settings_notifications_off_host">Notifications are off for MCP Server, so a pairing request from a computer only appears while this page or AutoJs6 is in the foreground. Allow notifications to confirm requests from anywhere.</string>
     <string name="settings_open_host">Open AutoJs6</string>
     <string name="settings_paired_clients">Paired clients</string>
+    <string name="settings_plugin_groups_hint">The groups below need an AutoJs6 plugin. Their tools appear in the client tool list only while the matching plugin is installed and enabled in AutoJs6.</string>
     <string name="settings_port">Port</string>
     <string name="settings_port_hint">Enter a port from 1024 to 65535.</string>
     <string name="settings_port_value">Port: %1$d</string>

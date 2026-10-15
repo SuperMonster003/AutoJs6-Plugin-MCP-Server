@@ -20,7 +20,7 @@ class ToolPermissionsTest {
 
         val encoded = permissions.encode()
         assertEquals(
-            """{"format":1,"allowShellRoot":false,"groups":{"script":false,"ui":true,"ui_gesture":false,"screen":true,"files":true,"files_delete":false,"device":true,"shell":true}}""",
+            """{"format":1,"allowShellRoot":false,"groups":{"script":false,"ui":true,"ui_gesture":false,"screen":true,"files":true,"files_delete":false,"device":true,"shell":true,"ocr":true,"barcode":true,"opencv":true,"pinyin":true,"pinyin4j":true,"mediainfo":true}}""",
             encoded,
         )
         val decoded = ToolPermissions.decode(encoded)

@@ -670,6 +670,7 @@ MCP 插件 (1.3.0):
 | `UNAUTHORIZED` (HTTP 401) | 令牌缺失或错误 | - |
 | `PAIRING_REQUIRED` / `PAIRING_DENIED` | 未配对 / 被拒绝或冷却中 | - |
 | `TOOL_DISABLED` | 工具组被禁用 | - |
+| `PLUGIN_UNAVAILABLE` | 插件家族工具对应的 AutoJs6 插件未安装, 已禁用或版本不兼容, 或宿主无法报告插件状态 (P11 D27); 此时工具也不在 `tools/list` 中, 消息附宿主的 detail | - |
 | `HOST_UNAVAILABLE` | 宿主未绑定或代理死亡 | `process-dead` / `unavailable` |
 | `A11Y_SERVICE_NOT_RUNNING` | 无障碍服务未运行 | `unavailable` (accessibility) |
 | `NODE_REF_STALE` / `NODE_NOT_FOUND` | 节点引用失效 / 选择器无命中 | `invalid-request` / 空结果 |

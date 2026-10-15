@@ -73,11 +73,21 @@ class ToolCatalogTest {
             "files_delete" to false,
             "device" to true,
             "shell" to false,
+            // Plugin families (roadmap P11 D27): read-only tools, on by default, listed only while the plugin is available.
+            "ocr" to true,
+            "barcode" to true,
+            "opencv" to true,
+            "pinyin" to true,
+            "pinyin4j" to true,
+            "mediainfo" to true,
         )
         assertEquals(expected, ToolGroup.entries.associate { it.id to it.defaultEnabled })
         assertEquals(expected.keys.toList(), ToolGroup.IDS)
         assertEquals(ToolGroup.UI_GESTURE, ToolGroup.fromId("ui_gesture"))
         assertEquals(null, ToolGroup.fromId("nope"))
+        assertEquals(listOf("ocr", "barcode", "opencv", "pinyin", "pinyin4j", "mediainfo"), ToolGroup.PLUGIN_FAMILIES.map { it.id })
+        ToolGroup.PLUGIN_FAMILIES.forEach { group -> assertEquals(group.id, group.family) }
+        ToolGroup.entries.filter { !it.isPluginFamily }.forEach { group -> assertEquals(null, group.family) }
     }
 
     @Test
@@ -87,9 +97,11 @@ class ToolCatalogTest {
         assertEquals(SCRIPT_NAMES + UI_NAMES + SCREEN_NAMES + DEFAULT_FILE_NAMES, ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.DEVICE, false)).map { it.name })
         assertEquals(DEVICE_NAMES + SCRIPT_NAMES + SCREEN_NAMES + DEFAULT_FILE_NAMES + NEW_DEVICE_NAMES, ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.UI, false)).map { it.name })
         assertEquals(ToolCatalog.all.map { it.name }, ToolCatalog.enabled(ToolPermissions.DEFAULT.with(ToolGroup.UI_GESTURE, true).with(ToolGroup.FILES_DELETE, true).with(ToolGroup.SHELL, true)).map { it.name })
-        assertEquals(ToolGroup.entries, ToolCatalog.groups)
+        // Every built-in group has rows; a plugin-family group joins the capability list once its tools exist.
+        assertEquals(ToolGroup.entries.filter { group -> ToolCatalog.all.any { it.group == group } }, ToolCatalog.groups)
+        assertTrue(ToolCatalog.groups.containsAll(ToolGroup.entries.filter { !it.isPluginFamily }))
         assertEquals(
-            """{"script":true,"ui":true,"ui_gesture":false,"screen":true,"files":true,"files_delete":false,"device":true,"shell":false}""",
+            """{"script":true,"ui":true,"ui_gesture":false,"screen":true,"files":true,"files_delete":false,"device":true,"shell":false,"ocr":true,"barcode":true,"opencv":true,"pinyin":true,"pinyin4j":true,"mediainfo":true}""",
             ToolCatalog.summary(ToolPermissions.DEFAULT),
         )
     }

@@ -62,10 +62,16 @@
     <string name="settings_developer_warning">تفعيل الوصول من المتصفح المحلي لـ MCP Inspector وقراءة الرمز عبر تشخيص adb? تظل المصادقة والاقتران مطلوبين. يطبق التغيير بإعادة تشغيل المستمع.</string>
     <string name="settings_failed">تعذر البدء. تحقق من المنفذ والشبكة.</string>
     <string name="settings_generic_hint">استخدم إدخال خادم HTTP هذا في عميل يدعم mcpServers JSON وترويسات Authorization.</string>
+    <string name="settings_group_barcode">التعرف على الباركود (إضافة Barcode)</string>
     <string name="settings_group_delete">حذف الملفات</string>
     <string name="settings_group_device">الجهاز والتطبيقات</string>
     <string name="settings_group_files">ملفات مساحة العمل</string>
     <string name="settings_group_gestures">إيماءات الإحداثيات</string>
+    <string name="settings_group_mediainfo">البيانات الوصفية للوسائط (إضافة MediaInfo)</string>
+    <string name="settings_group_ocr">التعرف على النص (إضافات OCR)</string>
+    <string name="settings_group_opencv">البحث عن الصور والألوان (إضافة OpenCV)</string>
+    <string name="settings_group_pinyin">التحويل إلى بينيين (إضافة Pinyin)</string>
+    <string name="settings_group_pinyin4j">التحويل إلى بينيين (إضافة Pinyin4j)</string>
     <string name="settings_group_screen">لقطات الشاشة</string>
     <string name="settings_group_script">البرامج ووحدة التحكم</string>
     <string name="settings_group_shell">أوامر Shell</string>
@@ -93,6 +99,7 @@
     <string name="settings_notifications_off_host">إشعارات MCP Server متوقفة, لذلك لا يظهر طلب الاقتران من الكمبيوتر إلا أثناء ظهور هذه الصفحة أو AutoJs6 في المقدمة. اسمح بالإشعارات لتأكيد الطلبات من أي مكان.</string>
     <string name="settings_open_host">فتح AutoJs6</string>
     <string name="settings_paired_clients">العملاء المقترنون</string>
+    <string name="settings_plugin_groups_hint">تحتاج المجموعات أدناه إلى إضافة AutoJs6. تظهر أدواتها في قائمة أدوات العميل فقط عندما تكون الإضافة المقابلة مثبتة ومفعلة في AutoJs6.</string>
     <string name="settings_port">المنفذ</string>
     <string name="settings_port_hint">أدخل منفذا من 1024 إلى 65535.</string>
     <string name="settings_port_value">المنفذ: %1$d</string>

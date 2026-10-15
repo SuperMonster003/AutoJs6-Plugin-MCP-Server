@@ -62,10 +62,16 @@
     <string name="settings_developer_warning">MCP Inspector のローカルブラウザー接続と adb 診断でのトークン表示を有効にしますか? 認証とペアリングは必要です. リスナー再起動で適用します.</string>
     <string name="settings_failed">起動できません. ポートとネットワークを確認してください.</string>
     <string name="settings_generic_hint">mcpServers JSON と Authorization ヘッダーに対応したクライアントで使用してください.</string>
+    <string name="settings_group_barcode">バーコード認識 (Barcode プラグイン)</string>
     <string name="settings_group_delete">ファイル削除</string>
     <string name="settings_group_device">デバイスとアプリ</string>
     <string name="settings_group_files">ワークスペースのファイル</string>
     <string name="settings_group_gestures">座標ジェスチャー</string>
+    <string name="settings_group_mediainfo">メディア情報 (MediaInfo プラグイン)</string>
+    <string name="settings_group_ocr">文字認識 (OCR プラグイン)</string>
+    <string name="settings_group_opencv">画像と色の検索 (OpenCV プラグイン)</string>
+    <string name="settings_group_pinyin">ピンイン変換 (Pinyin プラグイン)</string>
+    <string name="settings_group_pinyin4j">ピンイン変換 (Pinyin4j プラグイン)</string>
     <string name="settings_group_screen">スクリーンショット</string>
     <string name="settings_group_script">スクリプトとコンソール</string>
     <string name="settings_group_shell">Shell コマンド</string>
@@ -93,6 +99,7 @@
     <string name="settings_notifications_off_host">MCP Server の通知がオフのため, パソコンからのペアリング要求はこのページまたは AutoJs6 が前面にある間しか表示されません. 通知を許可すると, どの画面でも要求を確認できます.</string>
     <string name="settings_open_host">AutoJs6 を開く</string>
     <string name="settings_paired_clients">ペアリング済みクライアント</string>
+    <string name="settings_plugin_groups_hint">以下のグループには AutoJs6 プラグインが必要です. 対応するプラグインが AutoJs6 にインストールされ有効な間だけ, そのツールがクライアントのツール一覧に表示されます.</string>
     <string name="settings_port">ポート</string>
     <string name="settings_port_hint">1024 から 65535 のポートを入力してください.</string>
     <string name="settings_port_value">ポート: %1$d</string>

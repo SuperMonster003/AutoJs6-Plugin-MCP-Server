@@ -24,13 +24,21 @@ fun interface ToolExecutor {
 
 /**
  * Registers the enabled rows of the catalog on the SDK server, in catalog order, and keeps the
- * registration in step with the group switches (roadmap P2.3, decision D6): [refresh] adds and
+ * registration in step with the group switches (roadmap P2.3, decision D6) and with the plugin
+ * families the host reports (roadmap P11, decisions D27 / D28): [refresh] re-reads both, adds and
  * removes tools and sends `notifications/tools/list_changed` when something changed, and
- * [disabledFailure] answers calls to switched-off tools through the tool gate.
+ * [disabledFailure] answers calls to switched-off or unavailable tools through the tool gate.
+ *
+ * A plugin-family row ([ToolGroup.isPluginFamily]) is listed only while its group is on, the open
+ * session grants every host method it uses, and the host reports its family as available; the
+ * [availability] probe supplies that state (cached for a few seconds) and starts out as
+ * [PluginToolAvailability.NONE] on [install], so the rows join on the first [refresh], which the
+ * tool gate runs before every `tools/list` and `tools/call`.
  */
 class ToolRegistry(
     private val catalog: List<ToolSpec>,
     private val permissions: () -> ToolPermissions,
+    private val availability: suspend () -> PluginToolAvailability = { PluginToolAvailability.NONE },
     private val executor: ToolExecutor,
 ) : ToolGate {
 
@@ -42,19 +50,27 @@ class ToolRegistry(
     @Volatile
     private var current: ToolPermissions = ToolPermissions.DEFAULT
 
+    @Volatile
+    private var currentAvailability: PluginToolAvailability = PluginToolAvailability.NONE
+
     private val registered = LinkedHashSet<String>()
 
     /** The names currently registered on the SDK server, in list order. */
     val enabledNames: List<String>
         get() = synchronized(registered) { registered.toList() }
 
+    /** The plugin-family state the registration reflects, for `device_info` and the dump. */
+    val pluginAvailability: PluginToolAvailability
+        get() = currentAvailability
+
     /** Registers the enabled tools on a fresh [server]; called once per listener start. */
     fun install(server: Server) {
         this.server = server
         current = permissions()
+        currentAvailability = PluginToolAvailability.NONE
         synchronized(registered) {
             registered.clear()
-            catalog.filter { current.isEnabled(it.group) }.forEach { spec -> register(server, spec) }
+            wanted(current, currentAvailability).forEach { spec -> register(server, spec) }
         }
         server.onConnect {
             server.sessions.values.forEach { session ->
@@ -62,7 +78,7 @@ class ToolRegistry(
                     if (request.params?.cursor != null) throw McpException(RPCError.ErrorCode.INVALID_PARAMS, "Invalid tool cursor")
                     refresh()
                     ListToolsResult(
-                        tools = catalog.filter { current.isEnabled(it.group) }.map { it.toSdkTool() },
+                        tools = wanted(current, currentAvailability).map { it.toSdkTool() },
                         meta = buildJsonObject { put("ttlMs", 0); put("cacheScope", "private") },
                     )
                 }
@@ -75,13 +91,14 @@ class ToolRegistry(
         synchronized(registered) { registered.clear() }
     }
 
-    /** Re-reads the switches; true when the registration changed (and the clients were told). */
+    /** Re-reads the switches and the plugin-family state; true when the registration changed (and the clients were told). */
     override suspend fun refresh(): Boolean = mutex.withLock {
         val target = server ?: return false
         val next = permissions()
-        if (next.effective == current.effective) return false
+        val nextAvailability = availability()
         current = next
-        val wanted = catalog.filter { next.isEnabled(it.group) }
+        currentAvailability = nextAvailability
+        val wanted = wanted(next, nextAvailability)
         val changed = synchronized(registered) {
             if (wanted.map { it.name } == registered.toList()) {
                 false
@@ -101,8 +118,12 @@ class ToolRegistry(
 
     override fun disabledFailure(toolName: String): ToolFailure? {
         val spec = catalog.firstOrNull { it.name == toolName } ?: return null
-        return if (current.isEnabled(spec.group)) null else ToolFailure.toolDisabled(spec.name, spec.group.id)
+        if (!current.isEnabled(spec.group)) return ToolFailure.toolDisabled(spec.name, spec.group.id)
+        return if (spec.group.isPluginFamily) currentAvailability.unavailableFailure(spec) else null
     }
+
+    private fun wanted(permissions: ToolPermissions, availability: PluginToolAvailability): List<ToolSpec> =
+        catalog.filter { spec -> permissions.isEnabled(spec.group) && (!spec.group.isPluginFamily || availability.allows(spec)) }
 
     private fun register(server: Server, spec: ToolSpec) {
         server.addTool(spec.toSdkTool()) { request -> ToolResults.forSpec(spec, executor.execute(spec, this, request)) }
