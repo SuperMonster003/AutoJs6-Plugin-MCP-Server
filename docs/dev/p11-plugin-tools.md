@@ -248,3 +248,54 @@ without the method, a grant without it, a failure or an unknown answer leaves `p
 Tests: `DeviceInfoTest` (JVM: section shape and hints, the section only with a valid report, the flow and the output schema), the
 basic and plugin-family cases of `McpServerHostSessionTest` (no section without the grant; families, tools and the not-installed hint
 with the fake report). Device scenario: `tools/evidence/p11_device_info.py`.
+
+## Registered scripts (D42)
+
+Two built-in rows of the `script` group expose the scripts a user registered for models (an `@agent` JSDoc header, or an `agent`
+object in `project.json`; host `docs/dev/agent-script-manifest-v1.md`), so the tool list does not grow with the number of scripts:
+
+| Tool | Host calls | Permissions |
+|---|---|---|
+| `script_catalog` (`query?`, `limit` 1..500, default 100) | `agent.listScripts({query?, limit})` | `agent` |
+| `script_registered_run` (`id` or `path`, `arguments`, `timeoutMs?`) | `agent.listScripts` (only for an id) -> `agent.readManifest(path)` -> `agent.execRegistered(path, arguments, {expectedManifest, timeoutMs, captureConsole: true})` | `agent` for the first two, `agent`, `agent.exec`, `engines`, `engines.exec` for the run |
+
+Refinements decided 2026-10-15:
+
+- `risk` and `confirm` are passed through. The catalog lists them (the host normalizes `risk: sensitive` to `confirm: before-run`),
+  both descriptions tell the model to ask the user before such a script, and the run row carries the same annotations as `script_run`
+  (destructive, open world). The phone shows no extra prompt; an MCP client confirms destructive tools itself.
+- A run names exactly one of `id` or `path`. An id is resolved through `listScripts({query: id, limit: 500})` filtered by exact id;
+  none is `INVALID_ARGUMENTS`, and several (two directories may register the same id) is `INVALID_ARGUMENTS` listing every path. The
+  read manifest goes back as `expectedManifest`, so a registration that changed in between is refused.
+- The host's default scan scope: the working directory to depth 4 plus its `agent/` subtree. MCP sessions configure no extra roots.
+
+The plugin checks only what it can without the manifest: `..` or NUL in `path`, argument values that are not strings, numbers or
+booleans, and more than 16 KiB of argument JSON. AutoJs6 validates the arguments against the registered schema (types, enumerations,
+bounds, required names, no extra names, defaults filled in) and stops the script at `min(timeoutMs, registered timeout)`; the bridge
+waits 5 s longer. The host answers catalog failures with the bare code as the message; `SCRIPT_NOT_REGISTERED` and
+`TOOL_ARGUMENTS_INVALID` become `INVALID_ARGUMENTS`, a path outside the scanned directories stays `CAPABILITY_DENIED`, each with a
+hint to `script_catalog`. The run result:
+
+```json
+{"id": "echo", "path": "/storage/emulated/0/Scripts/echo.js", "kind": "file", "risk": "readonly", "confirm": "never",
+ "status": "finished", "outcome": "success", "executionId": 12, "resultReported": true, "result": {"text": "abab", "times": 2},
+ "console": ["echo abab"], "durationMs": 1737}
+```
+
+`status` maps the host outcome onto the statuses of the script group (`success` -> `finished`, `exception` -> `error`, `stopped`,
+`timeout`); `error` keeps the host's `{code, message}`; `result` appears only when the script called `ai.agent.result`.
+
+### Grant-gated built-in rows
+
+Older AutoJs6 builds do not grant the `agent.*` methods to MCP sessions (host commit `972e5dba6` adds them with the `agent` and
+`agent.exec` tokens). `ToolSpec.gatedByGrant` marks a built-in row that is listed only while the open session's grant covers all its
+`hostMethods`; without a session, or when the host reports an empty grant, it is listed like any other built-in row.
+`PluginToolAvailability.unavailableFailure` reuses the family check (`missingGrant`), so a direct call on an older host answers
+`CAPABILITY_DENIED` naming the first missing method instead of failing inside the host. The catalog snapshot shows
+`"gatedByGrant": true`.
+
+Tests: `RegisteredScriptToolsTest` (JVM: catalog options and text, id resolution with none / one / several matches, argument checks,
+the exec envelope, timeouts and failure mapping), `ToolRegistryTest` (grant-gated rows hidden on a grant without the agent methods),
+`ToolCatalogTest`, and `McpServerHostSessionTest#registeredScriptToolsListAndRunThroughTheHost` (listing, the
+listScripts -> readManifest -> execRegistered sequence, permissions and `expectedManifest`). Device scenario:
+`tools/evidence/p11_registered_scripts.py` (`--expect-hidden` for an older host).

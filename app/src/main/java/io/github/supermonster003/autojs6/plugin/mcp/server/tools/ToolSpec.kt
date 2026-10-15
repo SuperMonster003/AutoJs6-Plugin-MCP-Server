@@ -48,6 +48,12 @@ data class ToolSpec(
      * plugin-family group the registry lists the tool only while the session grant covers all of them.
      */
     val hostMethods: List<BridgeMethod> = listOfNotNull(bridge),
+    /**
+     * A built-in row that needs host methods only newer AutoJs6 builds grant (roadmap P11 D42): listed
+     * only while the open session's grant covers all [hostMethods], so an older host does not offer a
+     * tool that can only fail; without a session it is listed like the other built-in rows.
+     */
+    val gatedByGrant: Boolean = false,
 ) {
 
     val defaultEnabled: Boolean
@@ -94,6 +100,7 @@ data class ToolSpec(
         put("timeoutMs", timeoutMs)
         put("maxTimeoutMs", maxTimeoutMs)
         if (hostMethods != listOfNotNull(bridge)) put("hostMethods", JsonArray(hostMethods.map { JsonPrimitive(it.key) }))
+        if (gatedByGrant) put("gatedByGrant", true)
         put("annotations", buildJsonObject {
             put("readOnlyHint", hints.readOnly)
             put("destructiveHint", hints.destructive)

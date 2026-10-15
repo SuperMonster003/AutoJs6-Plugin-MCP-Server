@@ -131,27 +131,37 @@ data class PluginToolAvailability(
 
     fun allows(spec: ToolSpec): Boolean = unavailableFailure(spec) == null
 
-    /** Why [spec] is not listed, or null when it may run; always null for the built-in groups. */
+    /**
+     * Why [spec] is not listed, or null when it may run. Built-in rows always run, except a
+     * [ToolSpec.gatedByGrant] row while the open session's grant lacks one of its host methods.
+     */
     fun unavailableFailure(spec: ToolSpec): ToolFailure? {
-        val family = spec.group.family ?: return null
-        val granted = granted ?: return ToolFailure.hostUnavailable()
-        if (granted.isNotEmpty()) {
-            val missing = spec.hostMethods.filter { it.key !in granted }
-            if (missing.isNotEmpty()) {
-                return ToolFailure(
-                    ToolErrorCodes.CAPABILITY_DENIED,
-                    "the host grant does not include ${missing.joinToString { it.key }}",
-                    ToolFailure.HINT_CAPABILITY,
-                    module = missing.first().module,
-                    method = missing.first().method,
-                )
-            }
+        val family = spec.group.family
+        if (family == null) {
+            if (!spec.gatedByGrant) return null
+            return granted?.let { missingGrant(spec, it) }
         }
+        val granted = granted ?: return ToolFailure.hostUnavailable()
+        missingGrant(spec, granted)?.let { return it }
         val report = report ?: return ToolFailure.pluginUnavailable(spec.name, family, PluginFamilyStatus.describe(null), hostDetail)
         val status = report.families[family]
             ?: return ToolFailure.pluginUnavailable(spec.name, family, PluginFamilyStatus.describe(null), "AutoJs6 does not know the $family family")
         if (!status.available) return ToolFailure.pluginUnavailable(spec.name, family, PluginFamilyStatus.describe(status.status), status.detail)
         return null
+    }
+
+    /** `CAPABILITY_DENIED` naming the first host method of [spec] that [granted] lacks; an empty set means the host did not say. */
+    private fun missingGrant(spec: ToolSpec, granted: Set<String>): ToolFailure? {
+        if (granted.isEmpty()) return null
+        val missing = spec.hostMethods.filter { it.key !in granted }
+        if (missing.isEmpty()) return null
+        return ToolFailure(
+            ToolErrorCodes.CAPABILITY_DENIED,
+            "the host grant does not include ${missing.joinToString { it.key }}",
+            ToolFailure.HINT_CAPABILITY,
+            module = missing.first().module,
+            method = missing.first().method,
+        )
     }
 
     /** One line for logs and the dump. */

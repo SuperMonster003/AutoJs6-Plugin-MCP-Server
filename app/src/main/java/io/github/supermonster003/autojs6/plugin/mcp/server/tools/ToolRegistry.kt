@@ -119,11 +119,11 @@ class ToolRegistry(
     override fun disabledFailure(toolName: String): ToolFailure? {
         val spec = catalog.firstOrNull { it.name == toolName } ?: return null
         if (!current.isEnabled(spec.group)) return ToolFailure.toolDisabled(spec.name, spec.group.id)
-        return if (spec.group.isPluginFamily) currentAvailability.unavailableFailure(spec) else null
+        return if (spec.group.isPluginFamily || spec.gatedByGrant) currentAvailability.unavailableFailure(spec) else null
     }
 
     private fun wanted(permissions: ToolPermissions, availability: PluginToolAvailability): List<ToolSpec> =
-        catalog.filter { spec -> permissions.isEnabled(spec.group) && (!spec.group.isPluginFamily || availability.allows(spec)) }
+        catalog.filter { spec -> permissions.isEnabled(spec.group) && ((!spec.group.isPluginFamily && !spec.gatedByGrant) || availability.allows(spec)) }
 
     private fun register(server: Server, spec: ToolSpec) {
         server.addTool(spec.toSdkTool()) { request -> ToolResults.forSpec(spec, executor.execute(spec, this, request)) }

@@ -629,6 +629,43 @@ class McpServerHostSessionTest {
         session.close()
     }
 
+    @Test
+    fun registeredScriptToolsListAndRunThroughTheHost() {
+        val broker = FakeBroker()
+        val session = runtime.openSession(configBundle(PORT), broker, RecordingCallback(), Process.myUid())
+        awaitStatus(session) { it.getString(McpServerContract.KEY_STATUS_STATE) == McpServerContract.STATE_RUNNING }
+        val sessionId = post(initializeRequest(), sessionId = null).header("mcp-session-id")
+        post(initializedNotification(), sessionId)
+        // Roadmap P11 D42: the grant-gated rows are listed because the fake grant has the agent methods.
+        val names = toolNames(post(toolsListRequest(), sessionId))
+        assertTrue(names.containsAll(listOf(ToolCatalog.SCRIPT_CATALOG, ToolCatalog.SCRIPT_REGISTERED_RUN)))
+        val held = post(toolsCallRequest(ToolCatalog.SCRIPT_CATALOG), sessionId)
+        assertTrue(runtime.server.pairingGate!!.approve(held.json().getJSONObject("error").getJSONObject("data").getString("fingerprint")))
+
+        val catalog = post(toolsCallRequest(ToolCatalog.SCRIPT_CATALOG, """{"query":"clean"}"""), sessionId).result()
+        assertFalse(catalog.toString(), catalog.optBoolean("isError"))
+        assertEquals("clean-downloads", catalog.getJSONObject("structuredContent").getJSONArray("scripts").getJSONObject(0).getString("id"))
+        val list = broker.requests.last()
+        assertEquals("listScripts", list.getString("method"))
+        assertEquals(listOf("agent"), list.getJSONArray("permissions").toStringList())
+        assertEquals("clean", list.getJSONArray("args").getJSONObject(0).getString("query"))
+
+        val mark = broker.requests.size
+        val run = post(toolsCallRequest(ToolCatalog.SCRIPT_REGISTERED_RUN, """{"id":"clean-downloads","arguments":{"days":7}}"""), sessionId).result()
+        assertFalse(run.toString(), run.optBoolean("isError"))
+        val sequence = broker.requests.drop(mark).map { "${it.getString("module")}.${it.getString("method")}" }
+        assertEquals(listOf("agent.listScripts", "agent.readManifest", "agent.execRegistered"), sequence)
+        val exec = broker.requests.last()
+        assertEquals(listOf("agent", "agent.exec", "engines", "engines.exec"), exec.getJSONArray("permissions").toStringList())
+        assertEquals(REGISTERED_SCRIPT.getString("path"), exec.getJSONArray("args").getString(0))
+        assertEquals(7, exec.getJSONArray("args").getJSONObject(1).getInt("days"))
+        assertEquals("clean-downloads", exec.getJSONArray("args").getJSONObject(2).getJSONObject("expectedManifest").getString("id"))
+        val structured = run.getJSONObject("structuredContent")
+        assertEquals("finished", structured.getString("status"))
+        assertEquals(3, structured.getJSONObject("result").getInt("removed"))
+        session.close()
+    }
+
     /** The `app.pluginCapabilities` answer with the ocr, barcode, opencv, pinyin, pinyin4j and mediainfo families in [status]. */
     private fun pluginFamiliesReport(status: String): JSONObject = JSONObject()
         .put("schema", "autojs6-bridge-app-plugin-capabilities-v1")
@@ -831,9 +868,10 @@ class McpServerHostSessionTest {
                     "files.list", "files.stat", "files.read", "files.write", "files.mkdir", "files.rename", "files.delete",
                     "app.editFile", "app.launchPackage", "app.launchApp", "package_manager.listApps", "clipboard.getText", "clipboard.setText",
                     "accessibility.ensureEnabled", "toast.toast", "shell.exec", "app.listSamples", "app.readSample",
+                    "agent.listScripts", "agent.readManifest", "agent.execRegistered",
                 ) + if (pluginFamilies != null) familyGrantMethods else emptyArray(),
             )
-            putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query", "files", "files.write", "files.delete", "files.shared_read", "app.activity", "app.launch", "package_manager", "clipboard", "toast", "shell", "shell.root")
+            putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query", "files", "files.write", "files.delete", "files.shared_read", "agent", "agent.exec", "app.activity", "app.launch", "package_manager", "clipboard", "toast", "shell", "shell.root")
                 + if (pluginFamilies != null) arrayOf("ocr", "barcode", "image", "screen_capture", "pinyin", "pinyin4j", "media", "media.metadata") else emptyArray())
             putInt(McpServerContract.KEY_GRANT_MAX_REQUEST_BYTES, McpServerContract.MAX_BRIDGE_INLINE_JSON_BYTES)
             putInt(McpServerContract.KEY_GRANT_MAX_CONCURRENT_CALLS, McpServerContract.MAX_CONCURRENT_TOOL_CALLS)
@@ -894,6 +932,10 @@ class McpServerHostSessionTest {
                 "image.matchTemplate" -> ok(id, JSONArray().put(JSONObject().put("x", 200).put("y", 500).put("score", 0.97)))
                 "image.findColor" -> ok(id, JSONObject().put("x", 40).put("y", 30))
                 "image.findMultiColors" -> ok(id, JSONObject.NULL)
+                "agent.listScripts" -> ok(id, JSONArray().put(REGISTERED_SCRIPT))
+                "agent.readManifest" -> ok(id, REGISTERED_SCRIPT)
+                "agent.execRegistered" -> ok(id, JSONObject().put("executionId", 9).put("finished", true).put("outcome", "success").put("error", JSONObject.NULL)
+                    .put("result", JSONObject().put("removed", 3)).put("resultReported", true).put("consoleTail", JSONArray().put("done")))
                 "pinyin.convert" -> ok(id, JSONArray().put(JSONArray().put("yín")).put(JSONArray().put("háng")))
                 "pinyin4j.readings" -> ok(id, JSONArray().put(JSONArray().put("chung1").put("chung4")).put(JSONArray().put("kuo2")))
                 "mediainfo.read" -> ok(id, JSONObject().put("schema", "autojs6-node-mediainfo-snapshot-v1").put("fileName", "a.mp3").put("sizeBytes", 4096)
@@ -1223,6 +1265,12 @@ class McpServerHostSessionTest {
         rpcRequest("tools/call", """{"name":"$name","arguments":$arguments}""")
 
     private companion object {
+        /** The registered script the fake broker reports (roadmap P11 D42); a fresh object per use. */
+        val REGISTERED_SCRIPT: JSONObject
+            get() = JSONObject().put("id", "clean-downloads").put("path", "/storage/emulated/0/Scripts/clean.js").put("kind", "file")
+                .put("description", "Clean old downloads").put("parameters", JSONObject().put("type", "object")
+                    .put("properties", JSONObject().put("days", JSONObject().put("type", "integer").put("default", 30))).put("additionalProperties", false))
+                .put("risk", "normal").put("confirm", "never").put("timeoutMs", 60_000)
         const val TAG = "McpServerHostSessionTest"
         const val CLIENT_NAME = "McpServerHostSessionTest"
         const val FAKE_SNAPSHOT_ID = "fake-broker:1"

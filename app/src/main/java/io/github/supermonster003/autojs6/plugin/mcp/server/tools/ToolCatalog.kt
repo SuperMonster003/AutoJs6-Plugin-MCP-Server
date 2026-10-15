@@ -24,6 +24,8 @@ object ToolCatalog {
     const val SCRIPT_STOP_ALL = "script_stop_all"
     const val SCRIPT_LIST = "script_list"
     const val CONSOLE_TAIL = "console_tail"
+    const val SCRIPT_CATALOG = "script_catalog"
+    const val SCRIPT_REGISTERED_RUN = "script_registered_run"
     const val UI_DUMP = "ui_dump"
     const val UI_FIND = "ui_find"
     const val UI_CURRENT_WINDOW = "ui_current_window"
@@ -178,6 +180,28 @@ object ToolCatalog {
         /** Offsets of `opencv_find_multi_colors` lie within this distance of the first point, in either direction. */
         const val MAX_OFFSET = 65_535L
         const val DEFAULT_TIMEOUT_MS = 30_000L
+    }
+
+    /** `script_catalog` / `script_registered_run` argument names and bounds (roadmap P11 D42), shared with RegisteredScriptTools and the tests. */
+    object Registered {
+        const val QUERY = "query"
+        const val LIMIT = "limit"
+        const val ID = "id"
+        const val PATH = "path"
+        const val ARGUMENTS = "arguments"
+        const val TIMEOUT_MS = "timeoutMs"
+        const val DEFAULT_LIMIT = 100L
+        /** The host's catalog cap. */
+        const val MAX_LIMIT = 500L
+        const val MAX_QUERY_BYTES = 256
+        /** The host's bound on the serialized arguments (`AgentScriptExecutionState.MAX_PARAMETERS_BYTES`). */
+        const val MAX_ARGUMENTS_BYTES = 16 * 1024
+        /** A manifest without `timeoutMs` runs for this long (host default). */
+        const val DEFAULT_SCRIPT_TIMEOUT_MS = 60_000L
+        const val CATALOG_TIMEOUT_MS = 30_000L
+        const val READ_TIMEOUT_MS = 15_000L
+        /** On top of the script's own timeout: the host answers once the script stopped. */
+        const val EXEC_GRACE_MS = 5_000L
     }
 
     /** `pinyin_convert` argument names and values (roadmap P11 D38), shared with PinyinTools and the tests. */
@@ -1119,6 +1143,54 @@ object ToolCatalog {
         hints = ToolHints(readOnly = true, idempotent = true),
     )
 
+    val scriptCatalog = ToolSpec(
+        name = SCRIPT_CATALOG,
+        title = "List registered scripts",
+        description = "Lists the scripts the user registered for models in the AutoJs6 working directory (a script with an @agent JSDoc header, " +
+                "or a project with an agent object in project.json): id, path, description, parameter schema, the result it reports, risk " +
+                "(readonly, normal, sensitive), confirm (never, before-run) and timeout. query filters by id, description, tags and examples. Run one " +
+                "with script_registered_run; before running a script whose confirm is before-run or whose risk is sensitive, ask the user. " +
+                "Needs AutoJs6 6.8.0 or later.",
+        group = ToolGroup.SCRIPT,
+        inputSchema = JsonSchemas.objectSchema(
+            linkedMapOf(
+                Registered.QUERY to JsonSchemas.string("Case-insensitive text to look for in ids, descriptions, tags and examples", maxLength = Registered.MAX_QUERY_BYTES),
+                Registered.LIMIT to JsonSchemas.integer("Return at most this many scripts", minimum = 1, maximum = Registered.MAX_LIMIT, default = Registered.DEFAULT_LIMIT),
+            ),
+        ),
+        bridge = BridgeMethod("agent", "listScripts"),
+        permissions = listOf("agent"),
+        timeoutMs = Registered.CATALOG_TIMEOUT_MS,
+        hints = ToolHints(readOnly = true, idempotent = true),
+        gatedByGrant = true,
+    )
+
+    val scriptRegisteredRun = ToolSpec(
+        name = SCRIPT_REGISTERED_RUN,
+        title = "Run a registered script",
+        description = "Runs a script from script_catalog with arguments that AutoJs6 checks against the script's registered parameters " +
+                "(defaults filled in, unknown names refused), waits for it and stops it after its registered timeout (timeoutMs may only " +
+                "shorten it). Give id, or path when several scripts share an id. Returns the status (finished, error, stopped, timeout), " +
+                "the value the script reported with ai.agent.result, and the newest console lines. A registered script can act on the phone " +
+                "like script_run; ask the user first when its catalog entry says confirm before-run or risk sensitive. Needs AutoJs6 6.8.0 or later.",
+        group = ToolGroup.SCRIPT,
+        inputSchema = JsonSchemas.objectSchema(
+            linkedMapOf(
+                Registered.ID to JsonSchemas.string("Registered id from script_catalog; give id or path, not both", maxLength = 128),
+                Registered.PATH to JsonSchemas.string("Path from script_catalog; needed when several scripts share an id", maxLength = WorkspacePath.MAX_BYTES),
+                Registered.ARGUMENTS to JsonSchemas.primitiveMap("Values for the script's parameters as script_catalog describes them; strings, numbers and booleans only"),
+                Registered.TIMEOUT_MS to JsonSchemas.integer("Stop the script earlier than its registered timeout, in milliseconds", minimum = Images.MIN_TIMEOUT_MS, maximum = McpServerContract.MAX_TOOL_TIMEOUT_MS),
+            ),
+        ),
+        bridge = BridgeMethod("agent", "execRegistered"),
+        permissions = listOf("agent", "agent.exec", "engines", "engines.exec"),
+        timeoutMs = Registered.DEFAULT_SCRIPT_TIMEOUT_MS,
+        maxTimeoutMs = McpServerContract.MAX_TOOL_TIMEOUT_MS,
+        hints = ToolHints(destructive = true, openWorld = true),
+        hostMethods = listOf(BridgeMethod("agent", "listScripts"), BridgeMethod("agent", "readManifest"), BridgeMethod("agent", "execRegistered")),
+        gatedByGrant = true,
+    )
+
     /** The host methods of a tool that takes its image through ImageInputs and runs [operation] on the handle. */
     private fun imageHostMethods(operation: BridgeMethod): List<BridgeMethod> = listOf(
         BridgeMethod("accessibility", "captureScreenImage"), BridgeMethod("media_projection", "requestScreenCapture"),
@@ -1134,7 +1206,7 @@ object ToolCatalog {
 
     val all: List<ToolSpec> = listOf(
         devicePing, deviceInfo,
-        scriptRun, scriptRunFile, scriptStop, scriptStopAll, scriptList, consoleTail,
+        scriptRun, scriptRunFile, scriptStop, scriptStopAll, scriptList, consoleTail, scriptCatalog, scriptRegisteredRun,
         uiDump, uiFind, uiCurrentWindow, uiExplainSelector, uiWaitFor, uiClick, uiLongClick, uiSetText, uiScroll, uiPressKey,
         uiSwipe, uiGesture,
         screenCapture, screenState,

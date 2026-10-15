@@ -545,6 +545,114 @@
     }
   },
   {
+    "name": "script_catalog",
+    "title": "List registered scripts",
+    "description": "Lists the scripts the user registered for models in the AutoJs6 working directory (a script with an @agent JSDoc header, or a project with an agent object in project.json): id, path, description, parameter schema, the result it reports, risk (readonly, normal, sensitive), confirm (never, before-run) and timeout. query filters by id, description, tags and examples. Run one with script_registered_run; before running a script whose confirm is before-run or whose risk is sensitive, ask the user. Needs AutoJs6 6.8.0 or later.",
+    "group": "script",
+    "defaultEnabled": true,
+    "bridge": "agent.listScripts",
+    "permissions": [
+      "agent"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "gatedByGrant": true,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Case-insensitive text to look for in ids, descriptions, tags and examples",
+          "maxLength": 256
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Return at most this many scripts",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 100
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "script_registered_run",
+    "title": "Run a registered script",
+    "description": "Runs a script from script_catalog with arguments that AutoJs6 checks against the script's registered parameters (defaults filled in, unknown names refused), waits for it and stops it after its registered timeout (timeoutMs may only shorten it). Give id, or path when several scripts share an id. Returns the status (finished, error, stopped, timeout), the value the script reported with ai.agent.result, and the newest console lines. A registered script can act on the phone like script_run; ask the user first when its catalog entry says confirm before-run or risk sensitive. Needs AutoJs6 6.8.0 or later.",
+    "group": "script",
+    "defaultEnabled": true,
+    "bridge": "agent.execRegistered",
+    "permissions": [
+      "agent",
+      "agent.exec",
+      "engines",
+      "engines.exec"
+    ],
+    "timeoutMs": 60000,
+    "maxTimeoutMs": 300000,
+    "hostMethods": [
+      "agent.listScripts",
+      "agent.readManifest",
+      "agent.execRegistered"
+    ],
+    "gatedByGrant": true,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Registered id from script_catalog; give id or path, not both",
+          "maxLength": 128
+        },
+        "path": {
+          "type": "string",
+          "description": "Path from script_catalog; needed when several scripts share an id",
+          "maxLength": 4096
+        },
+        "arguments": {
+          "type": "object",
+          "description": "Values for the script's parameters as script_catalog describes them; strings, numbers and booleans only",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "Stop the script earlier than its registered timeout, in milliseconds",
+          "minimum": 1000,
+          "maximum": 300000
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "ui_dump",
     "title": "Dump UI tree",
     "description": "Dumps the accessibility node tree of the active window as compact text: one node per line with a #n reference, an indent per depth, the short class name, the state markers that apply (clickable, long_clickable, checkable, checked, scrollable, editable, focused, selected, !enabled, hidden), the text in quotes, desc=, id= (the full resource id), and the position (bounds [l,t][r,b] for a node with children, c=(x,y) for a leaf). Pass a #n reference as nodeRef to ui_click, ui_long_click, ui_set_text, or ui_scroll: AutoJs6 keeps the newest 8 dumps (snapshotId) and finds the node again when acting, so a reference works until the window changes or the node moves or changes. Call it before acting and again after the screen changed. format json returns the nodes as objects with every flag and format xml the uiautomator-style export; neither has references.",

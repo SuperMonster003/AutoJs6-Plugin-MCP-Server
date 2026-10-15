@@ -57,7 +57,7 @@ class ToolRegistryTest {
         val report = PluginFamilyReport.parse(Json.parseToJsonElement(
             """{"schema":"autojs6-bridge-app-plugin-capabilities-v1","families":[{"id":"ocr","status":"available","methods":["ocr.recognize"],"plugins":[]}]}""",
         ))!!
-        val granted = setOf("ocr.recognize", "image.readImage", "app.pluginCapabilities")
+        val granted = setOf("ocr.recognize", "image.readImage", "app.pluginCapabilities", "agent.listScripts", "agent.readManifest", "agent.execRegistered")
         var availability = PluginToolAvailability.NONE
         val registry = ToolRegistry(ToolCatalog.all + ocrSpec, { permissions }, { availability }) { _, _, _ -> ToolResults.success(JsonObject(emptyMap())) }
         val defaults = ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name }
@@ -92,5 +92,40 @@ class ToolRegistryTest {
         permissions = ToolPermissions.DEFAULT
         assertTrue(registry.refresh())
         assertEquals(defaults + ocrSpec.name, registry.enabledNames)
+    }
+
+    @Test
+    fun `grant-gated built-in rows hide on a session whose grant lacks their methods`() = runBlocking {
+        var availability = PluginToolAvailability.NONE
+        val registry = ToolRegistry(ToolCatalog.all, { permissions }, { availability }) { _, _, _ -> ToolResults.success(JsonObject(emptyMap())) }
+        val defaults = ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name }
+        registry.install(McpServerFactory.create("1"))
+        assertFalse("without a session they are listed like the other built-in rows", registry.refresh())
+        assertEquals(defaults, registry.enabledNames)
+        assertNull(registry.disabledFailure(ToolCatalog.SCRIPT_REGISTERED_RUN))
+
+        // An older host: its grant has no agent methods (roadmap P11 D42).
+        availability = PluginToolAvailability(setOf("engines.execScript", "device.info"), null)
+        assertTrue(registry.refresh())
+        assertEquals(defaults - ToolCatalog.SCRIPT_CATALOG - ToolCatalog.SCRIPT_REGISTERED_RUN, registry.enabledNames)
+        val denied = registry.disabledFailure(ToolCatalog.SCRIPT_REGISTERED_RUN)
+        assertEquals(ToolErrorCodes.CAPABILITY_DENIED, denied?.code)
+        assertEquals("agent", denied?.module)
+
+        // The catalog needs only listScripts; the run needs all three.
+        availability = PluginToolAvailability(setOf("agent.listScripts"), null)
+        assertTrue(registry.refresh())
+        assertTrue(ToolCatalog.SCRIPT_CATALOG in registry.enabledNames)
+        assertFalse(ToolCatalog.SCRIPT_REGISTERED_RUN in registry.enabledNames)
+
+        // An empty grant means the host did not say: listed, the broker enforces its grant itself.
+        availability = PluginToolAvailability(emptySet(), null)
+        assertTrue(registry.refresh())
+        assertEquals(defaults, registry.enabledNames)
+
+        permissions = ToolPermissions.DEFAULT.with(ToolGroup.SCRIPT, false)
+        assertTrue(registry.refresh())
+        assertEquals(ToolErrorCodes.TOOL_DISABLED, registry.disabledFailure(ToolCatalog.SCRIPT_CATALOG)?.code)
+        permissions = ToolPermissions.DEFAULT
     }
 }

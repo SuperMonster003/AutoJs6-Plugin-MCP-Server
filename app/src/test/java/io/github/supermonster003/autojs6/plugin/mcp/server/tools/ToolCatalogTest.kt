@@ -290,14 +290,15 @@ class ToolCatalogTest {
         assertEquals(ToolCatalog.all.size, rows.size)
         assertEquals("local", (rows[0] as JsonObject)["bridge"]?.jsonPrimitive?.content)
         assertEquals(JsonPrimitive("engines.execScript"), (rows[2] as JsonObject)["bridge"])
-        assertEquals(JsonPrimitive("accessibility.dump"), (rows[8] as JsonObject)["bridge"])
-        assertEquals(JsonPrimitive("ui_gesture"), (rows[19] as JsonObject)["group"])
+        assertEquals(JsonPrimitive("accessibility.dump"), (rows[10] as JsonObject)["bridge"])
+        assertEquals(JsonPrimitive("ui_gesture"), (rows[21] as JsonObject)["group"])
+        assertEquals(listOf("script_catalog", "script_registered_run"), ToolCatalog.all.filter { it.gatedByGrant }.map { it.name })
     }
 
     private companion object {
         const val SNAPSHOT_RESOURCE = "tool-catalog.snapshot.json"
         val DEVICE_NAMES = listOf("device_ping", "device_info")
-        val SCRIPT_NAMES = listOf("script_run", "script_run_file", "script_stop", "script_stop_all", "script_list", "console_tail")
+        val SCRIPT_NAMES = listOf("script_run", "script_run_file", "script_stop", "script_stop_all", "script_list", "console_tail", "script_catalog", "script_registered_run")
         val UI_NAMES = listOf("ui_dump", "ui_find", "ui_current_window", "ui_explain_selector", "ui_wait_for", "ui_click", "ui_long_click", "ui_set_text", "ui_scroll", "ui_press_key")
         val GESTURE_NAMES = listOf("ui_swipe", "ui_gesture")
         val FILE_NAMES = listOf("files_list", "files_stat", "files_read", "files_write", "files_mkdir", "files_rename", "files_delete", "editor_open")
