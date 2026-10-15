@@ -250,6 +250,10 @@ class McpClient:
         """Reconnects a stream with `GET` and `Last-Event-ID` (SEP-1699)."""
         return EventStream(self, "GET", None, {"Last-Event-ID": last_event_id, "Accept": "text/event-stream"}, request_id, timeout)
 
+    def listen(self, timeout: float | None = None) -> "EventStream":
+        """Opens the standalone GET stream that carries server notifications such as tools/list_changed."""
+        return EventStream(self, "GET", None, {"Accept": "text/event-stream"}, None, timeout)
+
     def close(self) -> None:
         if not self.session_id:
             return
