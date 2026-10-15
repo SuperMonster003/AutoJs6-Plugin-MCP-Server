@@ -7,6 +7,9 @@
   "$data": {
     "v1.2.0": {
       "released_date": "2026/10/15",
+      "hint": [
+        "外掛程式工具與 script_catalog / script_registered_run 依賴 AutoJs6 6.8.0 正式版中的宿主支援, 宿主不支援或未安裝對應外掛程式時不會出現, 其餘工具照常可用 (最低宿主需求仍為建置 5298)"
+      ],
       "feature": [
         "6 個外掛程式工具群組開關 (OCR 文字辨識, 條碼辨識, OpenCV 找圖找色, Pinyin 與 Pinyin4j 拼音轉換, MediaInfo 媒體資訊): 這些群組的工具只在對應的 AutoJs6 外掛程式已安裝並啟用時出現在用戶端的工具清單中, 安裝, 解除安裝或更新外掛程式後清單自動更新, 呼叫外掛程式缺失的工具會說明原因 (PLUGIN_UNAVAILABLE); 讀取螢幕的辨識呼叫 (image 為 \"screen\") 與 screen_capture 共用每個用戶端每分鐘 30 次的截圖上限, 辨識手機上的圖片檔案不計入",
         "ocr_recognize 工具, 用於辨識手機螢幕或手機上圖片檔案中的文字 (需要已安裝並啟用 ML Kit, Paddle OCR 或 Rapid OCR 外掛程式): image 為 \"screen\" 時在 AutoJs6 內截圖並辨識, 為工作目錄內的路徑時讀取檔案後辨識; 可選 region 裁切與 engine 指定引擎 (預設自動選擇); 結果附文字, 信心值與座標 (大圖按原圖像素回傳), 圖片不離開手機",

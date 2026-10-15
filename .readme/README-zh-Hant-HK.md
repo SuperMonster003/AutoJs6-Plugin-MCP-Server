@@ -42,7 +42,7 @@
 
 ******
 
-MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Protocol](https://modelcontextprotocol.io) 伺服器. 電腦上的 AI 代理 (例如 Claude Code, Cursor 或 MCP Inspector) 透過 USB 或 Wi-Fi 連接手機, 借助工具執行腳本, 讀取日誌, 檢視無障礙節點樹, 點擊與輸入, 擷取螢幕, 以及操作檔案與應用程式.
+MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Protocol](https://modelcontextprotocol.io) 伺服器. 電腦上的 AI 代理 (例如 Claude Code, Cursor 或 MCP Inspector) 透過 USB 或 Wi-Fi 連接手機, 借助工具執行腳本, 讀取日誌, 檢視無障礙節點樹, 點擊與輸入, 擷取螢幕, 以及操作檔案與應用程式. 安裝相應的 AutoJs6 外掛後, 還能識別螢幕或圖片中的文字與條碼, 找圖找色, 轉換拼音以及讀取媒體信息.
 
 伺服器在外掛自己的程序中運行, 透過單一的 Streamable HTTP 端點對外提供服務. AutoJs6 透過 Binder 向外掛下發能力代理, 每次工具呼叫都由主程式以其既有的權限, 引擎和無障礙服務執行; 外掛不會複製主程式的任何功能.
 
@@ -52,7 +52,7 @@ MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Proto
 
 ******
 
-版本 1.2.0: 37 個工具 (預設啟用 33 個), MCP 資源與提示, AutoJs6 抽屜開關與外掛程式設定頁. 需要 AutoJs6 6.8.0 (組建 5298) 或更高版本; 可選的 autojs6://docs/ 資源還需要 AutoJs6 離線文件外掛以及帶轉讀方法的宿主. 進度與證據記錄在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+版本 1.2.0: 39 個內建工具 (預設啟用 35 個) 與 8 個外掛能力工具, MCP 資源與提示, AutoJs6 抽屜開關與外掛程式設定頁. 需要 AutoJs6 6.8.0 (組建 5298) 或更高版本; 外掛能力工具只在 AutoJs6 中安裝並啟用對應外掛時出現, 外掛能力工具與已登記腳本工具在宿主不支援時自動隱藏, 可選的 autojs6://docs/ 資源還需要 AutoJs6 離線文件外掛以及帶轉讀方法的宿主. 進度與證據記錄在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -65,9 +65,11 @@ MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Proto
 - 手機設定頁提供服務狀態, USB 轉發, 連接埠與區域網絡存取, 權杖顯示/複製/輪換, 配對撤銷, 工具群組與 root 權限, 開發者模式, 可複製 (亦可顯示為二維碼) 的 Claude Code / Cursor / Codex / VS Code / 通用 HTTP 設定及發行歷史, 並跟隨 AutoJs6 外觀. 網絡設定會重新啟動執行中的監聽器, 權杖與權限變更立即生效. 敏感資訊視窗禁止截圖.
 - 腳本執行: 在 AutoJs6 內執行文字或檔案形式的 JavaScript, 列出與停止引擎, 讀取最近的主控台輸出.
 - 無障礙介面: 以緊湊文字格式匯出節點樹, 用 AutoJs6 選擇器語法尋找節點, 點擊, 長按, 捲動, 設定文字, 以及觸發返回和主畫面等全域按鍵.
-- 截圖分組 (P3.3): screen_capture 傳回 MCP 圖片, 支援裁剪, scale 或 maxWidth, JPEG / PNG / WebP 與品質參數. 預設 JPEG 品質 70, 最長邊 1280 px. base64 超過 4 MiB 時降低品質或尺寸重試, 中繼資料說明調整情況. screen_state 傳回亮屏狀態, 尺寸, 方向和密度. 工具目錄現有 37 項. MediaProjection 回退需要 2026-09-13 或之後建置的 AutoJs6 主程式及手機端授權, 主程式工作階段重用該授權. annotate: true 時在截圖上標出最近一次 ui_dump 的 #n 編號 (每個節點一個邊框和標籤), 便於把編號與畫面對應.
+- 截圖分組 (P3.3): screen_capture 傳回 MCP 圖片, 支援裁剪, scale 或 maxWidth, JPEG / PNG / WebP 與品質參數. 預設 JPEG 品質 70, 最長邊 1280 px. base64 超過 4 MiB 時降低品質或尺寸重試, 中繼資料說明調整情況. screen_state 傳回亮屏狀態, 尺寸, 方向和密度. MediaProjection 回退需要 2026-09-13 或之後建置的 AutoJs6 主程式及手機端授權, 主程式工作階段重用該授權. annotate: true 時在截圖上標出最近一次 ui_dump 的 #n 編號 (每個節點一個邊框和標籤), 便於把編號與畫面對應.
 - 工作目錄工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用從 1 開始的行列號的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二進制讀取使用 base64, 原始資料最多 1 MiB. 寫入亦受宿主請求預算約束 (通常為包含 JSON 轉義的 96 KiB). 檔案刪除和 Shell 預設關閉; root 另需 allowShellRoot 開關與宿主 shell.root 授權. 這些能力需要匹配的 P3.4 宿主構建.
 - MCP 資源 (P3.5) 提供唯讀工作目錄檔案, 可瀏覽的宿主範例, 安裝 AutoJs6 離線文件外掛後的離線文件, 裝置資訊和最近主控台輸出, 遵守配對與分組開關. 文字和二進制讀取報告截斷狀態. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指引, 其他手機語言回退英語.
+- 外掛能力工具: OCR 文字識別, 條碼識別, OpenCV 找圖找色, Pinyin 與 Pinyin4j 拼音轉換, MediaInfo 媒體信息. 各工具只在 AutoJs6 中安裝並啟用對應外掛時出現, 外掛安裝, 解除安裝或停用後客戶端會收到工具清單變更通知. 識別既可作用於螢幕 (image 為 "screen", 與 screen_capture 共用每分鐘 30 次的截圖上限), 也可作用於工作目錄中的圖片, 圖片不離開手機; 開啟 "允許讀取共享存儲" 後還可讀取相冊與下載目錄等位置的檔案. device_info 列出各外掛家族的狀態與安裝提示.
+- 已登記腳本: script_catalog 列出你用 @agent 註釋或 project.json 登記給模型的腳本 (說明, 參數, 風險等級, 是否需要先確認), script_registered_run 按登記的參數執行並返回腳本上報的結果. 風險等級與確認要求原樣交給客戶端, 由客戶端在執行前徵求你的同意.
 - 連接方式: 透過 `adb forward` 的 USB 連接, 須明確開啟的區域網絡連接, 以及面向無 HTTP 傳輸用戶端的電腦端 stdio 橋接程式.
 - 安全: 可輪換的 Bearer 權杖, 手機端首次配對確認, 按分組的工具開關; 伺服器預設只監聽回環介面.
 
@@ -252,6 +254,8 @@ Claude Desktop 及其他只支援 stdio 的客戶端: 用 `npm install -g autojs
 - VS Code 彈出 OAuth 或客戶端註冊提示: 權杖錯誤時 VS Code 會先嘗試 OAuth 探索與動態客戶端註冊, 而外掛程式只接受靜態權杖. 取消提示, 清除 VS Code 已保存的輸入值後重新輸入權杖, 再重新啟動伺服器.
 - 配對逾時: 新客戶端的首次呼叫會等待約一分鐘, 直到手機上點擊允許. 解鎖手機, 接受對話框或通知動作, 然後重複呼叫. 拒絕會進入短暫冷卻, 之後下一次呼叫會再次詢問.
 - HOST_UNAVAILABLE: AutoJs6 未執行或外掛程式工作階段已關閉. 開啟 AutoJs6, 保持抽屜開關開啟, 並在設定頁查看連線狀態.
+- 外掛能力工具未出現或返回 PLUGIN_UNAVAILABLE: 對應的 AutoJs6 外掛未安裝, 已停用或版本不兼容, 也可能是 AutoJs6 版本較舊. 呼叫 `device_info` 查看各外掛家族的狀態與提示; 在 AutoJs6 外掛中心安裝或啟用外掛後, 工具清單會自動更新.
+- 提示工作目錄不存在: 剛安裝且從未開啟過的 AutoJs6 可能尚未建立工作目錄 (預設為 /sdcard/Scripts), 檔案工具與 script_run 會說明這一點. 在手機上建立該文件夾, 或在 AutoJs6 設置 > 文件管理器 > 工作路徑 中選擇已有目錄.
 - 連線被拒 (`ECONNREFUSED`): 抽屜開關未開啟, 或電腦上的 `adb forward` 已失效. adb 服務重新啟動 (重新連接裝置, 或其他工具重啟了 adb) 會清空所有轉發; 重新執行 `adb -s <serial> forward tcp:9637 tcp:9637`, 或讓橋接程式用 `--serial` 自行建立轉發 (橋接程式結束時會移除該轉發).
 - 無障礙未啟用: `ui_*` 工具與截圖需要 AutoJs6 無障礙服務. 呼叫 `device_ensure_accessibility`, 或在系統無障礙設定中啟用該服務.
 - 連接埠被佔用: 抽屜會報告 `port_in_use`. 在設定頁修改連接埠, 並用 adb 轉發新連接埠.
@@ -321,6 +325,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 _2026/10/15_
 
+- `提示` 插件工具與 script_catalog / script_registered_run 依賴 AutoJs6 6.8.0 正式版中的宿主支持, 宿主不支持或未安裝對應插件時不會出現, 其餘工具照常可用 (最低宿主要求仍為建置 5298)
 - `新增` 6 個插件工具分組開關 (OCR 文字識別, 條碼識別, OpenCV 找圖找色, Pinyin 與 Pinyin4j 拼音轉換, MediaInfo 媒體信息): 這些分組的工具只在對應的 AutoJs6 插件已安裝並啟用時出現在客戶端的工具列表中, 安裝, 卸載或更新插件後列表自動更新, 調用插件缺失的工具會說明原因 (PLUGIN_UNAVAILABLE); 讀取屏幕的識別調用 (image 為 "screen") 與 screen_capture 共用每個客戶端每分鐘 30 次的截屏上限, 識別手機上的圖片文件不計入
 - `新增` ocr_recognize 工具, 用於識別手機屏幕或手機上圖片文件中的文字 (需要已安裝並啟用 ML Kit, Paddle OCR 或 Rapid OCR 插件): image 為 "screen" 時在 AutoJs6 內截屏並識別, 為工作目錄內的路徑時讀取文件後識別; 可選 region 裁切與 engine 指定引擎 (默認自動選擇); 結果附文字, 置信度與座標 (大圖按原圖像素返回), 圖片不離開手機
 - `新增` barcode_detect 工具, 用於識別手機屏幕或手機上圖片文件中的條碼與二維碼 (需要已安裝並啟用 ML Kit Barcode 插件): image 為 "screen" 時在 AutoJs6 內截屏後識別, 為工作目錄內的路徑時讀取文件後識別; 可選 formats 限定碼制, region 裁切與 maxResults 數量上限; 結果附內容, 碼制與座標 (大圖按原圖像素返回), 圖片不離開手機

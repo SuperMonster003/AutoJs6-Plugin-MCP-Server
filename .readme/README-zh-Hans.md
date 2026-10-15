@@ -42,7 +42,7 @@
 
 ******
 
-MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Protocol](https://modelcontextprotocol.io) 服务器. 电脑上的 AI 代理 (如 Claude Code, Cursor 或 MCP Inspector) 通过 USB 或 Wi-Fi 连接手机, 借助工具运行脚本, 读取日志, 查看无障碍节点树, 点击与输入, 截取屏幕, 以及操作文件与应用.
+MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Protocol](https://modelcontextprotocol.io) 服务器. 电脑上的 AI 代理 (如 Claude Code, Cursor 或 MCP Inspector) 通过 USB 或 Wi-Fi 连接手机, 借助工具运行脚本, 读取日志, 查看无障碍节点树, 点击与输入, 截取屏幕, 以及操作文件与应用. 安装相应的 AutoJs6 插件后, 还能识别屏幕或图片中的文字与条码, 找图找色, 转换拼音以及读取媒体信息.
 
 服务器运行在插件自己的进程中, 通过单一的 Streamable HTTP 端点对外提供服务. AutoJs6 通过 Binder 向插件下发能力代理, 每次工具调用都由宿主以其既有的权限, 引擎和无障碍服务执行; 插件不会复制宿主的任何功能.
 
@@ -52,7 +52,7 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 
 ******
 
-版本 1.2.0: 37 个工具 (默认启用 33 个), MCP 资源与提示, AutoJs6 抽屉开关和插件设置页. 需要 AutoJs6 6.8.0 (构建 5298) 或更高版本; 可选的 autojs6://docs/ 资源还需要 AutoJs6 离线文档插件以及带转读方法的宿主. 进度与证据记录在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+版本 1.2.0: 39 个内置工具 (默认启用 35 个) 与 8 个插件能力工具, MCP 资源与提示, AutoJs6 抽屉开关和插件设置页. 需要 AutoJs6 6.8.0 (构建 5298) 或更高版本; 插件能力工具只在 AutoJs6 中安装并启用对应插件时出现, 插件能力工具与已登记脚本工具在宿主不支持时自动隐藏, 可选的 autojs6://docs/ 资源还需要 AutoJs6 离线文档插件以及带转读方法的宿主. 进度与证据记录在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -65,9 +65,11 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 - 手机设置页提供服务状态, USB 转发, 端口和局域网访问, 令牌显示/复制/轮换, 配对撤销, 工具分组和 root 权限, 开发者模式, 可复制 (也可显示为二维码) 的 Claude Code / Cursor / Codex / VS Code / 通用 HTTP 配置及发行历史, 并跟随 AutoJs6 外观. 网络设置会重启运行中的监听器, 令牌和权限变更立即生效. 敏感信息窗口禁止截图.
 - 脚本执行: 在 AutoJs6 内运行文本或文件形式的 JavaScript, 列出与停止引擎, 读取最近的控制台输出.
 - 无障碍界面: 以紧凑文本格式导出节点树, 用 AutoJs6 选择器语法查找节点, 点击, 长按, 滚动, 设置文本, 以及触发返回和主屏幕等全局按键.
-- 截图分组 (P3.3): screen_capture 返回 MCP 图片, 支持裁剪, scale 或 maxWidth, JPEG / PNG / WebP 与质量参数. 默认 JPEG 质量 70, 最长边 1280 px. base64 超过 4 MiB 时降低质量或尺寸重试, 元数据说明调整情况. screen_state 返回亮屏状态, 尺寸, 方向和密度. 工具目录现有 37 项. MediaProjection 回退需要 2026-09-13 或之后构建的 AutoJs6 宿主及手机端授权, 宿主会话复用该授权. annotate: true 时在截图上标出最近一次 ui_dump 的 #n 编号 (每个节点一个边框和标签), 便于把编号与画面对应.
+- 截图分组 (P3.3): screen_capture 返回 MCP 图片, 支持裁剪, scale 或 maxWidth, JPEG / PNG / WebP 与质量参数. 默认 JPEG 质量 70, 最长边 1280 px. base64 超过 4 MiB 时降低质量或尺寸重试, 元数据说明调整情况. screen_state 返回亮屏状态, 尺寸, 方向和密度. MediaProjection 回退需要 2026-09-13 或之后构建的 AutoJs6 宿主及手机端授权, 宿主会话复用该授权. annotate: true 时在截图上标出最近一次 ui_dump 的 #n 编号 (每个节点一个边框和标签), 便于把编号与画面对应.
 - 工作目录工具 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 使用从 1 开始的行列号的 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast 和 shell_exec. 二进制读取使用 base64, 原始数据最多 1 MiB. 写入还受宿主请求预算约束 (通常为包含 JSON 转义的 96 KiB). 文件删除和 Shell 默认关闭; root 另需 allowShellRoot 开关与宿主 shell.root 授权. 这些能力需要匹配的 P3.4 宿主构建.
 - MCP 资源 (P3.5) 提供只读工作目录文件, 可浏览的宿主示例, 安装 AutoJs6 离线文档插件后的离线文档, 设备信息和最近控制台输出, 遵守配对与分组开关. 文本和二进制读取报告截断状态. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指导, 其他手机语言回退英语.
+- 插件能力工具: OCR 文字识别, 条码识别, OpenCV 找图找色, Pinyin 与 Pinyin4j 拼音转换, MediaInfo 媒体信息. 各工具只在 AutoJs6 中安装并启用对应插件时出现, 插件安装, 卸载或停用后客户端会收到工具列表变化通知. 识别既可作用于屏幕 (image 为 "screen", 与 screen_capture 共用每分钟 30 次的截图上限), 也可作用于工作目录中的图片, 图片不离开手机; 开启 "允许读取共享存储" 后还可读取相册与下载目录等位置的文件. device_info 列出各插件家族的状态与安装提示.
+- 已登记脚本: script_catalog 列出你用 @agent 注释或 project.json 登记给模型的脚本 (说明, 参数, 风险等级, 是否需要先确认), script_registered_run 按登记的参数运行并返回脚本上报的结果. 风险等级与确认要求原样交给客户端, 由客户端在运行前征求你的同意.
 - 连接方式: 通过 `adb forward` 的 USB 连接, 需显式开启的局域网连接, 以及面向无 HTTP 传输客户端的电脑端 stdio 桥接程序.
 - 安全: 可轮换的 Bearer 令牌, 手机端首次配对确认, 按分组的工具开关; 服务器默认只监听回环接口.
 
@@ -252,6 +254,8 @@ Claude Desktop 及其他仅支持 stdio 的客户端: 用 `npm install -g autojs
 - VS Code 弹出 OAuth 或客户端注册提示: 令牌错误时 VS Code 会先尝试 OAuth 发现与动态客户端注册, 而插件只接受静态令牌. 取消提示, 清除 VS Code 已保存的输入值后重新输入令牌, 再重启服务器.
 - 配对超时: 新客户端的首次调用会等待约一分钟, 直到手机上点击允许. 解锁手机, 接受对话框或通知动作, 然后重复调用. 拒绝会进入短暂冷却, 之后下一次调用会再次询问.
 - HOST_UNAVAILABLE: AutoJs6 未运行或插件会话已关闭. 打开 AutoJs6, 保持抽屉开关开启, 并在设置页查看连接状态.
+- 插件能力工具不出现或返回 PLUGIN_UNAVAILABLE: 对应的 AutoJs6 插件未安装, 已停用或版本不兼容, 也可能是 AutoJs6 版本较旧. 调用 `device_info` 查看各插件家族的状态与提示; 在 AutoJs6 插件中心安装或启用插件后, 工具列表会自动更新.
+- 提示工作目录不存在: 刚安装且从未打开过的 AutoJs6 可能还没有建立工作目录 (默认为 /sdcard/Scripts), 文件工具与 script_run 会说明这一点. 在手机上创建该文件夹, 或在 AutoJs6 设置 > 文件管理器 > 工作路径 中选择已有目录.
 - 连接被拒绝 (`ECONNREFUSED`): 抽屉开关未开启, 或电脑上的 `adb forward` 已失效. adb 服务重启 (重新连接设备, 或其他工具重启了 adb) 会清空所有转发; 重新执行 `adb -s <serial> forward tcp:9637 tcp:9637`, 或让桥接程序用 `--serial` 自行建立转发 (桥接程序退出时会移除该转发).
 - 无障碍未启用: `ui_*` 工具与截屏需要 AutoJs6 无障碍服务. 调用 `device_ensure_accessibility`, 或在系统无障碍设置中启用该服务.
 - 端口占用: 抽屉会报告 `port_in_use`. 在设置页修改端口, 并用 adb 转发新端口.
@@ -321,6 +325,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 _2026/10/15_
 
+- `提示` 插件工具与 script_catalog / script_registered_run 依赖 AutoJs6 6.8.0 正式版中的宿主支持, 宿主不支持或未安装对应插件时不会出现, 其余工具照常可用 (最低宿主要求仍为构建 5298)
 - `新增` 6 个插件工具分组开关 (OCR 文字识别, 条码识别, OpenCV 找图找色, Pinyin 与 Pinyin4j 拼音转换, MediaInfo 媒体信息): 这些分组的工具只在对应的 AutoJs6 插件已安装并启用时出现在客户端的工具列表中, 安装, 卸载或更新插件后列表自动更新, 调用插件缺失的工具会说明原因 (PLUGIN_UNAVAILABLE); 读取屏幕的识别调用 (image 为 "screen") 与 screen_capture 共用每个客户端每分钟 30 次的截图上限, 识别手机上的图片文件不计入
 - `新增` ocr_recognize 工具, 用于识别手机屏幕或手机上图片文件中的文字 (需要已安装并启用 ML Kit, Paddle OCR 或 Rapid OCR 插件): image 为 "screen" 时在 AutoJs6 内截屏并识别, 为工作目录内的路径时读取文件后识别; 可选 region 裁切与 engine 指定引擎 (默认自动选择); 结果附文字, 置信度与坐标 (大图按原图像素返回), 图片不离开手机
 - `新增` barcode_detect 工具, 用于识别手机屏幕或手机上图片文件中的条码与二维码 (需要已安装并启用 ML Kit Barcode 插件): image 为 "screen" 时在 AutoJs6 内截屏后识别, 为工作目录内的路径时读取文件后识别; 可选 formats 限定码制, region 裁切与 maxResults 数量上限; 结果附内容, 码制与坐标 (大图按原图像素返回), 图片不离开手机

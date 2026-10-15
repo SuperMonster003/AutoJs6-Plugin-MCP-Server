@@ -15,7 +15,7 @@ plugin-family tool is listed:
    allows (`BrokerInfo.methods`, read once when the session opens). A tool row declares every host
    method it may call in `ToolSpec.hostMethods` (default: its `bridge` method; flows list all of
    them). A plugin-family row is listed only while the grant covers all of them. An old host whose
-   grant lacks `app.pluginCapabilities` lists none of them, so the 37 built-in tools are unaffected.
+   grant lacks `app.pluginCapabilities` lists none of them, so the built-in tools (37 in 1.1.0, 39 in 1.2.0) are unaffected.
 2. **The host decides availability.** `app.pluginCapabilities` (schema
    `autojs6-bridge-app-plugin-capabilities-v1`) reports every family with `status` =
    `available` / `not_installed` / `disabled` / `incompatible`, its methods, the plugins behind it

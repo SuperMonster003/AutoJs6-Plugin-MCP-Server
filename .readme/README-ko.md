@@ -42,7 +42,7 @@
 
 ******
 
-MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol](https://modelcontextprotocol.io) 서버로 만듭니다. Claude Code, Cursor, MCP Inspector 같은 PC의 AI 에이전트가 USB 또는 Wi-Fi로 휴대폰에 연결하고, 도구를 사용해 스크립트 실행, 로그 읽기, 접근성 노드 트리 확인, 탭과 입력, 스크린샷 촬영, 파일과 앱 작업을 수행합니다.
+MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol](https://modelcontextprotocol.io) 서버로 만듭니다. Claude Code, Cursor, MCP Inspector 같은 PC의 AI 에이전트가 USB 또는 Wi-Fi로 휴대폰에 연결하고, 도구를 사용해 스크립트 실행, 로그 읽기, 접근성 노드 트리 확인, 탭과 입력, 스크린샷 촬영, 파일과 앱 작업을 수행합니다. 해당 AutoJs6 플러그인을 설치하면 화면이나 이미지의 텍스트와 바코드 인식, 이미지와 색상 찾기, 병음 변환, 미디어 정보 읽기도 할 수 있습니다.
 
 서버는 플러그인 자체 프로세스 안에서 실행되며 단일 Streamable HTTP 엔드포인트로 접근합니다. AutoJs6는 Binder를 통해 플러그인에 기능 브로커를 전달하므로 모든 도구 호출은 호스트가 기존 권한, 엔진, 접근성 서비스로 실행합니다. 플러그인은 호스트 기능을 복제하지 않습니다.
 
@@ -52,7 +52,7 @@ MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]
 
 ******
 
-버전 1.2.0: 도구 37개 (기본 활성화 33개), MCP 리소스와 프롬프트, AutoJs6 서랍 스위치와 플러그인 설정 페이지. AutoJs6 6.8.0 (빌드 5298) 이상이 필요합니다. 선택적 autojs6://docs/ 리소스에는 AutoJs6 오프라인 문서 플러그인과 중계 메서드를 갖춘 호스트도 필요합니다. 진행 상황과 증거는 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) 에 기록합니다.
+버전 1.2.0: 내장 도구 39개 (기본 활성화 35개)와 플러그인 기능 도구 8개, MCP 리소스와 프롬프트, AutoJs6 서랍 스위치와 플러그인 설정 페이지. AutoJs6 6.8.0 (빌드 5298) 이상이 필요합니다. 플러그인 기능 도구는 해당 AutoJs6 플러그인이 설치되고 활성화된 경우에만 나타나며, 플러그인 기능 도구와 등록된 스크립트 도구는 이를 지원하지 않는 호스트에서 자동으로 숨겨집니다. 선택적 autojs6://docs/ 리소스에는 AutoJs6 오프라인 문서 플러그인과 중계 메서드를 갖춘 호스트도 필요합니다. 진행 상황과 증거는 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) 에 기록합니다.
 
 ******
 
@@ -65,9 +65,11 @@ MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]
 - 서버 상태, USB 전달, 포트와 LAN, 토큰 표시/복사/교체, 페어링 해제, 도구 그룹과 root 권한, 개발자 모드, Claude Code / Cursor / Codex / VS Code / 일반 HTTP 설정 복사 (QR 코드 표시 가능), 출시 기록을 제공하며 AutoJs6 테마를 따릅니다. 네트워크 변경은 리스너를 재시작하고 토큰과 권한은 즉시 적용됩니다. 비밀 정보 창은 스크린샷을 차단합니다.
 - 스크립트 실행: AutoJs6 안에서 텍스트 또는 파일의 JavaScript를 실행하고, 엔진을 나열하거나 중지하며, 최근 콘솔 출력을 읽습니다.
 - 접근성 UI: 노드 트리를 간결한 텍스트 형식으로 덤프하고, AutoJs6 선택자 문법으로 노드를 찾고, 클릭, 길게 누르기, 스크롤, 텍스트 설정, 뒤로와 홈 같은 전역 키를 누릅니다.
-- 스크린샷 그룹 (P3.3): screen_capture는 자르기, scale 또는 maxWidth, JPEG / PNG / WebP, 품질 설정을 지원하는 MCP 이미지를 반환합니다. 기본값은 JPEG 품질 70, 긴 변 1280 px입니다. base64가 4 MiB를 초과하면 품질이나 크기를 낮춰 재시도하고 메타데이터에 변경을 표시합니다. screen_state는 화면 켜짐 상태, 크기, 방향, 밀도를 반환합니다. 도구 목록은 37개입니다. MediaProjection 대체 경로에는 2026-09-13 이후 빌드한 AutoJs6와 휴대전화의 승인이 필요하며 호스트 세션에서 승인을 재사용합니다. annotate: true 를 지정하면 최근 ui_dump 의 #n 참조를 이미지에 그려 (노드마다 테두리와 라벨) 화면의 요소와 대응시킬 수 있습니다.
+- 스크린샷 그룹 (P3.3): screen_capture는 자르기, scale 또는 maxWidth, JPEG / PNG / WebP, 품질 설정을 지원하는 MCP 이미지를 반환합니다. 기본값은 JPEG 품질 70, 긴 변 1280 px입니다. base64가 4 MiB를 초과하면 품질이나 크기를 낮춰 재시도하고 메타데이터에 변경을 표시합니다. screen_state는 화면 켜짐 상태, 크기, 방향, 밀도를 반환합니다. MediaProjection 대체 경로에는 2026-09-13 이후 빌드한 AutoJs6와 휴대전화의 승인이 필요하며 호스트 세션에서 승인을 재사용합니다. annotate: true 를 지정하면 최근 ui_dump 의 #n 참조를 이미지에 그려 (노드마다 테두리와 라벨) 화면의 요소와 대응시킬 수 있습니다.
 - 작업 디렉터리 도구 (P3.4): files_list / stat / read / write / mkdir / rename / delete, 1부터 시작하는 행과 열을 받는 editor_open, app_launch / list, clipboard_get / set, device_ensure_accessibility, toast, shell_exec. 바이너리 읽기는 base64이며 원본 데이터 최대 1 MiB입니다. 쓰기는 호스트 요청 한도도 따릅니다 (보통 JSON 이스케이프 포함 96 KiB). 삭제와 Shell은 기본 비활성화이며 root에는 allowShellRoot와 호스트 shell.root 권한이 추가로 필요합니다. 일치하는 P3.4 호스트 빌드가 필요합니다.
 - MCP 리소스 (P3.5)는 페어링 및 그룹 설정에 따라 읽기 전용 작업 파일, 호스트 예제 탐색, AutoJs6 오프라인 문서 플러그인이 설치된 경우의 오프라인 문서, 기기 정보, 최근 콘솔 출력을 제공합니다. 텍스트 및 바이너리 읽기는 잘림 상태를 보고합니다. write_autojs6_script, automate_task, debug_selector는 영어와 중국어를 지원하며, 다른 기기 언어에서는 영어를 사용합니다.
+- 플러그인 기능 도구: OCR 텍스트 인식, 바코드 인식, OpenCV 이미지 및 색상 찾기, Pinyin 과 Pinyin4j 병음 변환, MediaInfo 미디어 정보. 각 도구는 해당 AutoJs6 플러그인이 설치되고 활성화된 경우에만 나타나며, 플러그인을 설치, 제거, 비활성화하면 클라이언트에 도구 목록 변경 알림이 전달됩니다. 인식은 화면 (image 가 "screen", screen_capture 와 분당 30회 스크린샷 한도 공유) 또는 작업 디렉터리의 이미지에 사용할 수 있으며 이미지는 휴대폰을 떠나지 않습니다. "공유 저장소 읽기 허용" 을 켜면 사진, 다운로드 등의 파일도 읽을 수 있습니다. device_info 는 각 플러그인 계열의 상태와 설치 안내를 보여 줍니다.
+- 등록된 스크립트: script_catalog 는 @agent 주석이나 project.json 으로 모델용으로 등록한 스크립트 (설명, 매개변수, 위험 등급, 사전 확인 필요 여부) 를 나열하고, script_registered_run 은 등록된 매개변수로 인수를 검사해 실행한 뒤 스크립트가 보고한 결과를 반환합니다. 위험 등급과 확인 요구는 그대로 클라이언트에 전달되며, 클라이언트가 실행 전에 동의를 구합니다.
 - 연결 경로: `adb forward`를 통한 USB, 명시적으로 켜야 하는 로컬 네트워크, 그리고 HTTP 전송이 없는 클라이언트를 위한 PC 측 stdio 브리지.
 - 보안: 교체 가능한 Bearer 토큰, 휴대폰에서의 최초 페어링 확인, 그룹별 도구 스위치. 서버는 기본적으로 루프백 인터페이스에서만 수신합니다.
 
@@ -252,6 +254,8 @@ Claude Desktop 등 stdio 전용 클라이언트: `npm install -g autojs6-mcp-bri
 - VS Code 에 OAuth 또는 클라이언트 등록 창이 뜸: 토큰이 틀리면 VS Code 는 먼저 OAuth 검색과 동적 클라이언트 등록을 시도하지만, 플러그인은 정적 토큰만 받습니다. 창을 취소하고 VS Code 가 저장한 입력값을 지운 뒤 토큰을 다시 입력하고 서버를 재시작하세요.
 - 페어링 시간 초과: 새 클라이언트의 첫 호출은 휴대전화에서 허용할 때까지 약 1분을 기다립니다. 휴대전화 잠금을 해제하고 대화상자나 알림 동작을 수락한 뒤 호출을 반복하세요. 거부하면 짧은 대기 시간이 시작되고, 그 뒤의 호출에서 다시 묻습니다.
 - HOST_UNAVAILABLE: AutoJs6가 실행 중이 아니거나 플러그인 세션이 닫혔습니다. AutoJs6를 열고 서랍 스위치를 켠 상태로 두며 설정 페이지에서 연결 상태를 확인하세요.
+- 플러그인 기능 도구가 보이지 않거나 PLUGIN_UNAVAILABLE 이 반환됨: 해당 AutoJs6 플러그인이 설치되지 않았거나 비활성화되었거나 호환되지 않는 경우, 또는 AutoJs6 버전이 오래된 경우입니다. `device_info` 로 각 플러그인 계열의 상태와 안내를 확인하세요. AutoJs6 플러그인 센터에서 플러그인을 설치하거나 활성화하면 도구 목록이 자동으로 갱신됩니다.
+- 작업 디렉터리가 없다는 안내: 방금 설치하고 한 번도 열지 않은 AutoJs6 는 아직 작업 디렉터리 (기본값 /sdcard/Scripts) 를 만들지 않았을 수 있으며, 파일 도구와 script_run 이 이를 알려 줍니다. 휴대폰에서 해당 폴더를 만들거나 AutoJs6 설정 > 파일 탐색기 > 작업 디렉토리 경로 에서 기존 폴더를 선택하세요.
 - 연결 거부 (`ECONNREFUSED`): 드로어 스위치가 꺼져 있거나 컴퓨터의 `adb forward` 가 사라졌습니다. adb 서버가 다시 시작되면 (기기를 다시 연결하거나 다른 도구가 adb 를 재시작한 경우) 모든 포워딩이 지워집니다. `adb -s <serial> forward tcp:9637 tcp:9637` 을 다시 실행하거나, 브리지가 `--serial` 로 포워딩을 만들게 하세요 (브리지는 종료할 때 포워딩을 제거합니다).
 - 접근성 꺼짐: `ui_*` 도구와 화면 캡처에는 AutoJs6 접근성 서비스가 필요합니다. `device_ensure_accessibility` 를 호출하거나 시스템 접근성 설정에서 서비스를 켜세요.
 - 포트 사용 중: 서랍에 `port_in_use` 가 표시됩니다. 설정 페이지에서 포트를 바꾸고 새 포트를 adb로 포워딩하세요.
@@ -321,6 +325,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 _2026/10/15_
 
+- `힌트` 플러그인 도구와 script_catalog / script_registered_run 은 AutoJs6 6.8.0 정식 버전의 호스트 지원이 필요하며, 호스트가 지원하지 않거나 해당 플러그인이 없으면 나타나지 않고 다른 도구는 그대로 사용할 수 있음 (최소 호스트 요구 사항은 여전히 빌드 5298)
 - `기능` 플러그인 도구 그룹 6 개와 각각의 스위치 (OCR 문자 인식, 바코드 인식, OpenCV 이미지 및 색상 찾기, Pinyin 과 Pinyin4j 병음 변환, MediaInfo 미디어 정보): 이 도구들은 해당 AutoJs6 플러그인이 설치되어 활성화된 동안에만 클라이언트 도구 목록에 나타나고, 플러그인을 설치, 제거, 업데이트하면 목록이 자동으로 갱신되며, 플러그인이 없는 도구를 호출하면 이유를 알려 줌 (PLUGIN_UNAVAILABLE); 화면을 읽는 인식 호출 (image 가 "screen") 은 screen_capture 와 클라이언트당 분당 30 회의 스크린샷 상한을 공유하며, 기기에 있는 이미지 파일 인식은 세지 않음
 - `기능` ocr_recognize 도구, 기기 화면이나 기기에 있는 이미지 파일의 문자를 인식 (설치되어 활성화된 ML Kit, Paddle OCR 또는 Rapid OCR 플러그인 필요): image 가 "screen" 이면 AutoJs6 안에서 화면을 캡처해 인식하고, 작업 디렉터리 안의 경로이면 파일을 읽은 뒤 인식; region 자르기와 engine 지정은 선택 (기본은 자동 선택); 결과에 문자, 신뢰도, 좌표가 담기며 (큰 파일은 원본 픽셀 기준), 이미지는 기기를 떠나지 않음
 - `기능` barcode_detect 도구, 기기 화면이나 기기에 있는 이미지 파일의 바코드와 QR 코드를 인식 (설치되어 활성화된 ML Kit Barcode 플러그인 필요): image 가 "screen" 이면 AutoJs6 안에서 화면을 캡처해 인식하고, 작업 디렉터리 안의 경로이면 파일을 읽은 뒤 인식; formats 로 종류 제한, region 자르기, maxResults 개수 상한은 선택; 결과에 내용, 종류, 좌표가 담기며 (큰 파일은 원본 픽셀 기준), 이미지는 기기를 떠나지 않음
