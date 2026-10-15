@@ -58,6 +58,9 @@ object ToolCatalog {
     const val OPENCV_FIND_IMAGE = "opencv_find_image"
     const val OPENCV_FIND_COLOR = "opencv_find_color"
     const val OPENCV_FIND_MULTI_COLORS = "opencv_find_multi_colors"
+    const val PINYIN_CONVERT = "pinyin_convert"
+    const val PINYIN4J_CONVERT = "pinyin4j_convert"
+    const val MEDIAINFO_READ = "mediainfo_read"
 
     val FILE_NAMES = listOf(FILES_LIST, FILES_STAT, FILES_READ, FILES_WRITE, FILES_MKDIR, FILES_RENAME, FILES_DELETE)
     val DEVICE_ACTION_NAMES = listOf(EDITOR_OPEN, APP_LAUNCH, APP_LIST, CLIPBOARD_GET, CLIPBOARD_SET, DEVICE_ENSURE_ACCESSIBILITY, TOAST)
@@ -166,6 +169,50 @@ object ToolCatalog {
         /** Offsets of `opencv_find_multi_colors` lie within this distance of the first point, in either direction. */
         const val MAX_OFFSET = 65_535L
         const val DEFAULT_TIMEOUT_MS = 30_000L
+    }
+
+    /** `pinyin_convert` argument names and values (roadmap P11 D38), shared with PinyinTools and the tests. */
+    object Pinyin {
+        const val TEXT = "text"
+        const val STYLE = "style"
+        const val MODE = "mode"
+        const val SEGMENT = "segment"
+        const val HETERONYM = "heteronym"
+        /** UTF-8 bytes of `text`; well inside the host's 32 KiB argument limit even after JSON escaping. */
+        const val MAX_TEXT_BYTES = 8 * 1024
+        const val DEFAULT_TIMEOUT_MS = 30_000L
+        /** Tool style names; the host takes them upper case (`PinyinStyle`). */
+        val STYLES = listOf("tone", "tone2", "to3ne", "normal", "initials", "first_letter")
+        val MODES = listOf("normal", "surname", "place_name")
+    }
+
+    /** `pinyin4j_convert` argument names and values (roadmap P11 D38), shared with PinyinTools and the tests. */
+    object Pinyin4j {
+        const val TONE = "tone"
+        const val CASE = "case"
+        const val SEPARATOR = "separator"
+        const val ROMANIZATION = "romanization"
+        const val ALL_READINGS = "allReadings"
+        const val MAX_SEPARATOR_LENGTH = 16
+        val TONES = listOf("mark", "number", "none")
+        val CASES = listOf("lower", "upper")
+        val ROMANIZATIONS = listOf("hanyu", "tongyong", "wade_giles", "mps2", "yale", "gwoyeu")
+        /** Tool romanization names to the host's `Pinyin4jOptions.normalizeRomanization` names. */
+        val HOST_ROMANIZATIONS = mapOf(
+            "hanyu" to "HANYU", "tongyong" to "TONGYONG", "wade_giles" to "WADE_GILES", "mps2" to "MPS2", "yale" to "YALE", "gwoyeu" to "GWOYEU",
+        )
+        val HOST_TONES = mapOf("mark" to "WITH_TONE_MARK", "number" to "WITH_TONE_NUMBER", "none" to "WITHOUT_TONE")
+        val HOST_CASES = mapOf("lower" to "LOWERCASE", "upper" to "UPPERCASE")
+    }
+
+    /** `mediainfo_read` argument names and bounds (roadmap P11 D38), shared with MediaInfoTools and the tests. */
+    object MediaInfo {
+        const val PATH = "path"
+        const val REPORT = "report"
+        /** The MediaInfo plugin gives up a parse after 30 s; the file transfer comes on top. */
+        const val DEFAULT_TIMEOUT_MS = 60_000L
+        /** Characters of the text report kept in a result. */
+        const val MAX_REPORT_CHARS = 64 * 1024
     }
 
     /** Screenshot options shared by the catalog and ScreenTools (P3.3). */
@@ -976,6 +1023,84 @@ object ToolCatalog {
         hostMethods = imageHostMethods(BridgeMethod("image", "findMultiColors")),
     )
 
+    val pinyinConvert = ToolSpec(
+        name = PINYIN_CONVERT,
+        title = "Convert Chinese to pinyin (Pinyin plugin)",
+        description = "Convert Chinese text to Hanyu Pinyin with the AutoJs6 Pinyin plugin, which reads whole words from a phrase dictionary, so a " +
+                "character with several readings usually gets the one its word needs (\"银行\" -> yín háng); segment (on by default) splits longer text " +
+                "into words before the lookup. Readings come from the dictionary, so names and rare words can differ from usage. style picks the " +
+                "output (tone marks by default, tone2 / to3ne with digits, normal without tones, initials, first_letter); mode surname or place_name " +
+                "uses the readings of names; heteronym lists every reading of each character. Returns the pinyin as text, readings joined by spaces and " +
+                "alternatives by |, and the rows as structured content. For other romanizations (Wade-Giles, Yale, ...) or the readings of single " +
+                "characters use pinyin4j_convert. This tool exists only while the Pinyin plugin is installed and enabled in AutoJs6.",
+        group = ToolGroup.PINYIN,
+        inputSchema = JsonSchemas.objectSchema(
+            linkedMapOf(
+                Pinyin.TEXT to JsonSchemas.string("Text to convert; characters that are not Chinese stay as they are", maxLength = Pinyin.MAX_TEXT_BYTES),
+                Pinyin.STYLE to JsonSchemas.string("Output style: tone (zhōng), tone2 (zho1ng), to3ne (zhong1), normal (zhong), initials (zh), first_letter (z)", default = "tone", enum = Pinyin.STYLES),
+                Pinyin.MODE to JsonSchemas.string("normal, surname for personal names, or place_name for place names", default = "normal", enum = Pinyin.MODES),
+                Pinyin.SEGMENT to JsonSchemas.boolean("Split the text into words before the dictionary lookup; helps longer sentences", default = true),
+                Pinyin.HETERONYM to JsonSchemas.boolean("List every reading of each character instead of the most likely one", default = false),
+            ),
+            required = listOf(Pinyin.TEXT),
+        ),
+        bridge = BridgeMethod("pinyin", "convert"),
+        permissions = listOf("pinyin"),
+        timeoutMs = Pinyin.DEFAULT_TIMEOUT_MS,
+        hints = ToolHints(readOnly = true, idempotent = true),
+    )
+
+    val pinyin4jConvert = ToolSpec(
+        name = PINYIN4J_CONVERT,
+        title = "Romanize Chinese characters (Pinyin4j plugin)",
+        description = "Romanize Chinese text character by character with the AutoJs6 Pinyin4j plugin. Unlike pinyin_convert it looks at each " +
+                "character alone, without word context, so a character with several readings gets its first dictionary reading; in return it offers " +
+                "other romanizations (romanization: hanyu, tongyong, wade_giles, mps2, yale, gwoyeu) and, with allReadings, every reading of each character. " +
+                "For hanyu, tone chooses tone marks (default), tone numbers or none, and case lower or upper; other romanizations do not take tone or case. " +
+                "Returns the readings joined by separator (a space by default) as text, and one row per character as structured content. This tool " +
+                "exists only while the Pinyin4j plugin is installed and enabled in AutoJs6.",
+        group = ToolGroup.PINYIN4J,
+        inputSchema = JsonSchemas.objectSchema(
+            linkedMapOf(
+                Pinyin.TEXT to JsonSchemas.string("Text to romanize; characters that are not Chinese stay as they are", maxLength = Pinyin.MAX_TEXT_BYTES),
+                Pinyin4j.ROMANIZATION to JsonSchemas.string("Romanization system", default = "hanyu", enum = Pinyin4j.ROMANIZATIONS),
+                Pinyin4j.TONE to JsonSchemas.string("Hanyu only: tone marks (zhōng), tone numbers (zhong1) or none (zhong)", default = "mark", enum = Pinyin4j.TONES),
+                Pinyin4j.CASE to JsonSchemas.string("Hanyu only: lower or upper case", default = "lower", enum = Pinyin4j.CASES),
+                Pinyin4j.SEPARATOR to JsonSchemas.string("Placed between the characters of the text result", maxLength = Pinyin4j.MAX_SEPARATOR_LENGTH, default = " "),
+                Pinyin4j.ALL_READINGS to JsonSchemas.boolean("List every reading of each character (joined by | in the text) instead of the first one", default = false),
+            ),
+            required = listOf(Pinyin.TEXT),
+        ),
+        bridge = BridgeMethod("pinyin4j", "readings"),
+        permissions = listOf("pinyin4j"),
+        timeoutMs = Pinyin.DEFAULT_TIMEOUT_MS,
+        hints = ToolHints(readOnly = true, idempotent = true),
+    )
+
+    val mediainfoRead = ToolSpec(
+        name = MEDIAINFO_READ,
+        title = "Read media file information (MediaInfo)",
+        description = "Read the technical details and tags of an audio, video or image file on the phone with the AutoJs6 MediaInfo plugin: container " +
+                "format, duration, bit rates, codecs, resolution, frame rate, channels, sampling rate, title, artist and more. path is a POSIX path " +
+                "relative to the AutoJs6 working directory. Returns one summary line per track as text and every field of every track (general, video, " +
+                "audio, text, image, menu, other) as structured content; report adds the full MediaInfo text report. Values are MediaInfo's display " +
+                "strings (\"5 min 3 s\", \"1 920 pixels\"). This tool exists only while the MediaInfo plugin is installed and enabled in AutoJs6.",
+        group = ToolGroup.MEDIAINFO,
+        inputSchema = JsonSchemas.objectSchema(
+            linkedMapOf(
+                MediaInfo.PATH to pathSchema(),
+                MediaInfo.REPORT to JsonSchemas.boolean("Also return MediaInfo's full text report (up to 64 Ki characters)", default = false),
+                Images.TIMEOUT_MS to JsonSchemas.integer("How long to wait for the analysis, in milliseconds", minimum = Images.MIN_TIMEOUT_MS, maximum = McpServerContract.MAX_TOOL_TIMEOUT_MS, default = MediaInfo.DEFAULT_TIMEOUT_MS),
+            ),
+            required = listOf(MediaInfo.PATH),
+        ),
+        bridge = BridgeMethod("mediainfo", "read"),
+        permissions = listOf("media", "media.metadata"),
+        timeoutMs = MediaInfo.DEFAULT_TIMEOUT_MS,
+        maxTimeoutMs = McpServerContract.MAX_TOOL_TIMEOUT_MS,
+        hints = ToolHints(readOnly = true, idempotent = true),
+    )
+
     /** The host methods of a tool that takes its image through ImageInputs and runs [operation] on the handle. */
     private fun imageHostMethods(operation: BridgeMethod): List<BridgeMethod> = listOf(
         BridgeMethod("accessibility", "captureScreenImage"), BridgeMethod("media_projection", "requestScreenCapture"),
@@ -998,7 +1123,7 @@ object ToolCatalog {
         filesList, filesStat, filesRead, filesWrite, filesMkdir, filesRename, filesDelete, editorOpen,
         appLaunch, appList, clipboardGet, clipboardSet, deviceEnsureAccessibility, toast, shellExec,
         // Plugin-family rows (roadmap P11): listed only while the host grants their methods and reports the plugin as available.
-        ocrRecognize, barcodeDetect, opencvFindImage, opencvFindColor, opencvFindMultiColors,
+        ocrRecognize, barcodeDetect, opencvFindImage, opencvFindColor, opencvFindMultiColors, pinyinConvert, pinyin4jConvert, mediainfoRead,
     )
 
     val byName: Map<String, ToolSpec> = all.associateBy { it.name }

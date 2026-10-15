@@ -3199,5 +3199,193 @@
       ],
       "additionalProperties": false
     }
+  },
+  {
+    "name": "pinyin_convert",
+    "title": "Convert Chinese to pinyin (Pinyin plugin)",
+    "description": "Convert Chinese text to Hanyu Pinyin with the AutoJs6 Pinyin plugin, which reads whole words from a phrase dictionary, so a character with several readings usually gets the one its word needs (\"银行\" -> yín háng); segment (on by default) splits longer text into words before the lookup. Readings come from the dictionary, so names and rare words can differ from usage. style picks the output (tone marks by default, tone2 / to3ne with digits, normal without tones, initials, first_letter); mode surname or place_name uses the readings of names; heteronym lists every reading of each character. Returns the pinyin as text, readings joined by spaces and alternatives by |, and the rows as structured content. For other romanizations (Wade-Giles, Yale, ...) or the readings of single characters use pinyin4j_convert. This tool exists only while the Pinyin plugin is installed and enabled in AutoJs6.",
+    "group": "pinyin",
+    "defaultEnabled": true,
+    "bridge": "pinyin.convert",
+    "permissions": [
+      "pinyin"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Text to convert; characters that are not Chinese stay as they are",
+          "maxLength": 8192
+        },
+        "style": {
+          "type": "string",
+          "description": "Output style: tone (zhōng), tone2 (zho1ng), to3ne (zhong1), normal (zhong), initials (zh), first_letter (z)",
+          "default": "tone",
+          "enum": [
+            "tone",
+            "tone2",
+            "to3ne",
+            "normal",
+            "initials",
+            "first_letter"
+          ]
+        },
+        "mode": {
+          "type": "string",
+          "description": "normal, surname for personal names, or place_name for place names",
+          "default": "normal",
+          "enum": [
+            "normal",
+            "surname",
+            "place_name"
+          ]
+        },
+        "segment": {
+          "type": "boolean",
+          "description": "Split the text into words before the dictionary lookup; helps longer sentences",
+          "default": true
+        },
+        "heteronym": {
+          "type": "boolean",
+          "description": "List every reading of each character instead of the most likely one",
+          "default": false
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "pinyin4j_convert",
+    "title": "Romanize Chinese characters (Pinyin4j plugin)",
+    "description": "Romanize Chinese text character by character with the AutoJs6 Pinyin4j plugin. Unlike pinyin_convert it looks at each character alone, without word context, so a character with several readings gets its first dictionary reading; in return it offers other romanizations (romanization: hanyu, tongyong, wade_giles, mps2, yale, gwoyeu) and, with allReadings, every reading of each character. For hanyu, tone chooses tone marks (default), tone numbers or none, and case lower or upper; other romanizations do not take tone or case. Returns the readings joined by separator (a space by default) as text, and one row per character as structured content. This tool exists only while the Pinyin4j plugin is installed and enabled in AutoJs6.",
+    "group": "pinyin4j",
+    "defaultEnabled": true,
+    "bridge": "pinyin4j.readings",
+    "permissions": [
+      "pinyin4j"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 30000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Text to romanize; characters that are not Chinese stay as they are",
+          "maxLength": 8192
+        },
+        "romanization": {
+          "type": "string",
+          "description": "Romanization system",
+          "default": "hanyu",
+          "enum": [
+            "hanyu",
+            "tongyong",
+            "wade_giles",
+            "mps2",
+            "yale",
+            "gwoyeu"
+          ]
+        },
+        "tone": {
+          "type": "string",
+          "description": "Hanyu only: tone marks (zhōng), tone numbers (zhong1) or none (zhong)",
+          "default": "mark",
+          "enum": [
+            "mark",
+            "number",
+            "none"
+          ]
+        },
+        "case": {
+          "type": "string",
+          "description": "Hanyu only: lower or upper case",
+          "default": "lower",
+          "enum": [
+            "lower",
+            "upper"
+          ]
+        },
+        "separator": {
+          "type": "string",
+          "description": "Placed between the characters of the text result",
+          "maxLength": 16,
+          "default": " "
+        },
+        "allReadings": {
+          "type": "boolean",
+          "description": "List every reading of each character (joined by | in the text) instead of the first one",
+          "default": false
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "mediainfo_read",
+    "title": "Read media file information (MediaInfo)",
+    "description": "Read the technical details and tags of an audio, video or image file on the phone with the AutoJs6 MediaInfo plugin: container format, duration, bit rates, codecs, resolution, frame rate, channels, sampling rate, title, artist and more. path is a POSIX path relative to the AutoJs6 working directory. Returns one summary line per track as text and every field of every track (general, video, audio, text, image, menu, other) as structured content; report adds the full MediaInfo text report. Values are MediaInfo's display strings (\"5 min 3 s\", \"1 920 pixels\"). This tool exists only while the MediaInfo plugin is installed and enabled in AutoJs6.",
+    "group": "mediainfo",
+    "defaultEnabled": true,
+    "bridge": "mediainfo.read",
+    "permissions": [
+      "media",
+      "media.metadata"
+    ],
+    "timeoutMs": 60000,
+    "maxTimeoutMs": 300000,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        },
+        "report": {
+          "type": "boolean",
+          "description": "Also return MediaInfo's full text report (up to 64 Ki characters)",
+          "default": false
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "How long to wait for the analysis, in milliseconds",
+          "minimum": 1000,
+          "maximum": 300000,
+          "default": 60000
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    }
   }
 ]

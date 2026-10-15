@@ -155,7 +155,7 @@ class McpServerPluginContractTest {
         // Version 2 only for an installed host that accepts it (roadmap P10); the emulators of CI have no host.
         assertEquals(HostContractVersion.forHostVersion(installedHostVersionCode()), capabilities.getInt(McpServerCapabilityKeys.CONTRACT_VERSION))
         assertTrue(McpServerContract.supportsContractVersion(capabilities.getInt(McpServerCapabilityKeys.CONTRACT_VERSION)))
-        assertArrayEquals(arrayOf("script", "ui", "ui_gesture", "screen", "files", "files_delete", "device", "shell", "ocr", "barcode", "opencv"), capabilities.getStringArray(McpServerCapabilityKeys.TOOL_GROUPS))
+        assertArrayEquals(arrayOf("script", "ui", "ui_gesture", "screen", "files", "files_delete", "device", "shell", "ocr", "barcode", "opencv", "pinyin", "pinyin4j", "mediainfo"), capabilities.getStringArray(McpServerCapabilityKeys.TOOL_GROUPS))
         val protocolVersions = requireNotNull(capabilities.getStringArray(McpServerCapabilityKeys.PROTOCOL_VERSIONS))
         assertTrue(protocolVersions.contains("2025-06-18"))
         assertEquals(McpServerPlugin.SDK_VERSION, capabilities.getString(McpServerCapabilityKeys.SDK_VERSION))

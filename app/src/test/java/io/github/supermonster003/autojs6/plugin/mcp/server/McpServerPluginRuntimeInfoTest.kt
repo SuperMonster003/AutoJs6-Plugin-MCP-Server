@@ -87,7 +87,7 @@ class McpServerPluginRuntimeInfoTest {
         assertEquals("mcpServerSettingsVersion", McpServerCapabilityKeys.SETTINGS_VERSION)
         assertEquals("mcpServerUserStopped", McpServerCapabilityKeys.USER_STOPPED)
         assertTrue(McpServerContract.supportsContractVersion(info.contractVersion))
-        assertEquals(listOf("script", "ui", "ui_gesture", "screen", "files", "files_delete", "device", "shell", "ocr", "barcode", "opencv"), info.toolGroups)
+        assertEquals(listOf("script", "ui", "ui_gesture", "screen", "files", "files_delete", "device", "shell", "ocr", "barcode", "opencv", "pinyin", "pinyin4j", "mediainfo"), info.toolGroups)
         assertEquals(info.protocolVersions, info.protocolVersions.sortedDescending())
         assertTrue(info.protocolVersions.containsAll(listOf("2025-06-18", "2025-03-26")))
         assertEquals("0.15.0", info.sdkVersion)

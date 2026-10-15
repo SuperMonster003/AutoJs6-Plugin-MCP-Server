@@ -21,7 +21,8 @@ class ToolCatalogTest {
         val names = ToolCatalog.all.map { it.name }
         assertEquals(names, names.distinct())
         names.forEach { name ->
-            assertTrue(name, (name == "toast" || Regex("^[a-z]+(_[a-z]+)+$").matches(name)))
+            // The group part may carry digits (pinyin4j_convert, roadmap P11 D38); the action part is letters only.
+            assertTrue(name, (name == "toast" || Regex("^[a-z][a-z0-9]*(_[a-z]+)+$").matches(name)))
         }
         assertEquals(DEVICE_NAMES + SCRIPT_NAMES + UI_NAMES + GESTURE_NAMES + SCREEN_NAMES + FILE_NAMES + NEW_DEVICE_NAMES + listOf("shell_exec") + PLUGIN_FAMILY_NAMES, names)
         assertEquals(ToolCatalog.all, ToolCatalog.byName.values.toList())
@@ -303,6 +304,6 @@ class ToolCatalogTest {
         val DEFAULT_FILE_NAMES = FILE_NAMES.filter { it != "files_delete" }
         val NEW_DEVICE_NAMES = listOf("app_launch", "app_list", "clipboard_get", "clipboard_set", "device_ensure_accessibility", "toast")
         val SCREEN_NAMES = listOf("screen_capture", "screen_state")
-        val PLUGIN_FAMILY_NAMES = listOf("ocr_recognize", "barcode_detect", "opencv_find_image", "opencv_find_color", "opencv_find_multi_colors")
+        val PLUGIN_FAMILY_NAMES = listOf("ocr_recognize", "barcode_detect", "opencv_find_image", "opencv_find_color", "opencv_find_multi_colors", "pinyin_convert", "pinyin4j_convert", "mediainfo_read")
     }
 }

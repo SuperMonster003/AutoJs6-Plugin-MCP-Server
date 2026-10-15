@@ -161,3 +161,33 @@ Tests: `BarcodeToolsTest` and `OpenCvToolsTest` (JVM, fake caller: argument mapp
 consent retry, handle-limit hint, PLUGIN_UNAVAILABLE, argument checks), `McpServerHostSessionTest.pluginFamilyToolsFollowTheHostReportAndRunThroughTheHost`
 (instrumentation, fake broker: the rows appear with the report, the bridge envelopes, both handles of a template match recycled, the rows leave when
 the plugins go away). Device scenario: `tools/evidence/p11_image_tools.py`.
+
+## pinyin_convert, pinyin4j_convert (D38)
+
+`PinyinTools`, groups `pinyin` and `pinyin4j`: plain-text tools, one host call each, only the common options.
+
+| Tool | Host call | Notes |
+|---|---|---|
+| `pinyin_convert` (`text`, `style` tone / tone2 / to3ne / normal / initials / first_letter, `mode` normal / surname / place_name, `segment` default true, `heteronym` default false) | `pinyin.convert(text, {style, mode, segment, heteronym})` with the host's upper-case names | the Pinyin plugin reads whole words from its phrase dictionary; segmentation (on here, off in the script API) splits longer text into words first. On a device "银行行长" read `yín háng háng cháng` with and without it, so the tool description makes no promise about names and rare words |
+| `pinyin4j_convert` (`text`, `romanization` hanyu / tongyong / wade_giles / mps2 / yale / gwoyeu, `tone` mark / number / none and `case` lower / upper for hanyu only, `separator` default a space, `allReadings` default false) | `pinyin4j.readings(text, {romanization, tone?, case?})` | one row per code point (the code point itself when it has no reading); the text joins the first reading of each row with the separator, which is exactly what `pinyin4j.of` returns, so one host method covers both forms. `tone` or `case` with another romanization is refused before the host call (the host would refuse it too) |
+
+`text` is at most 8 KiB of UTF-8, well inside the host's 32 KiB argument limit (`NodeCapabilityBrokerPolicy`). Results: `pinyin_convert`
+`{pinyin, rows, style, mode, segment, heteronym}`, `pinyin4j_convert` `{text, rows, romanization, tone?, case?, allReadings}`; the content text joins rows with
+spaces (pinyin) or the separator (pinyin4j) and alternatives with `|`. A Pinyin plugin that fails surfaces as the host's `provider-failed`
+(`HOST_ERROR`); the probe hides the rows while a family is not available.
+
+## mediainfo_read (D38)
+
+`MediaInfoTools`, group `mediainfo`: `mediainfo.read(path, {includeInform: report, includeSections: true})`, permissions `media` + `media.metadata`.
+
+Arguments: `path` (workspace path; the shared storage switch of D26 widens it later), `report` (default false), `timeoutMs` (default 60 s, the plugin gives up a
+parse after 30 s). The host's default snapshot (`autojs6-node-mediainfo-snapshot-v1`) groups the fields of MediaInfo's text report by track kind, one object per
+track with camelCase keys (`overallBitRate`, `samplingRate`, `channels`, ...) and MediaInfo's display strings ("8 000 Hz", "1 channel").
+
+Result: one content line per track (`audio #2: format=AAC LC, channels=1 channel, ...`, chosen keys per kind in `MediaInfoTools.SUMMARY_KEYS`, the first six fields
+when none of them is present), then the report when asked; structured content `{path, fileName?, sizeBytes?, trackCounts, sections, report?, reportTruncated?, durationMs}`
+with the report cut at 64 Ki characters. A missing plugin is the host's `unavailable` category with module `mediainfo` and maps to `PLUGIN_UNAVAILABLE`; a missing
+file is `INVALID_ARGUMENTS` ("target does not exist").
+
+Tests: `PinyinToolsTest` and `MediaInfoToolsTest` (JVM), the plugin family case of `McpServerHostSessionTest` (fake broker). Device scenario:
+`tools/evidence/p11_text_tools.py` (a one-second WAV fixture written through `script_run`; needs "All files access" for the media checks).

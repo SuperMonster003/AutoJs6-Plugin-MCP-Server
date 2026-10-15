@@ -574,6 +574,35 @@ class McpServerHostSessionTest {
         assertEquals(listOf("4", "0", "#000000"), (0 until 3).map { offsets.get(it).toString() })
         assertFalse(pattern.getJSONObject("structuredContent").getBoolean("found"))
 
+        // Text and media tools (roadmap P11 D38): one host call each, plain arguments.
+        mark = broker.requests.size
+        val pinyin = call(ToolCatalog.PINYIN_CONVERT, """{"text":"银行"}""")
+        assertFalse(pinyin.toString(), pinyin.optBoolean("isError"))
+        assertEquals("yín háng", pinyin.getJSONArray("content").getJSONObject(0).getString("text"))
+        val convert = broker.requests[mark]
+        assertEquals("pinyin.convert", "${convert.getString("module")}.${convert.getString("method")}")
+        assertEquals(listOf("pinyin"), convert.getJSONArray("permissions").toStringList())
+        assertTrue(convert.getJSONArray("args").getJSONObject(1).getBoolean("segment"))
+
+        mark = broker.requests.size
+        val pinyin4j = call(ToolCatalog.PINYIN4J_CONVERT, """{"text":"中国","romanization":"wade_giles","allReadings":true}""")
+        assertFalse(pinyin4j.toString(), pinyin4j.optBoolean("isError"))
+        assertEquals("chung1|chung4 kuo2", pinyin4j.getJSONArray("content").getJSONObject(0).getString("text"))
+        val readings = broker.requests[mark]
+        assertEquals("pinyin4j.readings", "${readings.getString("module")}.${readings.getString("method")}")
+        assertEquals("WADE_GILES", readings.getJSONArray("args").getJSONObject(1).getString("romanization"))
+        assertFalse(readings.getJSONArray("args").getJSONObject(1).has("tone"))
+
+        mark = broker.requests.size
+        val media = call(ToolCatalog.MEDIAINFO_READ, """{"path":"music/a.mp3"}""")
+        assertFalse(media.toString(), media.optBoolean("isError"))
+        assertEquals("general: format=MPEG Audio, duration=1 s 0 ms\naudio: format=MPEG Audio, channels=2 channels", media.getJSONArray("content").getJSONObject(0).getString("text"))
+        val read = broker.requests[mark]
+        assertEquals("mediainfo.read", "${read.getString("module")}.${read.getString("method")}")
+        assertEquals(listOf("media", "media.metadata"), read.getJSONArray("permissions").toStringList())
+        assertEquals("music/a.mp3", read.getJSONArray("args").getString(0))
+        assertEquals(1, media.getJSONObject("structuredContent").getJSONObject("trackCounts").getInt("audio"))
+
         // The plugin goes away: the row leaves the list on the next request and a call explains why.
         broker.pluginFamilies = pluginFamiliesReport("not_installed")
         runtime.pluginFamilies.invalidate()
@@ -583,10 +612,12 @@ class McpServerHostSessionTest {
         assertTrue(gone.toString(), gone.toString().contains("not installed"))
         val goneBarcode = call(ToolCatalog.BARCODE_DETECT, """{"image":"screen"}""")
         assertEquals("PLUGIN_UNAVAILABLE", goneBarcode.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
+        val goneMedia = call(ToolCatalog.MEDIAINFO_READ, """{"path":"music/a.mp3"}""")
+        assertEquals("PLUGIN_UNAVAILABLE", goneMedia.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
         session.close()
     }
 
-    /** The `app.pluginCapabilities` answer with the ocr, barcode and opencv families in [status]. */
+    /** The `app.pluginCapabilities` answer with the ocr, barcode, opencv, pinyin, pinyin4j and mediainfo families in [status]. */
     private fun pluginFamiliesReport(status: String): JSONObject = JSONObject()
         .put("schema", "autojs6-bridge-app-plugin-capabilities-v1")
         .put("hostVersionCode", 5352)
@@ -596,7 +627,10 @@ class McpServerHostSessionTest {
             .put(JSONObject().put("id", "barcode").put("status", status)
                 .put("methods", JSONArray().put("barcode.detectAll")).put("plugins", JSONArray()))
             .put(JSONObject().put("id", "opencv").put("status", status)
-                .put("methods", JSONArray().put("image.matchTemplate").put("image.findColor").put("image.findMultiColors")).put("plugins", JSONArray())))
+                .put("methods", JSONArray().put("image.matchTemplate").put("image.findColor").put("image.findMultiColors")).put("plugins", JSONArray()))
+            .put(JSONObject().put("id", "pinyin").put("status", status).put("methods", JSONArray().put("pinyin.convert")).put("plugins", JSONArray()))
+            .put(JSONObject().put("id", "pinyin4j").put("status", status).put("methods", JSONArray().put("pinyin4j.readings")).put("plugins", JSONArray()))
+            .put(JSONObject().put("id", "mediainfo").put("status", status).put("methods", JSONArray().put("mediainfo.read")).put("plugins", JSONArray())))
 
     @Test
     fun workspaceToolsBridgeArgumentsPayloadsAndSeparateDangerousSwitches() {
@@ -740,13 +774,14 @@ class McpServerHostSessionTest {
         var screenFallback = false
         var denyCapture = false
 
-        /** When set, the grant covers the OCR, barcode and OpenCV family methods and `app.pluginCapabilities` answers with this report (roadmap P11). */
+        /** When set, the grant covers the plugin family methods and `app.pluginCapabilities` answers with this report (roadmap P11). */
         @Volatile
         var pluginFamilies: JSONObject? = null
 
         private val familyGrantMethods = arrayOf(
             "app.pluginCapabilities", "accessibility.readScreenText", "media_projection.requestScreenCapture", "image.readImage", "ocr.recognize", "image.recycle",
             "accessibility.captureScreenImage", "barcode.detectAll", "image.matchTemplate", "image.findColor", "image.findMultiColors",
+            "pinyin.convert", "pinyin4j.readings", "mediainfo.read",
         )
 
         override fun getBrokerInfo(): Bundle = Bundle().apply {
@@ -767,7 +802,7 @@ class McpServerHostSessionTest {
                 ) + if (pluginFamilies != null) familyGrantMethods else emptyArray(),
             )
             putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query", "files", "files.write", "files.delete", "app.activity", "app.launch", "package_manager", "clipboard", "toast", "shell", "shell.root")
-                + if (pluginFamilies != null) arrayOf("ocr", "barcode", "image", "screen_capture") else emptyArray())
+                + if (pluginFamilies != null) arrayOf("ocr", "barcode", "image", "screen_capture", "pinyin", "pinyin4j", "media", "media.metadata") else emptyArray())
             putInt(McpServerContract.KEY_GRANT_MAX_REQUEST_BYTES, McpServerContract.MAX_BRIDGE_INLINE_JSON_BYTES)
             putInt(McpServerContract.KEY_GRANT_MAX_CONCURRENT_CALLS, McpServerContract.MAX_CONCURRENT_TOOL_CALLS)
             putLong(McpServerContract.KEY_GRANT_DEFAULT_TIMEOUT_MS, McpServerContract.DEFAULT_TOOL_TIMEOUT_MS)
@@ -821,6 +856,12 @@ class McpServerHostSessionTest {
                 "image.matchTemplate" -> ok(id, JSONArray().put(JSONObject().put("x", 200).put("y", 500).put("score", 0.97)))
                 "image.findColor" -> ok(id, JSONObject().put("x", 40).put("y", 30))
                 "image.findMultiColors" -> ok(id, JSONObject.NULL)
+                "pinyin.convert" -> ok(id, JSONArray().put(JSONArray().put("yín")).put(JSONArray().put("háng")))
+                "pinyin4j.readings" -> ok(id, JSONArray().put(JSONArray().put("chung1").put("chung4")).put(JSONArray().put("kuo2")))
+                "mediainfo.read" -> ok(id, JSONObject().put("schema", "autojs6-node-mediainfo-snapshot-v1").put("fileName", "a.mp3").put("sizeBytes", 4096)
+                    .put("inform", "").put("sections", JSONObject()
+                        .put("general", JSONArray().put(JSONObject().put("format", "MPEG Audio").put("duration", "1 s 0 ms")))
+                        .put("audio", JSONArray().put(JSONObject().put("format", "MPEG Audio").put("channels", "2 channels")))))
                 "ocr.recognize" -> ok(id, JSONArray().put(JSONObject().put("text", "Decoded").put("confidence", 0.8)
                     .put("bounds", JSONObject().put("left", 10).put("top", 20).put("right", 110).put("bottom", 60))))
                 "image.recycle" -> ok(id, true)
