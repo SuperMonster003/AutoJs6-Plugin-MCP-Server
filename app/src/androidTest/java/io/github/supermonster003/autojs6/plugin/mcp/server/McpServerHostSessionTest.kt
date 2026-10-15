@@ -496,7 +496,7 @@ class McpServerHostSessionTest {
             return response.result()
         }
         // The soft probe (roadmap P11 D27 / D28): the row appears once the host grants its methods and reports the family available.
-        assertEquals(ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name } + ToolCatalog.OCR_RECOGNIZE, toolNames(post(toolsListRequest(), sessionId)))
+        assertEquals(ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name } + ToolCatalog.pluginFamilyRows.map { it.name }, toolNames(post(toolsListRequest(), sessionId)))
         assertTrue(broker.requests.any { it.getString("method") == "pluginCapabilities" && it.getJSONArray("permissions").toStringList() == listOf("app.query") })
         val held = post(toolsCallRequest(ToolCatalog.OCR_RECOGNIZE, """{"image":"screen"}"""), sessionId)
         assertTrue(runtime.server.pairingGate!!.approve(held.json().getJSONObject("error").getJSONObject("data").getString("fingerprint")))
@@ -529,6 +529,51 @@ class McpServerHostSessionTest {
         assertEquals("rapid-ocr", broker.requests[start + 1].getJSONArray("args").getJSONObject(1).getString("engine"))
         assertEquals("img-1", broker.requests[start + 2].getJSONArray("args").getJSONObject(0).getString("__autojs6ImageHandle"))
 
+        // Barcode and OpenCV (roadmap P11 D23 / D38): the screen becomes a session handle, every handle is recycled in the same call.
+        fun sequenceSince(mark: Int) = broker.requests.drop(mark).map { "${it.getString("module")}.${it.getString("method")}" }
+        var mark = broker.requests.size
+        val barcode = call(ToolCatalog.BARCODE_DETECT, """{"image":"screen","formats":["QR_CODE"]}""")
+        assertFalse(barcode.toString(), barcode.optBoolean("isError"))
+        assertEquals("QR_CODE: https://example.org", barcode.getJSONArray("content").getJSONObject(0).getString("text"))
+        assertEquals(listOf("accessibility.captureScreenImage", "barcode.detectAll", "image.recycle"), sequenceSince(mark))
+        val capture = broker.requests[mark]
+        assertEquals(listOf("accessibility", "screen_capture", "image"), capture.getJSONArray("permissions").toStringList())
+        val detect = broker.requests[mark + 1]
+        assertEquals(listOf("barcode", "image"), detect.getJSONArray("permissions").toStringList())
+        assertEquals("screen-1", detect.getJSONArray("args").getJSONObject(0).getString("__autojs6ImageHandle"))
+        assertEquals("QR_CODE", detect.getJSONArray("args").getJSONObject(1).getJSONArray("formats").getString(0))
+        assertEquals("screen-1", broker.requests[mark + 2].getJSONArray("args").getJSONObject(0).getString("id"))
+        assertEquals("accessibility", barcode.getJSONObject("structuredContent").getString("captureSource"))
+
+        mark = broker.requests.size
+        val found = call(ToolCatalog.OPENCV_FIND_IMAGE, """{"image":"screen","template":"tpl/button.png","maxResults":2}""")
+        assertFalse(found.toString(), found.optBoolean("isError"))
+        assertEquals(listOf("accessibility.captureScreenImage", "image.readImage", "image.matchTemplate", "image.recycle", "image.recycle"), sequenceSince(mark))
+        val matchArgs = broker.requests[mark + 2].getJSONArray("args")
+        assertEquals("screen-1", matchArgs.getJSONObject(0).getString("id"))
+        assertEquals("tpl-1", matchArgs.getJSONObject(1).getString("id"))
+        assertEquals(2, matchArgs.getJSONObject(2).getInt("limit"))
+        assertEquals(listOf("tpl-1", "screen-1"), (3..4).map { broker.requests[mark + it].getJSONArray("args").getJSONObject(0).getString("id") })
+        val center = found.getJSONObject("structuredContent").getJSONArray("matches").getJSONObject(0).getJSONObject("center")
+        assertEquals(listOf(250, 530), listOf(center.getInt("x"), center.getInt("y")))
+
+        mark = broker.requests.size
+        val color = call(ToolCatalog.OPENCV_FIND_COLOR, """{"image":"pics/a.png","color":"#f00"}""")
+        assertFalse(color.toString(), color.optBoolean("isError"))
+        assertEquals(listOf("image.readImage", "image.findColor", "image.recycle"), sequenceSince(mark))
+        assertEquals("#FF0000", broker.requests[mark + 1].getJSONArray("args").getString(1))
+        // Decoded pixel (40, 30) of the half-size decode lies on file pixel (81, 61).
+        val point = color.getJSONObject("structuredContent").getJSONObject("point")
+        assertEquals(listOf(81, 61), listOf(point.getInt("x"), point.getInt("y")))
+
+        mark = broker.requests.size
+        val pattern = call(ToolCatalog.OPENCV_FIND_MULTI_COLORS, """{"image":"screen","color":"#FFFFFF","points":[{"x":4,"y":0,"color":"#000000"}]}""")
+        assertFalse(pattern.toString(), pattern.optBoolean("isError"))
+        assertEquals(listOf("accessibility.captureScreenImage", "image.findMultiColors", "image.recycle"), sequenceSince(mark))
+        val offsets = broker.requests[mark + 1].getJSONArray("args").getJSONArray(2).getJSONArray(0)
+        assertEquals(listOf("4", "0", "#000000"), (0 until 3).map { offsets.get(it).toString() })
+        assertFalse(pattern.getJSONObject("structuredContent").getBoolean("found"))
+
         // The plugin goes away: the row leaves the list on the next request and a call explains why.
         broker.pluginFamilies = pluginFamiliesReport("not_installed")
         runtime.pluginFamilies.invalidate()
@@ -536,14 +581,22 @@ class McpServerHostSessionTest {
         val gone = call(ToolCatalog.OCR_RECOGNIZE, """{"image":"screen"}""")
         assertEquals("PLUGIN_UNAVAILABLE", gone.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
         assertTrue(gone.toString(), gone.toString().contains("not installed"))
+        val goneBarcode = call(ToolCatalog.BARCODE_DETECT, """{"image":"screen"}""")
+        assertEquals("PLUGIN_UNAVAILABLE", goneBarcode.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
         session.close()
     }
 
-    private fun pluginFamiliesReport(ocrStatus: String): JSONObject = JSONObject()
+    /** The `app.pluginCapabilities` answer with the ocr, barcode and opencv families in [status]. */
+    private fun pluginFamiliesReport(status: String): JSONObject = JSONObject()
         .put("schema", "autojs6-bridge-app-plugin-capabilities-v1")
         .put("hostVersionCode", 5352)
-        .put("families", JSONArray().put(JSONObject().put("id", "ocr").put("status", ocrStatus)
-            .put("methods", JSONArray().put("ocr.recognize").put("accessibility.readScreenText")).put("plugins", JSONArray())))
+        .put("families", JSONArray()
+            .put(JSONObject().put("id", "ocr").put("status", status)
+                .put("methods", JSONArray().put("ocr.recognize").put("accessibility.readScreenText")).put("plugins", JSONArray()))
+            .put(JSONObject().put("id", "barcode").put("status", status)
+                .put("methods", JSONArray().put("barcode.detectAll")).put("plugins", JSONArray()))
+            .put(JSONObject().put("id", "opencv").put("status", status)
+                .put("methods", JSONArray().put("image.matchTemplate").put("image.findColor").put("image.findMultiColors")).put("plugins", JSONArray())))
 
     @Test
     fun workspaceToolsBridgeArgumentsPayloadsAndSeparateDangerousSwitches() {
@@ -687,12 +740,13 @@ class McpServerHostSessionTest {
         var screenFallback = false
         var denyCapture = false
 
-        /** When set, the grant covers the OCR family methods and `app.pluginCapabilities` answers with this report (roadmap P11). */
+        /** When set, the grant covers the OCR, barcode and OpenCV family methods and `app.pluginCapabilities` answers with this report (roadmap P11). */
         @Volatile
         var pluginFamilies: JSONObject? = null
 
         private val familyGrantMethods = arrayOf(
             "app.pluginCapabilities", "accessibility.readScreenText", "media_projection.requestScreenCapture", "image.readImage", "ocr.recognize", "image.recycle",
+            "accessibility.captureScreenImage", "barcode.detectAll", "image.matchTemplate", "image.findColor", "image.findMultiColors",
         )
 
         override fun getBrokerInfo(): Bundle = Bundle().apply {
@@ -713,7 +767,7 @@ class McpServerHostSessionTest {
                 ) + if (pluginFamilies != null) familyGrantMethods else emptyArray(),
             )
             putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query", "files", "files.write", "files.delete", "app.activity", "app.launch", "package_manager", "clipboard", "toast", "shell", "shell.root")
-                + if (pluginFamilies != null) arrayOf("ocr", "image", "screen_capture") else emptyArray())
+                + if (pluginFamilies != null) arrayOf("ocr", "barcode", "image", "screen_capture") else emptyArray())
             putInt(McpServerContract.KEY_GRANT_MAX_REQUEST_BYTES, McpServerContract.MAX_BRIDGE_INLINE_JSON_BYTES)
             putInt(McpServerContract.KEY_GRANT_MAX_CONCURRENT_CALLS, McpServerContract.MAX_CONCURRENT_TOOL_CALLS)
             putLong(McpServerContract.KEY_GRANT_DEFAULT_TIMEOUT_MS, McpServerContract.DEFAULT_TOOL_TIMEOUT_MS)
@@ -753,8 +807,20 @@ class McpServerHostSessionTest {
                     ?: JSONObject().put("id", id).put("ok", false).put("error", JSONObject().put("category", "capability-denied").put("message", "not granted"))
                 "accessibility.readScreenText" -> ok(id, JSONArray().put(JSONObject().put("text", "Hello").put("confidence", 0.91)
                     .put("bounds", JSONObject().put("left", 10).put("top", 20).put("right", 110).put("bottom", 60))))
-                "image.readImage" -> ok(id, JSONObject().put("id", "img-1").put("__autojs6ImageHandle", "img-1").put("width", 1000).put("height", 500)
-                    .put("sourceWidth", 2000).put("sourceHeight", 1000).put("scale", 0.5))
+                "image.readImage" -> if (json.getJSONArray("args").getString(0).startsWith("tpl/")) {
+                    ok(id, JSONObject().put("id", "tpl-1").put("__autojs6ImageHandle", "tpl-1").put("width", 100).put("height", 60))
+                } else {
+                    ok(id, JSONObject().put("id", "img-1").put("__autojs6ImageHandle", "img-1").put("width", 1000).put("height", 500)
+                        .put("sourceWidth", 2000).put("sourceHeight", 1000).put("scale", 0.5))
+                }
+                "accessibility.captureScreenImage" -> ok(id, JSONObject().put("id", "screen-1").put("__autojs6ImageHandle", "screen-1")
+                    .put("width", 1080).put("height", 2400).put("captureSource", "accessibility"))
+                "barcode.detectAll" -> ok(id, JSONArray().put(JSONObject().put("rawValue", "https://example.org").put("displayValue", "example.org")
+                    .put("formatName", "QR_CODE").put("valueTypeName", "URL")
+                    .put("boundingBox", JSONObject().put("left", 100).put("top", 200).put("right", 300).put("bottom", 400))))
+                "image.matchTemplate" -> ok(id, JSONArray().put(JSONObject().put("x", 200).put("y", 500).put("score", 0.97)))
+                "image.findColor" -> ok(id, JSONObject().put("x", 40).put("y", 30))
+                "image.findMultiColors" -> ok(id, JSONObject.NULL)
                 "ocr.recognize" -> ok(id, JSONArray().put(JSONObject().put("text", "Decoded").put("confidence", 0.8)
                     .put("bounds", JSONObject().put("left", 10).put("top", 20).put("right", 110).put("bottom", 60))))
                 "image.recycle" -> ok(id, true)

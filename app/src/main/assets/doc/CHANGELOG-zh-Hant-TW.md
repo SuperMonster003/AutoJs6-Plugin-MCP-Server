@@ -10,6 +10,8 @@
 
 * `新增` 6 個外掛程式工具群組開關 (OCR 文字辨識, 條碼辨識, OpenCV 找圖找色, Pinyin 與 Pinyin4j 拼音轉換, MediaInfo 媒體資訊): 這些群組的工具只在對應的 AutoJs6 外掛程式已安裝並啟用時出現在用戶端的工具清單中, 安裝, 解除安裝或更新外掛程式後清單自動更新, 呼叫外掛程式缺失的工具會說明原因 (PLUGIN_UNAVAILABLE)
 * `新增` ocr_recognize 工具, 用於辨識手機螢幕或手機上圖片檔案中的文字 (需要已安裝並啟用 ML Kit, Paddle OCR 或 Rapid OCR 外掛程式): image 為 "screen" 時在 AutoJs6 內截圖並辨識, 為工作目錄內的路徑時讀取檔案後辨識; 可選 region 裁切與 engine 指定引擎 (預設自動選擇); 結果附文字, 信心值與座標 (大圖按原圖像素回傳), 圖片不離開手機
+* `新增` barcode_detect 工具, 用於辨識手機螢幕或手機上圖片檔案中的條碼與 QR Code (需要已安裝並啟用 ML Kit Barcode 外掛程式): image 為 "screen" 時在 AutoJs6 內截圖後辨識, 為工作目錄內的路徑時讀取檔案後辨識; 可選 formats 限定條碼類型, region 裁切與 maxResults 數量上限; 結果附內容, 條碼類型與座標 (大圖按原圖像素回傳), 圖片不離開手機
+* `新增` opencv_find_image, opencv_find_color 與 opencv_find_multi_colors 工具, 用於在手機螢幕或手機上的圖片檔案中找圖, 找色與多點找色 (需要已安裝並啟用 OpenCV 外掛程式): 找圖的範本是工作目錄內的圖片, 結果附每處相符的範圍, 中心與相似度; 找色回傳第一個相符的像素座標; 皆可用 region 限定範圍, 圖片不離開手機
 * `修復` 實機取證指令碼在正式版旁留有偵錯測試套件時誤啟動測試並導致應用程式程序崩潰的問題
 * `優化` AutoJs6 6.8.0 建置 5333 以上時, 設定頁的通知關閉提示會說明配對請求在 AutoJs6 位於前景時同樣會出現
 

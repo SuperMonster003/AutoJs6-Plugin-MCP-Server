@@ -54,6 +54,10 @@ object ToolCatalog {
     const val TOAST = "toast"
     const val SHELL_EXEC = "shell_exec"
     const val OCR_RECOGNIZE = "ocr_recognize"
+    const val BARCODE_DETECT = "barcode_detect"
+    const val OPENCV_FIND_IMAGE = "opencv_find_image"
+    const val OPENCV_FIND_COLOR = "opencv_find_color"
+    const val OPENCV_FIND_MULTI_COLORS = "opencv_find_multi_colors"
 
     val FILE_NAMES = listOf(FILES_LIST, FILES_STAT, FILES_READ, FILES_WRITE, FILES_MKDIR, FILES_RENAME, FILES_DELETE)
     val DEVICE_ACTION_NAMES = listOf(EDITOR_OPEN, APP_LAUNCH, APP_LIST, CLIPBOARD_GET, CLIPBOARD_SET, DEVICE_ENSURE_ACCESSIBILITY, TOAST)
@@ -99,23 +103,69 @@ object ToolCatalog {
         const val MAX_OUTPUT_BYTES = "maxOutputBytes"
     }
 
-    /** `ocr_recognize` argument names and bounds (roadmap P11 D23 / D24 / D25 / D38), shared with OcrTools and the tests. */
-    object Ocr {
+    /** The `image` argument and host handle budgets every plugin-family tool shares (roadmap P11 D23 / D24 / D38, see ImageInputs). */
+    object Images {
         const val IMAGE = "image"
         const val REGION = "region"
-        const val ENGINE = "engine"
         const val TIMEOUT_MS = "timeoutMs"
-        /** The `image` value that recognizes the phone screen instead of a file. */
+        /** The `image` value that works on the phone screen instead of a file. */
         const val SCREEN = "screen"
-        const val DEFAULT_TIMEOUT_MS = 60_000L
         const val MIN_TIMEOUT_MS = 1_000L
-        /** Reading the file into a host image handle, before recognition. */
+        /** Capturing the screen into a host image handle; the host retries while the system throttles accessibility screenshots. */
+        const val CAPTURE_TIMEOUT_MS = 15_000L
+        /** Reading a file into a host image handle. */
         const val READ_TIMEOUT_MS = 30_000L
-        /** Releasing the handle afterwards; a failure here is logged, not reported. */
+        /** Releasing a handle afterwards; a failure here is not reported. */
         const val RECYCLE_TIMEOUT_MS = 5_000L
+        /** Description of the `image` argument. */
+        const val IMAGE_DESCRIPTION = "\"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal"
+    }
+
+    /** `ocr_recognize` argument names and bounds (roadmap P11 D23 / D24 / D25 / D38), shared with OcrTools and the tests. */
+    object Ocr {
+        const val IMAGE = Images.IMAGE
+        const val REGION = Images.REGION
+        const val ENGINE = "engine"
+        const val TIMEOUT_MS = Images.TIMEOUT_MS
+        const val SCREEN = Images.SCREEN
+        const val DEFAULT_TIMEOUT_MS = 60_000L
+        const val MIN_TIMEOUT_MS = Images.MIN_TIMEOUT_MS
+        const val READ_TIMEOUT_MS = Images.READ_TIMEOUT_MS
+        const val RECYCLE_TIMEOUT_MS = Images.RECYCLE_TIMEOUT_MS
         val ENGINES = listOf("auto", "mlkit", "paddle", "rapid")
         /** Tool engine names to the host engine ids of the OCR plugins. */
         val HOST_ENGINES = mapOf("mlkit" to "mlkit-ocr", "paddle" to "paddle-ocr", "rapid" to "rapid-ocr")
+    }
+
+    /** `barcode_detect` argument names and bounds (roadmap P11 D23 / D24 / D38), shared with BarcodeTools and the tests. */
+    object Barcode {
+        const val FORMATS = "formats"
+        const val MAX_RESULTS = "maxResults"
+        const val DEFAULT_MAX_RESULTS = 10L
+        /** The host's `barcode` module caps a detection at 128 codes. */
+        const val MAX_RESULTS_LIMIT = 128L
+        const val DEFAULT_TIMEOUT_MS = 30_000L
+        /** The symbologies of the ML Kit Barcode plugin, as the host names them in results. */
+        val FORMAT_NAMES = listOf("AZTEC", "CODABAR", "CODE_39", "CODE_93", "CODE_128", "DATA_MATRIX", "EAN_8", "EAN_13", "ITF", "PDF_417", "QR_CODE", "UPC_A", "UPC_E")
+    }
+
+    /** Argument names and bounds of the `opencv` tools (roadmap P11 D23 / D24 / D38), shared with OpenCvTools and the tests. */
+    object OpenCv {
+        const val TEMPLATE = "template"
+        const val THRESHOLD = "threshold"
+        const val MAX_RESULTS = "maxResults"
+        const val COLOR = "color"
+        const val POINTS = "points"
+        const val DEFAULT_MATCH_THRESHOLD = 0.9
+        const val DEFAULT_MAX_RESULTS = 5L
+        const val MAX_RESULTS_LIMIT = 100L
+        /** The host's default per-channel tolerance of `image.findColor` / `findMultiColors`. */
+        const val DEFAULT_COLOR_THRESHOLD = 4L
+        const val MAX_COLOR_THRESHOLD = 255L
+        const val MAX_POINTS = 64
+        /** Offsets of `opencv_find_multi_colors` lie within this distance of the first point, in either direction. */
+        const val MAX_OFFSET = 65_535L
+        const val DEFAULT_TIMEOUT_MS = 30_000L
     }
 
     /** Screenshot options shared by the catalog and ScreenTools (P3.3). */
@@ -778,7 +828,7 @@ object ToolCatalog {
         group = ToolGroup.OCR,
         inputSchema = JsonSchemas.objectSchema(
             linkedMapOf(
-                Ocr.IMAGE to JsonSchemas.string("\"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal", maxLength = WorkspacePath.MAX_BYTES),
+                Ocr.IMAGE to JsonSchemas.string(Images.IMAGE_DESCRIPTION, maxLength = WorkspacePath.MAX_BYTES),
                 Ocr.REGION to JsonSchemas.bounds("Crop before recognition, in screen pixels for the screen or file pixels for a file; right and bottom are exclusive"),
                 Ocr.ENGINE to JsonSchemas.string("OCR plugin to use; auto picks the first enabled one in ML Kit, Paddle, Rapid order", default = "auto", enum = Ocr.ENGINES),
                 Ocr.TIMEOUT_MS to JsonSchemas.integer("How long to wait for the recognition, in milliseconds", minimum = Ocr.MIN_TIMEOUT_MS, maximum = McpServerContract.MAX_TOOL_TIMEOUT_MS, default = Ocr.DEFAULT_TIMEOUT_MS),
@@ -794,6 +844,142 @@ object ToolCatalog {
             BridgeMethod("accessibility", "readScreenText"), BridgeMethod("media_projection", "requestScreenCapture"),
             BridgeMethod("image", "readImage"), BridgeMethod("ocr", "recognize"), BridgeMethod("image", "recycle"),
         ),
+    )
+
+    val barcodeDetect = ToolSpec(
+        name = BARCODE_DETECT,
+        title = "Detect barcodes and QR codes",
+        description = "Detect barcodes and QR codes on the phone screen or in an image file on the phone with the AutoJs6 ML Kit Barcode plugin. " +
+                "image is \"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory for an image file. " +
+                "formats limits the symbologies (all by default); region crops before detection, in screen pixels or file pixels. Returns one line " +
+                "per code (format and raw value) and, as structured content, items with rawValue, displayValue, format, valueType, bounds and " +
+                "cornerPoints (file coordinates are in the file's own pixels even when AutoJs6 downscaled the image to read it). The screenshot " +
+                "stays inside AutoJs6; no image leaves the phone. This tool exists only while the barcode plugin is installed and enabled in AutoJs6.",
+        group = ToolGroup.BARCODE,
+        inputSchema = JsonSchemas.objectSchema(
+            linkedMapOf(
+                Images.IMAGE to JsonSchemas.string(Images.IMAGE_DESCRIPTION, maxLength = WorkspacePath.MAX_BYTES),
+                Barcode.FORMATS to JsonSchemas.array(
+                    "Only detect these symbologies; omit for all",
+                    JsonSchemas.string("Barcode symbology", enum = Barcode.FORMAT_NAMES),
+                    minItems = 1,
+                    maxItems = Barcode.FORMAT_NAMES.size,
+                ),
+                Images.REGION to JsonSchemas.bounds("Crop before detection, in screen pixels for the screen or file pixels for a file; right and bottom are exclusive"),
+                Barcode.MAX_RESULTS to JsonSchemas.integer("Report at most this many codes", minimum = 1, maximum = Barcode.MAX_RESULTS_LIMIT, default = Barcode.DEFAULT_MAX_RESULTS),
+                Images.TIMEOUT_MS to JsonSchemas.integer("How long to wait for the detection, in milliseconds", minimum = Images.MIN_TIMEOUT_MS, maximum = McpServerContract.MAX_TOOL_TIMEOUT_MS, default = Barcode.DEFAULT_TIMEOUT_MS),
+            ),
+            required = listOf(Images.IMAGE),
+        ),
+        bridge = BridgeMethod("barcode", "detectAll"),
+        permissions = listOf("barcode", "image", "accessibility", "screen_capture"),
+        timeoutMs = Barcode.DEFAULT_TIMEOUT_MS,
+        maxTimeoutMs = McpServerContract.MAX_TOOL_TIMEOUT_MS,
+        hints = ToolHints(readOnly = true, idempotent = false, openWorld = true),
+        hostMethods = imageHostMethods(BridgeMethod("barcode", "detectAll")),
+    )
+
+    val opencvFindImage = ToolSpec(
+        name = OPENCV_FIND_IMAGE,
+        title = "Find an image (template matching)",
+        description = "Find where a smaller template image appears on the phone screen or in an image file on the phone (OpenCV template " +
+                "matching through the AutoJs6 OpenCV plugin). image is \"screen\" for the current screen, or a POSIX path relative to the AutoJs6 " +
+                "working directory; template is the path of the image to look for, at the same pixel scale as image (for the screen, cut from a " +
+                "full-resolution screenshot). threshold is the lowest similarity accepted (0..1); region limits the search, in screen pixels or file " +
+                "pixels; maxResults caps the matches, best first and without overlaps. Returns bounds, center and score of each match; screen " +
+                "coordinates are device pixels. This tool exists only while the OpenCV plugin is installed and enabled in AutoJs6.",
+        group = ToolGroup.OPENCV,
+        inputSchema = JsonSchemas.objectSchema(
+            linkedMapOf(
+                Images.IMAGE to JsonSchemas.string(Images.IMAGE_DESCRIPTION, maxLength = WorkspacePath.MAX_BYTES),
+                OpenCv.TEMPLATE to JsonSchemas.string("POSIX path of the template image relative to the AutoJs6 working directory", maxLength = WorkspacePath.MAX_BYTES),
+                OpenCv.THRESHOLD to JsonSchemas.number("Lowest similarity a match needs, from 0 to 1", minimum = 0.0, maximum = 1.0, default = OpenCv.DEFAULT_MATCH_THRESHOLD),
+                Images.REGION to JsonSchemas.bounds("Search only inside this rectangle, in screen pixels or file pixels; right and bottom are exclusive"),
+                OpenCv.MAX_RESULTS to JsonSchemas.integer("Report at most this many matches, best first", minimum = 1, maximum = OpenCv.MAX_RESULTS_LIMIT, default = OpenCv.DEFAULT_MAX_RESULTS),
+                Images.TIMEOUT_MS to JsonSchemas.integer("How long to wait for the search, in milliseconds", minimum = Images.MIN_TIMEOUT_MS, maximum = McpServerContract.MAX_TOOL_TIMEOUT_MS, default = OpenCv.DEFAULT_TIMEOUT_MS),
+            ),
+            required = listOf(Images.IMAGE, OpenCv.TEMPLATE),
+        ),
+        bridge = BridgeMethod("image", "matchTemplate"),
+        permissions = listOf("image", "accessibility", "screen_capture"),
+        timeoutMs = OpenCv.DEFAULT_TIMEOUT_MS,
+        maxTimeoutMs = McpServerContract.MAX_TOOL_TIMEOUT_MS,
+        hints = ToolHints(readOnly = true, idempotent = false, openWorld = true),
+        hostMethods = imageHostMethods(BridgeMethod("image", "matchTemplate")),
+    )
+
+    val opencvFindColor = ToolSpec(
+        name = OPENCV_FIND_COLOR,
+        title = "Find a color",
+        description = "Find the first pixel of a color on the phone screen or in an image file on the phone (AutoJs6 OpenCV plugin). image is " +
+                "\"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory. color is #RRGGBB or #RGB; threshold " +
+                "is the difference allowed in each of the red, green and blue channels; region limits the search, in screen pixels or file pixels. " +
+                "Pixels are searched row by row from the top left. Returns found and the point; screen coordinates are device pixels. This tool " +
+                "exists only while the OpenCV plugin is installed and enabled in AutoJs6.",
+        group = ToolGroup.OPENCV,
+        inputSchema = JsonSchemas.objectSchema(
+            linkedMapOf(
+                Images.IMAGE to JsonSchemas.string(Images.IMAGE_DESCRIPTION, maxLength = WorkspacePath.MAX_BYTES),
+                OpenCv.COLOR to JsonSchemas.string("The color to find, #RRGGBB or #RGB", maxLength = 7),
+                OpenCv.THRESHOLD to JsonSchemas.integer("Difference allowed in each RGB channel, from 0 (exact) to 255", minimum = 0, maximum = OpenCv.MAX_COLOR_THRESHOLD, default = OpenCv.DEFAULT_COLOR_THRESHOLD),
+                Images.REGION to JsonSchemas.bounds("Search only inside this rectangle, in screen pixels or file pixels; right and bottom are exclusive"),
+                Images.TIMEOUT_MS to JsonSchemas.integer("How long to wait for the search, in milliseconds", minimum = Images.MIN_TIMEOUT_MS, maximum = McpServerContract.MAX_TOOL_TIMEOUT_MS, default = OpenCv.DEFAULT_TIMEOUT_MS),
+            ),
+            required = listOf(Images.IMAGE, OpenCv.COLOR),
+        ),
+        bridge = BridgeMethod("image", "findColor"),
+        permissions = listOf("image", "accessibility", "screen_capture"),
+        timeoutMs = OpenCv.DEFAULT_TIMEOUT_MS,
+        maxTimeoutMs = McpServerContract.MAX_TOOL_TIMEOUT_MS,
+        hints = ToolHints(readOnly = true, idempotent = false, openWorld = true),
+        hostMethods = imageHostMethods(BridgeMethod("image", "findColor")),
+    )
+
+    val opencvFindMultiColors = ToolSpec(
+        name = OPENCV_FIND_MULTI_COLORS,
+        title = "Find a multi-point color pattern",
+        description = "Find the first point whose color matches and whose neighbors at given offsets match their colors too (multi-point color " +
+                "search, AutoJs6 OpenCV plugin), on the phone screen or in an image file on the phone. image is \"screen\" for the current screen, " +
+                "or a POSIX path relative to the AutoJs6 working directory. color is the color of the point itself (#RRGGBB or #RGB); points lists " +
+                "the neighbors as {x, y, color}, with x and y relative to that point in the pixels of image. threshold is the difference allowed in " +
+                "each RGB channel for color and the average difference allowed for the neighbors; region limits where the point may lie. Returns " +
+                "found and the point; screen coordinates are device pixels. This tool exists only while the OpenCV plugin is installed and enabled in AutoJs6.",
+        group = ToolGroup.OPENCV,
+        inputSchema = JsonSchemas.objectSchema(
+            linkedMapOf(
+                Images.IMAGE to JsonSchemas.string(Images.IMAGE_DESCRIPTION, maxLength = WorkspacePath.MAX_BYTES),
+                OpenCv.COLOR to JsonSchemas.string("Color of the point itself, #RRGGBB or #RGB", maxLength = 7),
+                OpenCv.POINTS to JsonSchemas.array(
+                    "Neighbors that must match too, relative to the point",
+                    JsonSchemas.objectSchema(
+                        linkedMapOf(
+                            "x" to JsonSchemas.integer("Horizontal offset from the point; negative is to the left", minimum = -OpenCv.MAX_OFFSET, maximum = OpenCv.MAX_OFFSET),
+                            "y" to JsonSchemas.integer("Vertical offset from the point; negative is above", minimum = -OpenCv.MAX_OFFSET, maximum = OpenCv.MAX_OFFSET),
+                            "color" to JsonSchemas.string("Color at that offset, #RRGGBB or #RGB", maxLength = 7),
+                        ),
+                        required = listOf("x", "y", "color"),
+                    ),
+                    minItems = 1,
+                    maxItems = OpenCv.MAX_POINTS,
+                ),
+                OpenCv.THRESHOLD to JsonSchemas.integer("Allowed color difference, from 0 (exact) to 255", minimum = 0, maximum = OpenCv.MAX_COLOR_THRESHOLD, default = OpenCv.DEFAULT_COLOR_THRESHOLD),
+                Images.REGION to JsonSchemas.bounds("Only points inside this rectangle, in screen pixels or file pixels; right and bottom are exclusive"),
+                Images.TIMEOUT_MS to JsonSchemas.integer("How long to wait for the search, in milliseconds", minimum = Images.MIN_TIMEOUT_MS, maximum = McpServerContract.MAX_TOOL_TIMEOUT_MS, default = OpenCv.DEFAULT_TIMEOUT_MS),
+            ),
+            required = listOf(Images.IMAGE, OpenCv.COLOR, OpenCv.POINTS),
+        ),
+        bridge = BridgeMethod("image", "findMultiColors"),
+        permissions = listOf("image", "accessibility", "screen_capture"),
+        timeoutMs = OpenCv.DEFAULT_TIMEOUT_MS,
+        maxTimeoutMs = McpServerContract.MAX_TOOL_TIMEOUT_MS,
+        hints = ToolHints(readOnly = true, idempotent = false, openWorld = true),
+        hostMethods = imageHostMethods(BridgeMethod("image", "findMultiColors")),
+    )
+
+    /** The host methods of a tool that takes its image through ImageInputs and runs [operation] on the handle. */
+    private fun imageHostMethods(operation: BridgeMethod): List<BridgeMethod> = listOf(
+        BridgeMethod("accessibility", "captureScreenImage"), BridgeMethod("media_projection", "requestScreenCapture"),
+        BridgeMethod("image", "readImage"), operation, BridgeMethod("image", "recycle"),
     )
 
     private fun fileSpec(name: String, title: String, description: String, method: String,
@@ -812,7 +998,7 @@ object ToolCatalog {
         filesList, filesStat, filesRead, filesWrite, filesMkdir, filesRename, filesDelete, editorOpen,
         appLaunch, appList, clipboardGet, clipboardSet, deviceEnsureAccessibility, toast, shellExec,
         // Plugin-family rows (roadmap P11): listed only while the host grants their methods and reports the plugin as available.
-        ocrRecognize,
+        ocrRecognize, barcodeDetect, opencvFindImage, opencvFindColor, opencvFindMultiColors,
     )
 
     val byName: Map<String, ToolSpec> = all.associateBy { it.name }

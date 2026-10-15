@@ -102,3 +102,62 @@ and `ToolCatalog.groups` / `mcpServerToolGroups` carry `ocr` from this row on.
 Tests: `OcrToolsTest` (JVM, fake caller: argument mapping, scale conversion, recycle on failure, PLUGIN_UNAVAILABLE mapping, consent
 retry, argument checks), `McpServerHostSessionTest.pluginFamilyToolsFollowTheHostReportAndRunThroughTheHost` (instrumentation, fake
 broker: the row appears with the report, both paths run, the row leaves when the plugin goes away).
+
+## Image inputs shared by the image tools
+
+`ImageInputs` holds what every tool with an `image` argument (D38) needs: `"screen"` or a workspace path, a `region`
+(`{left, top, right, bottom}`, right and bottom exclusive, in screen pixels or file pixels), and a session image handle that is
+taken, used and recycled in one call (`withImage`; `withFile` for an argument that is always a path, such as a template, even one
+named `screen`).
+
+| Source | Host call | Notes |
+|---|---|---|
+| `"screen"` | `accessibility.captureScreenImage()` | accessibility screenshot on Android 11+, MediaProjection otherwise (D23); `permission-denied` asks once for consent through `media_projection.requestScreenCapture` and retries, like `screen_capture`; the handle reports `captureSource` |
+| a workspace path | `image.readImage(path)` | large files are decoded at a power-of-two sample size (D45); the handle reports `sourceWidth` / `sourceHeight` / `scale` |
+| afterwards | `image.recycle(handle)` | in a `finally`; a failure is not reported (the session close releases the handle at the latest) |
+
+`ImageHandle` converts in both directions: `region` to decoded pixels (`{x, y, width, height}` for OCR and barcode, `[x, y, width, height]`
+for the OpenCV methods), and results back to the image's own pixels. A region beyond the image is rejected once its size is known (after the
+handle is taken; the handle is still recycled). Every result reports `width` / `height` (the image's own size), `scale`, `decodedWidth` /
+`decodedHeight` when the host downscaled, and `captureSource` for the screen. A host `resource-limit` answer while taking a handle (the
+session keeps at most twice its concurrent call limit, 8 for MCP) is `LIMIT_EXCEEDED` with a hint that names the handle limit; the plugin's
+own concurrency limit (4) keeps a session at 8 handles at most, so this only shows when handles leak. `ocr_recognize` uses the same helper for
+its file path; its screen path stays on `accessibility.readScreenText`.
+
+## barcode_detect (D23 / D24 / D38)
+
+`BarcodeTools`, group `barcode`: the image handle goes to `barcode.detectAll(handle, {formats?, maxResults, region?})`.
+
+Arguments: `image` (required), `formats` (1 - 13 of `AZTEC`, `CODABAR`, `CODE_39`, `CODE_93`, `CODE_128`, `DATA_MATRIX`, `EAN_8`, `EAN_13`, `ITF`,
+`PDF_417`, `QR_CODE`, `UPC_A`, `UPC_E`, the names the host reports; omitted = all; duplicates are dropped), `region`, `maxResults` (default 10,
+1 .. 128, the host's cap), `timeoutMs` (default 30 s, 1 s .. 300 s).
+
+Result: one content line per code, `FORMAT: rawValue` (`(no barcode found)` when empty); structured content
+`{image, source, count, items[{rawValue, displayValue, format, valueType, bounds?, cornerPoints?, structured?}], formats?, region?, width, height, scale, decodedWidth?, decodedHeight?, captureSource?, durationMs}`.
+`rawValue` / `displayValue` may be null (binary payloads); `structured` is the plugin's parsed form (URL, Wi-Fi, contact, ...) when it gives one.
+A missing or disabled barcode plugin comes back as the host's `unavailable` category with module `barcode` and is mapped to `PLUGIN_UNAVAILABLE`.
+
+## opencv_find_image, opencv_find_color, opencv_find_multi_colors (D23 / D24 / D38)
+
+`OpenCvTools`, group `opencv`: the OpenCV methods of the host's `image` module, which run on the AutoJs6 OpenCV plugin inside the host process.
+
+| Tool | Host call | Result |
+|---|---|---|
+| `opencv_find_image` (`image`, `template` path, `threshold` 0..1 default 0.9, `region`, `maxResults` default 5 max 100) | `image.matchTemplate(image, template, {threshold, limit, region?})` | `matches[{bounds, center, score}]`, best first, no overlaps; `templateWidth` / `templateHeight` |
+| `opencv_find_color` (`image`, `color`, `threshold` 0..255 default 4, `region`) | `image.findColor(image, color, {threshold, region?})` | `found`, `point?`: the first pixel in row order |
+| `opencv_find_multi_colors` (`image`, `color`, `points[{x, y, color}]` 1 - 64, `threshold`, `region`) | `image.findMultiColors(image, color, [[x, y, color], ...], {threshold, region?})` | `found`, `point?` |
+
+Colors are `#RRGGBB` or `#RGB` and are sent upper case as `#RRGGBB`. `threshold` is the host's: a per-channel box for the first color and the
+average difference for the neighbors. Every tool has `timeoutMs` (default 30 s, 1 s .. 300 s).
+
+Scale rules (D45): the template is read as a file too. When the host decodes the image and the template at different sample sizes (in practice:
+an image longer than 4096 px with an ordinary template), template matching would compare two scales and find nothing, so the call is refused with
+`INVALID_ARGUMENTS` before `matchTemplate`; a template larger than the search area is refused the same way. Points of a downscaled file are
+reported at the file pixel under the decoded pixel's center; neighbor offsets of `opencv_find_multi_colors` are scaled to decoded pixels and
+rounded. The screen is never downscaled. An OpenCV plugin that disappears between the probe and the call surfaces as the host's
+`provider-failed` (`HOST_ERROR`); the next `tools/list` hides the rows.
+
+Tests: `BarcodeToolsTest` and `OpenCvToolsTest` (JVM, fake caller: argument mapping, region conversion, scale mapping, recycle on every path,
+consent retry, handle-limit hint, PLUGIN_UNAVAILABLE, argument checks), `McpServerHostSessionTest.pluginFamilyToolsFollowTheHostReportAndRunThroughTheHost`
+(instrumentation, fake broker: the rows appear with the report, the bridge envelopes, both handles of a template match recycled, the rows leave when
+the plugins go away). Device scenario: `tools/evidence/p11_image_tools.py`.

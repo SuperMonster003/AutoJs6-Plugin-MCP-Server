@@ -69,9 +69,12 @@ object JsonSchemas {
     }
 
     /** A JSON number (integer or fraction). */
-    fun number(description: String): JsonObject = buildJsonObject {
+    fun number(description: String, minimum: Double? = null, maximum: Double? = null, default: Double? = null): JsonObject = buildJsonObject {
         put("type", "number")
         put("description", description)
+        minimum?.let { put("minimum", it) }
+        maximum?.let { put("maximum", it) }
+        default?.let { put("default", it) }
     }
 
     /** An object whose members are not described further. */

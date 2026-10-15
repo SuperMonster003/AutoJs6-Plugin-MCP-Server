@@ -36,7 +36,9 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ScreenTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolFlows
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.FileTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.DeviceTools
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.BarcodeTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.OcrTools
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.OpenCvTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ShellTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.BridgeCaller
 import io.github.supermonster003.autojs6.plugin.mcp.server.bridge.ToolFailure
@@ -104,6 +106,8 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
     private val deviceTools = DeviceTools()
     private val shellTools = ShellTools { toolPermissions.load() }
     private val ocrTools = OcrTools()
+    private val barcodeTools = BarcodeTools()
+    private val openCvTools = OpenCvTools()
 
     /** Soft probe of the plugin families behind the plugin-family tool groups (roadmap P11 D27 / D28). */
     val pluginFamilies: PluginFamilyProbe = PluginFamilyProbe({ bridge })
@@ -123,7 +127,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
             flows = ToolFlows { spec, arguments ->
                 uiTools.planFor(spec, arguments) ?: screenTools.planFor(spec, arguments) ?:
                 fileTools.planFor(spec, arguments) ?: deviceTools.planFor(spec, arguments) ?: shellTools.planFor(spec, arguments) ?:
-                ocrTools.planFor(spec, arguments)
+                ocrTools.planFor(spec, arguments) ?: barcodeTools.planFor(spec, arguments) ?: openCvTools.planFor(spec, arguments)
             },
         ),
     )

@@ -2773,5 +2773,431 @@
       ],
       "additionalProperties": false
     }
+  },
+  {
+    "name": "barcode_detect",
+    "title": "Detect barcodes and QR codes",
+    "description": "Detect barcodes and QR codes on the phone screen or in an image file on the phone with the AutoJs6 ML Kit Barcode plugin. image is \"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory for an image file. formats limits the symbologies (all by default); region crops before detection, in screen pixels or file pixels. Returns one line per code (format and raw value) and, as structured content, items with rawValue, displayValue, format, valueType, bounds and cornerPoints (file coordinates are in the file's own pixels even when AutoJs6 downscaled the image to read it). The screenshot stays inside AutoJs6; no image leaves the phone. This tool exists only while the barcode plugin is installed and enabled in AutoJs6.",
+    "group": "barcode",
+    "defaultEnabled": true,
+    "bridge": "barcode.detectAll",
+    "permissions": [
+      "barcode",
+      "image",
+      "accessibility",
+      "screen_capture"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 300000,
+    "hostMethods": [
+      "accessibility.captureScreenImage",
+      "media_projection.requestScreenCapture",
+      "image.readImage",
+      "barcode.detectAll",
+      "image.recycle"
+    ],
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string",
+          "description": "\"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        },
+        "formats": {
+          "type": "array",
+          "description": "Only detect these symbologies; omit for all",
+          "items": {
+            "type": "string",
+            "description": "Barcode symbology",
+            "enum": [
+              "AZTEC",
+              "CODABAR",
+              "CODE_39",
+              "CODE_93",
+              "CODE_128",
+              "DATA_MATRIX",
+              "EAN_8",
+              "EAN_13",
+              "ITF",
+              "PDF_417",
+              "QR_CODE",
+              "UPC_A",
+              "UPC_E"
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 13
+        },
+        "region": {
+          "type": "object",
+          "description": "Crop before detection, in screen pixels for the screen or file pixels for a file; right and bottom are exclusive",
+          "properties": {
+            "left": {
+              "type": "integer",
+              "description": "Left edge in device pixels"
+            },
+            "top": {
+              "type": "integer",
+              "description": "Top edge in device pixels"
+            },
+            "right": {
+              "type": "integer",
+              "description": "Right edge in device pixels"
+            },
+            "bottom": {
+              "type": "integer",
+              "description": "Bottom edge in device pixels"
+            }
+          },
+          "required": [
+            "left",
+            "top",
+            "right",
+            "bottom"
+          ],
+          "additionalProperties": false
+        },
+        "maxResults": {
+          "type": "integer",
+          "description": "Report at most this many codes",
+          "minimum": 1,
+          "maximum": 128,
+          "default": 10
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "How long to wait for the detection, in milliseconds",
+          "minimum": 1000,
+          "maximum": 300000,
+          "default": 30000
+        }
+      },
+      "required": [
+        "image"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "opencv_find_image",
+    "title": "Find an image (template matching)",
+    "description": "Find where a smaller template image appears on the phone screen or in an image file on the phone (OpenCV template matching through the AutoJs6 OpenCV plugin). image is \"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory; template is the path of the image to look for, at the same pixel scale as image (for the screen, cut from a full-resolution screenshot). threshold is the lowest similarity accepted (0..1); region limits the search, in screen pixels or file pixels; maxResults caps the matches, best first and without overlaps. Returns bounds, center and score of each match; screen coordinates are device pixels. This tool exists only while the OpenCV plugin is installed and enabled in AutoJs6.",
+    "group": "opencv",
+    "defaultEnabled": true,
+    "bridge": "image.matchTemplate",
+    "permissions": [
+      "image",
+      "accessibility",
+      "screen_capture"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 300000,
+    "hostMethods": [
+      "accessibility.captureScreenImage",
+      "media_projection.requestScreenCapture",
+      "image.readImage",
+      "image.matchTemplate",
+      "image.recycle"
+    ],
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string",
+          "description": "\"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        },
+        "template": {
+          "type": "string",
+          "description": "POSIX path of the template image relative to the AutoJs6 working directory",
+          "maxLength": 4096
+        },
+        "threshold": {
+          "type": "number",
+          "description": "Lowest similarity a match needs, from 0 to 1",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.9
+        },
+        "region": {
+          "type": "object",
+          "description": "Search only inside this rectangle, in screen pixels or file pixels; right and bottom are exclusive",
+          "properties": {
+            "left": {
+              "type": "integer",
+              "description": "Left edge in device pixels"
+            },
+            "top": {
+              "type": "integer",
+              "description": "Top edge in device pixels"
+            },
+            "right": {
+              "type": "integer",
+              "description": "Right edge in device pixels"
+            },
+            "bottom": {
+              "type": "integer",
+              "description": "Bottom edge in device pixels"
+            }
+          },
+          "required": [
+            "left",
+            "top",
+            "right",
+            "bottom"
+          ],
+          "additionalProperties": false
+        },
+        "maxResults": {
+          "type": "integer",
+          "description": "Report at most this many matches, best first",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 5
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "How long to wait for the search, in milliseconds",
+          "minimum": 1000,
+          "maximum": 300000,
+          "default": 30000
+        }
+      },
+      "required": [
+        "image",
+        "template"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "opencv_find_color",
+    "title": "Find a color",
+    "description": "Find the first pixel of a color on the phone screen or in an image file on the phone (AutoJs6 OpenCV plugin). image is \"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory. color is #RRGGBB or #RGB; threshold is the difference allowed in each of the red, green and blue channels; region limits the search, in screen pixels or file pixels. Pixels are searched row by row from the top left. Returns found and the point; screen coordinates are device pixels. This tool exists only while the OpenCV plugin is installed and enabled in AutoJs6.",
+    "group": "opencv",
+    "defaultEnabled": true,
+    "bridge": "image.findColor",
+    "permissions": [
+      "image",
+      "accessibility",
+      "screen_capture"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 300000,
+    "hostMethods": [
+      "accessibility.captureScreenImage",
+      "media_projection.requestScreenCapture",
+      "image.readImage",
+      "image.findColor",
+      "image.recycle"
+    ],
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string",
+          "description": "\"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        },
+        "color": {
+          "type": "string",
+          "description": "The color to find, #RRGGBB or #RGB",
+          "maxLength": 7
+        },
+        "threshold": {
+          "type": "integer",
+          "description": "Difference allowed in each RGB channel, from 0 (exact) to 255",
+          "minimum": 0,
+          "maximum": 255,
+          "default": 4
+        },
+        "region": {
+          "type": "object",
+          "description": "Search only inside this rectangle, in screen pixels or file pixels; right and bottom are exclusive",
+          "properties": {
+            "left": {
+              "type": "integer",
+              "description": "Left edge in device pixels"
+            },
+            "top": {
+              "type": "integer",
+              "description": "Top edge in device pixels"
+            },
+            "right": {
+              "type": "integer",
+              "description": "Right edge in device pixels"
+            },
+            "bottom": {
+              "type": "integer",
+              "description": "Bottom edge in device pixels"
+            }
+          },
+          "required": [
+            "left",
+            "top",
+            "right",
+            "bottom"
+          ],
+          "additionalProperties": false
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "How long to wait for the search, in milliseconds",
+          "minimum": 1000,
+          "maximum": 300000,
+          "default": 30000
+        }
+      },
+      "required": [
+        "image",
+        "color"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "opencv_find_multi_colors",
+    "title": "Find a multi-point color pattern",
+    "description": "Find the first point whose color matches and whose neighbors at given offsets match their colors too (multi-point color search, AutoJs6 OpenCV plugin), on the phone screen or in an image file on the phone. image is \"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory. color is the color of the point itself (#RRGGBB or #RGB); points lists the neighbors as {x, y, color}, with x and y relative to that point in the pixels of image. threshold is the difference allowed in each RGB channel for color and the average difference allowed for the neighbors; region limits where the point may lie. Returns found and the point; screen coordinates are device pixels. This tool exists only while the OpenCV plugin is installed and enabled in AutoJs6.",
+    "group": "opencv",
+    "defaultEnabled": true,
+    "bridge": "image.findMultiColors",
+    "permissions": [
+      "image",
+      "accessibility",
+      "screen_capture"
+    ],
+    "timeoutMs": 30000,
+    "maxTimeoutMs": 300000,
+    "hostMethods": [
+      "accessibility.captureScreenImage",
+      "media_projection.requestScreenCapture",
+      "image.readImage",
+      "image.findMultiColors",
+      "image.recycle"
+    ],
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string",
+          "description": "\"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        },
+        "color": {
+          "type": "string",
+          "description": "Color of the point itself, #RRGGBB or #RGB",
+          "maxLength": 7
+        },
+        "points": {
+          "type": "array",
+          "description": "Neighbors that must match too, relative to the point",
+          "items": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer",
+                "description": "Horizontal offset from the point; negative is to the left",
+                "minimum": -65535,
+                "maximum": 65535
+              },
+              "y": {
+                "type": "integer",
+                "description": "Vertical offset from the point; negative is above",
+                "minimum": -65535,
+                "maximum": 65535
+              },
+              "color": {
+                "type": "string",
+                "description": "Color at that offset, #RRGGBB or #RGB",
+                "maxLength": 7
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "color"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 64
+        },
+        "threshold": {
+          "type": "integer",
+          "description": "Allowed color difference, from 0 (exact) to 255",
+          "minimum": 0,
+          "maximum": 255,
+          "default": 4
+        },
+        "region": {
+          "type": "object",
+          "description": "Only points inside this rectangle, in screen pixels or file pixels; right and bottom are exclusive",
+          "properties": {
+            "left": {
+              "type": "integer",
+              "description": "Left edge in device pixels"
+            },
+            "top": {
+              "type": "integer",
+              "description": "Top edge in device pixels"
+            },
+            "right": {
+              "type": "integer",
+              "description": "Right edge in device pixels"
+            },
+            "bottom": {
+              "type": "integer",
+              "description": "Bottom edge in device pixels"
+            }
+          },
+          "required": [
+            "left",
+            "top",
+            "right",
+            "bottom"
+          ],
+          "additionalProperties": false
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "How long to wait for the search, in milliseconds",
+          "minimum": 1000,
+          "maximum": 300000,
+          "default": 30000
+        }
+      },
+      "required": [
+        "image",
+        "color",
+        "points"
+      ],
+      "additionalProperties": false
+    }
   }
 ]

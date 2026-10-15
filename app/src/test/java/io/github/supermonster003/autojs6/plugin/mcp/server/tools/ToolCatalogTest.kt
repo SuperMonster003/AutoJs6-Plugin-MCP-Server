@@ -23,7 +23,7 @@ class ToolCatalogTest {
         names.forEach { name ->
             assertTrue(name, (name == "toast" || Regex("^[a-z]+(_[a-z]+)+$").matches(name)))
         }
-        assertEquals(DEVICE_NAMES + SCRIPT_NAMES + UI_NAMES + GESTURE_NAMES + SCREEN_NAMES + FILE_NAMES + NEW_DEVICE_NAMES + listOf("shell_exec") + OCR_NAMES, names)
+        assertEquals(DEVICE_NAMES + SCRIPT_NAMES + UI_NAMES + GESTURE_NAMES + SCREEN_NAMES + FILE_NAMES + NEW_DEVICE_NAMES + listOf("shell_exec") + PLUGIN_FAMILY_NAMES, names)
         assertEquals(ToolCatalog.all, ToolCatalog.byName.values.toList())
     }
 
@@ -99,7 +99,7 @@ class ToolCatalogTest {
         val allOn = ToolPermissions.DEFAULT.with(ToolGroup.UI_GESTURE, true).with(ToolGroup.FILES_DELETE, true).with(ToolGroup.SHELL, true)
         // The switches alone list the built-in rows; the plugin-family rows need the host's availability as well (roadmap P11 D27).
         assertEquals(ToolCatalog.all.filter { !it.group.isPluginFamily }.map { it.name }, ToolCatalog.enabled(allOn).map { it.name })
-        assertEquals(OCR_NAMES, ToolCatalog.pluginFamilyRows.map { it.name })
+        assertEquals(PLUGIN_FAMILY_NAMES, ToolCatalog.pluginFamilyRows.map { it.name })
         val everyFamily = PluginToolAvailability(emptySet(), PluginFamilyReport(families = ToolGroup.PLUGIN_FAMILIES.associate { it.id to PluginFamilyStatus(it.id, PluginFamilyStatus.STATUS_AVAILABLE) }))
         assertEquals(ToolCatalog.all.map { it.name }, ToolCatalog.enabled(allOn, everyFamily).map { it.name })
         assertEquals(ToolCatalog.enabled(allOn).map { it.name }, ToolCatalog.enabled(allOn, PluginToolAvailability.NONE).map { it.name })
@@ -303,6 +303,6 @@ class ToolCatalogTest {
         val DEFAULT_FILE_NAMES = FILE_NAMES.filter { it != "files_delete" }
         val NEW_DEVICE_NAMES = listOf("app_launch", "app_list", "clipboard_get", "clipboard_set", "device_ensure_accessibility", "toast")
         val SCREEN_NAMES = listOf("screen_capture", "screen_state")
-        val OCR_NAMES = listOf("ocr_recognize")
+        val PLUGIN_FAMILY_NAMES = listOf("ocr_recognize", "barcode_detect", "opencv_find_image", "opencv_find_color", "opencv_find_multi_colors")
     }
 }
