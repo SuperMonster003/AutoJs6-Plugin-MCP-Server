@@ -30,7 +30,7 @@ MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平
 | 宿主契约 | 插件 1.1.0 同时实现 MCP 契约 v1 (`openServer` + `IMcpHostCapabilityBroker`) 与 v2 (`openServerV2` + 共享 `IHostCapabilityBroker`), 按已安装宿主的 versionCode 声明版本 (>= 5283 声明 2, 否则 1), 宿主据此分流; 1.1.0 要求宿主 5298, 受支持的宿主都走 v2, 对更旧的宿主声明 1 只为让其读取元数据并显示宿主要求; 已发布的 1.0.3 及更早版本只有 v1 | 文首两条迁移记录; P10 |
 | MCP 协议 | 有状态 Streamable HTTP (`/mcp`, 带请求的 POST 以 SSE 应答), 协商 2024-11-05 至 2025-11-25; 事件流支持断线续传 (事件 id, 2025-11-25 客户端的 priming + `retry: 1000`, `Last-Event-ID`; 本地 1.0.3); 2026-07-28 无状态模型未实现 (D9), kotlin-sdk 0.15.0 截至 2026-10-10 仍为最新版 | D9; docs/dev/p6-conformance.md |
 | 能力面 | 37 个工具 / 8 个分组 (默认可见 33 个, `ui_gesture` / `files_delete` / `shell` 默认关闭), 资源 (工作目录, 示例, 设备, 控制台, 可选离线文档), 3 个提示 | 附录 A; `app/src/test/resources/tool-catalog.snapshot.json` |
-| 阶段 | P0 - P7 完成 (P5.2 / P5.3 于 2026-10-10 复核时重新打开, 同日补测 VS Code 与 Claude Desktop 后关闭); P8 可选, 未启动; P9 (1.0.x 补完) 与 P10 (1.1.0 契约 v2) 为 2026-10-10 新增; P10 于 2026-10-11 开始实施并于同日全部完成: 契约 v2, 节点引用迁移与文档同步随 1.1.0 发布, 宿主在前台时的配对确认由宿主本地提交解决, 依赖评估结论为暂不升级 Ktor; P11 (1.2.0 插件能力工具) 与 P12 (1.3.0 插件自描述工具契约) 于 2026-10-15 新增, 决策 D23 - D42 已定, 尚未实施 | 第 5 节阶段总览 |
+| 阶段 | P0 - P7 完成 (P5.2 / P5.3 于 2026-10-10 复核时重新打开, 同日补测 VS Code 与 Claude Desktop 后关闭); P8 可选, 未启动; P9 (1.0.x 补完) 与 P10 (1.1.0 契约 v2) 为 2026-10-10 新增; P10 于 2026-10-11 开始实施并于同日全部完成: 契约 v2, 节点引用迁移与文档同步随 1.1.0 发布, 宿主在前台时的配对确认由宿主本地提交解决, 依赖评估结论为暂不升级 Ktor; P11 (1.2.0 插件能力工具) 与 P12 (1.3.0 插件自描述工具契约) 于 2026-10-15 新增, 决策 D23 - D45 已定, 尚未实施; 6.8.0 的发布门见 D43 | 第 5 节阶段总览 |
 | 客户端实测 | 有真实结果: Claude Code 2.1.257 / 2.1.270 (HTTP, 以及经桥接程序的 stdio), Codex CLI 0.154.0-alpha.6.2, MCP Inspector CLI 2.5.0 / 2.6.0, VS Code 1.138 Copilot Chat (HTTP), Claude Desktop 2.9939.4.0 (经桥接程序的 stdio), Cursor CLI 2026.10.01 (HTTP, WSL); 未验证: Cursor IDE 界面, Cline, Gemini CLI | docs/dev/p5-client-matrix.md; docs/dev/p7-public-release.md |
 | PC 桥接程序 | `autojs6-mcp-bridge@0.1.0` (npm, 2026-09-15), 独立仓库 `AutoJs6-MCP-Bridge` (D19); 不是 APK 插件, 不进入插件中心; 维护者 2026-10-10 确认保留独立仓库 | D19; P5.3 |
 | 已知限制 | HyperOS / MIUI 默认限制侧载应用后台, 息屏用电池约 1 分钟后前台服务可能被停止 (设置页有提示); Ktor CIO 空闲时每 500 ms 唤醒一次; 每客户端 20 请求 / s 与 30 次截图 / min 上限; API 24 / 25 截图走 MediaProjection, 监听器重启后需重新同意 | docs/dev/p6-battery-and-residency.md, p6-rate-limits.md, p6-performance-baseline.md |
@@ -40,7 +40,7 @@ MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平
 
 ## 1. 固定决策
 
-以下决策已由维护者确认 (D1-D8 于 2026-09-07, 附录 C 的 Q1-Q7 同日拍板并回填为 D10 / D15 / D16 / D19-D22), 后续阶段不再重新讨论; D9-D18 为据此派生的技术决策, 其中未被 Q1-Q7 覆盖的部分进入 P0 前可推翻, 之后视同固定. D23-D28 是 P11 (插件能力工具) 的设计决策, D29-D37 是 P12 (插件自描述工具契约) 的设计决策, D38-D42 是开工前复核补充的决策, 维护者均于 2026-10-15 经多轮选择拍板.
+以下决策已由维护者确认 (D1-D8 于 2026-09-07, 附录 C 的 Q1-Q7 同日拍板并回填为 D10 / D15 / D16 / D19-D22), 后续阶段不再重新讨论; D9-D18 为据此派生的技术决策, 其中未被 Q1-Q7 覆盖的部分进入 P0 前可推翻, 之后视同固定. D23-D28 是 P11 (插件能力工具) 的设计决策, D29-D37 是 P12 (插件自描述工具契约) 的设计决策, D38-D42 是开工前复核补充的决策, D43-D45 是开工前第二次可行性复核 (逐条对照代码) 后的修订, 维护者均于 2026-10-15 经多轮选择拍板.
 
 | 编号 | 决策 | 含义 |
 | --- | --- | --- |
@@ -79,13 +79,16 @@ MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平
 | D33 | 命名与共享家族 | 工具名为 `<插件短名>_<工具名>`; 短名由插件在目录中声明, 宿主校验唯一且不与内置分组或 P11 的插件家族重名, 短名同时作为 D27 的插件家族分组; 完整名称须让 `mcp__autojs6__` 前缀加工具名不超过 64 字符. 契约 v1 预留 "共享家族": 宿主白名单中的家族短名 (如 `ocr`) 允许多个 OFFICIAL 插件声明同名工具, 由宿主按自动顺序或调用参数 (如 `engine`) 选择提供者, 供以后迁移 P11 内置工具时保持工具名不变; P12 只预留字段与规则, 不实现选择逻辑. (2026-10-15) |
 | D34 | 信任与风险开关 | 面向模型的消费方 (MCP, Agent): OFFICIAL 与 TRUSTED 插件的工具自动可用; USER_GRANTED 插件的工具须在消费方设置里逐个开启, 默认关闭 (工具描述由插件作者撰写并直接进入模型上下文, 有描述投毒风险). 宿主按信任级别强制, 消费方开关只能收窄. 插件为每个工具声明风险 (只读 / 写入 / 破坏性 / 联网): 每个插件一个分组开关, 只读工具随分组默认开启, 写入, 破坏性与联网工具归入该插件一个默认关闭的子开关, 并映射为 MCP 注解 (`readOnlyHint` / `destructiveHint` / `openWorldHint`). 不在手机上逐次确认, 由 MCP 客户端按注解自行确认. 脚本 API 的调用方是用户自己编写的脚本, 默认可调用所有已授权插件的工具 (实施前可调整). (2026-10-15) |
 | D35 | 脚本 API 挂在 `plugins` 下 | `plugins.tools.list()` 列出工具 (含 schema), `plugins.tools.call(name, args)` 同步调用, 另配 Promise 版本; 沿用现有 `plugins` 模块, d.ts 可以静态声明. 按宿主约定同步文档, d.ts, 离线文档与 Ace 补全. (2026-10-15) |
-| D36 | 试点, 封版与迁移 | 首批试点: Hanzi-CC (OpenCC), Yolo-NCNN, Image-Quantization (须先改为在插件进程提供服务; 目前是加载进宿主进程的原生库), Stack-Archive. 四个试点接入并稳定后封版契约 v1, 再对第三方公开 (协议文档, AAR, Garage 示例), 公开前可以自由调整契约. P11 的内置工具在 P12 稳定后迁移为插件自描述 (依赖 D33 的共享家族), 工具名保持不变. (2026-10-15) |
-| D37 | 版本 | P12 的宿主改动同样并入 6.8.0, 6.8.0 的公开发布因此等待 P11 与 P12. MCP 插件继续软探测 (D28), 不提高最低宿主版本; 插件版本默认 P11 为 1.2.0, P12 为 1.3.0, 实际版本号发布时定. (2026-10-15) |
+| D36 | 试点, 封版与迁移 | 首批试点: Hanzi-CC (OpenCC), Yolo-NCNN, Image-Quantization (须先改为在插件进程提供服务; 目前是加载进宿主进程的原生库), Stack-Archive. 四个试点接入并稳定后封版契约 v1, 再对第三方公开 (协议文档, AAR, Garage 示例), 公开前可以自由调整契约. P11 的内置工具在 P12 稳定后迁移为插件自描述 (依赖 D33 的共享家族), 工具名保持不变. (2026-10-15; 迁移部分同日第二次复核改为 D44 的可选项) |
+| D37 | 版本 | P12 的宿主改动同样并入 6.8.0, 6.8.0 的公开发布因此等待 P11 与 P12 (发布门同日第二次复核收窄为 D43). MCP 插件继续软探测 (D28), 不提高最低宿主版本; 插件版本默认 P11 为 1.2.0, P12 为 1.3.0, 实际版本号发布时定. (2026-10-15) |
 | D38 | P11 工具为单工具加 `image` 参数 | 屏幕与图片不再拆成两个工具: 需要图片的工具统一用 `image` 参数, 取值为 `"screen"` 或路径 (与 D32 一致, 以后迁移到自描述时形态不变). P11 的工具为 `ocr_recognize` (`image`, 可选 `region`, `engine`), `barcode_detect` (`image`, 可选格式, `region`, 数量上限), `opencv_find_image` (`image`, `template` 为路径, 可选阈值, `region`, 数量上限), `opencv_find_color`, `opencv_find_multi_colors`, `pinyin_convert`, `pinyin4j_convert`, `mediainfo_read`; 名称与参数的细节在实施时写入附录 A. 取代 P11 早先草拟的 `ocr_screen` / `ocr_image` 写法. (2026-10-15) |
 | D39 | 读屏幕的识别共用截图配额 | `image` 为 `"screen"` 的识别调用 (P11 的内置工具与 P12 的自描述工具) 与 `screen_capture` 共用每客户端每分钟 30 次的截图配额 (P6 限速), 防止绕过截图限制做高频监视; 超额回 `RATE_LIMITED` 与 `retryAfterMs`. (2026-10-15) |
 | D40 | 1.1.1 并入 1.2.0 | 未发布的 1.1.1 (取证脚本修复, 宿主 5333 起的通知关闭提示) 不单独发布: P11 开工时先把 `VERSION_NAME` 改为 1.2.0 并把两条条目并入 v1.2.0 (与 1.0.4 并入 1.1.0 同一做法). 理由: 那条提示只对宿主 5333 起生效, 而 6.8.0 尚未公开. (2026-10-15) |
 | D41 | OpenCV 与图片量化另提供工具服务 | P12 迁移时, OpenCV 插件新增在自身进程运行的工具服务 (按 D32 经描述符收图, 用插件自带的 OpenCV 计算); 宿主 images 模块继续在宿主进程内加载 OpenCV 插件的运行时, 行为不变. 这是宿主 `docs/dev/opencv-ocr-runtime-decoupling-roadmap.md` 的 D1 / D8 及非目标 "OpenCV 运行时的 AIDL 进程隔离" 的有意例外, 已在该路线图与 OpenCV 插件路线图记录. 图片量化 (P12 试点) 同样新增插件进程内的工具服务, 宿主进程内现有的加载路径 (`ImageQuantPluginHost`, 脚本 API) 保持不变. (2026-10-15) |
 | D42 | 已登记脚本为目录加执行两个工具 | P11 的可选项采用 `script_catalog` (列出已登记脚本与参数说明) 与 `script_registered_run` (按 id 执行, 参数按清单校验) 两个工具, 属 `script` 组, 与 Agent 的做法一致, 工具列表不随脚本数量变化; 清单中 `risk` / `confirm` 在 MCP 中的处理在实施时细化. (2026-10-15) |
+| D43 | 6.8.0 的发布门 | 6.8.0 等待: P11 全部; P12 的宿主侧 (契约模块, 发现与目录缓存, schema 校验, `plugin_tools` 桥接模块, 脚本 API, 文档) 与 OpenCC 试点走通全链路. YOLO, 图片量化, 压缩包三个试点随各自插件发布, 不阻塞宿主; 契约 v1 封版与对第三方公开仍等四个试点完成 (D36). 封版前若因后三个试点需要调整契约, 已发布宿主中的契约按 "末尾追加 + 版本协商" 演进, 不做破坏性修改. 取代 D37 中 "等待 P11 与 P12" 的表述. (2026-10-15) |
+| D44 | 内置工具迁移改为可选 | P11 内置工具 (OCR 7 个仓库, 条码, 两个拼音, MediaInfo, OpenCV, 共 12 个插件仓库) 不再统一迁移为自描述: 迁移后用户看到的工具不变, 收益只有架构统一, 成本是 12 个仓库各实现一次契约. 改为按家族在有具体收益时才迁移 (例如某插件要提供宿主桥接层没有的新工具), 不设时间点; D33 的共享家族预留保留, 以备 OCR 家族迁移. (2026-10-15) |
+| D45 | 插件会话读图降采样 | 宿主对插件会话 (`backend=plugin`) 的 `image.readImage` (含找图模板) 按 `inSampleSize` 降采样到最长边不超过 4096 px (约 16 MP 以内), 结果附缩放比 (`scale`), 工具把识别边界换算回原图坐标; 现状 `BitmapFactory.decodeFile` 无上限, 一张 12 MP 照片解码后约 48 MB, 四个句柄就可能耗尽宿主内存. OCR 与条码对降采样不敏感; 找图时模板与屏幕同为原始分辨率, 不受影响. Node 脚本会话行为不变. (2026-10-15) |
 
 由 D2 / D10 派生的硬约束:
 
@@ -550,16 +553,17 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 宿主 (6.8.0):
 
 - [ ] (宿主) `ocr.*` 未指定引擎时自动选择 (D25): `dispatchOcr` 不再把缺省引擎固定为 `mlkit-ocr`, 改用与 `accessibility.readScreenText` 相同的自动选择; 显式 `engine` / `engineId` / `variant` 仍按原规则过滤. 测试覆盖只装 Paddle, 只装 Rapid, 三者都装三种情形; 宿主 changelog 6.8.0 (10 语言); 同步 Node 运行时仓库中只提 ML Kit 的说明 (`AutoJs6-Plugin-NodeJs-Runtime/docs/HOST-API.md` 模块表的 `ocr` 一行, `sample/nodejs/ocr-automation/README.md`).
-- [ ] (宿主) 通用截屏句柄 (D23): 新增 `accessibility.captureScreenImage` (暂名), 截图策略与 `NodeBridgeScreenText.capture` 相同 (API 30+ 无障碍截图, 失败回退 MediaProjection), 结果登记为会话内图像句柄, 声明 `accessibility` + `screen_capture` + `image`. 一并评估会话图像句柄上限 (当前 `maxImageHandles = 4`): 找图同时占用屏幕与模板两个句柄, 并发调用可能触顶.
+- [ ] (宿主) 通用截屏句柄 (D23): 新增 `accessibility.captureScreenImage` (暂名), 截图策略与 `NodeBridgeScreenText.capture` 相同 (API 30+ 无障碍截图, 失败回退 MediaProjection), 结果登记为会话内图像句柄, 声明 `accessibility` + `screen_capture` + `image`. 会话图像句柄上限 (当前 `maxImageHandles = 4`) 对 MCP 会话提高为 `2 * maxConcurrentCalls` (默认 8): 找图同时占用屏幕与模板两个句柄, 4 个并发调用最多 8 个; 超出仍回 `resource-limit`.
+- [ ] (宿主) 插件会话的读图降采样 (D45): `backend=plugin` 的 `image.readImage` 先读尺寸再按 `inSampleSize` 解码到最长边不超过 4096 px, 结果 JSON 附 `scale` 与原图尺寸; JVM / instrumentation 覆盖大图与小图.
 - [ ] (宿主) 插件会话的路径范围 (D26): `backend=plugin` 时 `image.readImage`, `mediainfo.*` 等接受路径的方法按 canonical 路径限制在工作目录; 请求声明 `files.shared_read` (暂名) 且 grant 包含它时, 额外允许共享存储只读 (排除 `Android/data`, `Android/obb`); `files.list` / `files.stat` 在同一令牌下接受共享存储的绝对路径, 其余 `files.*` 不变; 宿主没有存储权限时返回 `permission-denied` 与提示. Node 脚本行为不变.
-- [ ] (宿主) 插件家族状态上报 (D27 / D28): `getBrokerInfo` 的 `availableOptionalMethods` 按已启用的插件补充各家族方法 (沿用 `accessibility.readScreenText` 的先例); 另提供只读方法 (暂名 `app.pluginCapabilities`) 返回各家族与离线文档插件的状态 (`available` / `not_installed` / `disabled` / `incompatible`) 及插件中心入口, 状态随插件安装, 启用, 更新而变化.
-- [ ] (宿主) MCP 默认 grant 扩充 (D28): `HostCapabilityGrant.DEFAULT_METHODS` 加入 `accessibility.readScreenText`, 通用截屏句柄方法, `ocr.*`, `barcode.*`, `image.readImage`, `image.findImage` / `matchTemplate` / `findColor` / `findMultiColors`, `pinyin.*`, `pinyin4j.*`, `mediainfo.*` 与状态方法; `DEFAULT_PERMISSIONS` 加入 `ocr`, `barcode`, `pinyin`, `pinyin4j`, `media.metadata` (以 `NodeBridgePermissionManifest` 为准) 与 `files.shared_read`. Agent 的 grant 不随之变化. 同步 grant 测试与 `McpServerPluginRoundTripTest`, 宿主协议文档 `docs/dev/mcp-server-protocol-v1.md` 与 `docs/dev/host-capability-contract-v1.md` 记录新方法与令牌.
+- [ ] (宿主) 插件家族状态上报 (D27 / D28): 两层. 静态层: `getBrokerInfo` 的 `grantMethods` 是权限上限, 会话打开时读取一次, 之后不变. 动态层 (必需, 非可选): 只读方法 (暂名 `app.pluginCapabilities`) 返回各家族与离线文档插件的当前状态 (`available` / `not_installed` / `disabled` / `incompatible`) 及插件中心入口, 每次调用实时查询 (复用 `OcrPluginHost.discover` 等已有发现逻辑, 不新建缓存), 会话打开后安装的插件也能被看到; `availableOptionalMethods` 按同一逻辑在打开时补充各家族方法, 只作首次参考. 复核发现 (2026-10-15): 若只靠 `getBrokerInfo`, 会话期间装的插件对 MCP 不可见.
+- [ ] (宿主) MCP 默认 grant 扩充 (D28): `HostCapabilityGrant.DEFAULT_METHODS` 加入 `accessibility.readScreenText`, 通用截屏句柄方法, `ocr.*`, `barcode.*`, `image.readImage`, `image.findImage` / `matchTemplate` / `findColor` / `findMultiColors`, `pinyin.*`, `pinyin4j.*`, `mediainfo.*` 与状态方法; `DEFAULT_PERMISSIONS` 加入 `ocr`, `barcode`, `pinyin`, `pinyin4j`, `media` 与 `media.metadata` (`NodeBridgePermissionManifest.requiredCapabilitiesFor`: `mediainfo.*` 同时要求两者; `ocr.*` 要求 `ocr` + `image`, `barcode.*` 要求 `barcode` + `image`, `image` 已在上限内) 与 `files.shared_read`. Agent 的 grant 不随之变化. 同步 grant 测试与 `McpServerPluginRoundTripTest`, 宿主协议文档 `docs/dev/mcp-server-protocol-v1.md` 与 `docs/dev/host-capability-contract-v1.md` 记录新方法与令牌.
 
 插件 (1.2.0):
 
 - [ ] (插件, 前置) 版本改为 1.2.0 (D40): `VERSION_NAME` 1.1.1 -> 1.2.0, 10 语言 changelog 的 v1.1.1 条目并入 v1.2.0, 同步 README, 发布文件名断言与测试夹具, 运行文档生成器; 之后的 P11 条目都记在 v1.2.0 下.
-- [ ] (插件) 软探测与动态目录 (D27 / D28): `ToolGroup` 增加插件家族分组 (默认开启); `ToolRegistry` 刷新时读取宿主 grant 与可用状态 (短时缓存), 只注册宿主已授权且对应插件可用的工具, 状态变化时发 `tools/list_changed`; 设置页分组开关 10 语言; 目录快照与 `ToolCatalogTest` 同步.
-- [ ] (插件) OCR 工具 (D23 / D24 / D25 / D38): `ocr_recognize` 的 `image` 为 `"screen"` 时映射 `accessibility.readScreenText`, 为路径时在一次调用内执行 `image.readImage` -> `ocr.recognize` -> `image.recycle` (回收放在 finally); 结果形状与 `accessibility.readScreenText` 一致 (文字, 边界, 置信度), 以文本加 `structuredContent` 返回; `engine` 映射到宿主引擎 id (`mlkit-ocr` / `paddle-ocr` / `rapid-ocr`); 新错误码 (暂名 `PLUGIN_NOT_AVAILABLE`) 写入附录 A.5.
+- [ ] (插件) 软探测与动态目录 (D27 / D28): `ToolGroup` 增加插件家族分组 (默认开启); `ToolRegistry` 刷新时以会话打开时的 `grantMethods` 为上限, 以 `app.pluginCapabilities` 的实时结果为可用性 (短时缓存, 如 5 s), 只注册宿主已授权且对应插件可用的工具; `:mcp_server` 进程运行期注册 `ACTION_PACKAGE_ADDED` / `REMOVED` / `CHANGED` / `REPLACED` 广播 (数据 scheme `package`), 收到后刷新并在结果变化时主动发 `tools/list_changed` (客户端不请求也能收到); 设置页分组开关 10 语言; 目录快照与 `ToolCatalogTest` 同步.
+- [ ] (插件) OCR 工具 (D23 / D24 / D25 / D38): `ocr_recognize` 的 `image` 为 `"screen"` 时映射 `accessibility.readScreenText`, 为路径时在一次调用内执行 `image.readImage` -> `ocr.recognize` -> `image.recycle` (回收放在 finally); 结果形状与 `accessibility.readScreenText` 一致 (文字, 边界, 置信度; 路径来源时按 D45 的 `scale` 换算回原图坐标), 以文本加 `structuredContent` 返回; 默认超时 60 s (Paddle 首次调用需加载模型), 上限 300 s; `engine` 映射到宿主引擎 id (`mlkit-ocr` / `paddle-ocr` / `rapid-ocr`); 新错误码 (暂名 `PLUGIN_NOT_AVAILABLE`) 写入附录 A.5.
 - [ ] (插件) 条码与 OpenCV 工具 (D23 / D24 / D38): `barcode_detect`, `opencv_find_image` (模板图片来自路径), `opencv_find_color`, `opencv_find_multi_colors`; `image` 为 `"screen"` 时经通用截屏句柄, 为路径时经 `image.readImage`; 句柄在 finally 回收, 超出宿主句柄上限时排队或返回明确错误.
 - [ ] (插件) 文本与媒体工具 (D38): `pinyin_convert` / `pinyin4j_convert` (纯文本参数, 只暴露常用选项, 描述中说明两者的差别), `mediainfo_read` (路径按 D26).
 - [ ] (插件) 截图配额 (D39): 限速器不再只按工具名 (`RateLimiter.SCREENSHOT_TOOLS`) 计入截图, `image` 为 `"screen"` 的识别调用也计入每客户端每分钟 30 次; JVM 测试覆盖混合调用.
@@ -580,7 +584,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 宿主 (6.8.0):
 
-- [ ] (宿主) 契约模块 `plugin-api/plugin-tool-api` (D30): AIDL 暂名 `IPluginToolProvider` (取目录, 调用, 取消) 与 oneway 回调 (最终结果, 输出描述符; 进度回调预留, 桥接层 v1 只转发最终结果); `PluginToolContract` 集中服务 action (暂名 `org.autojs.plugin.TOOL_PROVIDER`), 键, 上限与 `CONTRACT_VERSION = 1`; 目录 JSON 字段 (短名, 可选的共享家族, 工具名, 标题, 英文描述, 参数 schema, 可选输出 schema, 风险, 超时, 并发上限); 契约测试冻结 AIDL 顺序与 oneway 标志; 协议文档 `docs/dev/plugin-tool-protocol-v1.md`.
+- [ ] (宿主) 契约模块 `plugin-api/plugin-tool-api` (D30): AIDL 暂名 `IPluginToolProvider` (取目录, 调用, 取消) 与 oneway 回调 (最终结果, 输出描述符; 进度回调预留, 桥接层 v1 只转发最终结果); `PluginToolContract` 集中服务 action (暂名 `org.autojs.plugin.TOOL_PROVIDER`), 键, 上限与 `CONTRACT_VERSION = 1`; 目录 JSON 字段 (短名, 可选的共享家族, 工具名, 标题, 英文描述, 参数 schema, 可选输出 schema, 风险, 超时, 并发上限); 目录内联上限 256 KiB (Binder 单次事务约 1 MiB), 单个插件工具数上限 64, 超出整体拒绝并给出诊断; 契约测试冻结 AIDL 顺序与 oneway 标志; 协议文档 `docs/dev/plugin-tool-protocol-v1.md`.
 - [ ] (宿主) 发现与目录缓存 (D30 / D33 / D34): 基于 `AidlPluginHost` 的提供者宿主 (新 action), 目录按 (包名, versionCode) 缓存, 包变化时刷新; 只收录已启用, 已授权且宿主版本兼容的插件, 记录信任级别; 短名唯一, 不得与内置分组和 P11 插件家族重名, 冲突的目录整体拒绝并给出诊断; 共享家族字段只对白名单家族与 OFFICIAL 插件生效 (P12 只校验, 不做提供者选择).
 - [ ] (宿主) Schema 校验 (D31): 纯 Kotlin 实现可单测, 载入目录时校验 schema 本身 (不合规的工具单独剔除), 调用时校验参数; 图片 / 文件特殊类型只能作为顶层参数; 评估自研子集与现成库 (APK 体积, R8, Android 兼容) 后决定.
 - [ ] (宿主) 桥接模块 `plugin_tools` (暂名, D29 / D32 / D34): `list` (按调用方 grant 与信任过滤后的工具与 schema), `invoke`, `cancel`; 图片参数 `"screen"` 走 D23 的截屏, 路径按 D26 检查范围后以描述符交给插件; 二进制输出写入调用方指定的工作目录路径; 超时取插件声明值并受 grant 上限约束; USER_GRANTED 插件的工具只在请求声明对应权限令牌 (暂名) 且 grant 包含它时放行, 由消费方的开关决定是否声明. MCP 默认 grant 加入该模块与令牌; Agent grant 是否加入由 Agent 路线图决定.
@@ -589,7 +593,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 试点插件 (各自仓库, D36):
 
-- [ ] (插件: Hanzi-CC) 声明 `opencc` 工具 (如转换, 列出可用配置), 先走通目录, 调用, 校验与脚本 API 的主链路.
+- [ ] (插件: Hanzi-CC) 声明 `opencc` 工具 (如转换, 列出可用配置), 先走通目录, 调用, 校验与脚本 API 的主链路; 本试点是 6.8.0 发布门的一部分 (D43), 其余三个试点不是.
 - [ ] (插件: Yolo-NCNN) 声明 `yolo` 检测工具 (图片参数, 模型, 阈值, 结构化结果), 验证图片特殊类型, 模型加载耗时与超时.
 - [ ] (插件: Image-Quantization) 先新增在插件进程运行的工具服务 (D41; 目前量化由宿主 `ImageQuantPluginHost` 加载进宿主进程运行, 这条路径与脚本 API 保持不变), 再声明量化工具: 输入图片, 输出 PNG 写入工作目录, 验证二进制输出.
 - [ ] (插件: Stack-Archive) 声明压缩包工具: 列出内容 (只读), 解压到工作目录 (写入, 归入默认关闭的子开关), 验证文件输入, 风险分级与子开关.
@@ -599,8 +603,8 @@ MCP 插件 (1.3.0):
 - [ ] (插件) 自描述工具接入 (D33 / D34): 经 `plugin_tools.list` 生成 MCP 工具 (名称, 描述, schema, 注解), 按短名分组, 只读工具随分组默认开启, 写入 / 破坏性 / 联网工具在默认关闭的子开关下; USER_GRANTED 插件逐个开启 (默认关闭); 刷新与 `tools/list_changed` 沿用 P11 的软探测; `device_info` 列出自描述插件的状态; 图片参数接受 `"screen"` 或路径, 二进制输出返回路径并可附小图预览; 目录快照只覆盖内置工具, 动态部分另测.
 - [ ] (测试) 宿主 JVM: 目录解析, 短名冲突, 共享家族保留规则, schema 校验, 特殊类型解析, 信任过滤, grant. 宿主 instrumentation: 假提供者 APK 的 Binder 往返 (目录, 调用, 取消, 描述符输入与输出, 超时, 提供者进程死亡). 真机: 四个试点各经 MCP 与脚本 API 完成调用; USER_GRANTED 的假提供者默认不可见, 开启后可见; 旧宿主上自描述工具不出现.
 - [ ] (文档) MCP README / 插件说明 / changelog 10 语言, 附录 A 补充自描述工具的生成规则与错误码, AGENTS.md 第 9 节加入相应约束.
-- [ ] (发布) 四个试点稳定后封版契约 v1, 再对第三方公开 (协议文档, AAR, Garage 示例); 宿主 6.8.0 公开发布后发布 MCP 1.3.0.
-- [ ] (后续, 不计入本阶段验收) P11 内置工具迁移为插件自描述 (D36): OCR (三个插件声明共享家族 `ocr`, 宿主按 D25 选择提供者, 实现 D33 预留的选择逻辑), 条码, OpenCV (D41: OpenCV 插件新增在自身进程运行的工具服务, 宿主 images 模块不变), 拼音, MediaInfo; 工具名保持不变, MCP 删除对应的内置实现.
+- [ ] (发布) 6.8.0 的发布门按 D43: P12 宿主侧与 OpenCC 试点完成即可随 P11 一起进入 6.8.0 发布; 四个试点全部稳定后封版契约 v1, 再对第三方公开 (协议文档, AAR, Garage 示例); MCP 1.3.0 在宿主 6.8.0 公开发布后发布, 其自描述工具接入只依赖宿主侧, 不等后三个试点.
+- [ ] (可选, 不计入本阶段验收, D44) P11 内置工具按家族在有具体收益时迁移为插件自描述: OCR (三个引擎的 7 个插件声明共享家族 `ocr`, 宿主按 D25 选择提供者, 实现 D33 预留的选择逻辑), 条码, OpenCV (D41: OpenCV 插件新增在自身进程运行的工具服务, 宿主 images 模块不变), 拼音, MediaInfo; 迁移的家族工具名保持不变, MCP 删除对应的内置实现. 不设时间点, 每个家族迁移前先在本路线图写明收益.
 
 验收条件: 四个试点经 MCP 与脚本 API 在两台设备上完成真机调用; USER_GRANTED 提供者默认不可见; 旧宿主上自描述工具隐藏且其余工具不受影响; 契约测试冻结 AIDL 顺序与目录键.
 
@@ -1307,3 +1311,12 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 设备现状 (只读查询, 当日): 未被借用的 Sony XQ-AT72 / XQ-DQ72 装有 OpenCV 与 MediaInfo (前者另有 OpenCC), emulator-5586 (API 33) 只装 Rapid OCR PP-OCRv6, 适合 "只装 Rapid" 的验收; 这几台都没有 ML Kit OCR, 条码, 拼音与 Pinyin4j 插件, 真机验收前需要安装.
 - 设备补记 (当日, 3-Maple Image 会话归还设备后只读查询): Xiaomi 23046RP50C (`968e9f18`, API 35) 与 Redmi 22120RN86C (`bek749scrwv4wo8h`, API 33) 已装齐 P11 所需插件 (ML Kit OCR, Paddle OCR 多个变体, Rapid OCR v3 / v6, ML Kit Barcode, Pinyin, Pinyin4j, OpenCV, MediaInfo) 与 P12 的四个试点 (OpenCC, YOLO NCNN, Image-Quantization, Archive Manager), 可作为两台验收设备; Sony G8441 (`BH900ASK9E`, API 28) 只有 OpenCV, Image-Quantization 与 Archive Manager. 上一条 "真机验收前需要安装" 只适用于前述几台.
 - 结论: P11 宿主侧可以开工; 插件侧的第一步是 D40 的版本调整.
+
+### 2026-10-15: 开工前第二次可行性复核 (逐条对照代码)
+
+- 方法: 不再依赖此前的盘点摘要, 把 D23 - D42 所依赖的宿主与插件代码事实逐条重读. 结论: 方案成立, 无一条决策被推翻.
+- 核实为真: `readScreenText` 在 API 30+ 且无障碍服务运行时用无障碍截图, 否则回退 MediaProjection (D23); OCR 选项构造器引擎无关, 只有缺省值写死 ML Kit (D25); MediaInfo 由宿主打开文件后以描述符传给插件, 宿主声明 `MANAGE_EXTERNAL_STORAGE` (D26 不需要插件有存储权限); `files.list` / `files.stat` 已带 `lastModified`; `agentScriptRoots` 是多根目录先例; `RateLimitInterceptor` 在 HTTP 层解析 JSON-RPC, 可读 `arguments.image` (D39); Agent 的 `McpToolSource` 已把本机 MCP 工具并入 (P11 工具对 Agent 零成本可用); 各模块权限令牌: `ocr` 需 `ocr` + `image`, `barcode` 需 `barcode` + `image`, `mediainfo` 需 `media` + `media.metadata`, 找图找色只需 `image`.
+- 发现并已写入的缺口: `image.readImage` 无尺寸上限 (新增 D45 降采样); 权限上限漏了 `media`; `getBrokerInfo` 只在会话打开时读一次, 会话期间安装的插件不可见 (D27 的动态状态方法改为必需, MCP 增加包变化广播以主动推 `tools/list_changed`); P12 目录内联上限 256 KiB 与每插件 64 个工具; OCR 工具默认超时 60 s; MCP 会话图像句柄上限提高为 `2 * maxConcurrentCalls`.
+- 维护者改判 (经一轮选择): 6.8.0 的发布门收窄为 P11 + P12 宿主侧 + OpenCC 试点 (D43); P11 内置工具迁移改为按收益可选 (D44); 大图降采样而非拒绝 (D45).
+- 只记录不改: Agent 自有 `ocr_screen`, P11 后它会同时看到 `mcp_autojs6_ocr_recognize`, 是否去重由 Agent 路线图决定; `ocr_recognize` 两条路径 (readScreenText 与 ocr.recognize) 的结果编码不同, 由插件归一.
+- 本次只修改路线图, 未改代码与宿主. 设备归还与借用通知来自 3-Maple Image 会话, 本会话未占用设备.
