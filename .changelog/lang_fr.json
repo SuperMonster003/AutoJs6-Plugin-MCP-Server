@@ -18,6 +18,7 @@
         "Outils script_catalog et script_registered_run du groupe script, qui listent et exécutent les scripts que l'utilisateur a enregistrés pour les modèles dans le répertoire de travail d'AutoJs6 (un script avec un commentaire d'en-tête @agent, ou un projet avec une entrée agent dans project.json; AutoJs6 6.8.0 ou ultérieur): le catalogue indique la description, les paramètres et le niveau de risque de chaque script et s'il faut demander avant; à l'exécution, AutoJs6 vérifie les arguments selon les paramètres enregistrés et complète les valeurs par défaut, arrête le script après sa durée enregistrée et renvoie la valeur signalée par le script et les dernières lignes de la console; les outils n'apparaissent que si AutoJs6 les accorde, et le modèle demande l'accord de l'utilisateur avant un script marqué sensible ou à confirmer"
       ],
       "fix": [
+        "Les clients recevaient des dizaines de notifications tools/list_changed répétées (une par outil) après le basculement d'un groupe d'outils sur la page des réglages",
         "Les scripts de collecte de preuves sur appareil lançaient un APK de test de débogage restant contre la version de production et faisaient planter le processus de l'application"
       ],
       "improvement": [

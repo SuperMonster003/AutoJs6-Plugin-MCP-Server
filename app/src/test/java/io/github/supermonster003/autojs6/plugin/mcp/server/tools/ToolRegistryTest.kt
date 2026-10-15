@@ -17,8 +17,13 @@ class ToolRegistryTest {
     private val registry = ToolRegistry(ToolCatalog.all, { permissions }) { _, _, _ -> ToolResults.success(JsonObject(emptyMap())) }
 
     @Test
-    fun `the registration follows the switches and keeps the catalog order when a group comes back`() = runBlocking {
-        registry.install(McpServerFactory.create("1"))
+    fun `the listing follows the switches and keeps the catalog order when a group comes back`() = runBlocking {
+        val server = McpServerFactory.create("1")
+        registry.install(server)
+        // Every row stays registered on the SDK server: changing that registration makes the SDK send one
+        // tools/list_changed per added or removed tool, while the registry sends one per change.
+        val everyRow = ToolCatalog.all.map { it.name }.toSet()
+        assertEquals(everyRow, server.tools.keys)
         assertEquals(ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name }, registry.enabledNames)
         assertFalse("nothing changed", registry.refresh())
         assertEquals(ToolErrorCodes.TOOL_DISABLED, registry.disabledFailure(ToolCatalog.UI_SWIPE)?.code)
@@ -40,6 +45,7 @@ class ToolRegistryTest {
         assertTrue(registry.refresh())
         assertEquals(ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name }, registry.enabledNames)
         assertFalse(registry.refresh())
+        assertEquals("the SDK registration never changes", everyRow, server.tools.keys)
     }
 
     @Test

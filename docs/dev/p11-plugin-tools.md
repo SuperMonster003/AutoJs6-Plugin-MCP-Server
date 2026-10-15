@@ -25,8 +25,14 @@ plugin-family tool is listed:
    the last report, marked `stale`, so a short host restart does not make the tools flap; any other
    failure, an unknown answer shape, or a missing method hides the rows and records why.
 
-`ToolRegistry.refresh()` reads both layers together with the group switches, re-registers the
-rows in catalog order, and sends `notifications/tools/list_changed` when the registration changed.
+`ToolRegistry.refresh()` reads both layers together with the group switches, updates the listed set
+(`tools/list` answers it in catalog order), and sends one `notifications/tools/list_changed` per
+session when the set changed. Every catalog row stays registered on the SDK server from `install()`
+on: the SDK notifies every session once per added or removed tool (also through `addTools` /
+`removeTools`), so the earlier "remove everything, register the wanted rows" approach sent about
+twice the catalog size of notifications per change (172 for two changes on a device, 2026-10-15;
+released 1.1.0 did the same on every group switch). A hidden row stays unreachable: the gate answers
+it, and its SDK handler asks `disabledFailure` again for a request that bypassed the gate.
 The tool gate runs it before every `tools/list` and `tools/call`; the runtime also runs it after a
 session opens or closes, after the host dies, and after a package broadcast, so clients learn about
 a newly installed plugin without asking. `install()` starts with `PluginToolAvailability.NONE`:
@@ -37,6 +43,11 @@ plugin-family rows join on the first refresh.
 `PackageChangeWatcher` registers a runtime receiver for `ACTION_PACKAGE_ADDED` / `REMOVED` /
 `CHANGED` / `REPLACED` (data scheme `package`) while the listener runs, debounced 500 ms because
 one install fires several of them. Each change invalidates the probe and refreshes the registry.
+Android 11+ delivers package broadcasts only for visible packages, so the manifest queries the
+`org.autojs.plugin.action.WAKE` intent that every AutoJs6 plugin's wake activity declares; without it
+the broadcasts of other plugins never arrived and a change showed up only on the next request.
+Device scenario: `tools/evidence/p11_list_changed.py` (`pm disable-user` / `pm enable` of a plugin,
+the push within about 1 s, exactly one notification per change).
 Enabling or disabling a plugin inside the AutoJs6 plugin center sends no broadcast; the 5 s cache
 and the refresh before every request cover it.
 
