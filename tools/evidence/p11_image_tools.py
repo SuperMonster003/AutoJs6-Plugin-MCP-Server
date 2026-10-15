@@ -46,6 +46,8 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 FIXTURE_DIR = "mcp-evidence-p11"
 TOOLS = ("barcode_detect", "opencv_find_image", "opencv_find_color", "opencv_find_multi_colors")
 SHARED_BARCODE = "/sdcard/Pictures/autojs6-mcp-evidence-ean13.png"
+# Raw bytes per script_run call: the base64 text plus the script stays below the broker's 32 KiB argument limit.
+WRITE_CHUNK = 18 * 1024
 # adb joins the shell arguments with spaces, so the SQL quotes need a shell quote around them.
 SHARED_BARCODE_WHERE = "\"_display_name='autojs6-mcp-evidence-ean13.png'\""
 
@@ -58,16 +60,21 @@ def call(client, name: str, arguments: dict, timeout: float = 120) -> tuple[bool
 
 
 def script(client, source: str) -> None:
-    ok, structured, _text, _ms = call(client, "script_run", {"source": source, "timeoutMs": 30000})
+    ok, structured, text, _ms = call(client, "script_run", {"source": source, "timeoutMs": 30000})
     if not ok or structured.get("status") != "finished":
-        raise DeviceError(f"script_run failed: {structured.get('error') or structured.get('exception') or structured.get('status')}")
+        # script_run has an output schema, so an error result carries its reason in the text content only.
+        reason = structured.get("error") or structured.get("exception") or (structured.get("status") and f"status {structured['status']}") or text
+        raise DeviceError(f"script_run failed: {str(reason)[:300]}")
 
 
 def write_file(client, relative: str, data: bytes) -> None:
-    # The host writes the file, so it owns it; the base64 text stays within the bridge request budget.
-    encoded = base64.b64encode(data).decode("ascii")
-    script(client, f'var p = files.path("{relative}"); files.createWithDirs(p); '
-                   f'files.writeBytes(p, android.util.Base64.decode("{encoded}", 0));')
+    # The host writes the file, so it owns it. The broker caps engines.execScript arguments at 32 KiB, so the
+    # base64 text goes in chunks: the first call creates the file, the others append.
+    for offset in range(0, max(len(data), 1), WRITE_CHUNK):
+        encoded = base64.b64encode(data[offset:offset + WRITE_CHUNK]).decode("ascii")
+        script(client, f'var p = files.path("{relative}"); files.createWithDirs(p); '
+                       f'var out = new java.io.FileOutputStream(p, {"true" if offset else "false"}); '
+                       f'try {{ out.write(android.util.Base64.decode("{encoded}", 0)); }} finally {{ out.close(); }}')
 
 
 def near(actual, expected, tolerance: int) -> bool:
@@ -242,13 +249,16 @@ def run_checks(device: Device, client, args, files: dict, report: dict) -> None:
             progress("writing the fixtures through script_run")
             try:
                 for name, fixture in files.items():
-                    write_file(client, f"{FIXTURE_DIR}/{name}", fixture["png"])
+                    try:
+                        write_file(client, f"{FIXTURE_DIR}/{name}", fixture["png"])
+                    except DeviceError as error:
+                        raise DeviceError(f"{name} ({len(fixture['png'])} bytes): {error}") from error
                 report["fixtures"] = {name: len(fixture["png"]) for name, fixture in files.items()}
             except DeviceError as error:
                 # Without "All files access" Android 11+ refuses AutoJs6 its own working directory (EPERM); the file checks cannot run there.
                 writable = False
-                report["fixtures"] = "not writable: " + str(error).split("(Operation not permitted)")[0][-160:]
-                progress("the working directory is not writable; skipping the checks that need files")
+                report["fixtures"] = "not written: " + str(error)[:400]
+                progress(f"the fixtures could not be written ({str(error)[:200]}); skipping the checks that need files")
         if writable:
             report["checks"] += file_checks(client, files)
         if not args.skip_screen:
