@@ -47,6 +47,15 @@ def remove_dir(client, relative: str) -> bool | str:
         return str(error)
 
 
+def remove_file(client, relative: str) -> bool | str:
+    """Removes a file of the working directory through script_run (files_delete is off by default)."""
+    try:
+        script(client, f'files.remove(files.path("{relative}"));')
+        return True
+    except DeviceError as error:
+        return str(error)
+
+
 def ensure_accessibility(device: Device, client, report: dict) -> bool:
     def operational() -> bool:
         ok, structured, _text, _ms = call(client, "device_ensure_accessibility", {}, timeout=30)
