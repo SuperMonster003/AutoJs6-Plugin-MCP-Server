@@ -7,7 +7,7 @@ evidence should only depend on these files.
 | File | Purpose |
 | --- | --- |
 | `mcp_client.py` | Streamable HTTP MCP client (standard library only): `initialize`, requests answered as JSON or SSE, `Mcp-Session-Id`, pagination, streams read event by event, resumption with `Last-Event-ID`, `DELETE` on close |
-| `device.py` | adb helpers: plugin `dumpsys` state, `adb forward` with automatic cleanup, token reading, pre-pairing and revocation of the evidence client, a held host session, package enable / disable |
+| `device.py` | adb helpers: plugin `dumpsys` state, `adb forward` with automatic cleanup, token reading, pre-pairing and revocation of the evidence client, the shared storage switch, a held host session, package enable / disable |
 | `session.py` | The common frame of a scenario: token, evidence pairing, held host session, forward, MCP session, revocation |
 | `docs_resources.py` | Scenario: offline docs resources on a device (roadmap P3.5 optional item) |
 | `sse_resume.py` | Scenario: SSE resumption with `Last-Event-ID` mid-run and after the end, unknown ids (roadmap P9, SEP-1699) |
@@ -20,6 +20,7 @@ evidence should only depend on these files.
 | `bridge_reopen.py` | Scenario: the stdio bridge (`autojs6-mcp-bridge`) across a listener restart; each `--bridge` command runs once, so an old and a new bridge can be compared (roadmap P9) |
 | `p11_image_tools.py` | Scenario: the P11 barcode and OpenCV tools on a real host: fixtures written through `script_run`, `barcode_detect` / `opencv_find_color` / `opencv_find_multi_colors` / `opencv_find_image` on them at normal size and at 5000 px (decoded at half size, D45), a template at another scale refused; then on the screen of the Settings app with a label cut by `screen_capture` as template, and optionally an EAN-13 opened in an image viewer (`--show-barcode-with`) (roadmap P11) |
 | `p11_text_tools.py` | Scenario: the P11 text and media tools on a real host: `pinyin_convert` (word readings, heteronyms, styles), `pinyin4j_convert` (tone marks, Wade-Giles, all readings, tone refused outside Hanyu) and `mediainfo_read` on a WAV fixture written through `script_run`, with and without the report, and a missing file (roadmap P11) |
+| `p11_shared_storage.py` | Scenario: the "Allow reading shared storage" switch (roadmap P11 D26): with it off, absolute paths are refused before the host; with it on, fixtures pushed into `/sdcard/Download` are listed with absolute paths and read by `files_stat`, `barcode_detect`, `opencv_find_color` and `mediainfo_read`, while `Android/data`, `files_read` and paths outside shared storage stay refused; the switch is restored afterwards |
 | `p11_screen_quota.py` | Scenario: the screenshot window shared by `screen_capture` and the recognition tools with `image: "screen"` (roadmap P11 D39): 30 interleaved calls succeed, the 31st recognition and a capture are `RATE_LIMITED`, a file call is not counted, recovery after `retryAfterMs` |
 | `tool_calls.py` | `tools/call`, `script_run`, chunked file writes through the host and the accessibility check with rebinding, shared by the P11 scenarios |
 | `image_fixtures.py` | Standard-library PNG encoding / decoding, the EAN-13 symbol and the fixtures of `p11_image_tools.py` |

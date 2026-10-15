@@ -8,6 +8,7 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.server.PairedClient
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.PairingGate
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.PairedClientStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.TokenStore
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolPermissionStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.ui.McpSettingsReceiver
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -25,6 +26,8 @@ import org.junit.runner.RunWith
  *   runs without a phone-side prompt. A pending prompt cannot be answered from here: `am instrument`
  *   force-stops the whole package when it starts and ends, listener process included.
  * - `-e mcpEvidenceRevoke <fingerprint>` removes a paired client the way the settings page does.
+ * - `-e mcpEvidenceSharedRead true|false` sets the "Allow reading shared storage" switch (roadmap P11 D26) and
+ *   reports the previous value, so a scenario can restore it afterwards.
  *
  * Only an adb operator with an instrumentation APK signed by the same key reaches these paths; the
  * threat model already treats adb as trusted (developer-mode `dumpsys` prints the token as well).
@@ -63,10 +66,23 @@ class EvidenceHelperTest {
         McpSettingsReceiver.send(context, McpSettingsReceiver.REFRESH)
     }
 
+    @Test fun setSharedStorageRead() {
+        val value = arguments.getString(ARG_SHARED_READ)
+        assumeTrue("pass -e mcpEvidenceSharedRead true|false", value != null)
+        assertTrue("value must be true or false", value == "true" || value == "false")
+        val store = ToolPermissionStore(context)
+        val previous = store.load().allowSharedStorageRead
+        store.update { it.copy(allowSharedStorageRead = value == "true") }
+        assertTrue(store.load().allowSharedStorageRead == (value == "true"))
+        McpSettingsReceiver.send(context, McpSettingsReceiver.REFRESH)
+        instrumentation.sendStatus(STATUS_CODE, Bundle().apply { putString(ARG_SHARED_READ, previous.toString()) })
+    }
+
     private companion object {
         const val ARG_TOKEN = "mcpEvidenceToken"
         const val ARG_PAIR = "mcpEvidencePair"
         const val ARG_REVOKE = "mcpEvidenceRevoke"
+        const val ARG_SHARED_READ = "mcpEvidenceSharedRead"
         const val STATUS_CODE = 2
         val FINGERPRINT = Regex("[0-9a-f]{24}")
     }

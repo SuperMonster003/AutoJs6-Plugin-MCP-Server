@@ -216,6 +216,14 @@ class Device:
     def revoke_pairing(self, fingerprint: str) -> None:
         self._helper("revokePairing", "mcpEvidenceRevoke", fingerprint)
 
+    def set_shared_storage_read(self, enabled: bool) -> bool:
+        """Sets the "Allow reading shared storage" switch (roadmap P11 D26); returns the previous value. Restarts the plugin package."""
+        out = self._helper("setSharedStorageRead", "mcpEvidenceSharedRead", "true" if enabled else "false")
+        match = re.search(r"mcpEvidenceSharedRead=(true|false)", out)
+        if not match:
+            raise DeviceError("EvidenceHelperTest#setSharedStorageRead reported no previous value")
+        return match.group(1) == "true"
+
     # Host session ------------------------------------------------------------------------------
 
     @contextmanager
