@@ -40,41 +40,15 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import image_fixtures as fx  # noqa: E402
 from device import HOST_PACKAGE, PLUGIN_PACKAGE, Device, DeviceError, progress  # noqa: E402
 from session import evidence_session  # noqa: E402
+from tool_calls import call, remove_dir, write_file  # noqa: E402
 
 CLIENT_NAME = "autojs6-evidence-p11-image"
 REPO = pathlib.Path(__file__).resolve().parents[2]
 FIXTURE_DIR = "mcp-evidence-p11"
 TOOLS = ("barcode_detect", "opencv_find_image", "opencv_find_color", "opencv_find_multi_colors")
 SHARED_BARCODE = "/sdcard/Pictures/autojs6-mcp-evidence-ean13.png"
-# Raw bytes per script_run call: the base64 text plus the script stays below the broker's 32 KiB argument limit.
-WRITE_CHUNK = 18 * 1024
 # adb joins the shell arguments with spaces, so the SQL quotes need a shell quote around them.
 SHARED_BARCODE_WHERE = "\"_display_name='autojs6-mcp-evidence-ean13.png'\""
-
-
-def call(client, name: str, arguments: dict, timeout: float = 120) -> tuple[bool, dict, str, int]:
-    started = time.perf_counter()
-    result, _ = client.request("tools/call", {"name": name, "arguments": arguments}, timeout=timeout)
-    text = next((item.get("text", "") for item in result.get("content", []) if item.get("type") == "text"), "")
-    return not result.get("isError"), result.get("structuredContent") or {}, text, round((time.perf_counter() - started) * 1000)
-
-
-def script(client, source: str) -> None:
-    ok, structured, text, _ms = call(client, "script_run", {"source": source, "timeoutMs": 30000})
-    if not ok or structured.get("status") != "finished":
-        # script_run has an output schema, so an error result carries its reason in the text content only.
-        reason = structured.get("error") or structured.get("exception") or (structured.get("status") and f"status {structured['status']}") or text
-        raise DeviceError(f"script_run failed: {str(reason)[:300]}")
-
-
-def write_file(client, relative: str, data: bytes) -> None:
-    # The host writes the file, so it owns it. The broker caps engines.execScript arguments at 32 KiB, so the
-    # base64 text goes in chunks: the first call creates the file, the others append.
-    for offset in range(0, max(len(data), 1), WRITE_CHUNK):
-        encoded = base64.b64encode(data[offset:offset + WRITE_CHUNK]).decode("ascii")
-        script(client, f'var p = files.path("{relative}"); files.createWithDirs(p); '
-                       f'var out = new java.io.FileOutputStream(p, {"true" if offset else "false"}); '
-                       f'try {{ out.write(android.util.Base64.decode("{encoded}", 0)); }} finally {{ out.close(); }}')
 
 
 def near(actual, expected, tolerance: int) -> bool:
@@ -268,11 +242,7 @@ def run_checks(device: Device, client, args, files: dict, report: dict) -> None:
                 report["checks"].append({"check": "screen checks", "pass": False, "ms": 0, "reason": "accessibility unavailable"})
     finally:
         if isinstance(report.get("fixtures"), dict):
-            try:
-                script(client, f'files.removeDir(files.path("{FIXTURE_DIR}"));')
-                report["fixturesRemoved"] = True
-            except DeviceError as error:
-                report["fixturesRemoved"] = str(error)
+            report["fixturesRemoved"] = remove_dir(client, FIXTURE_DIR)
 
 
 def run(device: Device, args) -> dict:

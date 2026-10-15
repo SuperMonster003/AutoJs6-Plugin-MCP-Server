@@ -17,6 +17,7 @@ from bridge_reopen import SESSION_ID, call_facts  # noqa: E402
 from device import PLUGIN_PACKAGE, PLUGIN_TEST_RUNNER, Device, DeviceError, scrub  # noqa: E402
 from docs_resources import content_facts, find_png, index_facts  # noqa: E402
 import image_fixtures as fx  # noqa: E402
+from p11_text_tools import wav_fixture  # noqa: E402
 from mcp_client import PAIRING_REQUIRED, McpError, decode_messages, parse_sse  # noqa: E402
 from privileged import uid_name  # noqa: E402
 from session import evidence_session  # noqa: E402
@@ -262,6 +263,17 @@ class ImageFixtureTest(unittest.TestCase):
         self.assertEqual((2468, 500), files["ean13-5000.png"]["center"])
         self.assertEqual((330, 140), files["scene.png"]["center"])
         self.assertTrue(all(len(f["png"]) < 48 * 1024 for f in files.values()), {k: len(f["png"]) for k, f in files.items()})
+
+
+class MediaFixtureTest(unittest.TestCase):
+    def test_wav_fixture_is_one_second_of_mono_16_bit_pcm(self):
+        import wave
+        data = wav_fixture()
+        self.assertEqual(b"RIFF", data[:4])
+        self.assertEqual(b"WAVE", data[8:12])
+        with wave.open(__import__("io").BytesIO(data)) as parsed:
+            self.assertEqual((1, 2, 8000, 8000), (parsed.getnchannels(), parsed.getsampwidth(), parsed.getframerate(), parsed.getnframes()))
+        self.assertLess(len(data), 18 * 1024)  # one script_run chunk
 
 
 if __name__ == "__main__":

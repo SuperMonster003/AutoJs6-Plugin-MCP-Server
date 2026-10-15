@@ -19,6 +19,8 @@ evidence should only depend on these files.
 | `contract_v2.py` | Scenario: the host contract version the installed host chose (`openServerV2` from host build 5283 on, `openServer` before), read from `dumpsys` and the plugin log, then tools through that broker, a descriptor payload included when the accessibility service runs (roadmap P10) |
 | `bridge_reopen.py` | Scenario: the stdio bridge (`autojs6-mcp-bridge`) across a listener restart; each `--bridge` command runs once, so an old and a new bridge can be compared (roadmap P9) |
 | `p11_image_tools.py` | Scenario: the P11 barcode and OpenCV tools on a real host: fixtures written through `script_run`, `barcode_detect` / `opencv_find_color` / `opencv_find_multi_colors` / `opencv_find_image` on them at normal size and at 5000 px (decoded at half size, D45), a template at another scale refused; then on the screen of the Settings app with a label cut by `screen_capture` as template, and optionally an EAN-13 opened in an image viewer (`--show-barcode-with`) (roadmap P11) |
+| `p11_text_tools.py` | Scenario: the P11 text and media tools on a real host: `pinyin_convert` (word readings, heteronyms, styles), `pinyin4j_convert` (tone marks, Wade-Giles, all readings, tone refused outside Hanyu) and `mediainfo_read` on a WAV fixture written through `script_run`, with and without the report, and a missing file (roadmap P11) |
+| `tool_calls.py` | `tools/call`, `script_run` and chunked file writes through the host, shared by the P11 scenarios |
 | `image_fixtures.py` | Standard-library PNG encoding / decoding, the EAN-13 symbol and the fixtures of `p11_image_tools.py` |
 | `test_evidence.py` | Offline checks of the parsing and redaction logic and of the image fixtures |
 
