@@ -368,6 +368,10 @@ object ToolCatalog {
             "timeZone" to JsonSchemas.string("Device time zone id"),
             "uptimeMs" to JsonSchemas.integer("Milliseconds since boot"),
             "now" to JsonSchemas.integer("Device time, milliseconds since the epoch"),
+            "plugins" to JsonSchemas.openObject(
+                "Plugin families behind the plugin-family tools (roadmap P11): families[] with id, status (available, not_installed, disabled, " +
+                        "incompatible), the tools each brings, its tool group switch, the plugins and a hint; absent when AutoJs6 cannot report them",
+            ),
         ),
     )
 
@@ -422,7 +426,9 @@ object ToolCatalog {
         title = "Device info",
         description = "Returns the device build, screen, battery, memory, AutoJs6 host version and process, " +
                 "accessibility service state, screen state, locale, and time zone as AutoJs6 reports them " +
-                "(schema autojs6-bridge-device-info-v1). No hardware identifiers.",
+                "(schema autojs6-bridge-device-info-v1). No hardware identifiers. With AutoJs6 6.8.0 or later, plugins lists the plugin " +
+                "families (OCR, barcode, OpenCV, Pinyin, Pinyin4j, MediaInfo, offline docs) as available, not_installed, disabled or incompatible, " +
+                "the tools each brings and what to do in the AutoJs6 plugin center, so you can tell the user which plugin to install.",
         inputSchema = JsonSchemas.objectSchema(),
         group = ToolGroup.DEVICE,
         outputSchema = deviceInfoOutput,

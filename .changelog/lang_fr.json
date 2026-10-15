@@ -20,6 +20,7 @@
         "Les scripts de collecte de preuves sur appareil lançaient un APK de test de débogage restant contre la version de production et faisaient planter le processus de l'application"
       ],
       "improvement": [
+        "L'outil device_info et la ressource autojs6://device/info gagnent un champ plugins (AutoJs6 6.8.0 ou ultérieur): l'état de chaque famille de plugins, comme OCR, codes-barres, OpenCV, Pinyin, Pinyin4j, MediaInfo et documentation hors ligne (disponible / non installé / désactivé / incompatible), les outils qu'elle apporte et une indication d'installation, pour que le modèle puisse dire à l'utilisateur quoi installer dans le centre des plugins",
         "Avec AutoJs6 6.8.0 build 5333 ou ultérieur, l'avis de notifications désactivées de la page des paramètres indique que les demandes d'appairage apparaissent aussi lorsque AutoJs6 est au premier plan"
       ]
     },

@@ -16,6 +16,7 @@
 * `Feature` mediainfo_read tool, which reads the format, duration, bit rates, codecs, resolution, channels, sampling rate and tags of an audio, video or image file on the phone (needs an installed and enabled MediaInfo plugin): the path is a file in the working directory, and the result carries a summary and every field of each track, optionally with the full text report
 * `Feature` "Allow reading shared storage" switch on the settings page (off by default), which lets the recognition, media and list / stat tools read absolute paths in shared storage, such as photos and downloads: absolute paths are refused until it is on, Android/data and Android/obb are never readable, and the other file tools stay in the working directory (AutoJs6 needs All files access)
 * `Fix` Device evidence scripts starting a leftover debug test APK against the release app and crashing its process
+* `Improvement` The device_info tool and the autojs6://device/info resource gain a plugins field (AutoJs6 6.8.0 or later): the state of each plugin family, such as OCR, barcode, OpenCV, Pinyin, Pinyin4j, MediaInfo and offline docs (available / not installed / disabled / incompatible), the tools it brings and an install hint, so a model can tell the user what to install in the plugin center
 * `Improvement` With AutoJs6 6.8.0 build 5333 or later, the settings page notice about turned-off notifications says that pairing requests also appear while AutoJs6 is in the foreground
 
 # v1.1.0

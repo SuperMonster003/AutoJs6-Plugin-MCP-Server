@@ -5,8 +5,12 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.bridge.ToolFailure
 import kotlinx.serialization.json.*
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolCatalog.Workspace
 
-class DeviceTools : ToolFlows {
+/** The `device` group flows: `device_info` with its plugin family section (roadmap P11 D27) and the device actions of P3.4. */
+class DeviceTools(private val permissions: () -> ToolPermissions = { ToolPermissions.DEFAULT }) : ToolFlows {
     override fun planFor(spec: ToolSpec, arguments: JsonObject): ToolFlow? {
+        if (spec.name == ToolCatalog.DEVICE_INFO) {
+            return ToolFlow(spec.timeoutMs) { caller -> ToolFlowResult(DeviceInfo.read(caller, permissions(), spec.timeoutMs)) }
+        }
         if (spec.name !in ToolCatalog.DEVICE_ACTION_NAMES) return null
         var method = spec.bridge!!.method
         val args = buildJsonArray {

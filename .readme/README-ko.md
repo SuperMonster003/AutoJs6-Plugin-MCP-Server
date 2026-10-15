@@ -82,7 +82,7 @@ MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]
 | 도구 | 그룹 | 기본값 | 설명 |
 |---|---|---|---|
 | `device_ping` | `device` | 켜짐 | Confirms that the AutoJs6 MCP Server plugin is reachable and returns its version, the device model, the Android API level, and the device time. |
-| `device_info` | `device` | 켜짐 | Returns the device build, screen, battery, memory, AutoJs6 host version and process, accessibility service state, screen state, locale, and time zone as AutoJs6 reports them (schema autojs6-bridge-device-info-v1). No hardware identifiers. |
+| `device_info` | `device` | 켜짐 | Returns the device build, screen, battery, memory, AutoJs6 host version and process, accessibility service state, screen state, locale, and time zone as AutoJs6 reports them (schema autojs6-bridge-device-info-v1). No hardware identifiers. With AutoJs6 6.8.0 or later, plugins lists the plugin families (OCR, barcode, OpenCV, Pinyin, Pinyin4j, MediaInfo, offline docs) as available, not_installed, disabled or incompatible, the tools each brings and what to do in the AutoJs6 plugin center, so you can tell the user which plugin to install. |
 | `script_run` | `script` | 켜짐 | Runs JavaScript source in AutoJs6 (its Rhino engine with the full AutoJs6 API) and by default waits for it to finish. Use it for automation steps: toasts, UI actions, file work, app launches. The result carries executionId, status (finished, error, running), durationMs, the exception with its line when the script threw, and the newest console lines. A script still running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output. |
 | `script_run_file` | `script` | 켜짐 | Runs a script file that already exists on the device (AutoJs6 picks the engine from the suffix) and by default waits for it to finish. The result carries executionId, status (finished, error, running), durationMs, the exception with its line when the script threw, and the newest console lines. A script still running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output. |
 | `script_stop` | `script` | 켜짐 | Stops one running AutoJs6 script by the executionId that script_run, script_run_file, or script_list reported. |
@@ -327,6 +327,7 @@ _2026/10/15_
 - `기능` mediainfo_read 도구, 기기에 있는 오디오, 동영상, 이미지 파일의 형식, 길이, 비트레이트, 코덱, 해상도, 채널, 샘플링 레이트, 태그 등을 읽음 (설치되어 활성화된 MediaInfo 플러그인 필요): 경로는 작업 디렉터리 안의 파일이며, 결과에 트랙마다 요약과 모든 필드가 담기고 전체 텍스트 보고서도 선택적으로 포함
 - `기능` 설정 페이지의 "공유 저장소 읽기 허용" 스위치 (기본 꺼짐), 인식, 미디어 정보, 목록 / 속성 도구가 공유 저장소의 절대 경로 (사진, 다운로드 등) 를 읽기 전용으로 사용하게 함: 켜기 전에는 절대 경로를 모두 거부하고, Android/data 와 Android/obb 는 항상 읽을 수 없으며, 다른 파일 도구는 작업 디렉터리 안으로 제한됨 (AutoJs6 에 모든 파일 접근 권한 필요)
 - `수정` 기기 검증 스크립트가 릴리스 앱에 남아 있는 디버그 테스트 APK를 실행하여 앱 프로세스가 중단되는 문제
+- `개선` device_info 도구와 리소스 autojs6://device/info 에 plugins 필드 (AutoJs6 6.8.0 이상): OCR, 바코드, OpenCV, Pinyin, Pinyin4j, MediaInfo, 오프라인 문서 등 플러그인 계열의 상태 (사용 가능 / 미설치 / 비활성 / 호환 안 됨), 각각이 제공하는 도구와 설치 안내를 보여 주어 모델이 플러그인 센터에서의 설치를 안내할 수 있음
 - `개선` AutoJs6 6.8.0 빌드 5333 이상에서는 설정 페이지의 알림 꺼짐 안내가 AutoJs6가 앞에 표시된 동안에도 페어링 요청이 나타난다고 알려 줌
 
 #### v1.1.0

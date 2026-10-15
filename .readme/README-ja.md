@@ -82,7 +82,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 | ツール | グループ | 既定 | 説明 |
 |---|---|---|---|
 | `device_ping` | `device` | 有効 | Confirms that the AutoJs6 MCP Server plugin is reachable and returns its version, the device model, the Android API level, and the device time. |
-| `device_info` | `device` | 有効 | Returns the device build, screen, battery, memory, AutoJs6 host version and process, accessibility service state, screen state, locale, and time zone as AutoJs6 reports them (schema autojs6-bridge-device-info-v1). No hardware identifiers. |
+| `device_info` | `device` | 有効 | Returns the device build, screen, battery, memory, AutoJs6 host version and process, accessibility service state, screen state, locale, and time zone as AutoJs6 reports them (schema autojs6-bridge-device-info-v1). No hardware identifiers. With AutoJs6 6.8.0 or later, plugins lists the plugin families (OCR, barcode, OpenCV, Pinyin, Pinyin4j, MediaInfo, offline docs) as available, not_installed, disabled or incompatible, the tools each brings and what to do in the AutoJs6 plugin center, so you can tell the user which plugin to install. |
 | `script_run` | `script` | 有効 | Runs JavaScript source in AutoJs6 (its Rhino engine with the full AutoJs6 API) and by default waits for it to finish. Use it for automation steps: toasts, UI actions, file work, app launches. The result carries executionId, status (finished, error, running), durationMs, the exception with its line when the script threw, and the newest console lines. A script still running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output. |
 | `script_run_file` | `script` | 有効 | Runs a script file that already exists on the device (AutoJs6 picks the engine from the suffix) and by default waits for it to finish. The result carries executionId, status (finished, error, running), durationMs, the exception with its line when the script threw, and the newest console lines. A script still running after the wait keeps running: script_stop stops it, script_list shows it, console_tail follows its output. |
 | `script_stop` | `script` | 有効 | Stops one running AutoJs6 script by the executionId that script_run, script_run_file, or script_list reported. |
@@ -327,6 +327,7 @@ _2026/10/15_
 - `機能` mediainfo_read ツール, 端末上の音声, 動画, 画像ファイルの形式, 長さ, ビットレート, コーデック, 解像度, チャンネル, サンプリングレート, タグなどを読み取る (インストール済みで有効な MediaInfo プラグインが必要): パスは作業ディレクトリ内のファイルで, 結果はトラックごとの要約と全フィールドを含み, 完全なテキストレポートも任意で付けられる
 - `機能` 設定ページの "共有ストレージの読み取りを許可" スイッチ (既定はオフ), 認識, メディア情報, 一覧 / 属性ツールが共有ストレージの絶対パス (写真やダウンロードなど) を読み取り専用で扱えるようにする: オンにするまで絶対パスはすべて拒否され, Android/data と Android/obb は常に読めず, ほかのファイルツールは作業ディレクトリ内に限られる (AutoJs6 にすべてのファイルへのアクセス権が必要)
 - `修正` 実機検証スクリプトが残存するデバッグ用テスト APK をリリース版アプリに対して起動し, アプリのプロセスがクラッシュする問題
+- `改善` device_info ツールとリソース autojs6://device/info に plugins フィールド (AutoJs6 6.8.0 以降): OCR, バーコード, OpenCV, Pinyin, Pinyin4j, MediaInfo, オフラインドキュメントなどのプラグインファミリーの状態 (利用可能 / 未インストール / 無効 / 非互換), それぞれが提供するツールとインストールのヒントを示し, モデルがプラグインセンターでのインストールを案内できる
 - `改善` AutoJs6 6.8.0 のビルド 5333 以降では, 設定ページの通知オフの案内で, AutoJs6 が前面にあるときもペアリング要求が表示されることを説明するようにした
 
 #### v1.1.0

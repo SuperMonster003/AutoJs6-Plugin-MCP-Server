@@ -134,6 +134,8 @@ class McpServerHostSessionTest {
         assertEquals("info", infoRequest.getString("method"))
         assertEquals(listOf("device"), infoRequest.getJSONArray("permissions").toStringList())
         assertEquals(CLIENT_NAME, broker.clientNames.last())
+        // Without app.pluginCapabilities in the grant (an older host) there is no plugins section (roadmap P11 D27).
+        assertFalse(info.getJSONObject("structuredContent").has("plugins"))
         Log.i(TAG, "device_info through the broker: ${infoText.getJSONObject("host")}")
 
         val run = post(toolsCallRequest(ToolCatalog.SCRIPT_RUN, """{"source":"toast('hi')","name":"demo","timeoutMs":5000,"maxConsoleLines":1}"""), sessionId)
@@ -603,6 +605,12 @@ class McpServerHostSessionTest {
         assertEquals("music/a.mp3", read.getJSONArray("args").getString(0))
         assertEquals(1, media.getJSONObject("structuredContent").getJSONObject("trackCounts").getInt("audio"))
 
+        // device_info lists the families with their tools (roadmap P11 D27).
+        val families = call(ToolCatalog.DEVICE_INFO).getJSONObject("structuredContent").getJSONObject("plugins").getJSONArray("families")
+        val ocrFamily = (0 until families.length()).map { families.getJSONObject(it) }.first { it.getString("id") == "ocr" }
+        assertEquals("available", ocrFamily.getString("status"))
+        assertEquals("ocr_recognize", ocrFamily.getJSONArray("tools").getString(0))
+
         // The plugin goes away: the row leaves the list on the next request and a call explains why.
         broker.pluginFamilies = pluginFamiliesReport("not_installed")
         runtime.pluginFamilies.invalidate()
@@ -612,6 +620,10 @@ class McpServerHostSessionTest {
         assertTrue(gone.toString(), gone.toString().contains("not installed"))
         val goneBarcode = call(ToolCatalog.BARCODE_DETECT, """{"image":"screen"}""")
         assertEquals("PLUGIN_UNAVAILABLE", goneBarcode.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
+        val goneFamilies = call(ToolCatalog.DEVICE_INFO).getJSONObject("structuredContent").getJSONObject("plugins").getJSONArray("families")
+        val goneBarcodeFamily = (0 until goneFamilies.length()).map { goneFamilies.getJSONObject(it) }.first { it.getString("id") == "barcode" }
+        assertEquals("not_installed", goneBarcodeFamily.getString("status"))
+        assertTrue(goneBarcodeFamily.getString("hint").contains("plugin center"))
         val goneMedia = call(ToolCatalog.MEDIAINFO_READ, """{"path":"music/a.mp3"}""")
         assertEquals("PLUGIN_UNAVAILABLE", goneMedia.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
         session.close()

@@ -126,8 +126,7 @@ class ResourceCatalog(
         requireEnabled(group)
         val caller = callerFor(clientName)
         val contents: ResourceContents = when (resource.kind) {
-            ResourceUri.Kind.DEVICE -> TextResourceContents(
-                caller.callOrThrow("device", "info", ScriptTools.NO_ARGS, TIMEOUT_MS, listOf("device")).toString(), uri, "application/json")
+            ResourceUri.Kind.DEVICE -> TextResourceContents(DeviceInfo.read(caller, permissions(), TIMEOUT_MS).toString(), uri, "application/json")
             ResourceUri.Kind.CONSOLE -> TextResourceContents(
                 ScriptTools.shapeTail(caller.callOrThrow("console", "tail", ScriptTools.tailArgs(buildJsonObject { put("lines", 100) }),
                     TIMEOUT_MS, listOf("console"))).toString(), uri, "application/json")

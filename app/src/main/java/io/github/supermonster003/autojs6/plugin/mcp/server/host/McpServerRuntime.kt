@@ -112,7 +112,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
         sharedReadAllowed = { toolPermissions.load().allowSharedStorageRead },
     )
     private val fileTools = FileTools(pathAccess)
-    private val deviceTools = DeviceTools()
+    private val deviceTools = DeviceTools { toolPermissions.load() }
     private val shellTools = ShellTools { toolPermissions.load() }
     private val ocrTools = OcrTools(access = pathAccess)
     private val barcodeTools = BarcodeTools(access = pathAccess)

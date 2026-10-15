@@ -20,6 +20,7 @@
         "Los scripts de pruebas en dispositivos iniciaban un APK de prueba de depuración residual contra la versión de lanzamiento y provocaban el cierre del proceso de la aplicación"
       ],
       "improvement": [
+        "La herramienta device_info y el recurso autojs6://device/info ganan un campo plugins (AutoJs6 6.8.0 o posterior): el estado de cada familia de plugins, como OCR, códigos de barras, OpenCV, Pinyin, Pinyin4j, MediaInfo y documentación sin conexión (disponible / no instalado / desactivado / incompatible), las herramientas que aporta y una indicación de instalación, para que el modelo pueda decir al usuario qué instalar en el centro de plugins",
         "Con AutoJs6 6.8.0 compilación 5333 o posterior, el aviso de notificaciones desactivadas de la página de ajustes indica que las solicitudes de emparejamiento también aparecen mientras AutoJs6 está en primer plano"
       ]
     },

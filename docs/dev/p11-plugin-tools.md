@@ -226,3 +226,25 @@ Tests: `PathAccessTest`, the shared cases of `WorkspaceToolsTest`, `BarcodeTools
 (JVM); the workspace case of `McpServerHostSessionTest` (switch off -> refused without a host call, on -> token, absolute entries,
 `Android/data` refused, `files_read` refused). Device scenario: `tools/evidence/p11_shared_storage.py` (the switch is set through
 `EvidenceHelperTest#setSharedStorageRead` and restored afterwards).
+
+## device_info plugin families (D27)
+
+`device_info` became a flow (`DeviceTools`, `DeviceInfo`): `device.info` as before, then `app.pluginCapabilities` (5 s, token `app.query`).
+When the host answers with the capabilities schema, the result and the resource `autojs6://device/info` gain `plugins`:
+
+```json
+{"families": [{"id": "barcode", "name": "ML Kit Barcode", "status": "not_installed", "toolGroup": "barcode", "toolGroupEnabled": true,
+               "tools": ["barcode_detect"], "plugins": [], "detail": "...", "hint": "install the ML Kit Barcode plugin from the AutoJs6 plugin center"}],
+ "hint": "plugins are installed and enabled in AutoJs6 > Plugin center; the tool list follows within seconds"}
+```
+
+One entry per family in the host's order (`ocr`, `barcode`, `opencv`, `pinyin`, `pinyin4j`, `mediainfo`, `docs`, and any family a newer
+host adds, shown by its id); `tools` are the catalog rows of the family, `docs` lists the `autojs6://docs/{+path}` resources instead,
+`plugins` keeps package, version, enabled, compatible and the required host build. A `hint` appears when a family brings no tools:
+install, enable, update (with the build an incompatible plugin needs), or switch the tool group on in the MCP Server settings. A host
+without the method, a grant without it, a failure or an unknown answer leaves `plugins` out; the device part is unchanged, and the
+`outputSchema` stays an open object with `plugins` described but not required.
+
+Tests: `DeviceInfoTest` (JVM: section shape and hints, the section only with a valid report, the flow and the output schema), the
+basic and plugin-family cases of `McpServerHostSessionTest` (no section without the grant; families, tools and the not-installed hint
+with the fake report). Device scenario: `tools/evidence/p11_device_info.py`.
