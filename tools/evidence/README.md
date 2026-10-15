@@ -20,7 +20,8 @@ evidence should only depend on these files.
 | `bridge_reopen.py` | Scenario: the stdio bridge (`autojs6-mcp-bridge`) across a listener restart; each `--bridge` command runs once, so an old and a new bridge can be compared (roadmap P9) |
 | `p11_image_tools.py` | Scenario: the P11 barcode and OpenCV tools on a real host: fixtures written through `script_run`, `barcode_detect` / `opencv_find_color` / `opencv_find_multi_colors` / `opencv_find_image` on them at normal size and at 5000 px (decoded at half size, D45), a template at another scale refused; then on the screen of the Settings app with a label cut by `screen_capture` as template, and optionally an EAN-13 opened in an image viewer (`--show-barcode-with`) (roadmap P11) |
 | `p11_text_tools.py` | Scenario: the P11 text and media tools on a real host: `pinyin_convert` (word readings, heteronyms, styles), `pinyin4j_convert` (tone marks, Wade-Giles, all readings, tone refused outside Hanyu) and `mediainfo_read` on a WAV fixture written through `script_run`, with and without the report, and a missing file (roadmap P11) |
-| `tool_calls.py` | `tools/call`, `script_run` and chunked file writes through the host, shared by the P11 scenarios |
+| `p11_screen_quota.py` | Scenario: the screenshot window shared by `screen_capture` and the recognition tools with `image: "screen"` (roadmap P11 D39): 30 interleaved calls succeed, the 31st recognition and a capture are `RATE_LIMITED`, a file call is not counted, recovery after `retryAfterMs` |
+| `tool_calls.py` | `tools/call`, `script_run`, chunked file writes through the host and the accessibility check with rebinding, shared by the P11 scenarios |
 | `image_fixtures.py` | Standard-library PNG encoding / decoding, the EAN-13 symbol and the fixtures of `p11_image_tools.py` |
 | `test_evidence.py` | Offline checks of the parsing and redaction logic and of the image fixtures |
 

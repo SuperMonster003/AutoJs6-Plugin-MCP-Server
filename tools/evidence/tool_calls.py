@@ -1,10 +1,10 @@
-"""Tool calls shared by the P11 device scenarios: one `tools/call`, a host script, a file written by the host."""
+"""Tool calls shared by the P11 device scenarios: one `tools/call`, a host script, a file written by the host, the accessibility check."""
 from __future__ import annotations
 
 import base64
 import time
 
-from device import DeviceError
+from device import Device, DeviceError, progress
 
 # Raw bytes per script_run call: the base64 text plus the script stays below the broker's 32 KiB argument limit.
 WRITE_CHUNK = 18 * 1024
@@ -45,3 +45,21 @@ def remove_dir(client, relative: str) -> bool | str:
         return True
     except DeviceError as error:
         return str(error)
+
+
+def ensure_accessibility(device: Device, client, report: dict) -> bool:
+    def operational() -> bool:
+        ok, structured, _text, _ms = call(client, "device_ensure_accessibility", {}, timeout=30)
+        return ok and structured.get("enabled") is True
+
+    if device.host_accessibility_crashed():
+        # A held host session restarts the host process; rebinding the service is a toggle of the setting it already has.
+        progress("rebinding the AutoJs6 accessibility service")
+        report["accessibilityRebound"] = device.rebind_host_accessibility()
+    for attempt in range(5):
+        if operational():
+            report["accessibility"] = f"operational (attempt {attempt + 1})"
+            return True
+        time.sleep(3)
+    report["accessibility"] = "unavailable"
+    return False

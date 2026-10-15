@@ -40,7 +40,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import image_fixtures as fx  # noqa: E402
 from device import HOST_PACKAGE, PLUGIN_PACKAGE, Device, DeviceError, progress  # noqa: E402
 from session import evidence_session  # noqa: E402
-from tool_calls import call, remove_dir, write_file  # noqa: E402
+from tool_calls import call, ensure_accessibility, remove_dir, write_file  # noqa: E402
 
 CLIENT_NAME = "autojs6-evidence-p11-image"
 REPO = pathlib.Path(__file__).resolve().parents[2]
@@ -57,24 +57,6 @@ def near(actual, expected, tolerance: int) -> bool:
 
 def center_of(bounds: dict | None):
     return None if not bounds else ((bounds["left"] + bounds["right"]) // 2, (bounds["top"] + bounds["bottom"]) // 2)
-
-
-def ensure_accessibility(device: Device, client, report: dict) -> bool:
-    def operational() -> bool:
-        ok, structured, _text, _ms = call(client, "device_ensure_accessibility", {}, timeout=30)
-        return ok and structured.get("enabled") is True
-
-    if device.host_accessibility_crashed():
-        # A held host session restarts the host process; rebinding the service is a toggle of the setting it already has.
-        progress("rebinding the AutoJs6 accessibility service")
-        report["accessibilityRebound"] = device.rebind_host_accessibility()
-    for attempt in range(5):
-        if operational():
-            report["accessibility"] = f"operational (attempt {attempt + 1})"
-            return True
-        time.sleep(3)
-    report["accessibility"] = "unavailable"
-    return False
 
 
 def file_checks(client, files: dict) -> list[dict]:
