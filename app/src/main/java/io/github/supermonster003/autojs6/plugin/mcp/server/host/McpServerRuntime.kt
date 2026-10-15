@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -40,6 +41,7 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.tools.BarcodeTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.MediaInfoTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.OcrTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.OpenCvTools
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.PathAccess
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.PinyinTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ShellTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.BridgeCaller
@@ -104,14 +106,19 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
     private val info by lazy { this.context.mcpServerPluginRuntimeInfo() }
     private val uiTools = UiTools(nodeRefs, permissions = { toolPermissions.load() })
     private val screenTools = ScreenTools(snapshots = nodeRefs, annotator = AndroidImageAnnotator)
-    private val fileTools = FileTools()
+    /** Roadmap P11 D26: absolute shared storage paths for the read-only tools while the settings switch is on, read for every call. */
+    private val pathAccess = PathAccess(
+        sharedRoots = listOf(Environment.getExternalStorageDirectory().absolutePath, "/sdcard").distinct(),
+        sharedReadAllowed = { toolPermissions.load().allowSharedStorageRead },
+    )
+    private val fileTools = FileTools(pathAccess)
     private val deviceTools = DeviceTools()
     private val shellTools = ShellTools { toolPermissions.load() }
-    private val ocrTools = OcrTools()
-    private val barcodeTools = BarcodeTools()
-    private val openCvTools = OpenCvTools()
+    private val ocrTools = OcrTools(access = pathAccess)
+    private val barcodeTools = BarcodeTools(access = pathAccess)
+    private val openCvTools = OpenCvTools(access = pathAccess)
     private val pinyinTools = PinyinTools()
-    private val mediaInfoTools = MediaInfoTools()
+    private val mediaInfoTools = MediaInfoTools(access = pathAccess)
 
     /** Soft probe of the plugin families behind the plugin-family tool groups (roadmap P11 D27 / D28). */
     val pluginFamilies: PluginFamilyProbe = PluginFamilyProbe({ bridge })

@@ -118,6 +118,9 @@
     <string name="settings_running">サーバー稼働中</string>
     <string name="settings_save">保存</string>
     <string name="settings_save_failed">設定を保存または読み込めません. 再試行してください.</string>
+    <string name="settings_shared_storage">共有ストレージの読み取りを許可</string>
+    <string name="settings_shared_storage_hint">オンにすると, 認識, メディア情報, 一覧 / 属性ツールが共有ストレージの絶対パス (写真やダウンロードなど) を読み取り専用で扱える. AutoJs6 自体にすべてのファイルへのアクセス権が必要. Android/data と Android/obb は常に読めない.</string>
+    <string name="settings_shared_storage_warning">ペアリング済みクライアントに共有ストレージのファイル (写真, スクリーンショット, ダウンロードなど) の読み取りを許可しますか? 読み取りのみで, 変更や削除はできません. AutoJs6 にもすべてのファイルへのアクセス権が必要です.</string>
     <string name="settings_shell_root">root Shell を許可</string>
     <string name="settings_show_token">トークンを表示 / コピー</string>
     <string name="settings_stopped_idle">アイドルのため自動停止しました</string>

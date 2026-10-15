@@ -118,6 +118,9 @@
     <string name="settings_running">Servidor en ejecución</string>
     <string name="settings_save">Guardar</string>
     <string name="settings_save_failed">No se pueden guardar o leer los ajustes. Inténtalo de nuevo.</string>
+    <string name="settings_shared_storage">Permitir leer el almacenamiento compartido</string>
+    <string name="settings_shared_storage_hint">Permite que las herramientas de reconocimiento, multimedia y lista / propiedades lean rutas absolutas del almacenamiento compartido, como fotos y descargas, solo en lectura. AutoJs6 necesita el acceso a todos los archivos. Android/data y Android/obb siguen cerrados.</string>
+    <string name="settings_shared_storage_warning">Permitir que los clientes vinculados lean archivos del almacenamiento compartido, como fotos, capturas de pantalla y descargas? Solo podrán leerlos, no cambiarlos ni eliminarlos. AutoJs6 también necesita el acceso a todos los archivos.</string>
     <string name="settings_shell_root">Permitir Shell con root</string>
     <string name="settings_show_token">Mostrar / copiar token</string>
     <string name="settings_stopped_idle">Detenido automáticamente por inactividad</string>

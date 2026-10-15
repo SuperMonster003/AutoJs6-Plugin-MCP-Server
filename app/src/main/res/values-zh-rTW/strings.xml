@@ -118,6 +118,9 @@
     <string name="settings_running">伺服器執行中</string>
     <string name="settings_save">儲存</string>
     <string name="settings_save_failed">無法儲存或讀取設定. 請重試.</string>
+    <string name="settings_shared_storage">允許讀取共用儲存空間</string>
+    <string name="settings_shared_storage_hint">開啟後, 辨識, 媒體資訊與列出目錄 / 查看屬性工具可以唯讀存取共用儲存空間中的絕對路徑, 例如相簿與下載資料夾. AutoJs6 本身需要所有檔案存取權限. Android/data 與 Android/obb 始終無法讀取.</string>
+    <string name="settings_shared_storage_warning">允許已配對用戶端讀取共用儲存空間中的檔案 (例如相簿, 截圖與下載)? 用戶端只能讀取, 不能修改或刪除. AutoJs6 還必須擁有所有檔案存取權限.</string>
     <string name="settings_shell_root">允許 root Shell</string>
     <string name="settings_show_token">顯示 / 複製權杖</string>
     <string name="settings_stopped_idle">已因閒置自動停止</string>

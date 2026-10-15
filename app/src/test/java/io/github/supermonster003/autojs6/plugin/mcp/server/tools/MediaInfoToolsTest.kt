@@ -113,10 +113,22 @@ class MediaInfoToolsTest {
     }
 
     @Test
+    fun `a shared storage file declares files shared read`() {
+        val shared = MediaInfoTools(clock = { 7_000L }, access = PathAccess(listOf("/storage/emulated/0", "/sdcard")) { true })
+        val caller = FakeCaller { BridgeOutcome.Ok(snapshot, 1L) }
+        runBlocking { shared.planFor(ToolCatalog.mediainfoRead, args("""{"path":"/sdcard/Music/a.mp4"}"""))!!.run(caller) }
+        assertEquals("/sdcard/Music/a.mp4", caller.calls.single().args[0].jsonPrimitive.content)
+        assertEquals(listOf("media", "media.metadata", "files.shared_read"), caller.calls.single().permissions)
+        // A relative path stays in the working directory and declares nothing more, switch or not.
+        runBlocking { shared.planFor(ToolCatalog.mediainfoRead, args("""{"path":"music/a.mp4"}"""))!!.run(caller) }
+        assertEquals(listOf("media", "media.metadata"), caller.calls[1].permissions)
+    }
+
+    @Test
     fun `paths are checked before any host call`() {
         listOf(
             """{}""" to "requires the argument path",
-            """{"path":"/sdcard/Music/a.mp3"}""" to "inside the AutoJs6 working directory",
+            """{"path":"/sdcard/Music/a.mp3"}""" to "reading shared storage is switched off",
             """{"path":"../a.mp3"}""" to "inside the AutoJs6 working directory",
             """{"path":"."}""" to "inside the AutoJs6 working directory",
             """{"path":"a.mp3","timeoutMs":10}""" to "timeoutMs must be at least 1000",

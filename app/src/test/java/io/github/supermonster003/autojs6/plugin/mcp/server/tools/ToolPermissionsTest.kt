@@ -20,7 +20,7 @@ class ToolPermissionsTest {
 
         val encoded = permissions.encode()
         assertEquals(
-            """{"format":1,"allowShellRoot":false,"groups":{"script":false,"ui":true,"ui_gesture":false,"screen":true,"files":true,"files_delete":false,"device":true,"shell":true,"ocr":true,"barcode":true,"opencv":true,"pinyin":true,"pinyin4j":true,"mediainfo":true}}""",
+            """{"format":1,"allowShellRoot":false,"allowSharedStorageRead":false,"groups":{"script":false,"ui":true,"ui_gesture":false,"screen":true,"files":true,"files_delete":false,"device":true,"shell":true,"ocr":true,"barcode":true,"opencv":true,"pinyin":true,"pinyin4j":true,"mediainfo":true}}""",
             encoded,
         )
         val decoded = ToolPermissions.decode(encoded)
@@ -38,5 +38,15 @@ class ToolPermissionsTest {
         assertEquals(mapOf(ToolGroup.FILES_DELETE to true), partial.overrides)
         assertTrue(partial.isEnabled(ToolGroup.UI))
         assertTrue(partial.isEnabled(ToolGroup.FILES_DELETE))
+        assertFalse(partial.allowSharedStorageRead)
+    }
+
+    @Test
+    fun `the shared storage switch round-trips and only a JSON true enables it`() {
+        val on = ToolPermissions.DEFAULT.copy(allowSharedStorageRead = true)
+        assertTrue(ToolPermissions.decode(on.encode()).allowSharedStorageRead)
+        assertFalse(ToolPermissions.decode(on.encode()).allowShellRoot)
+        assertFalse(ToolPermissions.decode("""{"format":1,"allowSharedStorageRead":"true","groups":{}}""").allowSharedStorageRead)
+        assertFalse(ToolPermissions.DEFAULT.allowSharedStorageRead)
     }
 }

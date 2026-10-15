@@ -12,7 +12,12 @@ import kotlinx.serialization.json.putJsonObject
  * The per-group switches (roadmap P2.3, decision D6). Groups the document does not mention keep
  * their default, so a build that adds a group never silently enables or disables it for the user.
  */
-data class ToolPermissions(val overrides: Map<ToolGroup, Boolean> = emptyMap(), val allowShellRoot: Boolean = false) {
+data class ToolPermissions(
+    val overrides: Map<ToolGroup, Boolean> = emptyMap(),
+    val allowShellRoot: Boolean = false,
+    /** Roadmap P11 D26: the read-only tools may read absolute paths in shared storage; off by default. */
+    val allowSharedStorageRead: Boolean = false,
+) {
 
     fun isEnabled(group: ToolGroup): Boolean = overrides[group] ?: group.defaultEnabled
 
@@ -25,6 +30,7 @@ data class ToolPermissions(val overrides: Map<ToolGroup, Boolean> = emptyMap(), 
     fun encode(): String = buildJsonObject {
         put("format", FORMAT)
         put("allowShellRoot", allowShellRoot)
+        put("allowSharedStorageRead", allowSharedStorageRead)
         putJsonObject("groups") {
             ToolGroup.entries.forEach { group -> put(group.id, isEnabled(group)) }
         }
@@ -46,7 +52,8 @@ data class ToolPermissions(val overrides: Map<ToolGroup, Boolean> = emptyMap(), 
                 val enabled = (value as? JsonPrimitive)?.booleanOrNull ?: return@forEach
                 overrides[group] = enabled
             }
-            return ToolPermissions(overrides, (root["allowShellRoot"] as? JsonPrimitive)?.takeIf { !it.isString }?.booleanOrNull == true)
+            fun flag(name: String) = (root[name] as? JsonPrimitive)?.takeIf { !it.isString }?.booleanOrNull == true
+            return ToolPermissions(overrides, flag("allowShellRoot"), flag("allowSharedStorageRead"))
         }
     }
 }

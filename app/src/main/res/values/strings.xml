@@ -118,6 +118,9 @@
     <string name="settings_running">Server running</string>
     <string name="settings_save">Save</string>
     <string name="settings_save_failed">Cannot save or read settings. Try again.</string>
+    <string name="settings_shared_storage">Allow reading shared storage</string>
+    <string name="settings_shared_storage_hint">Lets the recognition, media and list / stat tools read absolute paths in shared storage, such as photos and downloads, read-only. AutoJs6 itself needs All files access. Android/data and Android/obb stay closed.</string>
+    <string name="settings_shared_storage_warning">Allow paired clients to read files in shared storage, such as photos, screenshots and downloads? They can only read them, not change or delete them. AutoJs6 must also have All files access.</string>
     <string name="settings_shell_root">Allow root Shell</string>
     <string name="settings_show_token">Show / copy token</string>
     <string name="settings_stopped_idle">Stopped automatically after being idle</string>

@@ -28,11 +28,14 @@ import kotlinx.serialization.json.put
  * pixels when the host downscaled a large file (D45). A missing barcode plugin is reported as
  * `PLUGIN_UNAVAILABLE`.
  */
-class BarcodeTools(private val clock: () -> Long = { System.nanoTime() / 1_000_000L }) : ToolFlows {
+class BarcodeTools(
+    private val clock: () -> Long = { System.nanoTime() / 1_000_000L },
+    private val access: PathAccess = PathAccess.WORKSPACE_ONLY,
+) : ToolFlows {
 
     override fun planFor(spec: ToolSpec, arguments: JsonObject): ToolFlow? = when (spec.name) {
         ToolCatalog.BARCODE_DETECT -> {
-            val options = Options.parse(arguments)
+            val options = Options.parse(arguments, access)
             ToolFlow(options.timeoutMs) { caller -> detect(caller, options) }
         }
         else -> null
@@ -57,8 +60,8 @@ class BarcodeTools(private val clock: () -> Long = { System.nanoTime() / 1_000_0
                 "$format: $value"
             }
             val structured = buildJsonObject {
-                put("image", options.image)
-                put("source", if (options.image == Images.SCREEN) "screen" else "file")
+                put("image", options.image.raw)
+                put("source", if (options.image.screen) "screen" else "file")
                 put("count", items.size)
                 put("items", JsonArray(items))
                 options.formats?.let { formats -> put(Barcode.FORMATS, JsonArray(formats.map { JsonPrimitive(it) })) }
@@ -116,13 +119,13 @@ class BarcodeTools(private val clock: () -> Long = { System.nanoTime() / 1_000_0
             failure
         }
 
-    private class Options(val image: String, val formats: List<String>?, val region: ImageRegion?, val maxResults: Long, val timeoutMs: Long) {
+    private class Options(val image: ImageArgument, val formats: List<String>?, val region: ImageRegion?, val maxResults: Long, val timeoutMs: Long) {
 
         companion object {
 
-            fun parse(arguments: JsonObject): Options {
+            fun parse(arguments: JsonObject, access: PathAccess): Options {
                 ToolArguments.validate(ToolCatalog.barcodeDetect, arguments)
-                val image = ImageInputs.parseImage(TOOL, arguments)
+                val image = ImageInputs.parseImage(TOOL, arguments, access)
                 val formats = (arguments[Barcode.FORMATS] as? JsonArray)?.let { array ->
                     if (array.isEmpty()) ImageInputs.invalid(TOOL, "formats must name at least one symbology; omit it for all")
                     array.map { element ->

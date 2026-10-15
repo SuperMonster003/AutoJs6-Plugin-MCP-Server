@@ -198,7 +198,7 @@ class OcrToolsTest {
         listOf(
             """{}""" to "requires the argument image",
             """{"image":""}""" to "image must be",
-            """{"image":"/sdcard/a.png"}""" to "inside the AutoJs6 working directory",
+            """{"image":"/sdcard/a.png"}""" to "reading shared storage is switched off",
             """{"image":"../a.png"}""" to "inside the AutoJs6 working directory",
             """{"image":"."}""" to "inside the AutoJs6 working directory",
             """{"image":"screen","engine":"tesseract"}""" to "engine must be one of",

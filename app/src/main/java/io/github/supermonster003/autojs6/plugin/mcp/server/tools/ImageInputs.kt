@@ -107,9 +107,17 @@ class ImageHandle(
     }
 }
 
+/** The `image` argument as given ([raw]): the screen when [target] is null, otherwise a file to read. */
+class ImageArgument(val raw: String, val target: ReadTarget?) {
+
+    val screen: Boolean
+        get() = target == null
+}
+
 /**
- * The `image` argument of the plugin-family tools (roadmap P11 D23 / D24 / D38): `"screen"` or a
- * path relative to the AutoJs6 working directory. A tool takes the image as a session handle,
+ * The `image` argument of the plugin-family tools (roadmap P11 D23 / D24 / D38): `"screen"`, a
+ * path relative to the AutoJs6 working directory, or an absolute path in shared storage while the
+ * switch of D26 is on ([PathAccess]). A tool takes the image as a session handle,
  * works on it, and recycles it in the same call ([withImage]); the picture never leaves AutoJs6.
  */
 object ImageInputs {
@@ -119,18 +127,16 @@ object ImageInputs {
     private val IMAGE_PERMISSIONS = listOf("image")
     private val CONSENT_ARGS = buildJsonArray { add(buildJsonObject { put("orientation", "auto") }) }
 
-    /** The `image` value of a file source, validated, or [Images.SCREEN]. */
-    fun parseImage(tool: String, arguments: JsonObject, key: String = Images.IMAGE): String {
+    /** The `image` argument [key], checked against [access]: the screen, or a file as a [ReadTarget]. */
+    fun parseImage(tool: String, arguments: JsonObject, access: PathAccess, key: String = Images.IMAGE): ImageArgument {
         val image = ToolArguments.string(arguments, key)?.trim()?.takeIf { it.isNotEmpty() } ?: invalid(tool, "$key must be \"screen\" or a file path")
-        if (image != Images.SCREEN) WorkspacePath.normalize(image, allowRoot = false)
-        return image
+        return ImageArgument(image, if (image == Images.SCREEN) null else access.readable(tool, key, image))
     }
 
-    /** A workspace path argument that must name a file (the template of `opencv_find_image`). */
-    fun parsePath(tool: String, arguments: JsonObject, key: String): String {
+    /** A path argument that must name a file (the template of `opencv_find_image`), checked against [access]. */
+    fun parsePath(tool: String, arguments: JsonObject, key: String, access: PathAccess): ReadTarget {
         val path = ToolArguments.string(arguments, key)?.trim()?.takeIf { it.isNotEmpty() } ?: invalid(tool, "$key must be a file path")
-        WorkspacePath.normalize(path, allowRoot = false)
-        return path
+        return access.readable(tool, key, path)
     }
 
     /** The optional `{left, top, right, bottom}` argument [key]. */
@@ -151,8 +157,8 @@ object ImageInputs {
      * Takes [image] as a handle, runs [block], and recycles the handle afterwards, also when
      * [block] throws: a leaked handle counts against the host's per-session limit until the session closes.
      */
-    suspend fun <T> withImage(caller: BridgeCaller, tool: String, image: String, block: suspend (ImageHandle) -> T): T {
-        val handle = if (image == Images.SCREEN) capture(caller, tool) else read(caller, tool, WorkspacePath.normalize(image, allowRoot = false))
+    suspend fun <T> withImage(caller: BridgeCaller, tool: String, image: ImageArgument, block: suspend (ImageHandle) -> T): T {
+        val handle = image.target?.let { read(caller, tool, it) } ?: capture(caller, tool)
         try {
             return block(handle)
         } finally {
@@ -161,8 +167,8 @@ object ImageInputs {
     }
 
     /** Like [withImage] for an argument that is always a file path (a template), even one named `screen`. */
-    suspend fun <T> withFile(caller: BridgeCaller, tool: String, path: String, block: suspend (ImageHandle) -> T): T {
-        val handle = read(caller, tool, WorkspacePath.normalize(path, allowRoot = false))
+    suspend fun <T> withFile(caller: BridgeCaller, tool: String, target: ReadTarget, block: suspend (ImageHandle) -> T): T {
+        val handle = read(caller, tool, target)
         try {
             return block(handle)
         } finally {
@@ -188,9 +194,12 @@ object ImageInputs {
         }
     }
 
-    /** A workspace file as a handle (`image.readImage`); the host downscales large files (D45) and reports the scale. */
-    suspend fun read(caller: BridgeCaller, tool: String, path: String): ImageHandle =
-        when (val outcome = caller.call("image", "readImage", JsonArray(listOf(JsonPrimitive(path))), Images.READ_TIMEOUT_MS, IMAGE_PERMISSIONS)) {
+    /**
+     * A file as a handle (`image.readImage`); the host downscales large files (D45) and reports the scale.
+     * A shared storage target declares `files.shared_read` (D26).
+     */
+    suspend fun read(caller: BridgeCaller, tool: String, target: ReadTarget): ImageHandle =
+        when (val outcome = caller.call("image", "readImage", JsonArray(listOf(JsonPrimitive(target.path))), Images.READ_TIMEOUT_MS, target.permissions(IMAGE_PERMISSIONS))) {
             is BridgeOutcome.Ok -> handleOf(outcome.result, "image.readImage")
             is BridgeOutcome.Failed -> throw ToolFailureException(acquireFailure(outcome.failure, consentHint = false))
         }

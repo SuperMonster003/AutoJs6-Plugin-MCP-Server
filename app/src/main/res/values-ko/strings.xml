@@ -118,6 +118,9 @@
     <string name="settings_running">서버 실행 중</string>
     <string name="settings_save">저장</string>
     <string name="settings_save_failed">설정을 저장하거나 읽을 수 없습니다. 다시 시도하세요.</string>
+    <string name="settings_shared_storage">공유 저장소 읽기 허용</string>
+    <string name="settings_shared_storage_hint">켜면 인식, 미디어 정보, 목록 / 속성 도구가 공유 저장소의 절대 경로 (사진, 다운로드 등) 를 읽기 전용으로 사용할 수 있습니다. AutoJs6 자체에 모든 파일 접근 권한이 필요합니다. Android/data 와 Android/obb 는 항상 읽을 수 없습니다.</string>
+    <string name="settings_shared_storage_warning">페어링된 클라이언트가 공유 저장소의 파일 (사진, 스크린샷, 다운로드 등) 을 읽도록 허용할까요? 읽기만 가능하며 변경하거나 삭제할 수 없습니다. AutoJs6 에도 모든 파일 접근 권한이 있어야 합니다.</string>
     <string name="settings_shell_root">root Shell 허용</string>
     <string name="settings_show_token">토큰 표시 / 복사</string>
     <string name="settings_stopped_idle">유휴 상태로 자동 중지됨</string>

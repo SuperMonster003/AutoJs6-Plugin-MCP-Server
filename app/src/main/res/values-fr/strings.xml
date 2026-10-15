@@ -118,6 +118,9 @@
     <string name="settings_running">Serveur en cours</string>
     <string name="settings_save">Enregistrer</string>
     <string name="settings_save_failed">Impossible de lire ou enregistrer les paramètres. Réessayez.</string>
+    <string name="settings_shared_storage">Autoriser la lecture du stockage partagé</string>
+    <string name="settings_shared_storage_hint">Permet aux outils de reconnaissance, de médias et de liste / propriétés de lire des chemins absolus du stockage partagé, comme les photos et les téléchargements, en lecture seule. AutoJs6 a besoin de l\'accès à tous les fichiers. Android/data et Android/obb restent fermés.</string>
+    <string name="settings_shared_storage_warning">Autoriser les clients associés à lire les fichiers du stockage partagé, comme les photos, les captures d\'écran et les téléchargements? Ils pourront seulement les lire, sans les modifier ni les supprimer. AutoJs6 doit aussi avoir l\'accès à tous les fichiers.</string>
     <string name="settings_shell_root">Autoriser Shell avec root</string>
     <string name="settings_show_token">Afficher / copier le jeton</string>
     <string name="settings_stopped_idle">Arrêté automatiquement pour inactivité</string>

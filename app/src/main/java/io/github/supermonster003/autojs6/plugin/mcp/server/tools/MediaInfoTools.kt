@@ -19,15 +19,19 @@ import kotlinx.serialization.json.put
  * groups the fields of MediaInfo's text report by track kind (`general`, `video`, `audio`, ...), one
  * object per track with camelCase keys and MediaInfo's display strings; the result keeps those
  * `sections` whole and adds one summary line per track for the text content. Paths are workspace
- * paths until the shared storage switch (D26) lands; the host checks the canonical path as well.
+ * paths, or shared storage paths while the switch of D26 is on ([PathAccess]); the host checks the
+ * canonical path as well.
  */
-class MediaInfoTools(private val clock: () -> Long = { System.nanoTime() / 1_000_000L }) : ToolFlows {
+class MediaInfoTools(
+    private val clock: () -> Long = { System.nanoTime() / 1_000_000L },
+    private val access: PathAccess = PathAccess.WORKSPACE_ONLY,
+) : ToolFlows {
 
     override fun planFor(spec: ToolSpec, arguments: JsonObject): ToolFlow? {
         if (spec.name != ToolCatalog.MEDIAINFO_READ) return null
         ToolArguments.validate(spec, arguments)
         val raw = ToolArguments.string(arguments, MediaInfo.PATH)?.trim().orEmpty()
-        val path = WorkspacePath.normalize(raw, allowRoot = false)
+        val target = access.readable(spec.name, MediaInfo.PATH, raw)
         val report = ToolArguments.boolean(arguments, MediaInfo.REPORT, false)
         val timeoutMs = ToolArguments.long(arguments, Images.TIMEOUT_MS, MediaInfo.DEFAULT_TIMEOUT_MS).coerceIn(Images.MIN_TIMEOUT_MS, spec.maxTimeoutMs)
         val options = buildJsonObject {
@@ -36,7 +40,7 @@ class MediaInfoTools(private val clock: () -> Long = { System.nanoTime() / 1_000
         }
         return ToolFlow(timeoutMs) { caller ->
             val startedAt = clock()
-            val snapshot = when (val outcome = caller.call("mediainfo", "read", JsonArray(listOf(JsonPrimitive(path), options)), timeoutMs, spec.permissions)) {
+            val snapshot = when (val outcome = caller.call("mediainfo", "read", JsonArray(listOf(JsonPrimitive(target.path), options)), timeoutMs, target.permissions(spec.permissions))) {
                 is BridgeOutcome.Ok -> outcome.result as? JsonObject ?: ImageInputs.badHost("mediainfo.read returned no snapshot")
                 is BridgeOutcome.Failed -> throw ToolFailureException(mapFailure(outcome.failure))
             }

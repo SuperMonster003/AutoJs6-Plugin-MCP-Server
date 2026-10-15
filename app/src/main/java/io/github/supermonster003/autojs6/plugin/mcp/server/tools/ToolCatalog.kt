@@ -122,8 +122,15 @@ object ToolCatalog {
         const val RECYCLE_TIMEOUT_MS = 5_000L
         /** The last sentence of every tool description with an `image` argument (roadmap P11 D39, see RateLimiter.countsAsScreenshot). */
         const val SCREEN_QUOTA_NOTE = "Reading the screen counts against the limit of 30 screenshots per minute per client that screen_capture also uses."
+        /** Roadmap P11 D26: what the read-only tools accept beyond the working directory, see PathAccess. */
+        const val SHARED_STORAGE_NOTE = "While \"Allow reading shared storage\" is switched on in the MCP Server settings on the phone, absolute paths in " +
+                "shared storage (such as /storage/emulated/0/DCIM/...) are accepted too, read-only; Android/data and Android/obb never are."
         /** Description of the `image` argument. */
-        const val IMAGE_DESCRIPTION = "\"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal"
+        const val IMAGE_DESCRIPTION = "\"screen\" for the current screen, a POSIX path relative to the AutoJs6 working directory, or an absolute shared " +
+                "storage path while reading shared storage is switched on; no traversal"
+        /** Description of a path argument of a read-only tool. */
+        const val READABLE_PATH_DESCRIPTION = "POSIX path relative to the AutoJs6 working directory, or an absolute shared storage path while reading " +
+                "shared storage is switched on; no traversal"
     }
 
     /** `ocr_recognize` argument names and bounds (roadmap P11 D23 / D24 / D25 / D38), shared with OcrTools and the tests. */
@@ -816,11 +823,14 @@ object ToolCatalog {
     )
 
     private fun pathSchema() = JsonSchemas.string("POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal", maxLength = WorkspacePath.MAX_BYTES)
+    private fun readablePathSchema() = JsonSchemas.string(Images.READABLE_PATH_DESCRIPTION, maxLength = WorkspacePath.MAX_BYTES)
 
-    val filesList = fileSpec(FILES_LIST, "List files", "Lists workspace files with metadata. Results are bounded and report truncation.", "list",
-        linkedMapOf(Workspace.PATH to pathSchema(), Workspace.RECURSIVE to JsonSchemas.boolean("Include subdirectories", default = false),
+    val filesList = fileSpec(FILES_LIST, "List files", "Lists workspace files with metadata. Results are bounded and report truncation. " +
+        Images.SHARED_STORAGE_NOTE + " A shared storage listing answers absolute paths and its root.", "list",
+        linkedMapOf(Workspace.PATH to readablePathSchema(), Workspace.RECURSIVE to JsonSchemas.boolean("Include subdirectories", default = false),
             Workspace.MAX_ENTRIES to JsonSchemas.integer("Maximum entries", minimum = 1, maximum = Files.MAX_ENTRIES, default = 500)), emptyList())
-    val filesStat = fileSpec(FILES_STAT, "File metadata", "Returns existence, type, size, and modification time of a workspace path.", "stat")
+    val filesStat = fileSpec(FILES_STAT, "File metadata", "Returns existence, type, size, and modification time of a workspace path. " +
+        Images.SHARED_STORAGE_NOTE, "stat", linkedMapOf(Workspace.PATH to readablePathSchema()))
     val filesRead = fileSpec(FILES_READ, "Read file", "Reads up to 1 MiB. Use encoding base64 for binary data; encoding, bytes, totalBytes, and truncated identify the representation and limit.", "read",
         linkedMapOf(Workspace.PATH to pathSchema(), Workspace.ENCODING to JsonSchemas.string("Content encoding", enum = listOf("utf-8", "base64"), default = "utf-8"),
             Workspace.MAX_BYTES to JsonSchemas.integer("Maximum raw file bytes", minimum = 1, maximum = Files.MAX_BYTES.toLong(), default = Files.MAX_BYTES.toLong())))
@@ -873,7 +883,7 @@ object ToolCatalog {
                 "takes the first enabled one in ML Kit, Paddle, Rapid order. Returns the recognized lines as text and, as structured content, " +
                 "items with text, confidence and bounds (file bounds are in the file's own pixels even when AutoJs6 downscaled the image to read it). " +
                 "The screenshot is taken and recognized inside AutoJs6; no image leaves the phone. A first Paddle call loads its model and can take " +
-                "tens of seconds; timeoutMs defaults to 60 s. This tool exists only while an OCR plugin is installed and enabled in AutoJs6. " + Images.SCREEN_QUOTA_NOTE,
+                "tens of seconds; timeoutMs defaults to 60 s. This tool exists only while an OCR plugin is installed and enabled in AutoJs6. " + Images.SHARED_STORAGE_NOTE + " " + Images.SCREEN_QUOTA_NOTE,
         group = ToolGroup.OCR,
         inputSchema = JsonSchemas.objectSchema(
             linkedMapOf(
@@ -903,7 +913,7 @@ object ToolCatalog {
                 "formats limits the symbologies (all by default); region crops before detection, in screen pixels or file pixels. Returns one line " +
                 "per code (format and raw value) and, as structured content, items with rawValue, displayValue, format, valueType, bounds and " +
                 "cornerPoints (file coordinates are in the file's own pixels even when AutoJs6 downscaled the image to read it). The screenshot " +
-                "stays inside AutoJs6; no image leaves the phone. This tool exists only while the barcode plugin is installed and enabled in AutoJs6. " + Images.SCREEN_QUOTA_NOTE,
+                "stays inside AutoJs6; no image leaves the phone. This tool exists only while the barcode plugin is installed and enabled in AutoJs6. " + Images.SHARED_STORAGE_NOTE + " " + Images.SCREEN_QUOTA_NOTE,
         group = ToolGroup.BARCODE,
         inputSchema = JsonSchemas.objectSchema(
             linkedMapOf(
@@ -936,12 +946,12 @@ object ToolCatalog {
                 "working directory; template is the path of the image to look for, at the same pixel scale as image (for the screen, cut from a " +
                 "full-resolution screenshot). threshold is the lowest similarity accepted (0..1); region limits the search, in screen pixels or file " +
                 "pixels; maxResults caps the matches, best first and without overlaps. Returns bounds, center and score of each match; screen " +
-                "coordinates are device pixels. This tool exists only while the OpenCV plugin is installed and enabled in AutoJs6. " + Images.SCREEN_QUOTA_NOTE,
+                "coordinates are device pixels. This tool exists only while the OpenCV plugin is installed and enabled in AutoJs6. " + Images.SHARED_STORAGE_NOTE + " " + Images.SCREEN_QUOTA_NOTE,
         group = ToolGroup.OPENCV,
         inputSchema = JsonSchemas.objectSchema(
             linkedMapOf(
                 Images.IMAGE to JsonSchemas.string(Images.IMAGE_DESCRIPTION, maxLength = WorkspacePath.MAX_BYTES),
-                OpenCv.TEMPLATE to JsonSchemas.string("POSIX path of the template image relative to the AutoJs6 working directory", maxLength = WorkspacePath.MAX_BYTES),
+                OpenCv.TEMPLATE to JsonSchemas.string("The template image: ${Images.READABLE_PATH_DESCRIPTION}", maxLength = WorkspacePath.MAX_BYTES),
                 OpenCv.THRESHOLD to JsonSchemas.number("Lowest similarity a match needs, from 0 to 1", minimum = 0.0, maximum = 1.0, default = OpenCv.DEFAULT_MATCH_THRESHOLD),
                 Images.REGION to JsonSchemas.bounds("Search only inside this rectangle, in screen pixels or file pixels; right and bottom are exclusive"),
                 OpenCv.MAX_RESULTS to JsonSchemas.integer("Report at most this many matches, best first", minimum = 1, maximum = OpenCv.MAX_RESULTS_LIMIT, default = OpenCv.DEFAULT_MAX_RESULTS),
@@ -964,7 +974,7 @@ object ToolCatalog {
                 "\"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory. color is #RRGGBB or #RGB; threshold " +
                 "is the difference allowed in each of the red, green and blue channels; region limits the search, in screen pixels or file pixels. " +
                 "Pixels are searched row by row from the top left. Returns found and the point; screen coordinates are device pixels. This tool " +
-                "exists only while the OpenCV plugin is installed and enabled in AutoJs6. " + Images.SCREEN_QUOTA_NOTE,
+                "exists only while the OpenCV plugin is installed and enabled in AutoJs6. " + Images.SHARED_STORAGE_NOTE + " " + Images.SCREEN_QUOTA_NOTE,
         group = ToolGroup.OPENCV,
         inputSchema = JsonSchemas.objectSchema(
             linkedMapOf(
@@ -992,7 +1002,7 @@ object ToolCatalog {
                 "or a POSIX path relative to the AutoJs6 working directory. color is the color of the point itself (#RRGGBB or #RGB); points lists " +
                 "the neighbors as {x, y, color}, with x and y relative to that point in the pixels of image. threshold is the difference allowed in " +
                 "each RGB channel for color and the average difference allowed for the neighbors; region limits where the point may lie. Returns " +
-                "found and the point; screen coordinates are device pixels. This tool exists only while the OpenCV plugin is installed and enabled in AutoJs6. " + Images.SCREEN_QUOTA_NOTE,
+                "found and the point; screen coordinates are device pixels. This tool exists only while the OpenCV plugin is installed and enabled in AutoJs6. " + Images.SHARED_STORAGE_NOTE + " " + Images.SCREEN_QUOTA_NOTE,
         group = ToolGroup.OPENCV,
         inputSchema = JsonSchemas.objectSchema(
             linkedMapOf(
@@ -1086,11 +1096,11 @@ object ToolCatalog {
                 "format, duration, bit rates, codecs, resolution, frame rate, channels, sampling rate, title, artist and more. path is a POSIX path " +
                 "relative to the AutoJs6 working directory. Returns one summary line per track as text and every field of every track (general, video, " +
                 "audio, text, image, menu, other) as structured content; report adds the full MediaInfo text report. Values are MediaInfo's display " +
-                "strings (\"5 min 3 s\", \"1 920 pixels\"). This tool exists only while the MediaInfo plugin is installed and enabled in AutoJs6.",
+                "strings (\"5 min 3 s\", \"1 920 pixels\"). This tool exists only while the MediaInfo plugin is installed and enabled in AutoJs6. " + Images.SHARED_STORAGE_NOTE,
         group = ToolGroup.MEDIAINFO,
         inputSchema = JsonSchemas.objectSchema(
             linkedMapOf(
-                MediaInfo.PATH to pathSchema(),
+                MediaInfo.PATH to readablePathSchema(),
                 MediaInfo.REPORT to JsonSchemas.boolean("Also return MediaInfo's full text report (up to 64 Ki characters)", default = false),
                 Images.TIMEOUT_MS to JsonSchemas.integer("How long to wait for the analysis, in milliseconds", minimum = Images.MIN_TIMEOUT_MS, maximum = McpServerContract.MAX_TOOL_TIMEOUT_MS, default = MediaInfo.DEFAULT_TIMEOUT_MS),
             ),

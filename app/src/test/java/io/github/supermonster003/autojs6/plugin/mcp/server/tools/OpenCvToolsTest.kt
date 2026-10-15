@@ -211,7 +211,7 @@ class OpenCvToolsTest {
     fun `arguments are checked before any host call`() {
         listOf(
             ToolCatalog.opencvFindImage to """{"image":"screen"}""" to "requires the argument template",
-            ToolCatalog.opencvFindImage to """{"image":"screen","template":"/sdcard/t.png"}""" to "inside the AutoJs6 working directory",
+            ToolCatalog.opencvFindImage to """{"image":"screen","template":"/sdcard/t.png"}""" to "reading shared storage is switched off",
             ToolCatalog.opencvFindImage to """{"image":"screen","template":"t.png","threshold":1.5}""" to "threshold must be at most 1.0",
             ToolCatalog.opencvFindImage to """{"image":"screen","template":"t.png","maxResults":101}""" to "maxResults must be at most 100",
             ToolCatalog.opencvFindColor to """{"image":"screen"}""" to "requires the argument color",

@@ -195,10 +195,27 @@ class BarcodeToolsTest {
     }
 
     @Test
+    fun `a shared storage image goes to the host as is and declares files shared read`() {
+        val shared = BarcodeTools(clock = { 5_000L }, access = PathAccess(listOf("/storage/emulated/0", "/sdcard")) { true })
+        val caller = FakeCaller(mutableMapOf(
+            "image.readImage" to { BridgeOutcome.Ok(fileHandle, 2L) },
+            "barcode.detectAll" to { BridgeOutcome.Ok(JsonArray(emptyList()), 3L) },
+        ))
+        val result = runBlocking { shared.planFor(ToolCatalog.barcodeDetect, args("""{"image":"/storage/emulated/0/Download/label.jpg/"}"""))!!.run(caller) }
+        val read = caller.calls[0]
+        assertEquals("/storage/emulated/0/Download/label.jpg", read.args[0].jsonPrimitive.content)
+        assertEquals(listOf("image", "files.shared_read"), read.permissions)
+        assertEquals(listOf("barcode", "image"), caller.calls[1].permissions)
+        assertEquals(listOf("image"), caller.calls[2].permissions)
+        assertEquals("file", result.structured["source"]?.jsonPrimitive?.content)
+        assertEquals("/storage/emulated/0/Download/label.jpg/", result.structured["image"]?.jsonPrimitive?.content)
+    }
+
+    @Test
     fun `arguments are checked before any host call`() {
         listOf(
             """{}""" to "requires the argument image",
-            """{"image":"/sdcard/a.png"}""" to "inside the AutoJs6 working directory",
+            """{"image":"/sdcard/a.png"}""" to "reading shared storage is switched off",
             """{"image":"screen","formats":[]}""" to "at least one symbology",
             """{"image":"screen","formats":["QR"]}""" to "formats entries must be one of",
             """{"image":"screen","maxResults":0}""" to "maxResults must be at least 1",

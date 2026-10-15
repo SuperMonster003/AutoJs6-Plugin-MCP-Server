@@ -118,6 +118,9 @@
     <string name="settings_running">الخادم يعمل</string>
     <string name="settings_save">حفظ</string>
     <string name="settings_save_failed">تعذر حفظ الإعدادات أو قراءتها. حاول مجددا.</string>
+    <string name="settings_shared_storage">السماح بقراءة التخزين المشترك</string>
+    <string name="settings_shared_storage_hint">تتيح لأدوات التعرف والوسائط والقائمة / الخصائص قراءة المسارات المطلقة في التخزين المشترك, مثل الصور والتنزيلات, للقراءة فقط. يحتاج AutoJs6 نفسه إلى إذن الوصول إلى كل الملفات. يبقى Android/data و Android/obb مغلقين دائما.</string>
+    <string name="settings_shared_storage_warning">هل تسمح للعملاء المقترنين بقراءة الملفات في التخزين المشترك, مثل الصور ولقطات الشاشة والتنزيلات? يمكنهم قراءتها فقط دون تعديلها أو حذفها. يجب أن يملك AutoJs6 أيضا إذن الوصول إلى كل الملفات.</string>
     <string name="settings_shell_root">السماح بـ Shell بصلاحيات root</string>
     <string name="settings_show_token">عرض / نسخ الرمز</string>
     <string name="settings_stopped_idle">توقف تلقائيا بسبب الخمول</string>

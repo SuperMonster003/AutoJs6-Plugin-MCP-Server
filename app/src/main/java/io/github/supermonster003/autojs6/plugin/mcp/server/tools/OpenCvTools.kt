@@ -31,15 +31,18 @@ import kotlin.math.roundToInt
  * Every handle is recycled in the same call ([ImageInputs.withImage]); points and bounds are
  * reported in the image's own pixels (device pixels for the screen).
  */
-class OpenCvTools(private val clock: () -> Long = { System.nanoTime() / 1_000_000L }) : ToolFlows {
+class OpenCvTools(
+    private val clock: () -> Long = { System.nanoTime() / 1_000_000L },
+    private val access: PathAccess = PathAccess.WORKSPACE_ONLY,
+) : ToolFlows {
 
     override fun planFor(spec: ToolSpec, arguments: JsonObject): ToolFlow? = when (spec.name) {
         ToolCatalog.OPENCV_FIND_IMAGE -> {
-            val options = MatchOptions.parse(arguments)
+            val options = MatchOptions.parse(arguments, access)
             ToolFlow(options.timeoutMs) { caller -> findImage(caller, options) }
         }
         ToolCatalog.OPENCV_FIND_COLOR, ToolCatalog.OPENCV_FIND_MULTI_COLORS -> {
-            val options = ColorOptions.parse(spec, arguments)
+            val options = ColorOptions.parse(spec, arguments, access)
             ToolFlow(options.timeoutMs) { caller -> findColor(caller, options) }
         }
         else -> null
@@ -69,9 +72,9 @@ class OpenCvTools(private val clock: () -> Long = { System.nanoTime() / 1_000_00
                 val result = caller.callOrThrow("image", "matchTemplate", JsonArray(listOf(image.ref, template.ref, hostOptions)), options.timeoutMs, IMAGE_PERMISSIONS)
                 val matches = matches(result, image, template)
                 val structured = buildJsonObject {
-                    put("image", options.image)
+                    put("image", options.image.raw)
                     put("source", sourceOf(options.image))
-                    put(OpenCv.TEMPLATE, options.template)
+                    put(OpenCv.TEMPLATE, options.templateRaw)
                     put("templateWidth", template.sourceWidth)
                     put("templateHeight", template.sourceHeight)
                     put(OpenCv.THRESHOLD, options.threshold)
@@ -121,7 +124,7 @@ class OpenCvTools(private val clock: () -> Long = { System.nanoTime() / 1_000_00
             val result = caller.callOrThrow("image", method, args, options.timeoutMs, IMAGE_PERMISSIONS)
             val point = point(result, image)
             val structured = buildJsonObject {
-                put("image", options.image)
+                put("image", options.image.raw)
                 put("source", sourceOf(options.image))
                 put("found", point != null)
                 point?.let { (x, y) -> put("point", buildJsonObject { put("x", x); put("y", y) }) }
@@ -169,20 +172,21 @@ class OpenCvTools(private val clock: () -> Long = { System.nanoTime() / 1_000_00
         return image.pixelToSource(x, y)
     }
 
-    private class MatchOptions(val image: String, val template: String, val threshold: Double, val region: ImageRegion?, val maxResults: Long, val timeoutMs: Long) {
+    private class MatchOptions(val image: ImageArgument, val template: ReadTarget, val templateRaw: String, val threshold: Double, val region: ImageRegion?, val maxResults: Long, val timeoutMs: Long) {
 
         companion object {
 
-            fun parse(arguments: JsonObject): MatchOptions {
+            fun parse(arguments: JsonObject, access: PathAccess): MatchOptions {
                 val tool = ToolCatalog.OPENCV_FIND_IMAGE
                 ToolArguments.validate(ToolCatalog.opencvFindImage, arguments)
-                val image = ImageInputs.parseImage(tool, arguments)
-                val template = ImageInputs.parsePath(tool, arguments, OpenCv.TEMPLATE)
+                val image = ImageInputs.parseImage(tool, arguments, access)
+                val template = ImageInputs.parsePath(tool, arguments, OpenCv.TEMPLATE, access)
+                val templateRaw = ToolArguments.string(arguments, OpenCv.TEMPLATE)!!.trim()
                 val threshold = (arguments[OpenCv.THRESHOLD] as? JsonPrimitive)?.doubleOrNull ?: OpenCv.DEFAULT_MATCH_THRESHOLD
                 val region = ImageInputs.parseRegion(tool, arguments)
                 val maxResults = ToolArguments.long(arguments, OpenCv.MAX_RESULTS, OpenCv.DEFAULT_MAX_RESULTS)
                 val timeoutMs = ToolArguments.long(arguments, Images.TIMEOUT_MS, OpenCv.DEFAULT_TIMEOUT_MS).coerceIn(Images.MIN_TIMEOUT_MS, ToolCatalog.opencvFindImage.maxTimeoutMs)
-                return MatchOptions(image, template, threshold, region, maxResults, timeoutMs)
+                return MatchOptions(image, template, templateRaw, threshold, region, maxResults, timeoutMs)
             }
         }
     }
@@ -195,7 +199,7 @@ class OpenCvTools(private val clock: () -> Long = { System.nanoTime() / 1_000_00
 
     private class ColorOptions(
         val tool: String,
-        val image: String,
+        val image: ImageArgument,
         val color: String,
         val points: List<Neighbor>?,
         val threshold: Long,
@@ -205,10 +209,10 @@ class OpenCvTools(private val clock: () -> Long = { System.nanoTime() / 1_000_00
 
         companion object {
 
-            fun parse(spec: ToolSpec, arguments: JsonObject): ColorOptions {
+            fun parse(spec: ToolSpec, arguments: JsonObject, access: PathAccess): ColorOptions {
                 val tool = spec.name
                 ToolArguments.validate(spec, arguments)
-                val image = ImageInputs.parseImage(tool, arguments)
+                val image = ImageInputs.parseImage(tool, arguments, access)
                 val color = color(tool, OpenCv.COLOR, ToolArguments.string(arguments, OpenCv.COLOR))
                 val points = if (tool == ToolCatalog.OPENCV_FIND_MULTI_COLORS) {
                     val array = arguments[OpenCv.POINTS] as? JsonArray ?: ImageInputs.invalid(tool, "points must be an array")
@@ -245,7 +249,7 @@ class OpenCvTools(private val clock: () -> Long = { System.nanoTime() / 1_000_00
 
         private val IMAGE_PERMISSIONS = listOf("image")
 
-        private fun sourceOf(image: String): String = if (image == Images.SCREEN) "screen" else "file"
+        private fun sourceOf(image: ImageArgument): String = if (image.screen) "screen" else "file"
 
         private fun format(value: Double): String = String.format(Locale.US, "%.3f", value).trimEnd('0').trimEnd('.')
     }

@@ -84,6 +84,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
     private lateinit var lanReminder: Switch
     private lateinit var developer: Switch
     private lateinit var rootShell: Switch
+    private lateinit var sharedStorage: Switch
     private lateinit var pairedRows: LinearLayout
     private val groupSwitches = linkedMapOf<ToolGroup, Switch>()
     private val refresh = object : Runnable {
@@ -168,6 +169,12 @@ class McpServerSettingsActivity : SettingsPageActivity() {
                 val save = { work { groups.update { it.copy(allowShellRoot = enabled) }; McpSettingsReceiver.send(this, McpSettingsReceiver.REFRESH) } }
                 if (enabled) confirm(getString(R.string.settings_shell_root), getString(R.string.settings_root_warning), save) else save()
             }
+            // Roadmap P11 D26: read-only access to shared storage for the recognition, media and list / stat tools.
+            sharedStorage = toggle(R.string.settings_shared_storage, box) { enabled ->
+                val save = { work { groups.update { it.copy(allowSharedStorageRead = enabled) }; McpSettingsReceiver.send(this, McpSettingsReceiver.REFRESH) } }
+                if (enabled) confirm(getString(R.string.settings_shared_storage), getString(R.string.settings_shared_storage_warning), save) else save()
+            }
+            label(getString(R.string.settings_shared_storage_hint), box).setTextColor(secondary)
         }
         card(R.string.settings_clients).also { box ->
             label(getString(R.string.settings_clients_hint), box).setTextColor(secondary)
@@ -271,6 +278,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
             tokenText.text = getString(R.string.settings_token_masked, snapshot.tokenTail)
             groupSwitches.forEach { (group, view) -> view.isChecked = snapshot.groups.isEnabled(group) }
             rootShell.isChecked = snapshot.groups.allowShellRoot
+            sharedStorage.isChecked = snapshot.groups.allowSharedStorageRead
             rootShell.isEnabled = snapshot.groups.isEnabled(ToolGroup.SHELL)
             showClients(snapshot.clients)
         } finally { rendering = false }

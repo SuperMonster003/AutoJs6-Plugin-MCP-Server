@@ -118,6 +118,9 @@
     <string name="settings_running">Сервер работает</string>
     <string name="settings_save">Сохранить</string>
     <string name="settings_save_failed">Не удалось сохранить или прочитать настройки. Повторите попытку.</string>
+    <string name="settings_shared_storage">Разрешить чтение общего хранилища</string>
+    <string name="settings_shared_storage_hint">Позволяет инструментам распознавания, медиаданных и списка / свойств читать абсолютные пути в общем хранилище, например фото и загрузки, только для чтения. AutoJs6 нужен доступ ко всем файлам. Android/data и Android/obb всегда закрыты.</string>
+    <string name="settings_shared_storage_warning">Разрешить сопряженным клиентам читать файлы в общем хранилище, например фото, снимки экрана и загрузки? Они смогут только читать их, но не изменять и не удалять. AutoJs6 также нужен доступ ко всем файлам.</string>
     <string name="settings_shell_root">Разрешить Shell с root</string>
     <string name="settings_show_token">Показать / скопировать токен</string>
     <string name="settings_stopped_idle">Остановлен автоматически из-за простоя</string>

@@ -690,6 +690,26 @@ class McpServerHostSessionTest {
         ToolPermissionStore(context).save(policy.copy(allowShellRoot = true))
         success(ToolCatalog.SHELL_EXEC, """{"cmd":"id","root":true}""")
         assertEquals("shell.root", broker.requests.last().getJSONArray("permissions").getString(1))
+
+        // Roadmap P11 D26: absolute shared storage paths only while the switch is on (read for every call), declaring files.shared_read.
+        val sharedBefore = broker.requests.size
+        val refused = call(ToolCatalog.FILES_LIST, """{"path":"/sdcard/Download"}""").getJSONObject("structuredContent").getJSONObject("error")
+        assertEquals("CAPABILITY_DENIED", refused.getString("code"))
+        assertTrue(refused.toString(), refused.getString("hint").contains("Allow reading shared storage"))
+        assertEquals(sharedBefore, broker.requests.size)
+        ToolPermissionStore(context).save(policy.copy(allowShellRoot = true, allowSharedStorageRead = true))
+        val shared = success(ToolCatalog.FILES_LIST, """{"path":"/sdcard/Download"}""")
+        val sharedRequest = broker.requests.last()
+        assertEquals("/sdcard/Download", sharedRequest.getJSONArray("args").getString(0))
+        assertEquals(listOf("files", "files.shared_read"), sharedRequest.getJSONArray("permissions").toStringList())
+        assertEquals("/storage/emulated/0", shared.getString("root"))
+        assertEquals("/storage/emulated/0/Download/a.png", shared.getJSONArray("entries").getJSONObject(0).getString("path"))
+        assertTrue(shared.getBoolean("sharedStorage"))
+        val hidden = call(ToolCatalog.FILES_STAT, """{"path":"/sdcard/Android/data"}""").getJSONObject("structuredContent").getJSONObject("error")
+        assertEquals("INVALID_ARGUMENTS", hidden.getString("code"))
+        assertEquals("INVALID_ARGUMENTS", call(ToolCatalog.FILES_READ, """{"path":"/sdcard/Download/a.png"}""").getJSONObject("structuredContent").getJSONObject("error").getString("code"))
+        success(ToolCatalog.FILES_LIST, """{"path":"."}""")
+        assertEquals(listOf("files"), broker.requests.last().getJSONArray("permissions").toStringList())
         session.close()
     }
 
@@ -801,7 +821,7 @@ class McpServerHostSessionTest {
                     "accessibility.ensureEnabled", "toast.toast", "shell.exec", "app.listSamples", "app.readSample",
                 ) + if (pluginFamilies != null) familyGrantMethods else emptyArray(),
             )
-            putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query", "files", "files.write", "files.delete", "app.activity", "app.launch", "package_manager", "clipboard", "toast", "shell", "shell.root")
+            putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query", "files", "files.write", "files.delete", "files.shared_read", "app.activity", "app.launch", "package_manager", "clipboard", "toast", "shell", "shell.root")
                 + if (pluginFamilies != null) arrayOf("ocr", "barcode", "image", "screen_capture", "pinyin", "pinyin4j", "media", "media.metadata") else emptyArray())
             putInt(McpServerContract.KEY_GRANT_MAX_REQUEST_BYTES, McpServerContract.MAX_BRIDGE_INLINE_JSON_BYTES)
             putInt(McpServerContract.KEY_GRANT_MAX_CONCURRENT_CALLS, McpServerContract.MAX_CONCURRENT_TOOL_CALLS)
@@ -826,7 +846,13 @@ class McpServerHostSessionTest {
             } ?: when ("${json.getString("module")}.${json.getString("method")}") {
                 "app.listSamples" -> ok(id, JSONObject().put("available", true).put("truncated", false).put("entries", JSONArray().put(JSONObject().put("path", "Examples/hello.js").put("name", "hello.js").put("type", "file"))))
                 "app.readSample" -> ok(id, JSONObject().put("content", "console.log('sample');").put("encoding", "utf-8").put("bytes", 22).put("truncated", false))
-                "files.list", "files.stat", "files.write", "files.mkdir", "files.rename", "files.delete" -> ok(id, JSONObject().put("schema", "file-v1").put("path", json.getJSONArray("args").getString(0)))
+                "files.list" -> if (json.getJSONArray("args").getString(0).startsWith("/")) {
+                    ok(id, JSONObject().put("schema", "file-v1").put("root", "/storage/emulated/0").put("path", "Download").put("count", 1).put("truncated", false)
+                        .put("entries", JSONArray().put(JSONObject().put("path", "Download/a.png").put("name", "a.png").put("type", "file").put("size", 3).put("lastModified", 1))))
+                } else {
+                    ok(id, JSONObject().put("schema", "file-v1").put("path", json.getJSONArray("args").getString(0)))
+                }
+                "files.stat", "files.write", "files.mkdir", "files.rename", "files.delete" -> ok(id, JSONObject().put("schema", "file-v1").put("path", json.getJSONArray("args").getString(0)))
                 "files.read" -> {
                     payloadMime = "application/json"
                     imageBytes = JSONObject().put("schema", "file-v1").put("encoding", "base64").put("bytes", 1024 * 1024)

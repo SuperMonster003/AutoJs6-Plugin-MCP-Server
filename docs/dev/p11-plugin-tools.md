@@ -197,3 +197,32 @@ Tests: `PinyinToolsTest` and `MediaInfoToolsTest` (JVM), the plugin family case 
 Every tool with an `image` argument counts a `"screen"` call against the per-client window of 30 screenshots per minute that
 `screen_capture` uses; files are not counted. The rate limiter decides this from the JSON-RPC body before the call reaches the tool
 gate (`RateLimiter.countsAsScreenshot`); details and evidence in `docs/dev/p6-rate-limits.md` (P11 addendum).
+
+## Shared storage, read-only (D26)
+
+The settings page has an "Allow reading shared storage" switch (off by default). It is stored as `allowSharedStorageRead` in
+`tool_groups.json`, next to `allowShellRoot`, and `PathAccess` reads it again for every call (the settings page writes from the
+main process, the listener runs in `:mcp_server`).
+
+| Path | Switch off | Switch on |
+|---|---|---|
+| relative (`pics/a.png`, `.`) | the working directory, as before | the same |
+| absolute in shared storage (`/storage/emulated/0/...` or the `/sdcard/...` alias) | `CAPABILITY_DENIED` with a hint to the switch, before any host call | sent as given (trailing `/` dropped), declaring `files.shared_read` |
+| `Android/data`, `Android/obb` (any letter case) or deeper | refused | `INVALID_ARGUMENTS`, never readable |
+| any other absolute path, `.` / `..` / empty segments, backslashes, control characters | refused | `INVALID_ARGUMENTS` |
+
+Tools that take such paths: the `image` of `ocr_recognize`, `barcode_detect` and the three opencv tools, the `template` of
+`opencv_find_image`, the `path` of `mediainfo_read`, `files_list` and `files_stat`. Every other file tool stays in the working
+directory whatever the switch says. Only a request that targets shared storage declares `files.shared_read`, so a relative
+`files_list` on a host whose grant lacks the token keeps working. AutoJs6 checks again (`NodeBridgeModelPathPolicy`: canonical
+path, the token, its own all-files access, `Android/data` / `Android/obb`); a host without all-files access answers
+`permission-denied` (`CAPABILITY_DENIED`) with its reason.
+
+A shared storage listing or stat comes back with the shared storage `root` (the host's canonical root, for example
+`/storage/emulated/0`), absolute `path` values for the target and every entry, and `sharedStorage: true`; a workspace answer keeps
+its old shape (no `root`). The roots the plugin accepts are `Environment.getExternalStorageDirectory()` and `/sdcard`.
+
+Tests: `PathAccessTest`, the shared cases of `WorkspaceToolsTest`, `BarcodeToolsTest`, `MediaInfoToolsTest`, `ToolPermissionsTest`
+(JVM); the workspace case of `McpServerHostSessionTest` (switch off -> refused without a host call, on -> token, absolute entries,
+`Android/data` refused, `files_read` refused). Device scenario: `tools/evidence/p11_shared_storage.py` (the switch is set through
+`EvidenceHelperTest#setSharedStorageRead` and restored afterwards).

@@ -32,11 +32,14 @@ import kotlin.math.roundToInt
  * the engine, the joined text, and the file dimensions. A missing OCR plugin is reported as
  * `PLUGIN_UNAVAILABLE` rather than the generic mapping of the host's `unavailable` category.
  */
-class OcrTools(private val clock: () -> Long = { System.nanoTime() / 1_000_000L }) : ToolFlows {
+class OcrTools(
+    private val clock: () -> Long = { System.nanoTime() / 1_000_000L },
+    private val access: PathAccess = PathAccess.WORKSPACE_ONLY,
+) : ToolFlows {
 
     override fun planFor(spec: ToolSpec, arguments: JsonObject): ToolFlow? = when (spec.name) {
         ToolCatalog.OCR_RECOGNIZE -> {
-            val options = Options.parse(arguments)
+            val options = Options.parse(arguments, access)
             ToolFlow(options.timeoutMs) { caller -> recognize(caller, options) }
         }
         else -> null
@@ -67,7 +70,7 @@ class OcrTools(private val clock: () -> Long = { System.nanoTime() / 1_000_000L 
     }
 
     private suspend fun recognizeFile(caller: BridgeCaller, options: Options, startedAt: Long): ToolFlowResult =
-        ImageInputs.withFile(caller, TOOL, options.path) { handle ->
+        ImageInputs.withFile(caller, TOOL, options.image.target!!) { handle ->
             handle.checkRegion(TOOL, options.region)
             val hostOptions = buildJsonObject {
                 options.region?.let { put("region", it.hostRegion(TOOL, handle.scale, handle.width, handle.height)) }
@@ -89,7 +92,7 @@ class OcrTools(private val clock: () -> Long = { System.nanoTime() / 1_000_000L 
     private fun result(options: Options, source: String, items: List<JsonObject>, startedAt: Long, extra: kotlinx.serialization.json.JsonObjectBuilder.() -> Unit): ToolFlowResult {
         val text = items.mapNotNull { (it["text"] as? JsonPrimitive)?.contentOrNull?.takeIf { line -> line.isNotBlank() } }.joinToString("\n")
         val structured = buildJsonObject {
-            put("image", options.image)
+            put("image", options.image.raw)
             put("source", source)
             put("engine", options.engine)
             put("count", items.size)
@@ -131,23 +134,19 @@ class OcrTools(private val clock: () -> Long = { System.nanoTime() / 1_000_000L 
         else -> failure
     }
 
-    private class Options(val image: String, val region: ImageRegion?, val engine: String, val timeoutMs: Long) {
+    private class Options(val image: ImageArgument, val region: ImageRegion?, val engine: String, val timeoutMs: Long) {
 
         val screen: Boolean
-            get() = image == Ocr.SCREEN
-
-        /** The normalized workspace path; only for a file source. */
-        val path: String
-            get() = WorkspacePath.normalize(image, allowRoot = false)
+            get() = image.screen
 
         val hostEngine: String?
             get() = Ocr.HOST_ENGINES[engine]
 
         companion object {
 
-            fun parse(arguments: JsonObject): Options {
+            fun parse(arguments: JsonObject, access: PathAccess): Options {
                 ToolArguments.validate(ToolCatalog.ocrRecognize, arguments)
-                val image = ImageInputs.parseImage(TOOL, arguments)
+                val image = ImageInputs.parseImage(TOOL, arguments, access)
                 val region = ImageInputs.parseRegion(TOOL, arguments)
                 val engine = ToolArguments.string(arguments, Ocr.ENGINE, "auto")!!
                 val timeoutMs = ToolArguments.long(arguments, Ocr.TIMEOUT_MS, Ocr.DEFAULT_TIMEOUT_MS).coerceIn(Ocr.MIN_TIMEOUT_MS, ToolCatalog.ocrRecognize.maxTimeoutMs)

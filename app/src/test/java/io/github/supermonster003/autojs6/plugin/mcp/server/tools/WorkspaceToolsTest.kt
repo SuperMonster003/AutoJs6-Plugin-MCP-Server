@@ -32,6 +32,35 @@ class WorkspaceToolsTest {
         assertThrows(ToolArgumentException::class.java) { WorkspacePath.normalize("中".repeat(1366)) }
         listOf(".", "./").forEach { assertThrows(ToolArgumentException::class.java) { WorkspacePath.normalize(it, false) } }
     }
+    @Test fun `shared storage listings declare the token and answer absolute paths`() = runBlocking {
+        val shared = FileTools(PathAccess(listOf("/storage/emulated/0", "/sdcard")) { true })
+        result = args("""{"schema":"file-v1","root":"/storage/emulated/0","path":"Download","recursive":false,"count":2,"truncated":false,
+            "entries":[{"path":"Download/a.png","name":"a.png","type":"file","size":3,"lastModified":1},{"path":"Download/sub","name":"sub","type":"directory","size":0,"lastModified":2}]}""")
+        val listed = plan(shared, ToolCatalog.FILES_LIST, args("""{"path":"/storage/emulated/0/Download"}""")).run(caller).structured
+        assertEquals(JsonPrimitive("/storage/emulated/0/Download"), calls.single().args[0])
+        assertEquals(listOf("files", "files.shared_read"), calls.single().permissions)
+        assertEquals("/storage/emulated/0", listed["root"]!!.jsonPrimitive.content)
+        assertEquals("/storage/emulated/0/Download", listed["path"]!!.jsonPrimitive.content)
+        assertEquals(listOf("/storage/emulated/0/Download/a.png", "/storage/emulated/0/Download/sub"), listed["entries"]!!.jsonArray.map { it.jsonObject["path"]!!.jsonPrimitive.content })
+        assertTrue(listed["sharedStorage"]!!.jsonPrimitive.boolean)
+        assertFalse(listed.containsKey("schema"))
+
+        calls.clear()
+        result = args("""{"schema":"file-v1","root":"/storage/emulated/0","path":".","name":"0","exists":true,"type":"directory","size":0,"lastModified":5}""")
+        val stat = plan(shared, ToolCatalog.FILES_STAT, args("""{"path":"/sdcard"}""")).run(caller).structured
+        assertEquals(JsonPrimitive("/sdcard"), calls.single().args[0])
+        assertEquals("/storage/emulated/0", stat["path"]!!.jsonPrimitive.content)
+
+        // Writing tools stay in the working directory even with the switch on; relative listings keep the old shape.
+        assertThrows(ToolArgumentException::class.java) { plan(shared, ToolCatalog.FILES_READ, args("""{"path":"/storage/emulated/0/a.txt"}""")) }
+        assertThrows(ToolArgumentException::class.java) { plan(shared, ToolCatalog.FILES_WRITE, args("""{"path":"/sdcard/a.txt","content":"x"}""")) }
+        calls.clear()
+        result = args("""{"schema":"file-v1","root":"/storage/emulated/0/Scripts","path":".","entries":[]}""")
+        val workspace = plan(shared, ToolCatalog.FILES_LIST, args("{}")).run(caller).structured
+        assertEquals(listOf("files"), calls.single().permissions)
+        assertFalse(workspace.containsKey("root"))
+        assertFalse(workspace.containsKey("sharedStorage"))
+    }
     @Test fun `file list defaults and integral decimal options are encoded`() = runBlocking {
         plan(FileTools(), ToolCatalog.FILES_LIST, args("""{"maxEntries":2.0,"recursive":true}""")).run(caller)
         assertEquals(args("""{"recursive":true,"maxEntries":2}"""), calls.single().args[1])
