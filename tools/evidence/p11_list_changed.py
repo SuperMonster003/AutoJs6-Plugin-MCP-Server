@@ -1,13 +1,14 @@
 """The tool list follows plugin packages on a real host (roadmap P11 D28): tools/list_changed after a disable and an enable.
 
 The scenario opens the standalone GET stream of the session, then disables the package of one plugin family
-with `pm disable-user` (the Pinyin plugin by default) and checks that the server pushes
+with `pm disable-user` (the Pinyin plugin by default; `--mode reinstall` uninstalls it instead and installs
+the same APK again, pulled from the device beforehand) and checks that the server pushes
 `notifications/tools/list_changed` without being asked, that the family's tool leaves tools/list, that a direct
 call answers PLUGIN_UNAVAILABLE and that device_info no longer reports the family as available. It then
 enables the package again (also when a check failed) and checks the push, the listing and a working call,
 and that each change sent exactly one notification.
 
-    py tools/evidence/p11_list_changed.py --serial <serial> [--family pinyin]
+    py tools/evidence/p11_list_changed.py --serial <serial> [--family pinyin] [--mode disable|reinstall]
 """
 from __future__ import annotations
 
@@ -109,18 +110,36 @@ def run(device: Device, args) -> dict:
                status=entry.get("status"))
         if not package:
             return report
+        stash = None
+        if args.mode == "reinstall":
+            # The APKs of the installed plugin, so the scenario can put back exactly what it removed.
+            stash = REPO / "build" / "evidence" / "stash" / package
+            stash.mkdir(parents=True, exist_ok=True)
+            paths = [line.removeprefix("package:").strip() for line in device.shell("pm", "path", package).splitlines() if line.startswith("package:")]
+            apks = []
+            for index, remote in enumerate(paths):
+                local = stash / f"{index}-{pathlib.PurePosixPath(remote).name}"
+                device.run("pull", remote, str(local))
+                apks.append(str(local))
+            report["stashedApks"] = len(apks)
         notifications = Notifications(client, timeout=args.hold_seconds + 30)
         disabled = False
         try:
             time.sleep(1)  # let the GET stream attach before the first change
             since = time.monotonic()
             notifications.marks["disable"] = round(since - notifications.opened, 2)
-            out = device.shell("pm", "disable-user", "--user", "0", package, check=False)
-            disabled = "disabled" in out
-            report["disable"] = out.strip()
-            record("pm disable-user changed the plugin package", disabled)
+            if args.mode == "reinstall":
+                out = device.shell("pm", "uninstall", package, check=False)
+                disabled = out.strip() == "Success"
+                report["uninstall"] = out.strip()
+                record("pm uninstall removed the plugin package", disabled)
+            else:
+                out = device.shell("pm", "disable-user", "--user", "0", package, check=False)
+                disabled = "disabled" in out
+                report["disable"] = out.strip()
+                record("pm disable-user changed the plugin package", disabled)
             delay = notifications.wait(LIST_CHANGED, since, args.wait)
-            record("the server pushes tools/list_changed after the disable", delay is not None, seconds=delay)
+            record(f"the server pushes tools/list_changed after the {'uninstall' if args.mode == 'reinstall' else 'disable'}", delay is not None, seconds=delay)
             record(f"{tool} leaves tools/list", not listed())
             ok, s, t, ms = call(client, tool, sample)
             code = (s.get("error") or {}).get("code") or (t.split(":", 1)[0] if t else None)
@@ -130,10 +149,15 @@ def run(device: Device, args) -> dict:
         finally:
             since = time.monotonic()
             notifications.marks["enable"] = round(since - notifications.opened, 2)
-            report["enable"] = device.shell("pm", "enable", package, check=False).strip()
+            if args.mode == "reinstall":
+                apks = sorted(str(path) for path in stash.iterdir()) if stash else []
+                verb = "install-multiple" if len(apks) > 1 else "install"
+                report["install"] = device.run(verb, "-r", *apks, check=False, timeout=300).strip().splitlines()[-1:] if apks else "no stashed APK"
+            else:
+                report["enable"] = device.shell("pm", "enable", package, check=False).strip()
         if disabled:
             delay = notifications.wait(LIST_CHANGED, since, args.wait)
-            record("the server pushes tools/list_changed after the enable", delay is not None, seconds=delay)
+            record(f"the server pushes tools/list_changed after the {'install' if args.mode == 'reinstall' else 'enable'}", delay is not None, seconds=delay)
             # One per change: the SDK used to send one per added or removed tool, a burst of about twice the catalog size.
             count = sum(1 for _at, name in notifications.received if name == LIST_CHANGED)
             record("each change sends exactly one tools/list_changed", count == 2, count=count)
@@ -156,6 +180,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--serial", required=True)
     parser.add_argument("--family", choices=sorted(FAMILIES), default="pinyin")
+    parser.add_argument("--mode", choices=("disable", "reinstall"), default="disable",
+                        help="disable / enable the plugin package, or uninstall it and install the same APK again")
     parser.add_argument("--wait", type=float, default=20, help="seconds to wait for each tools/list_changed")
     parser.add_argument("--token-source", choices=("auto", "env", "instrumentation", "dumpsys"), default="auto")
     parser.add_argument("--hold-seconds", type=int, default=150)
@@ -166,7 +192,7 @@ def main() -> int:
     report.setdefault("failed", sum(1 for c in report["checks"] if not c["pass"]))
     out_dir = pathlib.Path(args.report_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / f"{datetime.datetime.now():%Y%m%d-%H%M%S}-{args.serial}-p11-list-changed.json"
+    path = out_dir / f"{datetime.datetime.now():%Y%m%d-%H%M%S}-{args.serial}-p11-list-changed-{args.mode}.json"
     path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     for check in report["checks"]:
         print(f"{'PASS' if check['pass'] else 'FAIL'}  {check['check']}")
