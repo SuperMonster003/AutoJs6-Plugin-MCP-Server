@@ -52,7 +52,7 @@ Le serveur s'exécute dans le processus propre du plugin et est joignable via un
 
 ******
 
-Version 1.1.1: 37 outils (33 activés par défaut), ressources et invites MCP, un bouton dans le volet AutoJs6 et une page de paramètres du plugin. Nécessite AutoJs6 6.8.0 (build 5298) ou plus récent; les ressources optionnelles autojs6://docs/ demandent aussi le plugin AutoJs6 Offline Docs et un hôte doté de ses méthodes de relais. L'avancement et les preuves sont consignés dans [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Version 1.2.0: 37 outils (33 activés par défaut), ressources et invites MCP, un bouton dans le volet AutoJs6 et une page de paramètres du plugin. Nécessite AutoJs6 6.8.0 (build 5298) ou plus récent; les ressources optionnelles autojs6://docs/ demandent aussi le plugin AutoJs6 Offline Docs et un hôte doté de ses méthodes de relais. L'avancement et les preuves sont consignés dans [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -307,9 +307,9 @@ Les plans et l'avancement du plugin sont tenus sous forme de liste cochable dans
 
 ******
 
-#### v1.1.1
+#### v1.2.0
 
-_2026/10/14_
+_2026/10/15_
 
 - `Correctif` Les scripts de collecte de preuves sur appareil lançaient un APK de test de débogage restant contre la version de production et faisaient planter le processus de l'application
 - `Amélioration` Avec AutoJs6 6.8.0 build 5333 ou ultérieur, l'avis de notifications désactivées de la page des paramètres indique que les demandes d'appairage apparaissent aussi lorsque AutoJs6 est au premier plan

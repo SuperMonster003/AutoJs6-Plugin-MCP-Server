@@ -52,7 +52,7 @@ The server runs inside the plugin's own process and is reached through a single 
 
 ******
 
-Version 1.1.1: 37 tools (33 enabled by default), MCP resources and prompts, an AutoJs6 drawer switch and a plugin settings page. Requires AutoJs6 6.8.0 (build 5298) or later; the optional autojs6://docs/ resources also need the AutoJs6 Offline Docs plugin and a host with its relay methods. Progress and evidence are tracked in [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Version 1.2.0: 37 tools (33 enabled by default), MCP resources and prompts, an AutoJs6 drawer switch and a plugin settings page. Requires AutoJs6 6.8.0 (build 5298) or later; the optional autojs6://docs/ resources also need the AutoJs6 Offline Docs plugin and a host with its relay methods. Progress and evidence are tracked in [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -307,9 +307,9 @@ The plugin's plans and progress are maintained as a checkable list in ROADMAP.md
 
 ******
 
-#### v1.1.1
+#### v1.2.0
 
-_2026/10/14_
+_2026/10/15_
 
 - `Fix` Device evidence scripts starting a leftover debug test APK against the release app and crashing its process
 - `Improvement` With AutoJs6 6.8.0 build 5333 or later, the settings page notice about turned-off notifications says that pairing requests also appear while AutoJs6 is in the foreground

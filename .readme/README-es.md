@@ -52,7 +52,7 @@ El servidor se ejecuta dentro del propio proceso del plugin y se alcanza mediant
 
 ******
 
-Versión 1.1.1: 37 herramientas (33 activadas por defecto), recursos y plantillas MCP, un interruptor en el panel de AutoJs6 y una página de ajustes del complemento. Requiere AutoJs6 6.8.0 (compilación 5298) o posterior; los recursos opcionales autojs6://docs/ necesitan además el plugin AutoJs6 Offline Docs y un anfitrión con sus métodos de retransmisión. El progreso y las evidencias se registran en [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Versión 1.2.0: 37 herramientas (33 activadas por defecto), recursos y plantillas MCP, un interruptor en el panel de AutoJs6 y una página de ajustes del complemento. Requiere AutoJs6 6.8.0 (compilación 5298) o posterior; los recursos opcionales autojs6://docs/ necesitan además el plugin AutoJs6 Offline Docs y un anfitrión con sus métodos de retransmisión. El progreso y las evidencias se registran en [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -307,9 +307,9 @@ Los planes y el progreso del plugin se mantienen como una lista verificable en R
 
 ******
 
-#### v1.1.1
+#### v1.2.0
 
-_2026/10/14_
+_2026/10/15_
 
 - `Corrección` Los scripts de pruebas en dispositivos iniciaban un APK de prueba de depuración residual contra la versión de lanzamiento y provocaban el cierre del proceso de la aplicación
 - `Mejora` Con AutoJs6 6.8.0 compilación 5333 o posterior, el aviso de notificaciones desactivadas de la página de ajustes indica que las solicitudes de emparejamiento también aparecen mientras AutoJs6 está en primer plano

@@ -4,9 +4,9 @@
 
 ******
 
-# v1.1.1
+# v1.2.0
 
-###### 2026/10/14
+###### 2026/10/15
 
 * `Fix` Device evidence scripts starting a leftover debug test APK against the release app and crashing its process
 * `Improvement` With AutoJs6 6.8.0 build 5333 or later, the settings page notice about turned-off notifications says that pairing requests also appear while AutoJs6 is in the foreground

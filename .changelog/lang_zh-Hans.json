@@ -5,8 +5,8 @@
   "changelog_label_improvement": "优化",
   "changelog_label_dependency": "依赖",
   "$data": {
-    "v1.1.1": {
-      "released_date": "2026/10/14",
+    "v1.2.0": {
+      "released_date": "2026/10/15",
       "fix": [
         "真机取证脚本在发布版旁残留调试测试包时误启动测试并导致应用进程崩溃的问题"
       ],

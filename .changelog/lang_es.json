@@ -5,8 +5,8 @@
   "changelog_label_improvement": "Mejora",
   "changelog_label_dependency": "Dependencia",
   "$data": {
-    "v1.1.1": {
-      "released_date": "2026/10/14",
+    "v1.2.0": {
+      "released_date": "2026/10/15",
       "fix": [
         "Los scripts de pruebas en dispositivos iniciaban un APK de prueba de depuración residual contra la versión de lanzamiento y provocaban el cierre del proceso de la aplicación"
       ],

@@ -5,8 +5,8 @@
   "changelog_label_improvement": "Amélioration",
   "changelog_label_dependency": "Dépendance",
   "$data": {
-    "v1.1.1": {
-      "released_date": "2026/10/14",
+    "v1.2.0": {
+      "released_date": "2026/10/15",
       "fix": [
         "Les scripts de collecte de preuves sur appareil lançaient un APK de test de débogage restant contre la version de production et faisaient planter le processus de l'application"
       ],

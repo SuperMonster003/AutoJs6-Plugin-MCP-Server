@@ -5,8 +5,8 @@
   "changelog_label_improvement": "優化",
   "changelog_label_dependency": "依賴",
   "$data": {
-    "v1.1.1": {
-      "released_date": "2026/10/14",
+    "v1.2.0": {
+      "released_date": "2026/10/15",
       "fix": [
         "真機取證指令碼在發行版旁殘留偵錯測試套件時誤啟動測試並導致應用程式程序崩潰的問題"
       ],

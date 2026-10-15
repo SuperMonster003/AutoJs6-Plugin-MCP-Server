@@ -52,7 +52,7 @@ MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Proto
 
 ******
 
-版本 1.1.1: 37 個工具 (預設啟用 33 個), MCP 資源與提示, AutoJs6 抽屜開關與外掛程式設定頁. 需要 AutoJs6 6.8.0 (組建 5298) 或更高版本; 可選的 autojs6://docs/ 資源還需要 AutoJs6 離線文件外掛以及帶轉讀方法的宿主. 進度與證據記錄在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+版本 1.2.0: 37 個工具 (預設啟用 33 個), MCP 資源與提示, AutoJs6 抽屜開關與外掛程式設定頁. 需要 AutoJs6 6.8.0 (組建 5298) 或更高版本; 可選的 autojs6://docs/ 資源還需要 AutoJs6 離線文件外掛以及帶轉讀方法的宿主. 進度與證據記錄在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -307,9 +307,9 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 ******
 
-#### v1.1.1
+#### v1.2.0
 
-_2026/10/14_
+_2026/10/15_
 
 - `修復` 真機取證指令碼在發行版旁殘留偵錯測試套件時誤啟動測試並導致應用程式程序崩潰的問題
 - `優化` AutoJs6 6.8.0 建置 5333 或以上時, 設定頁的通知關閉提示會說明配對請求在 AutoJs6 位於前景時同樣會出現

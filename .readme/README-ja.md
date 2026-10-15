@@ -52,7 +52,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 
 ******
 
-バージョン 1.1.1: 37 ツール (既定で 33 が有効), MCP リソースとプロンプト, AutoJs6 のドロワースイッチとプラグイン設定画面. AutoJs6 6.8.0 (ビルド 5298) 以降が必要です. オプションの autojs6://docs/ リソースには AutoJs6 オフラインドキュメントプラグインと中継メソッドを持つホストも必要です. 進捗と証跡は [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) に記録しています.
+バージョン 1.2.0: 37 ツール (既定で 33 が有効), MCP リソースとプロンプト, AutoJs6 のドロワースイッチとプラグイン設定画面. AutoJs6 6.8.0 (ビルド 5298) 以降が必要です. オプションの autojs6://docs/ リソースには AutoJs6 オフラインドキュメントプラグインと中継メソッドを持つホストも必要です. 進捗と証跡は [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) に記録しています.
 
 ******
 
@@ -307,9 +307,9 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 ******
 
-#### v1.1.1
+#### v1.2.0
 
-_2026/10/14_
+_2026/10/15_
 
 - `修正` 実機検証スクリプトが残存するデバッグ用テスト APK をリリース版アプリに対して起動し, アプリのプロセスがクラッシュする問題
 - `改善` AutoJs6 6.8.0 のビルド 5333 以降では, 設定ページの通知オフの案内で, AutoJs6 が前面にあるときもペアリング要求が表示されることを説明するようにした

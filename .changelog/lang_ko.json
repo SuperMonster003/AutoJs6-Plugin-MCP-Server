@@ -5,8 +5,8 @@
   "changelog_label_improvement": "개선",
   "changelog_label_dependency": "의존성",
   "$data": {
-    "v1.1.1": {
-      "released_date": "2026/10/14",
+    "v1.2.0": {
+      "released_date": "2026/10/15",
       "fix": [
         "기기 검증 스크립트가 릴리스 앱에 남아 있는 디버그 테스트 APK를 실행하여 앱 프로세스가 중단되는 문제"
       ],
