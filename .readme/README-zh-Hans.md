@@ -118,6 +118,7 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 | `device_ensure_accessibility` | `device` | 开 | Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance. |
 | `toast` | `device` | 开 | Shows a short Android toast on the phone. |
 | `shell_exec` | `shell` | 关 | Runs an Android shell command in the host workspace. The shell group is off by default; root also requires the separate allow root switch and a shell.root host grant. Reports exit code, timeout, stdout, stderr, and truncation. maxOutputBytes bounds stdout and stderr together. |
+| `ocr_recognize` | `ocr` | 开 | Recognize text on the phone screen or in an image file on the phone with an installed AutoJs6 OCR plugin (ML Kit, Paddle OCR or Rapid OCR). image is "screen" for the current screen, or a POSIX path relative to the AutoJs6 working directory for an image file. region crops before recognition, in screen pixels or file pixels. engine picks the OCR plugin; auto takes the first enabled one in ML Kit, Paddle, Rapid order. Returns the recognized lines as text and, as structured content, items with text, confidence and bounds (file bounds are in the file's own pixels even when AutoJs6 downscaled the image to read it). The screenshot is taken and recognized inside AutoJs6; no image leaves the phone. A first Paddle call loads its model and can take tens of seconds; timeoutMs defaults to 60 s. This tool exists only while an OCR plugin is installed and enabled in AutoJs6. |
 
 ******
 
@@ -312,6 +313,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 _2026/10/15_
 
 - `新增` 6 个插件工具分组开关 (OCR 文字识别, 条码识别, OpenCV 找图找色, Pinyin 与 Pinyin4j 拼音转换, MediaInfo 媒体信息): 这些分组的工具只在对应的 AutoJs6 插件已安装并启用时出现在客户端的工具列表中, 安装, 卸载或更新插件后列表自动更新, 调用插件缺失的工具会说明原因 (PLUGIN_UNAVAILABLE)
+- `新增` ocr_recognize 工具, 用于识别手机屏幕或手机上图片文件中的文字 (需要已安装并启用 ML Kit, Paddle OCR 或 Rapid OCR 插件): image 为 "screen" 时在 AutoJs6 内截屏并识别, 为工作目录内的路径时读取文件后识别; 可选 region 裁切与 engine 指定引擎 (默认自动选择); 结果附文字, 置信度与坐标 (大图按原图像素返回), 图片不离开手机
 - `修复` 真机取证脚本在发布版旁残留调试测试包时误启动测试并导致应用进程崩溃的问题
 - `优化` AutoJs6 6.8.0 构建 5333 及以上时, 设置页的通知关闭提示会说明配对请求在 AutoJs6 位于前台时同样会出现
 

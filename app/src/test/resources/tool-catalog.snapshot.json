@@ -2683,5 +2683,95 @@
       ],
       "additionalProperties": false
     }
+  },
+  {
+    "name": "ocr_recognize",
+    "title": "Recognize text (OCR)",
+    "description": "Recognize text on the phone screen or in an image file on the phone with an installed AutoJs6 OCR plugin (ML Kit, Paddle OCR or Rapid OCR). image is \"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory for an image file. region crops before recognition, in screen pixels or file pixels. engine picks the OCR plugin; auto takes the first enabled one in ML Kit, Paddle, Rapid order. Returns the recognized lines as text and, as structured content, items with text, confidence and bounds (file bounds are in the file's own pixels even when AutoJs6 downscaled the image to read it). The screenshot is taken and recognized inside AutoJs6; no image leaves the phone. A first Paddle call loads its model and can take tens of seconds; timeoutMs defaults to 60 s. This tool exists only while an OCR plugin is installed and enabled in AutoJs6.",
+    "group": "ocr",
+    "defaultEnabled": true,
+    "bridge": "ocr.recognize",
+    "permissions": [
+      "ocr",
+      "image",
+      "accessibility",
+      "screen_capture"
+    ],
+    "timeoutMs": 60000,
+    "maxTimeoutMs": 300000,
+    "hostMethods": [
+      "accessibility.readScreenText",
+      "media_projection.requestScreenCapture",
+      "image.readImage",
+      "ocr.recognize",
+      "image.recycle"
+    ],
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string",
+          "description": "\"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal",
+          "maxLength": 4096
+        },
+        "region": {
+          "type": "object",
+          "description": "Crop before recognition, in screen pixels for the screen or file pixels for a file; right and bottom are exclusive",
+          "properties": {
+            "left": {
+              "type": "integer",
+              "description": "Left edge in device pixels"
+            },
+            "top": {
+              "type": "integer",
+              "description": "Top edge in device pixels"
+            },
+            "right": {
+              "type": "integer",
+              "description": "Right edge in device pixels"
+            },
+            "bottom": {
+              "type": "integer",
+              "description": "Bottom edge in device pixels"
+            }
+          },
+          "required": [
+            "left",
+            "top",
+            "right",
+            "bottom"
+          ],
+          "additionalProperties": false
+        },
+        "engine": {
+          "type": "string",
+          "description": "OCR plugin to use; auto picks the first enabled one in ML Kit, Paddle, Rapid order",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "mlkit",
+            "paddle",
+            "rapid"
+          ]
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "How long to wait for the recognition, in milliseconds",
+          "minimum": 1000,
+          "maximum": 300000,
+          "default": 60000
+        }
+      },
+      "required": [
+        "image"
+      ],
+      "additionalProperties": false
+    }
   }
 ]

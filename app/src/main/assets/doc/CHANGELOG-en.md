@@ -9,6 +9,7 @@
 ###### 2026/10/15
 
 * `Feature` Six plugin tool groups with their own switches (OCR text recognition, barcode recognition, OpenCV image and color search, Pinyin and Pinyin4j conversion, MediaInfo media metadata): their tools appear in the client tool list only while the matching AutoJs6 plugin is installed and enabled, the list updates itself after a plugin is installed, removed or updated, and calling a tool whose plugin is missing explains why (PLUGIN_UNAVAILABLE)
+* `Feature` ocr_recognize tool, which recognizes text on the phone screen or in an image file on the phone (needs an installed and enabled ML Kit, Paddle OCR or Rapid OCR plugin): image "screen" captures and recognizes inside AutoJs6, a path inside the working directory reads the file first; optional region crop and engine choice (automatic by default); results carry text, confidence and bounds (large files in their own pixels), and no image leaves the phone
 * `Fix` Device evidence scripts starting a leftover debug test APK against the release app and crashing its process
 * `Improvement` With AutoJs6 6.8.0 build 5333 or later, the settings page notice about turned-off notifications says that pairing requests also appear while AutoJs6 is in the foreground
 

@@ -53,6 +53,7 @@ object ToolCatalog {
     const val DEVICE_ENSURE_ACCESSIBILITY = "device_ensure_accessibility"
     const val TOAST = "toast"
     const val SHELL_EXEC = "shell_exec"
+    const val OCR_RECOGNIZE = "ocr_recognize"
 
     val FILE_NAMES = listOf(FILES_LIST, FILES_STAT, FILES_READ, FILES_WRITE, FILES_MKDIR, FILES_RENAME, FILES_DELETE)
     val DEVICE_ACTION_NAMES = listOf(EDITOR_OPEN, APP_LAUNCH, APP_LIST, CLIPBOARD_GET, CLIPBOARD_SET, DEVICE_ENSURE_ACCESSIBILITY, TOAST)
@@ -96,6 +97,25 @@ object ToolCatalog {
         const val ROOT = "root"
         const val TIMEOUT_MS = "timeoutMs"
         const val MAX_OUTPUT_BYTES = "maxOutputBytes"
+    }
+
+    /** `ocr_recognize` argument names and bounds (roadmap P11 D23 / D24 / D25 / D38), shared with OcrTools and the tests. */
+    object Ocr {
+        const val IMAGE = "image"
+        const val REGION = "region"
+        const val ENGINE = "engine"
+        const val TIMEOUT_MS = "timeoutMs"
+        /** The `image` value that recognizes the phone screen instead of a file. */
+        const val SCREEN = "screen"
+        const val DEFAULT_TIMEOUT_MS = 60_000L
+        const val MIN_TIMEOUT_MS = 1_000L
+        /** Reading the file into a host image handle, before recognition. */
+        const val READ_TIMEOUT_MS = 30_000L
+        /** Releasing the handle afterwards; a failure here is logged, not reported. */
+        const val RECYCLE_TIMEOUT_MS = 5_000L
+        val ENGINES = listOf("auto", "mlkit", "paddle", "rapid")
+        /** Tool engine names to the host engine ids of the OCR plugins. */
+        val HOST_ENGINES = mapOf("mlkit" to "mlkit-ocr", "paddle" to "paddle-ocr", "rapid" to "rapid-ocr")
     }
 
     /** Screenshot options shared by the catalog and ScreenTools (P3.3). */
@@ -745,6 +765,37 @@ object ToolCatalog {
         ToolGroup.SHELL, bridge = BridgeMethod("shell", "exec"), permissions = listOf("shell"), timeoutMs = Shell.DEFAULT_TIMEOUT_MS + 2_000,
         maxTimeoutMs = Shell.MAX_TIMEOUT_MS + 2_000, hints = ToolHints(destructive = true, openWorld = true))
 
+    val ocrRecognize = ToolSpec(
+        name = OCR_RECOGNIZE,
+        title = "Recognize text (OCR)",
+        description = "Recognize text on the phone screen or in an image file on the phone with an installed AutoJs6 OCR plugin " +
+                "(ML Kit, Paddle OCR or Rapid OCR). image is \"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working " +
+                "directory for an image file. region crops before recognition, in screen pixels or file pixels. engine picks the OCR plugin; auto " +
+                "takes the first enabled one in ML Kit, Paddle, Rapid order. Returns the recognized lines as text and, as structured content, " +
+                "items with text, confidence and bounds (file bounds are in the file's own pixels even when AutoJs6 downscaled the image to read it). " +
+                "The screenshot is taken and recognized inside AutoJs6; no image leaves the phone. A first Paddle call loads its model and can take " +
+                "tens of seconds; timeoutMs defaults to 60 s. This tool exists only while an OCR plugin is installed and enabled in AutoJs6.",
+        group = ToolGroup.OCR,
+        inputSchema = JsonSchemas.objectSchema(
+            linkedMapOf(
+                Ocr.IMAGE to JsonSchemas.string("\"screen\" for the current screen, or a POSIX path relative to the AutoJs6 working directory; no absolute paths or traversal", maxLength = WorkspacePath.MAX_BYTES),
+                Ocr.REGION to JsonSchemas.bounds("Crop before recognition, in screen pixels for the screen or file pixels for a file; right and bottom are exclusive"),
+                Ocr.ENGINE to JsonSchemas.string("OCR plugin to use; auto picks the first enabled one in ML Kit, Paddle, Rapid order", default = "auto", enum = Ocr.ENGINES),
+                Ocr.TIMEOUT_MS to JsonSchemas.integer("How long to wait for the recognition, in milliseconds", minimum = Ocr.MIN_TIMEOUT_MS, maximum = McpServerContract.MAX_TOOL_TIMEOUT_MS, default = Ocr.DEFAULT_TIMEOUT_MS),
+            ),
+            required = listOf(Ocr.IMAGE),
+        ),
+        bridge = BridgeMethod("ocr", "recognize"),
+        permissions = listOf("ocr", "image", "accessibility", "screen_capture"),
+        timeoutMs = Ocr.DEFAULT_TIMEOUT_MS,
+        maxTimeoutMs = McpServerContract.MAX_TOOL_TIMEOUT_MS,
+        hints = ToolHints(readOnly = true, idempotent = false, openWorld = true),
+        hostMethods = listOf(
+            BridgeMethod("accessibility", "readScreenText"), BridgeMethod("media_projection", "requestScreenCapture"),
+            BridgeMethod("image", "readImage"), BridgeMethod("ocr", "recognize"), BridgeMethod("image", "recycle"),
+        ),
+    )
+
     private fun fileSpec(name: String, title: String, description: String, method: String,
         properties: LinkedHashMap<String, JsonObject> = linkedMapOf(Workspace.PATH to pathSchema()), required: List<String> = listOf(Workspace.PATH),
         writes: Boolean = false, deletes: Boolean = false) = ToolSpec(name, title, description,
@@ -760,6 +811,8 @@ object ToolCatalog {
         screenCapture, screenState,
         filesList, filesStat, filesRead, filesWrite, filesMkdir, filesRename, filesDelete, editorOpen,
         appLaunch, appList, clipboardGet, clipboardSet, deviceEnsureAccessibility, toast, shellExec,
+        // Plugin-family rows (roadmap P11): listed only while the host grants their methods and reports the plugin as available.
+        ocrRecognize,
     )
 
     val byName: Map<String, ToolSpec> = all.associateBy { it.name }
@@ -767,7 +820,16 @@ object ToolCatalog {
     /** The groups the catalog uses, for the `mcpServerToolGroups` capability. */
     val groups: List<ToolGroup> = ToolGroup.entries.filter { group -> all.any { it.group == group } }
 
-    fun enabled(permissions: ToolPermissions): List<ToolSpec> = all.filter { permissions.isEnabled(it.group) }
+    /** The built-in rows the switches enable: what a session lists when the host reports no plugin family. */
+    fun enabled(permissions: ToolPermissions): List<ToolSpec> = all.filter { permissions.isEnabled(it.group) && !it.group.isPluginFamily }
+
+    /** The rows a session lists: the built-in rows the switches enable plus the plugin-family rows [availability] allows. */
+    fun enabled(permissions: ToolPermissions, availability: PluginToolAvailability): List<ToolSpec> =
+        all.filter { permissions.isEnabled(it.group) && (!it.group.isPluginFamily || availability.allows(it)) }
+
+    /** The rows of the plugin-family groups, in catalog order. */
+    val pluginFamilyRows: List<ToolSpec>
+        get() = all.filter { it.group.isPluginFamily }
 
     /** Pretty JSON of the whole catalog; `ToolCatalogTest` compares it with the committed snapshot. */
     fun snapshot(): String = PRETTY.encodeToString(

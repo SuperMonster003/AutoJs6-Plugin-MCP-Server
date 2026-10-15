@@ -118,6 +118,7 @@ MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]
 | `device_ensure_accessibility` | `device` | 켜짐 | Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance. |
 | `toast` | `device` | 켜짐 | Shows a short Android toast on the phone. |
 | `shell_exec` | `shell` | 꺼짐 | Runs an Android shell command in the host workspace. The shell group is off by default; root also requires the separate allow root switch and a shell.root host grant. Reports exit code, timeout, stdout, stderr, and truncation. maxOutputBytes bounds stdout and stderr together. |
+| `ocr_recognize` | `ocr` | 켜짐 | Recognize text on the phone screen or in an image file on the phone with an installed AutoJs6 OCR plugin (ML Kit, Paddle OCR or Rapid OCR). image is "screen" for the current screen, or a POSIX path relative to the AutoJs6 working directory for an image file. region crops before recognition, in screen pixels or file pixels. engine picks the OCR plugin; auto takes the first enabled one in ML Kit, Paddle, Rapid order. Returns the recognized lines as text and, as structured content, items with text, confidence and bounds (file bounds are in the file's own pixels even when AutoJs6 downscaled the image to read it). The screenshot is taken and recognized inside AutoJs6; no image leaves the phone. A first Paddle call loads its model and can take tens of seconds; timeoutMs defaults to 60 s. This tool exists only while an OCR plugin is installed and enabled in AutoJs6. |
 
 ******
 
@@ -312,6 +313,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 _2026/10/15_
 
 - `기능` 플러그인 도구 그룹 6 개와 각각의 스위치 (OCR 문자 인식, 바코드 인식, OpenCV 이미지 및 색상 찾기, Pinyin 과 Pinyin4j 병음 변환, MediaInfo 미디어 정보): 이 도구들은 해당 AutoJs6 플러그인이 설치되어 활성화된 동안에만 클라이언트 도구 목록에 나타나고, 플러그인을 설치, 제거, 업데이트하면 목록이 자동으로 갱신되며, 플러그인이 없는 도구를 호출하면 이유를 알려 줌 (PLUGIN_UNAVAILABLE)
+- `기능` ocr_recognize 도구, 기기 화면이나 기기에 있는 이미지 파일의 문자를 인식 (설치되어 활성화된 ML Kit, Paddle OCR 또는 Rapid OCR 플러그인 필요): image 가 "screen" 이면 AutoJs6 안에서 화면을 캡처해 인식하고, 작업 디렉터리 안의 경로이면 파일을 읽은 뒤 인식; region 자르기와 engine 지정은 선택 (기본은 자동 선택); 결과에 문자, 신뢰도, 좌표가 담기며 (큰 파일은 원본 픽셀 기준), 이미지는 기기를 떠나지 않음
 - `수정` 기기 검증 스크립트가 릴리스 앱에 남아 있는 디버그 테스트 APK를 실행하여 앱 프로세스가 중단되는 문제
 - `개선` AutoJs6 6.8.0 빌드 5333 이상에서는 설정 페이지의 알림 꺼짐 안내가 AutoJs6가 앞에 표시된 동안에도 페어링 요청이 나타난다고 알려 줌
 

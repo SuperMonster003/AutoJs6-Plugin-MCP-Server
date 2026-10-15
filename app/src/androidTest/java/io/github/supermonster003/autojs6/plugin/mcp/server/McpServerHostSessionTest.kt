@@ -480,6 +480,72 @@ class McpServerHostSessionTest {
     }
 
     @Test
+    fun pluginFamilyToolsFollowTheHostReportAndRunThroughTheHost() {
+        val broker = FakeBroker()
+        broker.pluginFamilies = pluginFamiliesReport("available")
+        val session = runtime.openSession(configBundle(PORT), broker, RecordingCallback(), Process.myUid())
+        awaitStatus(session) { it.getString(McpServerContract.KEY_STATUS_STATE) == McpServerContract.STATE_RUNNING }
+        val sessionId = post(initializeRequest(), sessionId = null).header("mcp-session-id")
+        post(initializedNotification(), sessionId)
+        fun call(name: String, args: String = "{}"): JSONObject {
+            var response = post(toolsCallRequest(name, args), sessionId)
+            if (response.status == 429) {
+                Thread.sleep(response.header("retry-after")!!.toLong() * 1_000L)
+                response = post(toolsCallRequest(name, args), sessionId)
+            }
+            return response.result()
+        }
+        // The soft probe (roadmap P11 D27 / D28): the row appears once the host grants its methods and reports the family available.
+        assertEquals(ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name } + ToolCatalog.OCR_RECOGNIZE, toolNames(post(toolsListRequest(), sessionId)))
+        assertTrue(broker.requests.any { it.getString("method") == "pluginCapabilities" && it.getJSONArray("permissions").toStringList() == listOf("app.query") })
+        val held = post(toolsCallRequest(ToolCatalog.OCR_RECOGNIZE, """{"image":"screen"}"""), sessionId)
+        assertTrue(runtime.server.pairingGate!!.approve(held.json().getJSONObject("error").getJSONObject("data").getString("fingerprint")))
+
+        val screen = call(ToolCatalog.OCR_RECOGNIZE, """{"image":"screen","region":{"left":100,"top":200,"right":500,"bottom":400}}""")
+        assertFalse(screen.toString(), screen.optBoolean("isError"))
+        assertEquals("Hello", screen.getJSONArray("content").getJSONObject(0).getString("text"))
+        val screenMeta = screen.getJSONObject("structuredContent")
+        assertEquals("screen", screenMeta.getString("source"))
+        assertEquals(1, screenMeta.getInt("count"))
+        assertEquals(10, screenMeta.getJSONArray("items").getJSONObject(0).getJSONObject("bounds").getInt("left"))
+        val readScreen = broker.requests.last { it.getString("method") == "readScreenText" }
+        assertEquals(listOf("accessibility", "screen_capture", "ocr"), readScreen.getJSONArray("permissions").toStringList())
+        val region = readScreen.getJSONArray("args").getJSONObject(0).getJSONObject("region")
+        assertEquals(listOf(100, 200, 400, 200), listOf("x", "y", "width", "height").map { region.getInt(it) })
+        assertEquals(60_000L, readScreen.getLong("timeoutMs"))
+
+        val file = call(ToolCatalog.OCR_RECOGNIZE, """{"image":"pics/a.png","engine":"rapid"}""")
+        assertFalse(file.toString(), file.optBoolean("isError"))
+        val fileMeta = file.getJSONObject("structuredContent")
+        assertEquals("file", fileMeta.getString("source"))
+        assertEquals(2000, fileMeta.getInt("width"))
+        assertEquals(0.5, fileMeta.getDouble("scale"), 0.0)
+        val bounds = fileMeta.getJSONArray("items").getJSONObject(0).getJSONObject("bounds")
+        assertEquals(listOf(20, 40, 220, 120), listOf("left", "top", "right", "bottom").map { bounds.getInt(it) })
+        val sequence = broker.requests.map { "${it.getString("module")}.${it.getString("method")}" }
+        val start = sequence.lastIndexOf("image.readImage")
+        assertEquals(listOf("image.readImage", "ocr.recognize", "image.recycle"), sequence.subList(start, start + 3))
+        assertEquals("pics/a.png", broker.requests[start].getJSONArray("args").getString(0))
+        assertEquals("rapid-ocr", broker.requests[start + 1].getJSONArray("args").getJSONObject(1).getString("engine"))
+        assertEquals("img-1", broker.requests[start + 2].getJSONArray("args").getJSONObject(0).getString("__autojs6ImageHandle"))
+
+        // The plugin goes away: the row leaves the list on the next request and a call explains why.
+        broker.pluginFamilies = pluginFamiliesReport("not_installed")
+        runtime.pluginFamilies.invalidate()
+        assertEquals(ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name }, toolNames(post(toolsListRequest(), sessionId)))
+        val gone = call(ToolCatalog.OCR_RECOGNIZE, """{"image":"screen"}""")
+        assertEquals("PLUGIN_UNAVAILABLE", gone.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
+        assertTrue(gone.toString(), gone.toString().contains("not installed"))
+        session.close()
+    }
+
+    private fun pluginFamiliesReport(ocrStatus: String): JSONObject = JSONObject()
+        .put("schema", "autojs6-bridge-app-plugin-capabilities-v1")
+        .put("hostVersionCode", 5352)
+        .put("families", JSONArray().put(JSONObject().put("id", "ocr").put("status", ocrStatus)
+            .put("methods", JSONArray().put("ocr.recognize").put("accessibility.readScreenText")).put("plugins", JSONArray())))
+
+    @Test
     fun workspaceToolsBridgeArgumentsPayloadsAndSeparateDangerousSwitches() {
         val broker = FakeBroker()
         val session = runtime.openSession(configBundle(PORT), broker, RecordingCallback(), Process.myUid())
@@ -621,6 +687,14 @@ class McpServerHostSessionTest {
         var screenFallback = false
         var denyCapture = false
 
+        /** When set, the grant covers the OCR family methods and `app.pluginCapabilities` answers with this report (roadmap P11). */
+        @Volatile
+        var pluginFamilies: JSONObject? = null
+
+        private val familyGrantMethods = arrayOf(
+            "app.pluginCapabilities", "accessibility.readScreenText", "media_projection.requestScreenCapture", "image.readImage", "ocr.recognize", "image.recycle",
+        )
+
         override fun getBrokerInfo(): Bundle = Bundle().apply {
             putInt(McpServerContract.KEY_CONTRACT_VERSION, McpServerContract.CONTRACT_VERSION)
             putInt(McpServerContract.KEY_HOST_CAPABILITY_BROKER_VERSION, McpServerContract.HOST_CAPABILITY_BROKER_CONTRACT_VERSION)
@@ -636,9 +710,10 @@ class McpServerHostSessionTest {
                     "files.list", "files.stat", "files.read", "files.write", "files.mkdir", "files.rename", "files.delete",
                     "app.editFile", "app.launchPackage", "app.launchApp", "package_manager.listApps", "clipboard.getText", "clipboard.setText",
                     "accessibility.ensureEnabled", "toast.toast", "shell.exec", "app.listSamples", "app.readSample",
-                ),
+                ) + if (pluginFamilies != null) familyGrantMethods else emptyArray(),
             )
-            putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query", "files", "files.write", "files.delete", "app.activity", "app.launch", "package_manager", "clipboard", "toast", "shell", "shell.root"))
+            putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query", "files", "files.write", "files.delete", "app.activity", "app.launch", "package_manager", "clipboard", "toast", "shell", "shell.root")
+                + if (pluginFamilies != null) arrayOf("ocr", "image", "screen_capture") else emptyArray())
             putInt(McpServerContract.KEY_GRANT_MAX_REQUEST_BYTES, McpServerContract.MAX_BRIDGE_INLINE_JSON_BYTES)
             putInt(McpServerContract.KEY_GRANT_MAX_CONCURRENT_CALLS, McpServerContract.MAX_CONCURRENT_TOOL_CALLS)
             putLong(McpServerContract.KEY_GRANT_DEFAULT_TIMEOUT_MS, McpServerContract.DEFAULT_TOOL_TIMEOUT_MS)
@@ -674,6 +749,15 @@ class McpServerHostSessionTest {
                 "clipboard.setText", "toast.toast" -> ok(id, JSONObject.NULL)
                 "package_manager.listApps" -> ok(id, JSONObject().put("schema", "apps-v1").put("apps", JSONArray()).put("count", 0))
                 "shell.exec" -> ok(id, JSONObject().put("code", 0).put("stdout", "ok").put("stderr", "").put("truncated", false).put("timedOut", false))
+                "app.pluginCapabilities" -> pluginFamilies?.let { ok(id, it) }
+                    ?: JSONObject().put("id", id).put("ok", false).put("error", JSONObject().put("category", "capability-denied").put("message", "not granted"))
+                "accessibility.readScreenText" -> ok(id, JSONArray().put(JSONObject().put("text", "Hello").put("confidence", 0.91)
+                    .put("bounds", JSONObject().put("left", 10).put("top", 20).put("right", 110).put("bottom", 60))))
+                "image.readImage" -> ok(id, JSONObject().put("id", "img-1").put("__autojs6ImageHandle", "img-1").put("width", 1000).put("height", 500)
+                    .put("sourceWidth", 2000).put("sourceHeight", 1000).put("scale", 0.5))
+                "ocr.recognize" -> ok(id, JSONArray().put(JSONObject().put("text", "Decoded").put("confidence", 0.8)
+                    .put("bounds", JSONObject().put("left", 10).put("top", 20).put("right", 110).put("bottom", 60))))
+                "image.recycle" -> ok(id, true)
                 "device.info" -> JSONObject()
                     .put("id", id)
                     .put("ok", true)

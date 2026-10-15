@@ -70,3 +70,35 @@ and answers an `isError` result instead of the SDK's "tool not found":
   and vanish with the grant and the report, the gate reasons), `ToolCatalogTest` and
   `ToolPermissionsTest` (the new groups).
 - Instrumentation and devices: recorded with the tool items and the P11 test item in `ROADMAP.md`.
+
+## ocr_recognize (D23 / D24 / D25 / D38)
+
+The first plugin-family tool (`OcrTools`, group `ocr`): one tool with an `image` argument (D38).
+
+| `image` | Host calls | Notes |
+|---|---|---|
+| `"screen"` | `accessibility.readScreenText({region?, engine?})` | capture and recognition happen inside AutoJs6 (D23); a `permission-denied` answer means MediaProjection consent is missing (Android 10 and below, or no accessibility service), so the flow asks once through `media_projection.requestScreenCapture` and retries, like `screen_capture` |
+| a workspace path | `image.readImage(path)` -> `ocr.recognize(handle, {region?, engine?})` -> `image.recycle(handle)` | the recycle runs in a `finally`; the host decodes large files downscaled (D45) and the flow converts `region` to decoded pixels and the bounds back to file pixels, so callers only see the file's own coordinates (`scale`, `decodedWidth` / `decodedHeight` are reported when the host downscaled) |
+
+Arguments: `image` (required), `region` (`{left, top, right, bottom}`, exclusive right / bottom, screen or file pixels),
+`engine` (`auto` / `mlkit` / `paddle` / `rapid`, mapped to the host engine ids `mlkit-ocr` / `paddle-ocr` / `rapid-ocr`; `auto` sends
+nothing and the host picks the first enabled plugin in that order, D25), `timeoutMs` (default 60 s because a first Paddle call loads
+its model, 1 s .. 300 s). Only workspace-relative paths are accepted until the shared storage switch (D26) lands.
+
+Result: the content text is the recognized lines joined with newlines (`(no text recognized)` when empty); the structured content is
+`{image, source: "screen" | "file", engine, count, items[{text, confidence?, bounds?}], text, region?, width?, height?, scale?, decodedWidth?, decodedHeight?, durationMs}`.
+The host answers `[{text, confidence, bounds}]` for both paths (`readScreenText` caps the list at the Agent contract's item and byte
+limits); `confidence` and `bounds` are omitted when the plugin gives none.
+
+Errors: a missing or disabled OCR plugin comes back from the host as the `unavailable` category (`OCR_PLUGIN_REQUIRED` from
+`readScreenText`, "requires an enabled compatible recognition plugin" from `ocr.recognize`); the flow maps both to
+`PLUGIN_UNAVAILABLE` instead of the generic `A11Y_SERVICE_NOT_RUNNING` / `HOST_UNAVAILABLE` of that category. A refused consent is
+`CAPABILITY_DENIED` with the `screen_capture` consent hint. Bad arguments are rejected before any host call, except a `region` beyond the
+file, which needs the handle's dimensions and is rejected after `image.readImage` (the handle is still recycled).
+
+`ToolCatalog.enabled(permissions)` now lists the built-in rows only; `enabled(permissions, availability)` adds the plugin-family rows,
+and `ToolCatalog.groups` / `mcpServerToolGroups` carry `ocr` from this row on.
+
+Tests: `OcrToolsTest` (JVM, fake caller: argument mapping, scale conversion, recycle on failure, PLUGIN_UNAVAILABLE mapping, consent
+retry, argument checks), `McpServerHostSessionTest.pluginFamilyToolsFollowTheHostReportAndRunThroughTheHost` (instrumentation, fake
+broker: the row appears with the report, both paths run, the row leaves when the plugin goes away).

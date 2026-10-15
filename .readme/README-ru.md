@@ -118,6 +118,7 @@ MCP Server превращает Android-устройство с AutoJs6 в се�
 | `device_ensure_accessibility` | `device` | вкл | Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance. |
 | `toast` | `device` | вкл | Shows a short Android toast on the phone. |
 | `shell_exec` | `shell` | выкл | Runs an Android shell command in the host workspace. The shell group is off by default; root also requires the separate allow root switch and a shell.root host grant. Reports exit code, timeout, stdout, stderr, and truncation. maxOutputBytes bounds stdout and stderr together. |
+| `ocr_recognize` | `ocr` | вкл | Recognize text on the phone screen or in an image file on the phone with an installed AutoJs6 OCR plugin (ML Kit, Paddle OCR or Rapid OCR). image is "screen" for the current screen, or a POSIX path relative to the AutoJs6 working directory for an image file. region crops before recognition, in screen pixels or file pixels. engine picks the OCR plugin; auto takes the first enabled one in ML Kit, Paddle, Rapid order. Returns the recognized lines as text and, as structured content, items with text, confidence and bounds (file bounds are in the file's own pixels even when AutoJs6 downscaled the image to read it). The screenshot is taken and recognized inside AutoJs6; no image leaves the phone. A first Paddle call loads its model and can take tens of seconds; timeoutMs defaults to 60 s. This tool exists only while an OCR plugin is installed and enabled in AutoJs6. |
 
 ******
 
@@ -312,6 +313,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 _2026/10/15_
 
 - `Функция` Шесть групп инструментов плагинов со своими переключателями (распознавание текста OCR, распознавание штрихкодов, поиск изображений и цветов OpenCV, преобразование в пиньинь Pinyin и Pinyin4j, метаданные медиафайлов MediaInfo): их инструменты появляются в списке инструментов клиента только пока соответствующий плагин AutoJs6 установлен и включен, список обновляется сам после установки, удаления или обновления плагина, а вызов инструмента без плагина объясняет причину (PLUGIN_UNAVAILABLE)
+- `Функция` Инструмент ocr_recognize, который распознает текст на экране телефона или в файле изображения на телефоне (нужен установленный и включенный плагин ML Kit, Paddle OCR или Rapid OCR): image "screen" снимает и распознает экран внутри AutoJs6, путь внутри рабочего каталога сначала читает файл; необязательные обрезка region и выбор движка engine (по умолчанию автоматический); результаты содержат текст, уверенность и координаты (большие файлы в их собственных пикселях), и ни одно изображение не покидает телефон
 - `Исправление` Скрипты проверки на устройстве запускали оставшийся отладочный тестовый APK для релизной версии приложения и вызывали сбой ее процесса
 - `Улучшение` С AutoJs6 6.8.0 сборки 5333 и новее подсказка об отключенных уведомлениях на странице настроек сообщает, что запросы сопряжения появляются и тогда, когда AutoJs6 на переднем плане
 

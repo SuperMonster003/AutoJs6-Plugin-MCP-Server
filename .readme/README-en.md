@@ -118,6 +118,7 @@ The table below is generated from the plugin's tool catalog snapshot (`app/src/t
 | `device_ensure_accessibility` | `device` | on | Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance. |
 | `toast` | `device` | on | Shows a short Android toast on the phone. |
 | `shell_exec` | `shell` | off | Runs an Android shell command in the host workspace. The shell group is off by default; root also requires the separate allow root switch and a shell.root host grant. Reports exit code, timeout, stdout, stderr, and truncation. maxOutputBytes bounds stdout and stderr together. |
+| `ocr_recognize` | `ocr` | on | Recognize text on the phone screen or in an image file on the phone with an installed AutoJs6 OCR plugin (ML Kit, Paddle OCR or Rapid OCR). image is "screen" for the current screen, or a POSIX path relative to the AutoJs6 working directory for an image file. region crops before recognition, in screen pixels or file pixels. engine picks the OCR plugin; auto takes the first enabled one in ML Kit, Paddle, Rapid order. Returns the recognized lines as text and, as structured content, items with text, confidence and bounds (file bounds are in the file's own pixels even when AutoJs6 downscaled the image to read it). The screenshot is taken and recognized inside AutoJs6; no image leaves the phone. A first Paddle call loads its model and can take tens of seconds; timeoutMs defaults to 60 s. This tool exists only while an OCR plugin is installed and enabled in AutoJs6. |
 
 ******
 
@@ -312,6 +313,7 @@ The plugin's plans and progress are maintained as a checkable list in ROADMAP.md
 _2026/10/15_
 
 - `Feature` Six plugin tool groups with their own switches (OCR text recognition, barcode recognition, OpenCV image and color search, Pinyin and Pinyin4j conversion, MediaInfo media metadata): their tools appear in the client tool list only while the matching AutoJs6 plugin is installed and enabled, the list updates itself after a plugin is installed, removed or updated, and calling a tool whose plugin is missing explains why (PLUGIN_UNAVAILABLE)
+- `Feature` ocr_recognize tool, which recognizes text on the phone screen or in an image file on the phone (needs an installed and enabled ML Kit, Paddle OCR or Rapid OCR plugin): image "screen" captures and recognizes inside AutoJs6, a path inside the working directory reads the file first; optional region crop and engine choice (automatic by default); results carry text, confidence and bounds (large files in their own pixels), and no image leaves the phone
 - `Fix` Device evidence scripts starting a leftover debug test APK against the release app and crashing its process
 - `Improvement` With AutoJs6 6.8.0 build 5333 or later, the settings page notice about turned-off notifications says that pairing requests also appear while AutoJs6 is in the foreground
 

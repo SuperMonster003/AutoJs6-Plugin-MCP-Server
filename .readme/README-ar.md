@@ -118,6 +118,7 @@
 | `device_ensure_accessibility` | `device` | مفعل | Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance. |
 | `toast` | `device` | مفعل | Shows a short Android toast on the phone. |
 | `shell_exec` | `shell` | معطل | Runs an Android shell command in the host workspace. The shell group is off by default; root also requires the separate allow root switch and a shell.root host grant. Reports exit code, timeout, stdout, stderr, and truncation. maxOutputBytes bounds stdout and stderr together. |
+| `ocr_recognize` | `ocr` | مفعل | Recognize text on the phone screen or in an image file on the phone with an installed AutoJs6 OCR plugin (ML Kit, Paddle OCR or Rapid OCR). image is "screen" for the current screen, or a POSIX path relative to the AutoJs6 working directory for an image file. region crops before recognition, in screen pixels or file pixels. engine picks the OCR plugin; auto takes the first enabled one in ML Kit, Paddle, Rapid order. Returns the recognized lines as text and, as structured content, items with text, confidence and bounds (file bounds are in the file's own pixels even when AutoJs6 downscaled the image to read it). The screenshot is taken and recognized inside AutoJs6; no image leaves the phone. A first Paddle call loads its model and can take tens of seconds; timeoutMs defaults to 60 s. This tool exists only while an OCR plugin is installed and enabled in AutoJs6. |
 
 ******
 
@@ -312,6 +313,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 _2026/10/15_
 
 - `ميزة` ست مجموعات لأدوات الإضافات مع مفاتيح خاصة بها (التعرف على النص OCR, التعرف على الباركود, البحث عن الصور والألوان OpenCV, التحويل إلى بينيين Pinyin و Pinyin4j, البيانات الوصفية للوسائط MediaInfo): تظهر أدواتها في قائمة أدوات العميل فقط عندما تكون إضافة AutoJs6 المقابلة مثبتة ومفعلة, وتتحدث القائمة تلقائيا بعد تثبيت إضافة أو إزالتها أو تحديثها, ويوضح استدعاء أداة بلا إضافة السبب (PLUGIN_UNAVAILABLE)
+- `ميزة` أداة ocr_recognize للتعرف على النص في شاشة الهاتف أو في ملف صورة على الهاتف (تحتاج إضافة ML Kit أو Paddle OCR أو Rapid OCR مثبتة ومفعلة): عندما تكون image هي "screen" تلتقط الشاشة وتتعرف عليها داخل AutoJs6, وعندما تكون مسارا داخل دليل العمل تقرأ الملف أولا; القص بـ region واختيار المحرك بـ engine اختياريان (الافتراضي اختيار تلقائي); تحمل النتائج النص ودرجة الثقة والإحداثيات (الملفات الكبيرة بوحدات بكسلها الأصلية), ولا تخرج أي صورة من الهاتف
 - `إصلاح` تسبب برامج جمع أدلة الاختبار على الأجهزة في تعطل عملية التطبيق عند تشغيل حزمة اختبار تصحيح متبقية مع إصدار النشر
 - `تحسين` مع AutoJs6 6.8.0 البناء 5333 أو أحدث, يوضح تنبيه الإشعارات المتوقفة في صفحة الإعدادات أن طلبات الاقتران تظهر أيضا عندما يكون AutoJs6 في المقدمة
 

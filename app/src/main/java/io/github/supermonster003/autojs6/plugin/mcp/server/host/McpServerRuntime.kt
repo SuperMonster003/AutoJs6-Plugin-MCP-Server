@@ -36,6 +36,7 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ScreenTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolFlows
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.FileTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.DeviceTools
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.OcrTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ShellTools
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.BridgeCaller
 import io.github.supermonster003.autojs6.plugin.mcp.server.bridge.ToolFailure
@@ -102,6 +103,7 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
     private val fileTools = FileTools()
     private val deviceTools = DeviceTools()
     private val shellTools = ShellTools { toolPermissions.load() }
+    private val ocrTools = OcrTools()
 
     /** Soft probe of the plugin families behind the plugin-family tool groups (roadmap P11 D27 / D28). */
     val pluginFamilies: PluginFamilyProbe = PluginFamilyProbe({ bridge })
@@ -120,7 +122,8 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
             onToolCall = ::onToolCall,
             flows = ToolFlows { spec, arguments ->
                 uiTools.planFor(spec, arguments) ?: screenTools.planFor(spec, arguments) ?:
-                fileTools.planFor(spec, arguments) ?: deviceTools.planFor(spec, arguments) ?: shellTools.planFor(spec, arguments)
+                fileTools.planFor(spec, arguments) ?: deviceTools.planFor(spec, arguments) ?: shellTools.planFor(spec, arguments) ?:
+                ocrTools.planFor(spec, arguments)
             },
         ),
     )

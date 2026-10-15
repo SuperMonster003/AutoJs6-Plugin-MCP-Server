@@ -9,6 +9,7 @@
 ###### 2026/10/15
 
 * `Función` Seis grupos de herramientas de plugins con sus propios interruptores (reconocimiento de texto OCR, reconocimiento de códigos de barras, búsqueda de imágenes y colores OpenCV, conversión a pinyin Pinyin y Pinyin4j, metadatos multimedia MediaInfo): sus herramientas solo aparecen en la lista de herramientas del cliente mientras el plugin de AutoJs6 correspondiente está instalado y habilitado, la lista se actualiza sola al instalar, desinstalar o actualizar un plugin, y llamar a una herramienta cuyo plugin falta explica el motivo (PLUGIN_UNAVAILABLE)
+* `Función` Herramienta ocr_recognize, que reconoce texto en la pantalla del teléfono o en un archivo de imagen del teléfono (necesita un plugin ML Kit, Paddle OCR o Rapid OCR instalado y habilitado): image "screen" captura y reconoce dentro de AutoJs6, una ruta dentro del directorio de trabajo lee primero el archivo; recorte region y elección de motor engine opcionales (automático por defecto); los resultados llevan texto, confianza y coordenadas (los archivos grandes en sus propios píxeles), y ninguna imagen sale del teléfono
 * `Corrección` Los scripts de pruebas en dispositivos iniciaban un APK de prueba de depuración residual contra la versión de lanzamiento y provocaban el cierre del proceso de la aplicación
 * `Mejora` Con AutoJs6 6.8.0 compilación 5333 o posterior, el aviso de notificaciones desactivadas de la página de ajustes indica que las solicitudes de emparejamiento también aparecen mientras AutoJs6 está en primer plano
 

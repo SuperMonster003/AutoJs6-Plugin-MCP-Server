@@ -41,8 +41,9 @@ internal class PackageChangeWatcher(
             addDataScheme("package")
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Package broadcasts come from the system, which still reaches a receiver that is not exported.
-            context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            // The package actions are protected broadcasts only the system can send; a receiver registered as
+            // RECEIVER_NOT_EXPORTED did not get them on Android 15 (Xiaomi 23046RP50C), so the receiver is exported.
+            context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
         } else {
             @Suppress("UnspecifiedRegisterReceiverFlag")
             context.registerReceiver(receiver, filter)

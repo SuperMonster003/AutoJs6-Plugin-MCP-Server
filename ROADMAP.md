@@ -648,6 +648,7 @@ MCP 插件 (1.3.0):
 | device | `app_launch` / `app_list` | `packageName?|appName?` / `query?` | `app.launchPackage` / `app.launchApp` / `package_manager.listApps` |
 | device | `clipboard_get` / `clipboard_set` / `toast` | `text` | `clipboard.*` / `toast` |
 | shell (关) | `shell_exec` | `cmd`, `root?=false`, `timeoutMs?=15000`, `maxOutputBytes?=64 KiB` | `shell.exec` |
+| ocr (开, 插件家族, 仅在 OCR 插件可用时出现) | `ocr_recognize` | `image` (`"screen"` 或工作目录内路径), `region?={left,top,right,bottom}`, `engine?=auto|mlkit|paddle|rapid`, `timeoutMs?=60000` (上限 300000) | `accessibility.readScreenText` (屏幕; permission-denied 时请求 `media_projection.requestScreenCapture` 后重试一次) / `image.readImage` -> `ocr.recognize` -> `image.recycle` (路径; 边界按 `scale` 换算回原图像素) |
 
 ### A.3 资源
 
