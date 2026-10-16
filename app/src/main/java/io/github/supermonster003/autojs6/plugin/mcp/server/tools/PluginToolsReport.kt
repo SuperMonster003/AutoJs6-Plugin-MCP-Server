@@ -8,12 +8,23 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.longOrNull
 
-/** One binary output a self-described tool may produce (`outputs[]` of its catalog entry). */
+/**
+ * One output a self-described tool may produce (`outputs[]` of its catalog entry): a file, or a directory AutoJs6 fills
+ * through the plugin (roadmap D53), whose [mimeType] is `inode/directory`.
+ */
 data class PluginToolOutput(
     val name: String,
     val mimeType: String,
     val description: String? = null,
-)
+    val kind: String = KIND_FILE,
+) {
+    val isDirectory: Boolean get() = kind == KIND_DIRECTORY
+
+    companion object {
+        const val KIND_FILE = "file"
+        const val KIND_DIRECTORY = "directory"
+    }
+}
 
 /**
  * One tool a plugin describes itself (roadmap P12, decisions D29 - D34), as the host's `plugin_tools.list` lists it:
@@ -138,10 +149,12 @@ data class PluginToolsReport(
                 maxConcurrency = (record["maxConcurrency"] as? JsonPrimitive)?.longOrNull?.toInt() ?: 1,
                 outputs = (record["outputs"] as? JsonArray)?.mapNotNull { item ->
                     val output = item as? JsonObject ?: return@mapNotNull null
+                    val kind = output["kind"]?.string() ?: PluginToolOutput.KIND_FILE
                     PluginToolOutput(
                         name = output["name"]?.string() ?: return@mapNotNull null,
-                        mimeType = output["mimeType"]?.string() ?: return@mapNotNull null,
+                        mimeType = output["mimeType"]?.string() ?: if (kind == PluginToolOutput.KIND_DIRECTORY) "inode/directory" else return@mapNotNull null,
                         description = output["description"]?.string(),
+                        kind = kind,
                     )
                 }.orEmpty(),
                 imageParameters = (record["imageParameters"] as? JsonArray)?.mapNotNull { it.string() }.orEmpty(),

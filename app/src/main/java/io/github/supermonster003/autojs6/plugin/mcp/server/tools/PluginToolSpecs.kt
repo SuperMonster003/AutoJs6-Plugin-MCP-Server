@@ -40,7 +40,7 @@ object PluginToolSpecs {
         if (tool.userGranted) append(", a third-party plugin the user allowed")
         append(".)")
         if (tool.outputs.isNotEmpty()) {
-            append(" Writes ").append(tool.outputs.joinToString { "${it.name} (${it.mimeType})" })
+            append(" Writes ").append(tool.outputs.joinToString { "${it.name} (${if (it.isDirectory) "a directory" else it.mimeType})" })
             append(" into the AutoJs6 working directory and returns the paths.")
         }
     }
@@ -66,12 +66,16 @@ object PluginToolSpecs {
             if (takesOutputPaths(tool)) {
                 putJsonObject(OUTPUT_PATHS) {
                     put("type", "object")
-                    put("description", "Optional paths in the AutoJs6 working directory for the outputs, by output name (${tool.outputs.joinToString { it.name }}). Outputs without a path go to plugin-outputs/${tool.shortName}/ with an automatic name. An existing file is not replaced.")
+                    put("description", buildString {
+                        append("Optional paths in the AutoJs6 working directory for the outputs, by output name (${tool.outputs.joinToString { it.name }}). ")
+                        append("Outputs without a path go to plugin-outputs/${tool.shortName}/ with an automatic name. An existing file is not replaced.")
+                        if (tool.outputs.any { it.isDirectory }) append(" A directory output may name an existing directory; files already in it are kept and reported as conflicts.")
+                    })
                     putJsonObject("properties") {
                         tool.outputs.forEach { output ->
                             putJsonObject(output.name) {
                                 put("type", "string")
-                                put("description", listOfNotNull(output.description, output.mimeType).joinToString(", "))
+                                put("description", listOfNotNull(output.description, if (output.isDirectory) "a directory path" else output.mimeType).joinToString(", "))
                             }
                         }
                     }

@@ -107,7 +107,16 @@ object PluginToolInvocations {
             append(text ?: result.toString())
             written.forEach { output ->
                 append("\nWrote ").append(output.text("name")).append(" to ").append(output.text("path"))
-                (output["bytes"] as? JsonPrimitive)?.longOrNull?.let { append(" (").append(it).append(" bytes)") }
+                val bytes = (output["bytes"] as? JsonPrimitive)?.longOrNull
+                if (output.text("kind") == PluginToolOutput.KIND_DIRECTORY) {
+                    val files = (output["files"] as? JsonPrimitive)?.longOrNull ?: 0
+                    val conflicts = (output["conflictCount"] as? JsonPrimitive)?.longOrNull ?: 0
+                    append(" (").append(files).append(if (files == 1L) " file, " else " files, ").append(bytes ?: 0).append(" bytes")
+                    if (conflicts > 0) append(", ").append(conflicts).append(if (conflicts == 1L) " conflict kept as it was" else " conflicts kept as they were")
+                    append(")")
+                } else {
+                    bytes?.let { append(" (").append(it).append(" bytes)") }
+                }
             }
             if (missing.isNotEmpty()) append("\nThe plugin returned no ").append(missing.joinToString { (it as? JsonPrimitive)?.contentOrNull.orEmpty() })
         }
@@ -140,7 +149,8 @@ object PluginToolInvocations {
         val stamp = STAMP.get()!!.format(Date(now))
         return tool.outputs.associate { output ->
             val suffix = if (sequence > 0) "-$sequence" else ""
-            output.name to (given[output.name] ?: "$OUTPUT_DIRECTORY/${tool.shortName}/${tool.tool}-$stamp$suffix${if (tool.outputs.size > 1) "-${output.name}" else ""}.${extension(output.mimeType)}")
+            val base = "$OUTPUT_DIRECTORY/${tool.shortName}/${tool.tool}-$stamp$suffix${if (tool.outputs.size > 1) "-${output.name}" else ""}"
+            output.name to (given[output.name] ?: if (output.isDirectory) base else "$base.${extension(output.mimeType)}")
         }
     }
 

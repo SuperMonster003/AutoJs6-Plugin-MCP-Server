@@ -79,6 +79,25 @@ class PluginToolInvocationsTest {
     }
 
     @Test
+    fun `directory outputs get a path without extension, a note and a summary of files and conflicts`() {
+        val parsed = PluginToolsReport.parse(Json.parseToJsonElement(PluginToolSpecsTest.LIST.replace(
+            """"outputs":[{"name":"image","mimeType":"image/png","description":"the quantized PNG"}]""",
+            """"outputs":[{"name":"image","kind":"directory","mimeType":"inode/directory","description":"the entries"}]""",
+        )))!!
+        val extract = parsed.tools[1].copy(name = "archive_extract", tool = "extract", shortName = "archive", imageParameters = emptyList(), fileParameters = listOf("image"))
+        assertTrue(extract.outputs.single().isDirectory)
+        val call = PluginToolInvocations.prepare(extract, args("""{"image":"a.zip"}"""), PathAccess.WORKSPACE_ONLY, now)
+        assertEquals(mapOf("image" to "plugin-outputs/archive/extract-$stamp"), call.outputs)
+        val schema = PluginToolSpecs.inputSchema(extract)["properties"]!!.jsonObject[PluginToolSpecs.OUTPUT_PATHS]!!.jsonObject
+        assertTrue(schema["description"].toString().contains("files already in it are kept and reported as conflicts"))
+        assertTrue(PluginToolSpecs.description(extract).contains("Writes image (a directory) into the AutoJs6 working directory"))
+        val (_, summary) = PluginToolInvocations.shape(extract, Json.parseToJsonElement(
+            """{"result":{"entries":3},"outputs":[{"name":"image","kind":"directory","path":"out/x","mimeType":"inode/directory","files":2,"bytes":30,"conflicts":["a.txt"],"conflictCount":1}]}""",
+        ))
+        assertEquals("{\"entries\":3}\nWrote image to out/x (2 files, 30 bytes, 1 conflict kept as it was)", summary)
+    }
+
+    @Test
     fun `output paths must name declared outputs inside the working directory`() {
         val unknown = assertThrows(ToolArgumentException::class.java) {
             PluginToolInvocations.prepare(quant, args("""{"image":"screen","outputPaths":{"thumbnail":"t.png"}}"""), PathAccess.WORKSPACE_ONLY, now)
