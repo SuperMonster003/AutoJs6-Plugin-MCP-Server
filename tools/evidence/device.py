@@ -224,6 +224,14 @@ class Device:
             raise DeviceError("EvidenceHelperTest#setSharedStorageRead reported no previous value")
         return match.group(1) == "true"
 
+    def set_plugin_group(self, short_name: str, enabled: str, writes: str) -> tuple[str, str]:
+        """Sets the switches of a plugin tool group (roadmap P12) to true / false / default; returns the previous pair. Restarts the plugin package."""
+        out = self._helper("setPluginGroup", "mcpEvidencePluginGroup", f"{short_name}:{enabled}:{writes}")
+        match = re.search(r"mcpEvidencePluginGroup=(true|false|default):(true|false|default)", out)
+        if not match:
+            raise DeviceError("EvidenceHelperTest#setPluginGroup reported no previous value")
+        return match.group(1), match.group(2)
+
     # Host session ------------------------------------------------------------------------------
 
     @contextmanager

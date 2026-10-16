@@ -482,6 +482,55 @@ class McpServerHostSessionTest {
     }
 
     @Test
+    fun selfDescribedPluginToolsFollowTheSwitchesAndRunThroughPluginToolsInvoke() {
+        val broker = FakeBroker()
+        broker.pluginTools = JSONObject(PLUGIN_TOOLS_LIST)
+        val session = runtime.openSession(configBundle(PORT), broker, RecordingCallback(), Process.myUid())
+        awaitStatus(session) { it.getString(McpServerContract.KEY_STATUS_STATE) == McpServerContract.STATE_RUNNING }
+        val sessionId = post(initializeRequest(), sessionId = null).header("mcp-session-id")
+        post(initializedNotification(), sessionId)
+        val catalog = ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name }
+
+        // Roadmap P12 D34: the official read-only tool is listed, the writing one and the user-granted plugin wait for their switches.
+        val listed = post(toolsListRequest(), sessionId)
+        assertEquals(catalog + "opencc_convert", toolNames(listed))
+        val opencc = listed.result().getJSONArray("tools").let { tools -> (0 until tools.length()).map { tools.getJSONObject(it) } }.single { it.getString("name") == "opencc_convert" }
+        assertEquals(listOf("text"), opencc.getJSONObject("inputSchema").getJSONArray("required").toStringList())
+        assertTrue(opencc.getJSONObject("annotations").getBoolean("readOnlyHint"))
+        assertTrue(broker.requests.any { it.getString("method") == "list" && it.getJSONArray("permissions").toStringList() == listOf("plugin_tools", "plugin_tools.user_granted") })
+
+        val held = post(toolsCallRequest("opencc_convert", """{"text":"汉字"}"""), sessionId)
+        assertTrue(runtime.server.pairingGate!!.approve(held.json().getJSONObject("error").getJSONObject("data").getString("fingerprint")))
+        val converted = post(toolsCallRequest("opencc_convert", """{"text":"汉字","config":"s2twi"}"""), sessionId).result()
+        assertFalse(converted.toString(), converted.optBoolean("isError"))
+        assertEquals("漢字", converted.getJSONArray("content").getJSONObject(0).getString("text"))
+        assertEquals("s2twi", converted.getJSONObject("structuredContent").getString("config"))
+        val invoke = broker.requests.last { it.getString("method") == "invoke" }
+        assertEquals("plugin_tools", invoke.getString("module"))
+        assertEquals("""["opencc_convert",{"text":"汉字","config":"s2twi"}]""", invoke.getJSONArray("args").toString())
+        assertEquals(listOf("plugin_tools"), invoke.getJSONArray("permissions").toStringList())
+        assertEquals(12_000L, invoke.getLong("timeoutMs"))
+
+        val hidden = post(toolsCallRequest("quant_quantize", """{"image":"screen"}"""), sessionId).result()
+        assertTrue(hidden.optBoolean("isError"))
+        assertEquals("TOOL_DISABLED", hidden.getJSONObject("structuredContent").getJSONObject("error").getString("code"))
+        assertTrue(post(toolsCallRequest("no_such_tool"), sessionId).result().optBoolean("isError"))
+
+        ToolPermissionStore(context).update { it.withPluginWrites("quant", true).withPluginGroup("fake", true) }
+        assertEquals(catalog + listOf("fake_echo", "opencc_convert", "quant_quantize"), toolNames(post(toolsListRequest(), sessionId)))
+        val quantized = post(toolsCallRequest("quant_quantize", """{"image":"screen","colors":16}"""), sessionId).result()
+        assertFalse(quantized.toString(), quantized.optBoolean("isError"))
+        val quantInvoke = broker.requests.last { it.getString("method") == "invoke" }
+        assertEquals(listOf("plugin_tools", "screen_capture", "files.write"), quantInvoke.getJSONArray("permissions").toStringList())
+        val outputPath = quantInvoke.getJSONArray("args").getJSONObject(2).getJSONObject("outputs").getString("image")
+        assertTrue(outputPath, outputPath.matches(Regex("plugin-outputs/quant/quantize-\\d{8}-\\d{6}-\\d{3}\\.png")))
+        assertEquals(outputPath, quantized.getJSONObject("structuredContent").getJSONArray("outputs").getJSONObject(0).getString("path"))
+        assertEquals("image", quantized.getJSONArray("content").getJSONObject(1).getString("type"))
+        assertEquals("files.read", broker.requests.last().let { "${it.getString("module")}.${it.getString("method")}" })
+        session.close()
+    }
+
+    @Test
     fun pluginFamilyToolsFollowTheHostReportAndRunThroughTheHost() {
         val broker = FakeBroker()
         broker.pluginFamilies = pluginFamiliesReport("available")
@@ -847,6 +896,10 @@ class McpServerHostSessionTest {
         @Volatile
         var pluginFamilies: JSONObject? = null
 
+        /** When set, the grant covers `plugin_tools.list` / `invoke` and the list answers with this document (roadmap P12). */
+        @Volatile
+        var pluginTools: JSONObject? = null
+
         private val familyGrantMethods = arrayOf(
             "app.pluginCapabilities", "accessibility.readScreenText", "media_projection.requestScreenCapture", "image.readImage", "ocr.recognize", "image.recycle",
             "accessibility.captureScreenImage", "barcode.detectAll", "image.matchTemplate", "image.findColor", "image.findMultiColors",
@@ -869,10 +922,12 @@ class McpServerHostSessionTest {
                     "app.editFile", "app.launchPackage", "app.launchApp", "package_manager.listApps", "clipboard.getText", "clipboard.setText",
                     "accessibility.ensureEnabled", "toast.toast", "shell.exec", "app.listSamples", "app.readSample",
                     "agent.listScripts", "agent.readManifest", "agent.execRegistered",
-                ) + if (pluginFamilies != null) familyGrantMethods else emptyArray(),
+                ) + (if (pluginFamilies != null) familyGrantMethods else emptyArray())
+                    + if (pluginTools != null) arrayOf("plugin_tools.list", "plugin_tools.invoke", "plugin_tools.cancel") else emptyArray(),
             )
             putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query", "files", "files.write", "files.delete", "files.shared_read", "agent", "agent.exec", "app.activity", "app.launch", "package_manager", "clipboard", "toast", "shell", "shell.root")
-                + if (pluginFamilies != null) arrayOf("ocr", "barcode", "image", "screen_capture", "pinyin", "pinyin4j", "media", "media.metadata") else emptyArray())
+                + (if (pluginFamilies != null) arrayOf("ocr", "barcode", "image", "screen_capture", "pinyin", "pinyin4j", "media", "media.metadata") else emptyArray())
+                + if (pluginTools != null) arrayOf("plugin_tools", "plugin_tools.user_granted", "screen_capture") else emptyArray())
             putInt(McpServerContract.KEY_GRANT_MAX_REQUEST_BYTES, McpServerContract.MAX_BRIDGE_INLINE_JSON_BYTES)
             putInt(McpServerContract.KEY_GRANT_MAX_CONCURRENT_CALLS, McpServerContract.MAX_CONCURRENT_TOOL_CALLS)
             putLong(McpServerContract.KEY_GRANT_DEFAULT_TIMEOUT_MS, McpServerContract.DEFAULT_TOOL_TIMEOUT_MS)
@@ -916,6 +971,19 @@ class McpServerHostSessionTest {
                 "shell.exec" -> ok(id, JSONObject().put("code", 0).put("stdout", "ok").put("stderr", "").put("truncated", false).put("timedOut", false))
                 "app.pluginCapabilities" -> pluginFamilies?.let { ok(id, it) }
                     ?: JSONObject().put("id", id).put("ok", false).put("error", JSONObject().put("category", "capability-denied").put("message", "not granted"))
+                "plugin_tools.list" -> pluginTools?.let { ok(id, it) }
+                    ?: JSONObject().put("id", id).put("ok", false).put("error", JSONObject().put("category", "capability-denied").put("message", "not granted"))
+                "plugin_tools.invoke" -> {
+                    val args = json.getJSONArray("args")
+                    val outputs = args.optJSONObject(2)?.optJSONObject("outputs")
+                    val written = JSONArray()
+                    outputs?.keys()?.forEach { name -> written.put(JSONObject().put("name", name).put("path", outputs.getString(name)).put("bytes", 2048).put("mimeType", "image/png")) }
+                    val result = if (args.getString(0) == "opencc_convert") JSONObject().put("text", "漢字").put("config", args.getJSONObject(1).optString("config", "s2t"))
+                        else JSONObject().put("colors", args.getJSONObject(1).optInt("colors", 256))
+                    ok(id, JSONObject().put("schema", "autojs6-bridge-plugin-tools-invoke-v1").put("tool", args.getString(0)).put("provider", "io.github.example")
+                        .put("invocationId", "inv-1").put("result", result).put("text", if (result.has("text")) result.getString("text") else JSONObject.NULL)
+                        .put("outputs", written).put("durationMs", 3))
+                }
                 "accessibility.readScreenText" -> ok(id, JSONArray().put(JSONObject().put("text", "Hello").put("confidence", 0.91)
                     .put("bounds", JSONObject().put("left", 10).put("top", 20).put("right", 110).put("bottom", 60))))
                 "image.readImage" -> if (json.getJSONArray("args").getString(0).startsWith("tpl/")) {
@@ -1271,6 +1339,21 @@ class McpServerHostSessionTest {
                 .put("description", "Clean old downloads").put("parameters", JSONObject().put("type", "object")
                     .put("properties", JSONObject().put("days", JSONObject().put("type", "integer").put("default", 30))).put("additionalProperties", false))
                 .put("risk", "normal").put("confirm", "never").put("timeoutMs", 60_000)
+        /** The `plugin_tools.list` answer of the fake broker (roadmap P12): an official read-only tool, an official writing tool, a user-granted one. */
+        const val PLUGIN_TOOLS_LIST = """{"schema":"autojs6-bridge-plugin-tools-list-v1","tools":[
+            {"name":"opencc_convert","tool":"convert","shortName":"opencc","provider":"io.github.example.cc","trust":"official","title":"Convert Chinese text (OpenCC)",
+             "description":"Converts Chinese text.","inputSchema":{"type":"object","properties":{"text":{"type":"string"},"config":{"type":"string","enum":["s2t","s2twi"],"default":"s2t"}},"required":["text"],"additionalProperties":false},
+             "outputSchema":{"type":"object","properties":{"text":{"type":"string"},"config":{"type":"string"}},"required":["text","config"],"additionalProperties":false},
+             "risk":"readonly","timeoutMs":10000,"maxConcurrency":4,"outputs":[],"imageParameters":[],"fileParameters":[]},
+            {"name":"quant_quantize","tool":"quantize","shortName":"quant","provider":"io.github.example.quant","trust":"official","description":"Quantizes an image.",
+             "inputSchema":{"type":"object","properties":{"image":{"type":"string","x-autojs6-type":"image"},"colors":{"type":"integer"}},"required":["image"],"additionalProperties":false},
+             "risk":"write","timeoutMs":60000,"maxConcurrency":1,"outputs":[{"name":"image","mimeType":"image/png"}],"imageParameters":["image"],"fileParameters":[]},
+            {"name":"fake_echo","tool":"echo","shortName":"fake","provider":"org.example.fake","trust":"user_granted","description":"Echoes.",
+             "inputSchema":{"type":"object","properties":{},"additionalProperties":false},"risk":"readonly","timeoutMs":5000}
+            ],"providers":[
+            {"packageName":"io.github.example.cc","trust":"official","status":"available","shortName":"opencc","tools":1},
+            {"packageName":"io.github.example.quant","trust":"official","status":"available","shortName":"quant","tools":1},
+            {"packageName":"org.example.fake","trust":"user_granted","status":"available","shortName":"fake","tools":1}]}"""
         const val TAG = "McpServerHostSessionTest"
         const val CLIENT_NAME = "McpServerHostSessionTest"
         const val FAKE_SNAPSHOT_ID = "fake-broker:1"

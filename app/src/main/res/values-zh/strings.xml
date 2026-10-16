@@ -100,6 +100,14 @@
     <string name="settings_open_host">打开 AutoJs6</string>
     <string name="settings_paired_clients">已配对客户端</string>
     <string name="settings_plugin_groups_hint">以下分组需要 AutoJs6 插件. 其工具只在对应插件已在 AutoJs6 中安装并启用时出现在客户端工具列表中.</string>
+    <string name="settings_plugin_tools">插件提供的工具</string>
+    <string name="settings_plugin_tools_empty">服务连接 AutoJs6 后, 这里会列出提供工具的插件.</string>
+    <string name="settings_plugin_tools_hint">AutoJs6 插件自己声明的工具, 每个插件一组. 官方插件的分组默认开启, 第三方插件默认关闭; 会写入, 删除或联网的工具还需开启所在分组的第二个开关.</string>
+    <string name="settings_plugin_tools_summary">工具: %1$s</string>
+    <string name="settings_plugin_tools_third_party">第三方插件</string>
+    <string name="settings_plugin_tools_third_party_warning">%1$s 是第三方插件. 它的工具说明由插件作者撰写, 会原样交给 MCP 客户端与模型. 确定开启?</string>
+    <string name="settings_plugin_tools_unavailable">暂不可用: %1$s</string>
+    <string name="settings_plugin_tools_writes">允许写入, 删除或联网的工具</string>
     <string name="settings_port">端口</string>
     <string name="settings_port_hint">请输入 1024 至 65535 之间的端口.</string>
     <string name="settings_port_value">端口: %1$d</string>

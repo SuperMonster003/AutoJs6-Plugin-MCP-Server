@@ -100,6 +100,14 @@
     <string name="settings_open_host">Открыть AutoJs6</string>
     <string name="settings_paired_clients">Сопряженные клиенты</string>
     <string name="settings_plugin_groups_hint">Группам ниже нужен плагин AutoJs6. Их инструменты появляются в списке инструментов клиента только пока соответствующий плагин установлен и включен в AutoJs6.</string>
+    <string name="settings_plugin_tools">Инструменты плагинов</string>
+    <string name="settings_plugin_tools_empty">Плагины с инструментами появятся здесь, когда сервер подключится к AutoJs6.</string>
+    <string name="settings_plugin_tools_hint">Инструменты, которые описывают сами плагины AutoJs6, по одной группе на плагин. Группы официальных плагинов включены по умолчанию, сторонние плагины выключены. Инструментам, которые записывают, удаляют или выходят в сеть, нужен также второй переключатель группы.</string>
+    <string name="settings_plugin_tools_summary">Инструменты: %1$s</string>
+    <string name="settings_plugin_tools_third_party">Сторонний плагин</string>
+    <string name="settings_plugin_tools_third_party_warning">%1$s - сторонний плагин. Описания его инструментов написаны автором и передаются MCP-клиентам и моделям без изменений. Включить?</string>
+    <string name="settings_plugin_tools_unavailable">Недоступно: %1$s</string>
+    <string name="settings_plugin_tools_writes">Разрешить инструменты, которые записывают, удаляют или выходят в сеть</string>
     <string name="settings_port">Порт</string>
     <string name="settings_port_hint">Введите порт от 1024 до 65535.</string>
     <string name="settings_port_value">Порт: %1$d</string>

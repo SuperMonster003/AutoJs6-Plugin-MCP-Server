@@ -85,9 +85,13 @@ class DeviceInfoTest {
         }
 
         val withPlugins = runBlocking { DeviceInfo.read(caller(BridgeOutcome.Ok(capabilities, 1L)), ToolPermissions.DEFAULT, 10_000L) }
-        assertEquals(listOf("device.info:10000:device", "app.pluginCapabilities:5000:app.query"), calls)
+        assertEquals(
+            listOf("device.info:10000:device", "app.pluginCapabilities:5000:app.query", "plugin_tools.list:5000:plugin_tools+plugin_tools.user_granted"),
+            calls,
+        )
         assertEquals("autojs6-bridge-device-info-v1", withPlugins["schema"]!!.jsonPrimitive.content)
         assertEquals("ocr", withPlugins["plugins"]!!.jsonObject["families"]!!.jsonArray[0].jsonObject["id"]!!.jsonPrimitive.content)
+        assertNull("an answer of another shape adds no pluginTools", withPlugins["pluginTools"])
 
         val denied = BridgeOutcome.Failed(ToolFailure.fromBridge(BridgeError(name = "Error", message = "not granted", code = "x", category = BridgeError.CATEGORY_CAPABILITY_DENIED, module = "app", method = "pluginCapabilities")))
         assertEquals(device, runBlocking { DeviceInfo.read(caller(denied), ToolPermissions.DEFAULT, 10_000L) })
@@ -100,6 +104,46 @@ class DeviceInfoTest {
         assertTrue(flow != null)
         val properties = ToolCatalog.deviceInfo.outputSchema!!["properties"]!!.jsonObject
         assertTrue(properties.containsKey("plugins"))
+        assertTrue(properties.containsKey("pluginTools"))
         assertFalse(ToolCatalog.deviceInfo.outputSchema!!.containsKey("required"))
+    }
+
+    @Test
+    fun `the pluginTools section shows each plugin with its switches, listed tools and a hint`() {
+        val report = PluginToolsReport.parse(Json.parseToJsonElement(PluginToolSpecsTest.LIST))!!
+        val device = Json.parseToJsonElement("""{"schema":"autojs6-bridge-device-info-v1"}""")
+        val caller = BridgeCaller { module, method, _, _, _ ->
+            when ("$module.$method") {
+                "device.info" -> BridgeOutcome.Ok(device, 1L)
+                "plugin_tools.list" -> BridgeOutcome.Ok(Json.parseToJsonElement(PluginToolSpecsTest.LIST), 1L)
+                else -> BridgeOutcome.Failed(ToolFailure.hostUnavailable())
+            }
+        }
+        val info = runBlocking { DeviceInfo.read(caller, ToolPermissions.DEFAULT, 10_000L) }
+        assertNull(info["plugins"])
+        val section = info["pluginTools"]!!.jsonObject
+        assertEquals(DeviceInfo.HINT_PLUGIN_TOOLS, section["hint"]!!.jsonPrimitive.content)
+        val plugins = section["plugins"]!!.jsonArray.associate { it.jsonObject["shortName"]!!.jsonPrimitive.content to it.jsonObject }
+
+        val opencc = plugins.getValue("opencc")
+        assertTrue(opencc["toolGroupEnabled"]!!.jsonPrimitive.boolean)
+        assertNull("no writing tools, no writes switch", opencc["writesEnabled"])
+        assertEquals("""[{"name":"opencc_convert","risk":"readonly","listed":true}]""", opencc["tools"].toString())
+        assertNull(opencc["hint"])
+
+        val quant = plugins.getValue("quant")
+        assertFalse(quant["writesEnabled"]!!.jsonPrimitive.boolean)
+        assertTrue(quant["hint"]!!.jsonPrimitive.content.startsWith("tools of the quant group that write, delete or reach the network stay hidden"))
+
+        val fake = plugins.getValue("fake")
+        assertEquals("user_granted", fake["trust"]!!.jsonPrimitive.content)
+        assertFalse(fake["toolGroupEnabled"]!!.jsonPrimitive.boolean)
+        assertEquals("switch on the fake group in the MCP Server settings on the phone to list its tools", fake["hint"]!!.jsonPrimitive.content)
+        assertEquals("""["deadbeef: inputSchema is not closed"]""", fake["diagnostics"].toString())
+
+        val on = DeviceInfo.toolsSection(report, ToolPermissions.DEFAULT.withPluginGroup("fake", true).withPluginWrites("fake", true))
+        val fakeOn = on["plugins"]!!.jsonArray.first { it.jsonObject["shortName"]!!.jsonPrimitive.content == "fake" }.jsonObject
+        assertTrue(fakeOn["tools"]!!.jsonArray[0].jsonObject["listed"]!!.jsonPrimitive.boolean)
+        assertNull(fakeOn["hint"])
     }
 }

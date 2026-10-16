@@ -100,6 +100,14 @@
     <string name="settings_open_host">فتح AutoJs6</string>
     <string name="settings_paired_clients">العملاء المقترنون</string>
     <string name="settings_plugin_groups_hint">تحتاج المجموعات أدناه إلى إضافة AutoJs6. تظهر أدواتها في قائمة أدوات العميل فقط عندما تكون الإضافة المقابلة مثبتة ومفعلة في AutoJs6.</string>
+    <string name="settings_plugin_tools">أدوات الإضافات</string>
+    <string name="settings_plugin_tools_empty">تظهر هنا الإضافات التي توفر أدوات بعد اتصال الخادم بـ AutoJs6.</string>
+    <string name="settings_plugin_tools_hint">أدوات تصفها إضافات AutoJs6 بنفسها, مجموعة لكل إضافة. مجموعات الإضافات الرسمية مفعلة افتراضيا, وإضافات الطرف الثالث معطلة. الأدوات التي تكتب أو تحذف أو تتصل بالشبكة تحتاج أيضا إلى المفتاح الثاني لمجموعتها.</string>
+    <string name="settings_plugin_tools_summary">الأدوات: %1$s</string>
+    <string name="settings_plugin_tools_third_party">إضافة طرف ثالث</string>
+    <string name="settings_plugin_tools_third_party_warning">%1$s إضافة طرف ثالث. أوصاف أدواتها يكتبها مؤلفها وتصل إلى عملاء MCP والنماذج كما هي. هل تريد تفعيلها?</string>
+    <string name="settings_plugin_tools_unavailable">غير متاح: %1$s</string>
+    <string name="settings_plugin_tools_writes">السماح بالأدوات التي تكتب أو تحذف أو تتصل بالشبكة</string>
     <string name="settings_port">المنفذ</string>
     <string name="settings_port_hint">أدخل منفذا من 1024 إلى 65535.</string>
     <string name="settings_port_value">المنفذ: %1$d</string>

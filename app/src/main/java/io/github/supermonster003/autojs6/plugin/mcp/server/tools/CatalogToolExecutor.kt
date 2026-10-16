@@ -8,6 +8,7 @@ import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.shared.RequestHandlerExtra
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.ImageContent
 import io.modelcontextprotocol.kotlin.sdk.types.ProgressNotification
 import io.modelcontextprotocol.kotlin.sdk.types.ProgressNotificationParams
 import io.modelcontextprotocol.kotlin.sdk.types.RequestId
@@ -43,7 +44,10 @@ class CatalogToolExecutor(
     private val flows: ToolFlows? = null,
     private val heartbeatMs: Long = HEARTBEAT_MS,
     private val scriptHeartbeatMs: Long = SCRIPT_HEARTBEAT_MS,
-) : ToolExecutor {
+    /** Where the image and file arguments of self-described plugin tools may point (roadmap P12, D26). */
+    private val pluginPaths: PathAccess = PathAccess.WORKSPACE_ONLY,
+    private val clock: () -> Long = System::currentTimeMillis,
+) : ToolExecutor, PluginToolExecutor {
 
     private class BridgeCall(
         val args: JsonArray,
@@ -110,6 +114,52 @@ class CatalogToolExecutor(
             is BridgeOutcome.Ok -> ToolResults.success(call.shape(outcome.result))
             is BridgeOutcome.Failed -> ToolResults.failure(outcome.failure)
         }
+    }
+
+    /**
+     * A call of a self-described plugin tool (roadmap P12): one `plugin_tools.invoke` with the heartbeat of the other
+     * host calls; the host checks the arguments against the plugin's schema. An image output within
+     * [PluginToolInvocations.PREVIEW_MAX_BYTES] comes back as an image block too (decision D47).
+     */
+    override suspend fun execute(tool: PluginToolInfo, connection: ClientConnection, request: CallToolRequest): CallToolResult {
+        val arguments = request.arguments ?: JsonObject(emptyMap())
+        val clientName = runCatching { clientNameOf(connection.sessionId) }.getOrNull()
+        onToolCall(tool.name, clientName)
+        val client = bridge() ?: return ToolResults.failure(ToolFailure.hostUnavailable())
+        val call = try {
+            PluginToolInvocations.prepare(tool, arguments, pluginPaths, clock())
+        } catch (e: ToolArgumentException) {
+            return ToolResults.failure(e.failure)
+        }
+        val token = request.meta?.progressToken
+        val relatedRequestId = currentCoroutineContext()[RequestHandlerExtra.Key]?.requestId
+        val outcome = withHeartbeat(connection, token, relatedRequestId, heartbeatMs, call.timeoutMs, followConsole = false, client, clientName) {
+            client.call(PluginToolInvocations.MODULE, PluginToolInvocations.INVOKE, call.args, call.timeoutMs, call.permissions, clientName)
+        }
+        return when (outcome) {
+            is BridgeOutcome.Failed -> ToolResults.failure(outcome.failure)
+            is BridgeOutcome.Ok -> try {
+                val (structured, text) = PluginToolInvocations.shape(tool, outcome.result)
+                val image = PluginToolInvocations.previewCandidate(structured)?.let { (path, mimeType) -> preview(client, path, mimeType, clientName) }
+                ToolResults.success(structured, text, image)
+            } catch (e: ToolFailureException) {
+                ToolResults.failure(e.failure)
+            }
+        }
+    }
+
+    /** The bytes of a written image output as an image block; null when the grant or the host does not allow it. */
+    private suspend fun preview(client: HostBridgeClient, path: String, mimeType: String, clientName: String?): ImageContent? {
+        if (!client.isGranted("files", "read")) return null
+        val options = buildJsonObject {
+            put("encoding", "base64")
+            put("maxBytes", PluginToolInvocations.PREVIEW_MAX_BYTES)
+        }
+        val outcome = client.call("files", "read", JsonArray(listOf(JsonPrimitive(path), options)), PREVIEW_TIMEOUT_MS, listOf("files"), clientName)
+        val result = (outcome as? BridgeOutcome.Ok)?.result as? JsonObject ?: return null
+        if ((result["truncated"] as? JsonPrimitive)?.contentOrNull == "true") return null
+        val data = (result["content"] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull ?: return null
+        return ImageContent(data = data, mimeType = mimeType)
     }
 
     private fun prepare(spec: ToolSpec, arguments: JsonObject): BridgeCall = when (spec.name) {
@@ -186,6 +236,9 @@ class CatalogToolExecutor(
 
         /** Progress heartbeat interval of `script_run` / `script_run_file` (roadmap P3.1: 2 s with the newest output line). */
         const val SCRIPT_HEARTBEAT_MS = 2_000L
+
+        /** How long reading a written image output for the preview may take. */
+        const val PREVIEW_TIMEOUT_MS = 10_000L
 
         /** How long a heartbeat waits for `console.tail` before going out without a line. */
         const val CONSOLE_PEEK_TIMEOUT_MS = 3_000L

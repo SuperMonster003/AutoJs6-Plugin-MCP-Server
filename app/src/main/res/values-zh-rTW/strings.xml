@@ -100,6 +100,14 @@
     <string name="settings_open_host">開啟 AutoJs6</string>
     <string name="settings_paired_clients">已配對用戶端</string>
     <string name="settings_plugin_groups_hint">以下群組需要 AutoJs6 外掛程式. 其工具只在對應外掛程式已在 AutoJs6 中安裝並啟用時出現在用戶端工具清單中.</string>
+    <string name="settings_plugin_tools">外掛提供的工具</string>
+    <string name="settings_plugin_tools_empty">服務連線 AutoJs6 後, 這裡會列出提供工具的外掛.</string>
+    <string name="settings_plugin_tools_hint">AutoJs6 外掛自行宣告的工具, 每個外掛一組. 官方外掛的群組預設開啟, 第三方外掛預設關閉; 會寫入, 刪除或連網的工具還需開啟所在群組的第二個開關.</string>
+    <string name="settings_plugin_tools_summary">工具: %1$s</string>
+    <string name="settings_plugin_tools_third_party">第三方外掛</string>
+    <string name="settings_plugin_tools_third_party_warning">%1$s 是第三方外掛. 它的工具說明由外掛作者撰寫, 會原樣交給 MCP 用戶端與模型. 確定開啟?</string>
+    <string name="settings_plugin_tools_unavailable">暫不可用: %1$s</string>
+    <string name="settings_plugin_tools_writes">允許寫入, 刪除或連網的工具</string>
     <string name="settings_port">連接埠</string>
     <string name="settings_port_hint">請輸入 1024 至 65535 之間的連接埠.</string>
     <string name="settings_port_value">連接埠: %1$d</string>

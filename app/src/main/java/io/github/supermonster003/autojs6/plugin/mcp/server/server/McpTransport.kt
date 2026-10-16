@@ -54,7 +54,11 @@ fun Application.mcpServerModule(
     installRequestGate(policy)
     if (tokenProvider != null) installBearerAuth(tokenProvider)
     if (activity != null) installActivityMarker(activity)
-    if (rateLimiter != null) installRateLimit(server, rateLimiter)
+    if (rateLimiter != null) {
+        installRateLimit(server, rateLimiter) { name, arguments ->
+            RateLimiter.countsAsScreenshot(name, arguments) || toolGate?.countsAsScreenshot(name, arguments) == true
+        }
+    }
     if (pairingGate != null) installPairingGate(server, pairingGate)
     if (toolGate != null) installToolGate(toolGate)
     mcpStreamableSse(path) { server }

@@ -12,6 +12,7 @@ import io.ktor.server.application.call
 import io.ktor.server.request.httpMethod
 import io.ktor.server.response.respondText
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -29,6 +30,12 @@ interface ToolGate {
 
     /** The `TOOL_DISABLED` failure for a known but switched-off tool, or null when the tool may run. */
     fun disabledFailure(toolName: String): ToolFailure?
+
+    /** Whether [toolName] declares an output schema, so its errors go without `structuredContent`. */
+    fun hasOutputSchema(toolName: String): Boolean = ToolCatalog.byName[toolName]?.outputSchema != null
+
+    /** Whether a call of a tool outside the catalog reads the screen (roadmap P12 tools with `"screen"` image arguments). */
+    fun countsAsScreenshot(toolName: String, arguments: JsonElement?): Boolean = false
 }
 
 /**
@@ -52,7 +59,7 @@ fun Application.installToolGate(gate: ToolGate) {
         val document = buildJsonObject {
             put("jsonrpc", "2.0")
             put("id", id)
-            put("result", ToolResults.failureJson(failure, structured = ToolCatalog.byName[name]?.outputSchema == null))
+            put("result", ToolResults.failureJson(failure, structured = !gate.hasOutputSchema(name)))
         }
         call.respondText(document.toString(), ContentType.Application.Json, HttpStatusCode.OK)
         finish()

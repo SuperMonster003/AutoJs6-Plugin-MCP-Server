@@ -100,6 +100,14 @@
     <string name="settings_open_host">AutoJs6 を開く</string>
     <string name="settings_paired_clients">ペアリング済みクライアント</string>
     <string name="settings_plugin_groups_hint">以下のグループには AutoJs6 プラグインが必要です. 対応するプラグインが AutoJs6 にインストールされ有効な間だけ, そのツールがクライアントのツール一覧に表示されます.</string>
+    <string name="settings_plugin_tools">プラグインのツール</string>
+    <string name="settings_plugin_tools_empty">サーバーが AutoJs6 に接続すると, ツールを提供するプラグインがここに表示されます.</string>
+    <string name="settings_plugin_tools_hint">AutoJs6 プラグインが自ら記述するツールです. プラグインごとに 1 グループで, 公式プラグインは既定でオン, サードパーティ製プラグインは既定でオフです. 書き込み, 削除, ネットワーク接続を行うツールには, グループの 2 つ目のスイッチも必要です.</string>
+    <string name="settings_plugin_tools_summary">ツール: %1$s</string>
+    <string name="settings_plugin_tools_third_party">サードパーティ製プラグイン</string>
+    <string name="settings_plugin_tools_third_party_warning">%1$s はサードパーティ製プラグインです. ツールの説明は作者が書いたもので, そのまま MCP クライアントとモデルに渡されます. オンにしますか?</string>
+    <string name="settings_plugin_tools_unavailable">利用できません: %1$s</string>
+    <string name="settings_plugin_tools_writes">書き込み, 削除, ネットワーク接続を行うツールを許可</string>
     <string name="settings_port">ポート</string>
     <string name="settings_port_hint">1024 から 65535 のポートを入力してください.</string>
     <string name="settings_port_value">ポート: %1$d</string>

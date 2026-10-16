@@ -121,12 +121,17 @@ data class PluginFamilyReport(
  * host did not say and the broker enforces the grant itself), the host's live [report] decides the
  * availability of each family. [stale] marks a report kept from an earlier probe because the host
  * did not answer the last one; [hostDetail] explains a missing report.
+ *
+ * [tools] is the host's `plugin_tools.list` answer (roadmap P12): the tools plugins describe themselves, or null when the
+ * host offers none (an older build, or no session), with [toolsDetail] saying why.
  */
 data class PluginToolAvailability(
     val granted: Set<String>?,
     val report: PluginFamilyReport?,
     val stale: Boolean = false,
     val hostDetail: String? = null,
+    val tools: PluginToolsReport? = null,
+    val toolsDetail: String? = null,
 ) {
 
     fun allows(spec: ToolSpec): Boolean = unavailableFailure(spec) == null
@@ -169,7 +174,7 @@ data class PluginToolAvailability(
         granted == null -> "session=none"
         report == null -> "session=open report=none${hostDetail?.let { " ($it)" }.orEmpty()}"
         else -> "session=open stale=$stale families=${report.describe()}"
-    }
+    } + tools?.let { " pluginTools=${it.describe()}" }.orEmpty()
 
     companion object {
 
@@ -209,6 +214,11 @@ class PluginFamilyProbe(
     var probeCount: Int = 0
         private set
 
+    /** `plugin_tools.list` calls made against the host, for tests and the dump. */
+    @Volatile
+    var toolsProbeCount: Int = 0
+        private set
+
     /** The newest availability without probing; [PluginToolAvailability.NONE] before the first probe. */
     val last: PluginToolAvailability
         get() = cached
@@ -237,6 +247,38 @@ class PluginFamilyProbe(
     }
 
     private suspend fun probe(client: HostBridgeClient, previous: PluginToolAvailability?): PluginToolAvailability {
+        val families = probeFamilies(client, previous)
+        val (tools, detail) = probeTools(client, previous)
+        return families.copy(tools = tools, toolsDetail = detail)
+    }
+
+    /**
+     * The self-described tools (roadmap P12): asks `plugin_tools.list` with `plugin_tools.user_granted` when the grant
+     * has it, so the user-granted plugins appear too (their switches start off); a host that stops answering keeps the
+     * previous list like the family report does.
+     */
+    private suspend fun probeTools(client: HostBridgeClient, previous: PluginToolAvailability?): Pair<PluginToolsReport?, String?> {
+        if (!client.isGranted(TOOLS_MODULE, TOOLS_LIST)) {
+            return null to "this AutoJs6 build does not offer plugin tools ($TOOLS_MODULE.$TOOLS_LIST); update AutoJs6"
+        }
+        if (client.availability != HostAvailability.AVAILABLE) {
+            return (previous?.tools to previous?.toolsDetail).takeIf { previous != null } ?: (null to ToolFailure.hostUnavailable().message)
+        }
+        val granted = client.info.permissions
+        val permissions = listOf(TOOLS_TOKEN) + listOf(TOOLS_USER_GRANTED_TOKEN).filter { granted.isEmpty() || it in granted }
+        toolsProbeCount++
+        return when (val outcome = client.call(TOOLS_MODULE, TOOLS_LIST, NO_ARGS, timeoutMs, permissions)) {
+            is BridgeOutcome.Ok -> PluginToolsReport.parse(outcome.result)?.let { it to null }
+                ?: (null to "AutoJs6 answered $TOOLS_MODULE.$TOOLS_LIST with an unknown shape")
+            is BridgeOutcome.Failed -> when (outcome.failure.code) {
+                ToolErrorCodes.HOST_UNAVAILABLE, ToolErrorCodes.TIMEOUT ->
+                    (previous?.tools to previous?.toolsDetail).takeIf { previous != null } ?: (null to outcome.failure.message)
+                else -> null to outcome.failure.render()
+            }
+        }
+    }
+
+    private suspend fun probeFamilies(client: HostBridgeClient, previous: PluginToolAvailability?): PluginToolAvailability {
         val granted = client.info.methods
         if (!client.isGranted(MODULE, METHOD)) {
             return PluginToolAvailability(granted, null, hostDetail = "this AutoJs6 build does not report plugin capabilities ($MODULE.$METHOD); update AutoJs6")
@@ -266,6 +308,11 @@ class PluginFamilyProbe(
 
         /** The probe is a package manager query on the host; it must not hold up `tools/list` for long. */
         const val TIMEOUT_MS = 5_000L
+
+        const val TOOLS_MODULE = "plugin_tools"
+        const val TOOLS_LIST = "list"
+        const val TOOLS_TOKEN = "plugin_tools"
+        const val TOOLS_USER_GRANTED_TOKEN = "plugin_tools.user_granted"
 
         private val NO_ARGS = JsonArray(emptyList())
         private val PERMISSIONS = listOf("app.query")

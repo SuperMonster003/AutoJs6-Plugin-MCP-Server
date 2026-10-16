@@ -25,6 +25,7 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.store.BindScope
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfig
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerConfigStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerLifecycleStore
+import io.github.supermonster003.autojs6.plugin.mcp.server.store.PluginToolsSnapshotStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.ServerStatusStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.CatalogToolExecutor
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.HostSnapshots
@@ -128,22 +129,29 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
     /** Package changes while the listener runs re-probe the families and may change the tool list. */
     private val packageWatcher = PackageChangeWatcher(this.context, mainHandler) { refreshPluginTools("package change") }
 
+    private val toolExecutor = CatalogToolExecutor(
+        bridge = { bridge },
+        local = mapOf(ToolCatalog.DEVICE_PING to { DevicePingTool.payload(this.context, info) }),
+        clientNameOf = { sessionId -> server.clientNameOf(sessionId) },
+        onToolCall = ::onToolCall,
+        flows = ToolFlows { spec, arguments ->
+            uiTools.planFor(spec, arguments) ?: screenTools.planFor(spec, arguments) ?:
+            fileTools.planFor(spec, arguments) ?: deviceTools.planFor(spec, arguments) ?: shellTools.planFor(spec, arguments) ?:
+            ocrTools.planFor(spec, arguments) ?: barcodeTools.planFor(spec, arguments) ?: openCvTools.planFor(spec, arguments) ?:
+            pinyinTools.planFor(spec, arguments) ?: mediaInfoTools.planFor(spec, arguments) ?: registeredScriptTools.planFor(spec, arguments)
+        },
+        pluginPaths = pathAccess,
+    )
+
+    /** The plugins with self-described tools as last seen, for the settings page in the main process (roadmap P12). */
+    private val pluginToolsSnapshot = PluginToolsSnapshotStore(this.context)
+
     val registry: ToolRegistry = ToolRegistry(
         catalog = ToolCatalog.all,
         permissions = { toolPermissions.load() },
-        availability = { pluginFamilies.current() },
-        executor = CatalogToolExecutor(
-            bridge = { bridge },
-            local = mapOf(ToolCatalog.DEVICE_PING to { DevicePingTool.payload(this.context, info) }),
-            clientNameOf = { sessionId -> server.clientNameOf(sessionId) },
-            onToolCall = ::onToolCall,
-            flows = ToolFlows { spec, arguments ->
-                uiTools.planFor(spec, arguments) ?: screenTools.planFor(spec, arguments) ?:
-                fileTools.planFor(spec, arguments) ?: deviceTools.planFor(spec, arguments) ?: shellTools.planFor(spec, arguments) ?:
-                ocrTools.planFor(spec, arguments) ?: barcodeTools.planFor(spec, arguments) ?: openCvTools.planFor(spec, arguments) ?:
-                pinyinTools.planFor(spec, arguments) ?: mediaInfoTools.planFor(spec, arguments) ?: registeredScriptTools.planFor(spec, arguments)
-            },
-        ),
+        availability = { pluginFamilies.current().also { pluginToolsSnapshot.saveIfChanged(it.tools) } },
+        pluginExecutor = toolExecutor,
+        executor = toolExecutor,
     )
 
     val server: McpHttpServer = McpHttpServer(

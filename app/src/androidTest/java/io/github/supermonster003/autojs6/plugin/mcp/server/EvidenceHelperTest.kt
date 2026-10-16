@@ -8,6 +8,7 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.server.PairedClient
 import io.github.supermonster003.autojs6.plugin.mcp.server.server.PairingGate
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.PairedClientStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.store.TokenStore
+import io.github.supermonster003.autojs6.plugin.mcp.server.tools.PluginGroupSwitch
 import io.github.supermonster003.autojs6.plugin.mcp.server.tools.ToolPermissionStore
 import io.github.supermonster003.autojs6.plugin.mcp.server.ui.McpSettingsReceiver
 import org.junit.Assert.assertTrue
@@ -78,7 +79,32 @@ class EvidenceHelperTest {
         instrumentation.sendStatus(STATUS_CODE, Bundle().apply { putString(ARG_SHARED_READ, previous.toString()) })
     }
 
+    /**
+     * Sets the switches of one plugin tool group (roadmap P12): `-e mcpEvidencePluginGroup <shortName>:<enabled>:<writes>` with
+     * `true`, `false` or `default` for each; reports the previous `<enabled>:<writes>` so the scenario can restore it.
+     */
+    @Test fun setPluginGroup() {
+        val value = arguments.getString(ARG_PLUGIN_GROUP)
+        assumeTrue("pass -e mcpEvidencePluginGroup <shortName>:<enabled>:<writes>", value != null)
+        val parts = value!!.split(':')
+        assertTrue("expected <shortName>:<enabled>:<writes>", parts.size == 3 && parts[1] in CHOICES && parts[2] in CHOICES)
+        fun choice(text: String): Boolean? = if (text == "default") null else text == "true"
+        val shortName = parts[0]
+        val store = ToolPermissionStore(context)
+        val previous = store.load().pluginGroups[shortName]
+        val next = PluginGroupSwitch(choice(parts[1]), choice(parts[2]))
+        store.update { permissions ->
+            permissions.copy(pluginGroups = if (next == PluginGroupSwitch()) permissions.pluginGroups - shortName else permissions.pluginGroups + (shortName to next))
+        }
+        assertTrue((store.load().pluginGroups[shortName] ?: PluginGroupSwitch()) == next)
+        McpSettingsReceiver.send(context, McpSettingsReceiver.REFRESH)
+        fun text(choice: Boolean?) = choice?.toString() ?: "default"
+        instrumentation.sendStatus(STATUS_CODE, Bundle().apply { putString(ARG_PLUGIN_GROUP, "${text(previous?.enabled)}:${text(previous?.writes)}") })
+    }
+
     private companion object {
+        const val ARG_PLUGIN_GROUP = "mcpEvidencePluginGroup"
+        val CHOICES = setOf("true", "false", "default")
         const val ARG_TOKEN = "mcpEvidenceToken"
         const val ARG_PAIR = "mcpEvidencePair"
         const val ARG_REVOKE = "mcpEvidenceRevoke"

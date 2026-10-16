@@ -100,6 +100,14 @@
     <string name="settings_open_host">Open AutoJs6</string>
     <string name="settings_paired_clients">Paired clients</string>
     <string name="settings_plugin_groups_hint">The groups below need an AutoJs6 plugin. Their tools appear in the client tool list only while the matching plugin is installed and enabled in AutoJs6.</string>
+    <string name="settings_plugin_tools">Plugin tools</string>
+    <string name="settings_plugin_tools_empty">Plugins with tools appear here once the server has connected to AutoJs6.</string>
+    <string name="settings_plugin_tools_hint">Tools that AutoJs6 plugins describe themselves, one group per plugin. Groups of official plugins are on by default, third-party plugins start off. Tools that write, delete or reach the network also need the second switch of their group.</string>
+    <string name="settings_plugin_tools_summary">Tools: %1$s</string>
+    <string name="settings_plugin_tools_third_party">Third-party plugin</string>
+    <string name="settings_plugin_tools_third_party_warning">%1$s is a third-party plugin. Its tool descriptions are written by its author and go to MCP clients and models as written. Turn it on?</string>
+    <string name="settings_plugin_tools_unavailable">Not available: %1$s</string>
+    <string name="settings_plugin_tools_writes">Allow tools that write, delete or reach the network</string>
     <string name="settings_port">Port</string>
     <string name="settings_port_hint">Enter a port from 1024 to 65535.</string>
     <string name="settings_port_value">Port: %1$d</string>

@@ -100,6 +100,14 @@
     <string name="settings_open_host">AutoJs6 열기</string>
     <string name="settings_paired_clients">페어링된 클라이언트</string>
     <string name="settings_plugin_groups_hint">아래 그룹은 AutoJs6 플러그인이 필요합니다. 해당 플러그인이 AutoJs6에 설치되어 활성화된 동안에만 그 도구가 클라이언트 도구 목록에 나타납니다.</string>
+    <string name="settings_plugin_tools">플러그인 도구</string>
+    <string name="settings_plugin_tools_empty">서버가 AutoJs6 에 연결되면 도구를 제공하는 플러그인이 여기에 표시됩니다.</string>
+    <string name="settings_plugin_tools_hint">AutoJs6 플러그인이 스스로 설명하는 도구로, 플러그인마다 한 그룹입니다. 공식 플러그인 그룹은 기본으로 켜지고, 서드파티 플러그인은 꺼진 상태로 시작합니다. 쓰기, 삭제 또는 네트워크 접속을 하는 도구는 그룹의 두 번째 스위치도 켜야 합니다.</string>
+    <string name="settings_plugin_tools_summary">도구: %1$s</string>
+    <string name="settings_plugin_tools_third_party">서드파티 플러그인</string>
+    <string name="settings_plugin_tools_third_party_warning">%1$s 은(는) 서드파티 플러그인입니다. 도구 설명은 작성자가 쓴 그대로 MCP 클라이언트와 모델에 전달됩니다. 켜시겠습니까?</string>
+    <string name="settings_plugin_tools_unavailable">사용할 수 없음: %1$s</string>
+    <string name="settings_plugin_tools_writes">쓰기, 삭제, 네트워크 접속 도구 허용</string>
     <string name="settings_port">포트</string>
     <string name="settings_port_hint">1024부터 65535까지의 포트를 입력하세요.</string>
     <string name="settings_port_value">포트: %1$d</string>

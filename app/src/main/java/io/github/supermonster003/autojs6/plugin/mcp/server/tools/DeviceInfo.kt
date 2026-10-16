@@ -38,15 +38,72 @@ object DeviceInfo {
 
     const val HINT_PLUGIN_CENTER = "plugins are installed and enabled in AutoJs6 > Plugin center; the tool list follows within seconds"
 
-    /** `device.info`, plus `plugins` when the host can report its plugin families. */
+    /** `device.info`, plus `plugins` when the host can report its plugin families and `pluginTools` when it offers plugin tools. */
     suspend fun read(caller: BridgeCaller, permissions: ToolPermissions, timeoutMs: Long): JsonObject {
         val info = when (val result = caller.callOrThrow("device", "info", NO_ARGS, timeoutMs, DEVICE_PERMISSIONS)) {
             is JsonObject -> result
             else -> buildJsonObject { put("result", result) }
         }
+        val sections = LinkedHashMap(info)
         val outcome = caller.call("app", "pluginCapabilities", NO_ARGS, PLUGINS_TIMEOUT_MS, STATUS_PERMISSIONS)
-        val report = (outcome as? BridgeOutcome.Ok)?.let { PluginFamilyReport.parse(it.result) } ?: return info
-        return JsonObject(info + ("plugins" to section(report, permissions)))
+        (outcome as? BridgeOutcome.Ok)?.let { PluginFamilyReport.parse(it.result) }?.let { sections["plugins"] = section(it, permissions) }
+        val tools = caller.call(PluginFamilyProbe.TOOLS_MODULE, PluginFamilyProbe.TOOLS_LIST, NO_ARGS, PLUGINS_TIMEOUT_MS, TOOLS_PERMISSIONS)
+        (tools as? BridgeOutcome.Ok)?.let { PluginToolsReport.parse(it.result) }?.let { sections["pluginTools"] = toolsSection(it, permissions) }
+        return JsonObject(sections)
+    }
+
+    private val TOOLS_PERMISSIONS = listOf(PluginFamilyProbe.TOOLS_TOKEN, PluginFamilyProbe.TOOLS_USER_GRANTED_TOKEN)
+
+    const val HINT_PLUGIN_TOOLS = "plugins that describe their own tools appear here; each is one group in the MCP Server settings on the phone"
+
+    /**
+     * The `pluginTools` section (roadmap P12): one entry per plugin that declares tools, with the host's verdict, its
+     * group switches, whether each tool is listed, and what the user can do when tools are missing.
+     */
+    fun toolsSection(report: PluginToolsReport, permissions: ToolPermissions): JsonObject = buildJsonObject {
+        put("plugins", buildJsonArray {
+            report.providers.forEach { provider ->
+                add(buildJsonObject {
+                    val tools = report.tools.filter { it.provider == provider.packageName }
+                    val userGranted = provider.trust == PluginToolInfo.TRUST_USER_GRANTED
+                    provider.shortName?.let { put("shortName", it) }
+                    put("packageName", provider.packageName)
+                    provider.versionCode?.let { put("versionCode", it) }
+                    provider.trust?.let { put("trust", it) }
+                    put("status", provider.status)
+                    provider.shortName?.let { shortName ->
+                        put("toolGroupEnabled", permissions.isPluginGroupEnabled(shortName, userGranted))
+                        if (tools.any { !it.readOnly }) put("writesEnabled", permissions.arePluginWritesEnabled(shortName))
+                    }
+                    put("tools", buildJsonArray {
+                        tools.forEach { tool ->
+                            add(buildJsonObject {
+                                put("name", tool.name)
+                                put("risk", tool.risk)
+                                put("listed", permissions.allows(tool))
+                            })
+                        }
+                    })
+                    provider.detail?.takeIf { it.isNotBlank() }?.let { put("detail", it) }
+                    if (provider.diagnostics.isNotEmpty()) put("diagnostics", JsonArray(provider.diagnostics.map { JsonPrimitive(it) }))
+                    toolsHint(provider, tools, permissions)?.let { put("hint", it) }
+                })
+            }
+        })
+        put("hint", HINT_PLUGIN_TOOLS)
+    }
+
+    private fun toolsHint(provider: PluginToolProvider, tools: List<PluginToolInfo>, permissions: ToolPermissions): String? {
+        val shortName = provider.shortName
+        return when {
+            !provider.available -> "AutoJs6 does not offer the tools of ${provider.packageName} (${provider.status}); check the plugin in the AutoJs6 plugin center"
+            shortName == null -> null
+            !permissions.isPluginGroupEnabled(shortName, provider.trust == PluginToolInfo.TRUST_USER_GRANTED) ->
+                "switch on the $shortName group in the MCP Server settings on the phone to list its tools"
+            tools.any { !it.readOnly } && !permissions.arePluginWritesEnabled(shortName) ->
+                "tools of the $shortName group that write, delete or reach the network stay hidden until that option of the group is switched on in the MCP Server settings"
+            else -> null
+        }
     }
 
     /** The `plugins` section: one entry per family the host reports, in its order, with the tools, the group switch and a hint. */

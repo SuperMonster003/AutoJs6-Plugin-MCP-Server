@@ -55,6 +55,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
     private val tokens by lazy { TokenStore(this) }
     private val clients by lazy { PairedClientStore(this) }
     private val statuses by lazy { ServerStatusStore(this) }
+    private val pluginToolGroups by lazy { PluginToolsSnapshotStore(this) }
     private var config = ServerConfig()
     private var status = SessionStatus(C.STATE_STOPPED)
     private var paired = emptyList<PairedClient>()
@@ -86,7 +87,11 @@ class McpServerSettingsActivity : SettingsPageActivity() {
     private lateinit var rootShell: Switch
     private lateinit var sharedStorage: Switch
     private lateinit var pairedRows: LinearLayout
+    private lateinit var pluginRows: LinearLayout
     private val groupSwitches = linkedMapOf<ToolGroup, Switch>()
+    /** The plugin groups the rows were built for; the rows are rebuilt only when this changes. */
+    private var shownPluginGroups: List<PluginToolsGroup>? = null
+    private val pluginGroupSwitches = linkedMapOf<String, Pair<Switch, Switch?>>()
     private val refresh = object : Runnable {
         override fun run() {
             if (resumed && !reading) work {}
@@ -176,6 +181,12 @@ class McpServerSettingsActivity : SettingsPageActivity() {
             }
             label(getString(R.string.settings_shared_storage_hint), box).setTextColor(secondary)
         }
+        // Roadmap P12 D34 / D46: one group per plugin that describes its own tools, built from the listener's snapshot.
+        card(R.string.settings_plugin_tools).also { box ->
+            label(getString(R.string.settings_plugin_tools_hint), box).setTextColor(secondary)
+            pluginRows = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            box.addView(pluginRows)
+        }
         card(R.string.settings_clients).also { box ->
             label(getString(R.string.settings_clients_hint), box).setTextColor(secondary)
             McpClient.entries.forEach { client -> button(clientTitle(client), box) { chooseEndpoint(client) } }
@@ -229,7 +240,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
                 val config = configStore.load()
                 // While the listener is down the LAN addresses come from the interfaces directly.
                 val lanUrls = if (config.bindScope == BindScope.LAN) McpHttpServer.endpointUrls(config, LanAddressWatcher.currentAddresses()).drop(1) else emptyList()
-                Snapshot(config, statuses.load(), groups.load(), clients.all(), tokens.tail(), lanUrls, BackgroundRestriction.isRestricted(this))
+                Snapshot(config, statuses.load(), groups.load(), clients.all(), tokens.tail(), lanUrls, BackgroundRestriction.isRestricted(this), pluginToolGroups.load())
             }
             main.post {
                 reading = false
@@ -240,7 +251,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
 
     private data class Snapshot(
         val config: ServerConfig, val status: SessionStatus, val groups: ToolPermissions, val clients: List<PairedClient>, val tokenTail: String,
-        val lanUrls: List<String>, val restricted: Boolean,
+        val lanUrls: List<String>, val restricted: Boolean, val pluginGroups: List<PluginToolsGroup>,
     )
 
     private fun render(snapshot: Snapshot) {
@@ -280,9 +291,53 @@ class McpServerSettingsActivity : SettingsPageActivity() {
             rootShell.isChecked = snapshot.groups.allowShellRoot
             sharedStorage.isChecked = snapshot.groups.allowSharedStorageRead
             rootShell.isEnabled = snapshot.groups.isEnabled(ToolGroup.SHELL)
+            showPluginGroups(snapshot.pluginGroups, snapshot.groups)
             showClients(snapshot.clients)
         } finally { rendering = false }
     }
+
+    /**
+     * The plugin tool groups (roadmap P12): a switch per plugin, on by default for official and trusted plugins, plus a
+     * second switch for its tools that write, delete or reach the network. Turning on a third-party plugin or the second
+     * switch asks first, like the groups that are off by default.
+     */
+    private fun showPluginGroups(next: List<PluginToolsGroup>, permissions: ToolPermissions) {
+        if (next != shownPluginGroups) {
+            shownPluginGroups = next
+            pluginRows.removeAllViews()
+            pluginGroupSwitches.clear()
+            if (next.isEmpty()) label(getString(R.string.settings_plugin_tools_empty), pluginRows).setTextColor(secondary)
+            next.forEach { group ->
+                val title = "${pluginLabel(group.packageName)} (${group.shortName})"
+                val enabled = toggle(title, pluginRows) { on ->
+                    val save = { work { groups.update { it.withPluginGroup(group.shortName, on) }; McpSettingsReceiver.send(this, McpSettingsReceiver.REFRESH) } }
+                    if (on && group.userGranted) confirm(title, getString(R.string.settings_plugin_tools_third_party_warning, title), save) else save()
+                }
+                val writes = if (!group.hasWritingTools) null else toggle(getString(R.string.settings_plugin_tools_writes), pluginRows) { on ->
+                    val save = { work { groups.update { it.withPluginWrites(group.shortName, on) }; McpSettingsReceiver.send(this, McpSettingsReceiver.REFRESH) } }
+                    if (on) confirm(title, getString(R.string.settings_dangerous_group, getString(R.string.settings_plugin_tools_writes)), save) else save()
+                }
+                val details = buildList {
+                    if (group.userGranted) add(getString(R.string.settings_plugin_tools_third_party))
+                    if (group.status != "available") add(getString(R.string.settings_plugin_tools_unavailable, group.detail ?: group.status))
+                    if (group.tools.isNotEmpty()) add(getString(R.string.settings_plugin_tools_summary, group.tools.keys.joinToString(", ")))
+                }
+                if (details.isNotEmpty()) label(details.joinToString("\n"), pluginRows).setTextColor(secondary)
+                pluginGroupSwitches[group.shortName] = enabled to writes
+            }
+        }
+        next.forEach { group ->
+            val (enabled, writes) = pluginGroupSwitches[group.shortName] ?: return@forEach
+            enabled.isChecked = permissions.isPluginGroupEnabled(group.shortName, group.userGranted)
+            writes?.isChecked = permissions.arePluginWritesEnabled(group.shortName)
+            writes?.isEnabled = enabled.isChecked
+        }
+    }
+
+    /** The plugin's app name; the package name when the package is not visible to this app. */
+    private fun pluginLabel(packageName: String): String = runCatching {
+        packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
+    }.getOrDefault(packageName)
 
     private fun saveConfig(transform: (ServerConfig) -> ServerConfig) = work {
         configStore.update(transform)
@@ -327,8 +382,10 @@ class McpServerSettingsActivity : SettingsPageActivity() {
         runCatching { startActivity(intent) }.onFailure { toast(R.string.settings_save_failed) }
     }
 
-    private fun toggle(titleId: Int, parent: LinearLayout, change: (Boolean) -> Unit): Switch = Switch(this).apply {
-        setText(titleId); textSize = 16f; setTextColor(textColor); minHeight = dp(56)
+    private fun toggle(titleId: Int, parent: LinearLayout, change: (Boolean) -> Unit): Switch = toggle(getString(titleId), parent, change)
+
+    private fun toggle(title: CharSequence, parent: LinearLayout, change: (Boolean) -> Unit): Switch = Switch(this).apply {
+        text = title; textSize = 16f; setTextColor(textColor); minHeight = dp(56)
         setPadding(0, dp(8), 0, dp(8))
         tintSwitch(this)
         parent.addView(this, LinearLayout.LayoutParams(-1, -2))

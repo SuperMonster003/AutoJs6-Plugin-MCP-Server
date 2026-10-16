@@ -396,6 +396,10 @@ object ToolCatalog {
                 "Plugin families behind the plugin-family tools (roadmap P11): families[] with id, status (available, not_installed, disabled, " +
                         "incompatible), the tools each brings, its tool group switch, the plugins and a hint; absent when AutoJs6 cannot report them",
             ),
+            "pluginTools" to JsonSchemas.openObject(
+                "Plugins that describe their own tools (roadmap P12): plugins[] with shortName, packageName, trust, status, the group switches, " +
+                        "tools[] with name, risk and whether it is listed, and a hint; absent when AutoJs6 offers no plugin tools",
+            ),
         ),
     )
 
