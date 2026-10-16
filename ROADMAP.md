@@ -1516,4 +1516,4 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 
 - 维护者选定 D49 (目录特殊类型与 `x-autojs6-files`, 文件输入上限 512 MiB) 与 D50 (只返回结构化结果).
 - 宿主 `b5debd84a` (目录参数), `b3dd21556` / `15a97cb79` (YOLO 往返测试与超时用例), `4e280d657` (桥接取消顺序); Yolo-NCNN `c8a0a0e` / `2a96672` (0.2.0: `yolo_detect`, OpenMP 锚定线程修复服务重建后的中止); MCP 本条提交 (目录参数与 `--yolo`). G8441 与小米两台设备经脚本 API 与 MCP 通过.
-- P12 剩余: 图片量化与压缩包两个试点及其真机调用, 发布条目 (等宿主 6.8.0), 可选的 D44 迁移. 关联仓库待同步: 文档 `api/plugins.md` 与 d.ts / Ace 的 `directoryParameters`.
+- P12 剩余: 图片量化与压缩包两个试点及其真机调用, 发布条目 (等宿主 6.8.0), 可选的 D44 迁移. 关联仓库已同步 `directoryParameters`: 文档 `0154b21` / `e1d95e0` (计数 120), 离线文档 `25c036b`, d.ts 4.41.0 `b2f7f7b`, Ace Editor 2.3.0 `c986add` (均为本地提交, 版本号未另升).
