@@ -44,6 +44,9 @@ ARCHIVE_PACKAGE = "io.github.supermonster003.autojs6.plugin.three.stack.archive"
 ARCHIVE_GROUP = "archive"
 ARCHIVE_DIR = "p12-archive-evidence"
 FAKE_GROUP = "faketool"
+SAMPLE_PROVIDERS = (("ktsample", "io.github.supermonster003.autojs6.toolsample.ktsample"),
+                    ("javasample", "io.github.supermonster003.autojs6.toolsample.javasample"))
+SAMPLE_DIR = "p12-sample-evidence"
 FIXTURE_DIR = "mcp-evidence-p12"
 
 
@@ -106,6 +109,8 @@ def run(device: Device, args) -> dict:
         archive_checks(device, args, report, record)
     if args.fake:
         fake_checks(device, args, report, record)
+    if args.sample:
+        sample_checks(device, args, report, record)
     return finish(report)
 
 
@@ -304,6 +309,123 @@ def fake_checks(device: Device, args, report: dict, record) -> None:
         report["fakeGroupRestored"] = True
 
 
+ABC_SHA256 = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+ABC_MD5 = "900150983cd24fb0d6963f7d28e17f72"
+
+# Runs inside AutoJs6 through script_run: the three tools of one sample provider through plugins.tools, one JSON line.
+SAMPLE_SCRIPT = """
+var dir = '%(dir)s', sn = '%(sn)s', out = {};
+function attempt(name, f) { try { out[name] = f(); } catch (e) { out[name] = {error: String(e && e.message || e).slice(0, 300)}; } }
+attempt('listed', function () { return plugins.tools.list().filter(function (t) { return t.shortName === sn; }).map(function (t) { return t.tool; }).sort(); });
+attempt('hash', function () { var r = plugins.tools.call(sn + '_hash', {file: dir + '/abc.txt'}); return {sha256: r.result.sha256, md5: r.result.md5, bytes: r.result.bytes}; });
+attempt('thumb', function () {
+    var r = plugins.tools.call(sn + '_thumbnail', {image: dir + '/pic.png', maxSize: 16}, {outputs: {thumbnail: dir + '/' + sn + '-thumb.png'}});
+    return {w: r.result.width, h: r.result.height, bytes: r.outputs[0].bytes, exists: files.exists(files.path(dir + '/' + sn + '-thumb.png'))};
+});
+attempt('split', function () {
+    var r = plugins.tools.call(sn + '_split', {file: dir + '/lines.txt', linesPerFile: 1000}, {outputs: {parts: dir + '/' + sn + '-parts'}});
+    return {parts: r.result.parts, written: r.result.written, files: r.outputs[0].files, kind: r.outputs[0].kind};
+});
+attempt('again', function () {
+    var r = plugins.tools.call(sn + '_split', {file: dir + '/lines.txt', linesPerFile: 1000}, {outputs: {parts: dir + '/' + sn + '-parts'}});
+    return {written: r.result.written, skipped: r.result.skipped, conflictCount: r.outputs[0].conflictCount || 0};
+});
+attempt('badPrefix', function () { plugins.tools.call(sn + '_split', {file: dir + '/lines.txt', prefix: 'bad/name'}, {outputs: {parts: dir + '/' + sn + '-bad'}}); return 'no error'; });
+console.log('SAMPLE_RESULT ' + JSON.stringify(out));
+"""
+
+
+def sample_fixtures(client) -> None:
+    write_file(client, f"{SAMPLE_DIR}/abc.txt", b"abc")
+    write_file(client, f"{SAMPLE_DIR}/pic.png", encode_png(64, 32, b"".join(b"\x00" + bytes((30, 120, 200)) * 64 for _ in range(32))))
+    write_file(client, f"{SAMPLE_DIR}/lines.txt", "".join(f"line {n}\n" for n in range(1, 2501)).encode())
+
+
+def sample_checks(device: Device, args, report: dict, record) -> None:
+    """The third-party sample plugins (roadmap P12 D57 - D64): signed with their own key, they are USER_GRANTED once
+    authorized in the AutoJs6 Plugin Center, listed there without an INFO service and built on PluginToolProviderService.
+    Scripts call every tool at once; MCP lists them only after their group and writes switches are on."""
+    for short_name, package in SAMPLE_PROVIDERS:
+        report["packages"][short_name] = device.package(package)
+        tools = {f"{short_name}_{name}" for name in ("hash", "thumbnail", "split")}
+        with evidence_session(device, report, CLIENT_NAME, hold_seconds=args.hold_seconds, token_source=args.token_source, keep_pairing=args.keep_pairing) as client:
+            listed, _elapsed, _metas = client.list_all("tools/list", "tools")
+            names = {tool["name"] for tool in listed}
+            ok, s, _text, ms = call(client, "device_info", {})
+            provider = next((p for p in ((s.get("pluginTools") or {}).get("plugins") or []) if p.get("shortName") == short_name), {})
+            record(f"{short_name}: reported as an authorized user-granted provider", provider.get("status") == "available" and provider.get("trust") == "user_granted", ms,
+                   status=provider.get("status"), trust=provider.get("trust"), detail=provider.get("detail"))
+            record(f"{short_name}: MCP hides its tools by default", not (tools & names), 0)
+            ok, s, text, ms = call(client, f"{short_name}_hash", {"file": f"{SAMPLE_DIR}/abc.txt"})
+            record(f"{short_name}: a hidden tool answers TOOL_DISABLED", not ok and code_of(s, text) == "TOOL_DISABLED", ms, code=code_of(s, text))
+            try:
+                sample_fixtures(client)
+                ok, s, text, ms = call(client, "script_run", {"source": SAMPLE_SCRIPT % {"dir": SAMPLE_DIR, "sn": short_name}, "timeoutMs": 60000}, timeout=120)
+                # Console lines carry a time and level prefix ("22:50:47.420/D: SAMPLE_RESULT {...}").
+                line = next((str(c.get("text", "")) for c in s.get("console") or [] if "SAMPLE_RESULT " in str(c.get("text", ""))), "")
+                out = json.loads(line.split("SAMPLE_RESULT ", 1)[1]) if line else {}
+                report[f"{short_name}Script"] = {key: value for key, value in out.items() if key != "listed"}
+                report[f"{short_name}ScriptRun"] = {"ok": ok, "status": s.get("status"), "exception": str(s.get("exception") or "")[:300],
+                                                    "consoleCount": s.get("consoleCount"), "line": line[:300], "text": "" if line else text[:300]}
+                record(f"{short_name}: scripts list the three tools", out.get("listed") == ["hash", "split", "thumbnail"], ms, listed=out.get("listed"))
+                hashed = out.get("hash") or {}
+                record(f"{short_name}: script hash", hashed.get("sha256") == ABC_SHA256 and hashed.get("md5") == ABC_MD5 and hashed.get("bytes") == 3, 0)
+                thumb = out.get("thumb") or {}
+                record(f"{short_name}: script thumbnail writes a PNG", thumb.get("w") == 16 and thumb.get("h") == 8 and (thumb.get("bytes") or 0) > 0 and thumb.get("exists") is True, 0,
+                       size=f"{thumb.get('w')}x{thumb.get('h')}", bytes=thumb.get("bytes"))
+                split = out.get("split") or {}
+                record(f"{short_name}: script split fills a directory", split.get("parts") == 3 and split.get("written") == 3 and split.get("files") == 3
+                       and split.get("kind") == "directory", 0, files=split.get("files"))
+                again = out.get("again") or {}
+                # The tool skips parts that openFile answers EXISTS for and reports them itself; the host's conflictCount only
+                # counts files that were written but could not be moved in.
+                record(f"{short_name}: existing parts are kept", again.get("written") == 0 and again.get("skipped") == 3, 0,
+                       skipped=again.get("skipped"), conflicts=again.get("conflictCount"))
+                bad = out.get("badPrefix")
+                bad_error = str(bad.get("error")) if isinstance(bad, dict) else str(bad)
+                record(f"{short_name}: IllegalArgumentException reaches the script as INVALID_ARGUMENTS", "INVALID_ARGUMENTS" in bad_error, 0)
+            finally:
+                report[f"{short_name}ScriptFixtureRemoved"] = remove_dir(client, SAMPLE_DIR)
+        previous = device.set_plugin_group(short_name, "true", "true")
+        report[f"{short_name}GroupBefore"] = previous
+        try:
+            with evidence_session(device, report, CLIENT_NAME, hold_seconds=args.hold_seconds, token_source=args.token_source, keep_pairing=args.keep_pairing) as client:
+                listed, _elapsed, _metas = client.list_all("tools/list", "tools")
+                by_name = {tool["name"]: tool for tool in listed}
+                hash_hint = ((by_name.get(f"{short_name}_hash") or {}).get("annotations") or {}).get("readOnlyHint")
+                split_hint = ((by_name.get(f"{short_name}_split") or {}).get("annotations") or {}).get("readOnlyHint")
+                record(f"{short_name}: MCP lists the tools once switched on", tools <= set(by_name) and hash_hint is True and split_hint is not True, 0,
+                       readOnlyHash=hash_hint, readOnlySplit=split_hint)
+                try:
+                    sample_fixtures(client)
+                    ok, s, text, ms = call(client, f"{short_name}_hash", {"file": f"{SAMPLE_DIR}/abc.txt", "algorithms": ["sha256"]})
+                    result = s.get("result") or s
+                    record(f"{short_name}: MCP hash", ok and result.get("sha256") == ABC_SHA256 and "md5" not in result, ms)
+                    ok, s, text, ms = call(client, f"{short_name}_thumbnail", {"image": f"{SAMPLE_DIR}/pic.png", "maxSize": 32,
+                                                                            "outputPaths": {"thumbnail": f"{SAMPLE_DIR}/thumb.png"}})
+                    out = (s.get("outputs") or [{}])[0]
+                    result = s.get("result") or {}
+                    record(f"{short_name}: MCP thumbnail to outputPaths", ok and out.get("path") == f"{SAMPLE_DIR}/thumb.png" and (out.get("bytes") or 0) > 0
+                           and result.get("width") == 32 and result.get("height") == 16, ms, bytes=out.get("bytes"))
+                    ok, s, text, ms = call(client, f"{short_name}_split", {"file": f"{SAMPLE_DIR}/lines.txt", "linesPerFile": 1000,
+                                                                        "outputPaths": {"parts": f"{SAMPLE_DIR}/parts"}}, timeout=180)
+                    out = (s.get("outputs") or [{}])[0]
+                    record(f"{short_name}: MCP split to a directory", ok and out.get("kind") == "directory" and out.get("files") == 3, ms, files=out.get("files"))
+                    ok, s, text, ms = call(client, f"{short_name}_split", {"file": f"{SAMPLE_DIR}/lines.txt", "linesPerFile": 1000,
+                                                                        "outputPaths": {"parts": f"{SAMPLE_DIR}/parts"}}, timeout=180)
+                    out = (s.get("outputs") or [{}])[0]
+                    result = s.get("result") or {}
+                    record(f"{short_name}: MCP split keeps existing parts", ok and result.get("written") == 0 and result.get("skipped") == 3, ms,
+                           conflicts=out.get("conflictCount"), files=out.get("files"), result=s.get("result"), code=None if ok else code_of(s, text),
+                           missing=s.get("missingOutputs"), text=None if ok else text[:300])
+                finally:
+                    report[f"{short_name}FixtureRemoved"] = remove_dir(client, SAMPLE_DIR)
+                    report[f"{short_name}OutputsRemoved"] = remove_dir(client, f"plugin-outputs/{short_name}")
+        finally:
+            device.set_plugin_group(short_name, *previous)
+            report[f"{short_name}GroupRestored"] = True
+
+
 def code_of(structured: dict, text: str) -> str | None:
     """The error code of a failed call; a tool with an output schema carries it in the text only (`CODE: message`)."""
     return (structured.get("error") or {}).get("code") or (text.split(":", 1)[0] if ":" in text else None)
@@ -331,6 +453,8 @@ def main() -> int:
                         help="also check archive_list / archive_read / archive_extract of 3-Stack Archive 3.1.0 (its writes switch is turned on and restored)")
     parser.add_argument("--fake", action="store_true",
                         help="also check the user-granted test provider (org.autojs.plugin.tool.fake, authorized in the AutoJs6 plugin center)")
+    parser.add_argument("--sample", action="store_true",
+                        help="also check the third-party sample plugins ktsample and javasample (authorized in the AutoJs6 plugin center) through scripts and MCP")
     parser.add_argument("--report-dir", default=str(REPO / "build" / "evidence"))
     args = parser.parse_args()
     report = run(Device(args.serial), args)

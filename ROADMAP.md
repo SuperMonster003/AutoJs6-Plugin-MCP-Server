@@ -624,7 +624,7 @@ MCP 插件 (1.2.0, D48):
 - [x] (测试) 其余三个试点 (YOLO, 图片量化, 压缩包) 各经 MCP 与脚本 API 在两台设备上完成真机调用; 随各自试点条目完成后补测 (2026-10-16 自上一条拆出). (三个试点都已在 Sony G8441 (`BH900ASK9E`) 与小米 968e9f18 上经脚本 API (宿主往返测试) 与 MCP (`p12_plugin_tools.py --yolo` / `--imagequant` / `--archive`) 完成, 小米上另用 release 包复测; 证据见上面三个试点条目.)
 - [x] (文档) MCP README / 插件说明 / changelog 10 语言, 附录 A 补充自描述工具的生成规则与错误码, AGENTS.md 第 9 节加入相应约束. (SOURCE: 插件本条提交: README 与插件中心说明 10 语言 (状态段与简介提到自描述插件工具, 新增特性条目: 分组与默认开关, 第三方插件先在插件中心授权, 写入开关, 图片 / 文件参数, 输出路径与 `outputPaths`, 预览, `device_info.pluginTools`; 新增常见问题: 工具不出现或答 `TOOL_DISABLED` 时的处理); changelog v1.2.0 的两条已随接入条目 (`79b6c20`) 写入 10 语言; 附录 A: A.1 计数说明, A.5 的 `TOOL_DISABLED` / `CAPABILITY_DENIED` / `PLUGIN_UNAVAILABLE` 含义与自描述工具的错误映射, A.6 补 `plugin_tools.*` 方法与两个令牌, 新增 A.8 生成规则 (来源, 名称与顺序, 列出条件, schema, 描述与注解, 输出与结果, 调用与令牌, 通知, 设置与状态); AGENTS.md 第 9 节已加入自描述插件工具的约束 (该文件被 `.gitignore` 忽略, 只在本地维护). TEST: `generate_markdown.py --check` 通过 (10 语言 36 个产物), `ApplicationTextPunctuationTest` 通过.)
 - [ ] (发布) 6.8.0 的发布门按 D43: P12 宿主侧与 OpenCC 试点完成即可随 P11 一起进入 6.8.0 发布; 四个试点全部稳定后封版契约 v1, 再对第三方公开 (协议文档, AAR, Garage 示例); MCP 1.2.0 在宿主 6.8.0 公开发布后发布 (D48), 其自描述工具接入只依赖宿主侧, 不等后三个试点.
-- [ ] (封版前准备, D57 - D64) 让契约 v1 可以对第三方公开: 契约库追加提供者基类与 `@JvmStatic` (D59), 宿主插件中心经 `TOOL_PROVIDER` 发现插件 (D60), 契约库的 Maven Central 发布配置与本地暂存验证 (D58), 第三方示例仓库 `AutoJs6-Third-Party-Tool-Sample` 的 Kotlin / Java 两个模块与十语言接入说明 (D57 / D61 - D63), 专用签名的 APK 进 Garage (D64), 真机经脚本 API 与 MCP 验证第三方授权流程. 正式封版与公开仍等宿主 6.8.0 发布 (上一条).
+- [x] (封版前准备, D57 - D64) 让契约 v1 可以对第三方公开: 契约库追加提供者基类与 `@JvmStatic` (D59), 宿主插件中心经 `TOOL_PROVIDER` 发现插件 (D60), 契约库的 Maven Central 发布配置与本地暂存验证 (D58), 第三方示例仓库 `AutoJs6-Third-Party-Tool-Sample` 的 Kotlin / Java 两个模块与十语言接入说明 (D57 / D61 - D63), 专用签名的 APK 进 Garage (D64), 真机经脚本 API 与 MCP 验证第三方授权流程. 正式封版与公开仍等宿主 6.8.0 发布 (上一条). 2026-10-16 完成: 宿主本地提交 b4ae5535e (基类 `PluginToolProviderService` 与 `@JvmStatic`, 模块 androidTest 11 项含 Java 子类), e03a3cc0d (插件中心对没有其他插件服务的包查询 `TOOL_PROVIDER`, 官方试点的端点不变), 484742790c / 179a25dd9 (Maven Central 发布配置, Java 17 字节码 + Kotlin 2.2, 本地暂存库与上传包已验证, 维护者步骤见宿主 `docs/dev/plugin-api-maven-central.md`), a2b903899 (协议文档), 1bb2af454 (zh-Hans changelog); 示例仓库 e2f0b8c (本地, MIT, `ktsample` / `javasample` 1.0.0 build 1, 十语言 README); Garage c27e9b3 (未推送); 证据 `tools/evidence/p12_plugin_tools.py --sample` 在小米 968e9f18 与 G8441 (宿主 5456) 各 35 项全部通过: USER_GRANTED 提供者被识别, MCP 默认隐藏, 脚本经 `plugins.tools` 调用三个工具 (包括目录输出保留已有分片, `IllegalArgumentException` 报 `INVALID_ARGUMENTS`), 打开分组与写入开关后 MCP 列出并运行. Maven Central 的首次发布 (账号, GPG, 上传) 由维护者在宿主 6.8.0 发布时完成.
 - [ ] (可选, 不计入本阶段验收, D44) P11 内置工具按家族在有具体收益时迁移为插件自描述: OCR (三个引擎的 7 个插件声明共享家族 `ocr`, 宿主按 D25 选择提供者, 实现 D33 预留的选择逻辑), 条码, OpenCV (D41: OpenCV 插件新增在自身进程运行的工具服务, 宿主 images 模块不变), 拼音, MediaInfo; 迁移的家族工具名保持不变, MCP 删除对应的内置实现. 不设时间点, 每个家族迁移前先在本路线图写明收益.
 
 验收条件: 四个试点经 MCP 与脚本 API 在两台设备上完成真机调用 (OpenCC 已完成, 其余三个见拆出的测试条目); USER_GRANTED 提供者默认不可见; 旧宿主上自描述工具隐藏且其余工具不受影响; 契约测试冻结 AIDL 顺序与目录键.
@@ -1549,3 +1549,10 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 
 - 维护者决定: 发布条目暂不具备条件 (宿主 6.8.0 暂无发布计划); D44 与 P8 先搁置, 需要时再评估; 三个试点插件发布前的 ColorOS 覆盖用 OnePlus 63751f63, 16 KB 设备需要时由维护者租用.
 - 封版前准备经三轮选择题定为 D57 - D64 (示例仓库, Maven Central, 提供者基类, 工具服务发现, 示例工具, Kotlin 与 Java, 十语言说明, 专用签名), 新增对应条目.
+
+### 2026-10-16: P12 封版前准备完成
+
+- D57 - D64 落地: 契约库提供者基类 (D59), 插件中心发现只提供工具服务的插件 (D60), Maven Central 发布配置 (D58), 示例仓库 `AutoJs6-Third-Party-Tool-Sample` 的 Kotlin / Java 模块与十语言 README (D57, D61 - D63), 专用签名的 APK 进 Garage (D64).
+- 契约库对外改为 Java 17 字节码与 Kotlin 2.2 语言 / 标准库, 使 JDK 17 与 AGP 9 自带的 Kotlin 能编译; 宿主其他模块不变.
+- 证据新增 `--sample`; 宿主目录输出的 `conflictCount` 只统计提交时无法移入的文件, 插件经 openFile 收到 `EXISTS` 后跳过的由插件自己报告 (与压缩包试点的 `kept` 相同).
+- 剩余: 宿主 6.8.0 发布后封版契约 v1, 发布 Maven Central 1.0.0, 示例仓库改用 Maven Central 并按需建 GitHub 仓库; 三个试点的 ColorOS 与 16 KB 覆盖.
