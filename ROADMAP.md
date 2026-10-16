@@ -593,7 +593,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 试点插件 (各自仓库, D36):
 
-- [ ] (插件: Hanzi-CC) 声明 `opencc` 工具 (如转换, 列出可用配置), 先走通目录, 调用, 校验与脚本 API 的主链路; 本试点是 6.8.0 发布门的一部分 (D43), 其余三个试点不是.
+- [x] (插件: Hanzi-CC) 声明 `opencc` 工具 (如转换, 列出可用配置), 先走通目录, 调用, 校验与脚本 API 的主链路; 本试点是 6.8.0 发布门的一部分 (D43), 其余三个试点不是. (SOURCE: 3-Hanzi CC `f7cd98d` (2.1.0, 未发布): `ThreeHanziCcToolService` 实现契约 v1 (`libs/plugin-tool-api.aar` 取自宿主 `d993f9bf2`, APK 门禁固定其 SHA-256), 目录短名 `opencc`, 只声明一个只读工具 `convert` (即 `opencc_convert`; 维护者 2026-10-16 选定: 不另设列出配置的工具, 可选配置写在 schema enum 中; `config` 接受与宿主 `opencc` 模块相同的 32 个名称 (14 个原生配置, `s2twi` / `twi2s` 两个别名, 16 个组合, 照搬宿主 `OpenccConversionPlan`), 默认 `s2t`; 单段 `text`, 上限 16384 个字符 (码点), 在 64 KiB 参数上限之内), 输出 `{text, config}`, 时限 10 s, 并发 4 (在单个工作线程上排队, 不报忙), 不合规参数 / 未知工具 / 契约版本不支持时立即拒绝; `PluginInfo` 能力新增 `pluginToolContractVersion`; 最低宿主不变. 插件路线图新增 M7, 十语言 changelog v2.1.0 与 README; 宿主 `3c69db90e`: androidTest `OpenccPluginToolRoundTripTest`, 协议文档的目录示例改为真实目录并把 OpenCC 试点标为 done. TEST: 插件 JVM 31 项 (新增 `OpenccToolCatalogTest` 4 项: 32 个名称与宿主顺序一致且每条链的起止与名称一致, 默认值, 未知配置, 码点计数的长度上限, 目录符合契约命名 / 大小 / 字段, JSON 转义), APK 门禁测试 26 项, lint 0 error, debug 与 signed release 各 5 个 APK 通过 APK 门禁. DEVICE: 只读模拟器 AVD_API_30 (API 30, x86_64, 宿主 debug 含本条与此前 P12 提交), 插件仓库脚本 `scripts/ci/verify_plugin_tool_pilot.py`: debug 包 6/6 步, 插件 `ThreeHanziCcToolServiceTest` 3/3 (经 AIDL Proxy/Parcel 的发现, 能力, 目录, 原生 / 别名 / 组合转换, 五类拒绝), 宿主 `OpenccPluginToolRoundTripTest` 2/2 (`plugins.tools` 下 32 个 config 的结果与宿主 `opencc.convert` 逐个一致, 信任 official, 宿主 schema 拒绝未知 config 与超长文本; 以 MCP 会话只凭 `plugin_tools` 令牌即可列出并调用, `s2twi` 把 "鼠标和打印机" 转为 "滑鼠和印表機"); signed release x86_64 包上宿主往返 2/2 (插件自己的 debug 测试包不能对 minified release 运行, 属预期). 未执行: 经 MCP Server 插件的端到端调用 (属 MCP 1.3.0 接入条目); 3-Hanzi CC 2.1.0 的发布与索引登记 (等维护者指示); 实体机.)
 - [ ] (插件: Yolo-NCNN) 声明 `yolo` 检测工具 (图片参数, 模型, 阈值, 结构化结果), 验证图片特殊类型, 模型加载耗时与超时.
 - [ ] (插件: Image-Quantization) 先新增在插件进程运行的工具服务 (D41; 目前量化由宿主 `ImageQuantPluginHost` 加载进宿主进程运行, 这条路径与脚本 API 保持不变), 再声明量化工具: 输入图片, 输出 PNG 写入工作目录, 验证二进制输出.
 - [ ] (插件: Stack-Archive) 声明压缩包工具: 列出内容 (只读), 解压到工作目录 (写入, 归入默认关闭的子开关), 验证文件输入, 风险分级与子开关.
@@ -1467,3 +1467,9 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 
 - 宿主 `daa13620b`: 6.8.0 简体中文 changelog 三条 (plugins.tools 模块, 插件工具契约, 宿主桥接层 plugin_tools 模块), 其他语言待维护者定稿后同步; `plugin-tool-protocol-v1.md` 新增脚本 API 一节, `host-capability-contract-v1.md` 新增 "Plugin tool module" 一节. 证据见 P12 对应条目.
 - P12 宿主侧六条全部完成 (宿主提交均未推送). 下一步是 OpenCC 试点 (Hanzi-CC 声明 opencc 工具, 6.8.0 发布门 D43).
+
+### 2026-10-16: P12 OpenCC 试点
+
+- 维护者选定: 只声明 `opencc_convert` 一个工具, `config` 用宿主 `opencc` 模块的 32 个名称, 单段 `text` 上限 16384 个字符.
+- 3-Hanzi CC `f7cd98d` (2.1.0, 未发布): `ThreeHanziCcToolService` 与目录, 插件 JVM / APK 门禁 / lint / release 构建通过; 宿主 `3c69db90e`: `OpenccPluginToolRoundTripTest`. 模拟器 API 30 上插件 3/3, 宿主往返 2/2 (32 个 config 与 opencc 模块逐个一致, MCP 会话可调用), release 包宿主往返 2/2. 证据见 P12 对应条目.
+- 6.8.0 发布门 (D43) 中 P12 的部分已齐 (宿主侧六条与 OpenCC 试点); 3-Hanzi CC 2.1.0 需随宿主一同发布. 下一步可选: 其余三个试点 (YOLO, 图片量化, 压缩包) 或 MCP 1.3.0 接入自描述工具.
