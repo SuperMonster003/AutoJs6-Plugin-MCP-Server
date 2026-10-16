@@ -1566,3 +1566,9 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - ColorOS 观察: 第一次运行时, 抽屉开着的监听器在辅助测试之后没有回来. `EvidenceHelperTest` 每次 `am instrument` 都会强停插件包; ColorOS 在插件进程不在时拒绝 bindService, 宿主的 PluginAutoWake 唤醒了插件, 但唤醒落在第二个辅助测试运行期间, 被它结束时的强停抵消; 之后同一包的唤醒退避 60 s, 而抽屉监听器只重绑 3 次 (间隔 1 / 3 / 9 s), 宿主于是放弃. MCP `ecc5c8d` 让 `evidence_session` 在监听器没回来且确实不在运行时改用宿主 instrumentation 保持会话 (报告记 `listenerRebind`), 等待失败时也撤销预配对; 重跑全部通过. 宿主代码未改: 唤醒失败一次后, 抽屉监听器的三次重绑都落在退避期内, 若日常使用中第一次唤醒未生效, 监听器要等用户重新打开开关; 是否让重绑越过唤醒退避由维护者决定.
 - 收尾: OnePlus 的抽屉监听器在测试后为关闭状态 (宿主放弃重绑), 需要时在 AutoJs6 抽屉里重新打开; 两台设备的预配对已撤销, 写入开关与夹具已还原, YOLO 模型留在 `/sdcard/Scripts/models/yolo11n`.
 - 剩余: 发布条目 (等宿主 6.8.0). 16 KB 页 arm64 真机未租用, arm64 包由静态对齐检查与模拟器原生桥覆盖, 需要时再请维护者租用.
+
+### 2026-10-17: ColorOS 上抽屉监听器的重绑唤醒
+
+- 维护者选定: 抽屉监听器的重绑越过 60 s 唤醒退避 (仍要求插件已启用且已授权, 每次进程死亡最多 3 次唤醒), 手动打开抽屉开关也越过退避; 启动 AutoJs6 时的自动恢复仍按需唤醒. 宿主 changelog 不另加条目 (6.8.0 未发布, 已有的 "ColorOS 上自动唤醒插件" 条目即最终行为).
+- 宿主 `c4a23e784` (本地): `PluginAutoWake.Mode.REBIND` 与 `PluginAutoWake.Rebind`, `McpServerSessionController` 的重绑在其中打开会话, `McpServerTool` 手动打开时以 `UserRequest` 运行. JVM `PluginWakePolicyTest` 6/6, OnePlus 上 `McpServerSessionControllerRebindTest` 7/7 (新增: 重绑时 openServer 处于 REBIND 模式).
+- 复现: 唤醒拉起的进程在绑定前又被结束时唤醒无效. 新场景 `tools/evidence/listener_rebind.py` 先用辅助测试停止插件包, 再在设备上循环 `am kill` (只结束进程, 不把包标为停止). OnePlus OPD2413 (宿主 debug 5456 含 `c4a23e784`): `--kill-seconds 6` 4/4 (2 次唤醒无效后又唤醒一次, 监听器在循环结束后 4.8 s 回来); `--kill-seconds 34 --expect-given-up` 3/3 (三次重绑都失败后宿主放弃, 维护者随即打开开关, 唤醒发生在上一次无效唤醒后 4.1 s, 即退避期内). 修复前的失败见上一条会话记录.
