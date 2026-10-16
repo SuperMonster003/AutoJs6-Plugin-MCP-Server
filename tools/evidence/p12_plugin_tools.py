@@ -18,7 +18,9 @@ import argparse
 import datetime
 import json
 import pathlib
+import io
 import sys
+import zipfile
 import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
@@ -38,6 +40,9 @@ YOLO_MODEL = "models/yolo11n"
 IMAGEQUANT_PACKAGE = "io.github.supermonster003.autojs6.plugin.imagequant"
 IMAGEQUANT_GROUP = "imagequant"
 IMAGEQUANT_DIR = "p12-imagequant-evidence"
+ARCHIVE_PACKAGE = "io.github.supermonster003.autojs6.plugin.three.stack.archive"
+ARCHIVE_GROUP = "archive"
+ARCHIVE_DIR = "p12-archive-evidence"
 FAKE_GROUP = "faketool"
 FIXTURE_DIR = "mcp-evidence-p12"
 
@@ -97,6 +102,8 @@ def run(device: Device, args) -> dict:
         yolo_checks(device, args, report, record)
     if args.imagequant:
         imagequant_checks(device, args, report, record)
+    if args.archive:
+        archive_checks(device, args, report, record)
     if args.fake:
         fake_checks(device, args, report, record)
     return finish(report)
@@ -185,6 +192,69 @@ def imagequant_checks(device: Device, args, report: dict, record) -> None:
         report["imagequantGroupRestored"] = True
 
 
+def sample_zip() -> bytes:
+    """readme.txt, docs/a.txt and docs/deep/b.txt, built in memory."""
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("readme.txt", "Read me first.")
+        archive.writestr("docs/a.txt", "alpha")
+        archive.writestr("docs/deep/b.txt", "beta")
+    return buffer.getvalue()
+
+
+def archive_checks(device: Device, args, report: dict, record) -> None:
+    """The archive pilot (roadmap P12, D53 - D56): list and read are official read-only tools, listed at once; extract
+    writes a directory output, so it is listed only once the writes switch of its group is on. An existing directory is
+    merged and its files are kept."""
+    report["packages"]["archive"] = device.package(ARCHIVE_PACKAGE)
+    with evidence_session(device, report, CLIENT_NAME, hold_seconds=args.hold_seconds, token_source=args.token_source, keep_pairing=args.keep_pairing) as client:
+        listed, _elapsed, _metas = client.list_all("tools/list", "tools")
+        names = {tool["name"] for tool in listed}
+        record("list and read listed, extract hidden while the writes switch is off",
+               {"archive_list", "archive_read"} <= names and "archive_extract" not in names, 0, tools=sorted(n for n in names if n.startswith("archive_")))
+        try:
+            write_file(client, f"{ARCHIVE_DIR}/sample.zip", sample_zip())
+            ok, s, text, ms = call(client, "archive_list", {"archive": f"{ARCHIVE_DIR}/sample.zip"})
+            paths = [e.get("path") for e in s.get("entries") or []]
+            record("lists the entries", ok and s.get("total") == 3 and "docs/deep/b.txt" in paths and s.get("format") == "zip", ms, total=s.get("total"))
+            ok, s, text, ms = call(client, "archive_read", {"archive": f"{ARCHIVE_DIR}/sample.zip", "path": "docs/a.txt"})
+            record("reads a file inside the archive", ok and s.get("text") == "alpha", ms)
+            ok, s, text, ms = call(client, "archive_read", {"archive": f"{ARCHIVE_DIR}/sample.zip", "path": "missing.txt"})
+            record("a missing entry is refused", not ok and code_of(s, text) == "INVALID_ARGUMENTS", ms, code=code_of(s, text))
+            ok, s, text, ms = call(client, "archive_extract", {"archive": f"{ARCHIVE_DIR}/sample.zip"})
+            record("a hidden write tool answers TOOL_DISABLED", not ok and code_of(s, text) == "TOOL_DISABLED", ms, code=code_of(s, text))
+        finally:
+            pass
+    previous = device.set_plugin_group(ARCHIVE_GROUP, "true", "true")
+    report["archiveGroupBefore"] = previous
+    try:
+        with evidence_session(device, report, CLIENT_NAME, hold_seconds=args.hold_seconds, token_source=args.token_source, keep_pairing=args.keep_pairing) as client:
+            listed, _elapsed, _metas = client.list_all("tools/list", "tools")
+            tool = next((t for t in listed if t["name"] == "archive_extract"), None)
+            properties = (tool or {}).get("inputSchema", {}).get("properties", {})
+            record("extract listed with the writes switch on, with outputPaths", tool is not None and "outputPaths" in properties
+                   and "directory" in str(properties.get("outputPaths", {}).get("description", "")), 0)
+            try:
+                if tool is None:
+                    return
+                ok, s, text, ms = call(client, "archive_extract", {"archive": f"{ARCHIVE_DIR}/sample.zip"}, timeout=180)
+                out = (s.get("outputs") or [{}])[0]
+                record("extracts to an automatic directory", ok and str(out.get("path", "")).startswith("plugin-outputs/archive/extract-")
+                       and out.get("kind") == "directory" and out.get("files") == 3, ms, path=out.get("path"), files=out.get("files"))
+                write_file(client, f"{ARCHIVE_DIR}/out/readme.txt", b"mine")
+                ok, s, text, ms = call(client, "archive_extract", {"archive": f"{ARCHIVE_DIR}/sample.zip", "outputPaths": {"files": f"{ARCHIVE_DIR}/out"}}, timeout=180)
+                out = (s.get("outputs") or [{}])[0]
+                result = s.get("result") or {}
+                record("merges into an existing directory and keeps its files", ok and out.get("files") == 2 and result.get("kept") == 1
+                       and result.get("keptPaths") == ["readme.txt"], ms, files=out.get("files"), kept=result.get("kept"))
+            finally:
+                report["fixtureRemoved"] = remove_dir(client, ARCHIVE_DIR)
+                report["outputsRemoved"] = remove_dir(client, "plugin-outputs/archive")
+    finally:
+        device.set_plugin_group(ARCHIVE_GROUP, *previous)
+        report["archiveGroupRestored"] = True
+
+
 def fake_checks(device: Device, args, report: dict, record) -> None:
     """The user-granted provider (roadmap P12 D34 / D46 / D47): hidden by default, listed once its group and its writes
     switch are on, then files in and outputs out. The provider must be authorized in the AutoJs6 plugin center first."""
@@ -257,6 +327,8 @@ def main() -> int:
                         help=f"also check yolo_detect with the model pushed to <working directory>/{YOLO_MODEL}")
     parser.add_argument("--imagequant", action="store_true",
                         help="also check imagequant_quantize of the Image Quantization plugin 1.1.0 (its writes switch is turned on and restored)")
+    parser.add_argument("--archive", action="store_true",
+                        help="also check archive_list / archive_read / archive_extract of 3-Stack Archive 3.1.0 (its writes switch is turned on and restored)")
     parser.add_argument("--fake", action="store_true",
                         help="also check the user-granted test provider (org.autojs.plugin.tool.fake, authorized in the AutoJs6 plugin center)")
     parser.add_argument("--report-dir", default=str(REPO / "build" / "evidence"))
