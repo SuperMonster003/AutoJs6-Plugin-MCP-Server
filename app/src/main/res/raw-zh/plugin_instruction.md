@@ -1,6 +1,6 @@
-MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Protocol](https://modelcontextprotocol.io) 服务器. 电脑上的 AI 代理 (如 Claude Code, Cursor 或 MCP Inspector) 通过 USB 或 Wi-Fi 连接手机, 借助工具运行脚本, 读取日志, 查看无障碍节点树, 点击与输入, 截取屏幕, 以及操作文件与应用. 安装相应的 AutoJs6 插件后, 还能识别屏幕或图片中的文字与条码, 找图找色, 转换拼音以及读取媒体信息.
+MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Protocol](https://modelcontextprotocol.io) 服务器. 电脑上的 AI 代理 (如 Claude Code, Cursor 或 MCP Inspector) 通过 USB 或 Wi-Fi 连接手机, 借助工具运行脚本, 读取日志, 查看无障碍节点树, 点击与输入, 截取屏幕, 以及操作文件与应用. 安装相应的 AutoJs6 插件后, 还能识别屏幕或图片中的文字与条码, 找图找色, 转换拼音以及读取媒体信息. 插件也可以自行声明工具 (例如中文繁简转换), 由 MCP Server 按插件分组提供.
 
-版本 1.2.0: 39 个内置工具 (默认启用 35 个) 与 8 个插件能力工具, MCP 资源与提示, AutoJs6 抽屉开关和插件设置页. 需要 AutoJs6 6.8.0 (构建 5298) 或更高版本; 插件能力工具只在 AutoJs6 中安装并启用对应插件时出现, 插件能力工具与已登记脚本工具在宿主不支持时自动隐藏, 可选的 autojs6://docs/ 资源还需要 AutoJs6 离线文档插件以及带转读方法的宿主. 进度与证据记录在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+版本 1.2.0: 39 个内置工具 (默认启用 35 个) 与 8 个插件能力工具, MCP 资源与提示, AutoJs6 抽屉开关和插件设置页. 需要 AutoJs6 6.8.0 (构建 5298) 或更高版本; 插件能力工具只在 AutoJs6 中安装并启用对应插件时出现, 插件能力工具与已登记脚本工具在宿主不支持时自动隐藏, 可选的 autojs6://docs/ 资源还需要 AutoJs6 离线文档插件以及带转读方法的宿主. AutoJs6 插件自行声明的工具 (如 3-Hanzi CC 的 opencc_convert) 按插件分组另外列出, 需要 AutoJs6 6.8.0 及以上. 进度与证据记录在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ### 使用方法
 

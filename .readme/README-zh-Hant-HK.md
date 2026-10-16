@@ -42,7 +42,7 @@
 
 ******
 
-MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Protocol](https://modelcontextprotocol.io) 伺服器. 電腦上的 AI 代理 (例如 Claude Code, Cursor 或 MCP Inspector) 透過 USB 或 Wi-Fi 連接手機, 借助工具執行腳本, 讀取日誌, 檢視無障礙節點樹, 點擊與輸入, 擷取螢幕, 以及操作檔案與應用程式. 安裝相應的 AutoJs6 外掛後, 還能識別螢幕或圖片中的文字與條碼, 找圖找色, 轉換拼音以及讀取媒體信息.
+MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Protocol](https://modelcontextprotocol.io) 伺服器. 電腦上的 AI 代理 (例如 Claude Code, Cursor 或 MCP Inspector) 透過 USB 或 Wi-Fi 連接手機, 借助工具執行腳本, 讀取日誌, 檢視無障礙節點樹, 點擊與輸入, 擷取螢幕, 以及操作檔案與應用程式. 安裝相應的 AutoJs6 外掛後, 還能識別螢幕或圖片中的文字與條碼, 找圖找色, 轉換拼音以及讀取媒體信息. 插件也可以自行聲明工具 (例如中文繁簡轉換), 由 MCP Server 按插件分組提供.
 
 伺服器在外掛自己的程序中運行, 透過單一的 Streamable HTTP 端點對外提供服務. AutoJs6 透過 Binder 向外掛下發能力代理, 每次工具呼叫都由主程式以其既有的權限, 引擎和無障礙服務執行; 外掛不會複製主程式的任何功能.
 
@@ -52,7 +52,7 @@ MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Proto
 
 ******
 
-版本 1.2.0: 39 個內建工具 (預設啟用 35 個) 與 8 個外掛能力工具, MCP 資源與提示, AutoJs6 抽屜開關與外掛程式設定頁. 需要 AutoJs6 6.8.0 (組建 5298) 或更高版本; 外掛能力工具只在 AutoJs6 中安裝並啟用對應外掛時出現, 外掛能力工具與已登記腳本工具在宿主不支援時自動隱藏, 可選的 autojs6://docs/ 資源還需要 AutoJs6 離線文件外掛以及帶轉讀方法的宿主. 進度與證據記錄在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+版本 1.2.0: 39 個內建工具 (預設啟用 35 個) 與 8 個外掛能力工具, MCP 資源與提示, AutoJs6 抽屜開關與外掛程式設定頁. 需要 AutoJs6 6.8.0 (組建 5298) 或更高版本; 外掛能力工具只在 AutoJs6 中安裝並啟用對應外掛時出現, 外掛能力工具與已登記腳本工具在宿主不支援時自動隱藏, 可選的 autojs6://docs/ 資源還需要 AutoJs6 離線文件外掛以及帶轉讀方法的宿主. AutoJs6 插件自行聲明的工具 (如 3-Hanzi CC 的 opencc_convert) 按插件分組另外列出, 需要 AutoJs6 6.8.0 及以上. 進度與證據記錄在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -70,6 +70,7 @@ MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Proto
 - MCP 資源 (P3.5) 提供唯讀工作目錄檔案, 可瀏覽的宿主範例, 安裝 AutoJs6 離線文件外掛後的離線文件, 裝置資訊和最近主控台輸出, 遵守配對與分組開關. 文字和二進制讀取報告截斷狀態. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指引, 其他手機語言回退英語.
 - 外掛能力工具: OCR 文字識別, 條碼識別, OpenCV 找圖找色, Pinyin 與 Pinyin4j 拼音轉換, MediaInfo 媒體信息. 各工具只在 AutoJs6 中安裝並啟用對應外掛時出現, 外掛安裝, 解除安裝或停用後客戶端會收到工具清單變更通知. 識別既可作用於螢幕 (image 為 "screen", 與 screen_capture 共用每分鐘 30 次的截圖上限), 也可作用於工作目錄中的圖片, 圖片不離開手機; 開啟 "允許讀取共享存儲" 後還可讀取相冊與下載目錄等位置的檔案. device_info 列出各外掛家族的狀態與安裝提示.
 - 已登記腳本: script_catalog 列出你用 @agent 註釋或 project.json 登記給模型的腳本 (說明, 參數, 風險等級, 是否需要先確認), script_registered_run 按登記的參數執行並返回腳本上報的結果. 風險等級與確認要求原樣交給客戶端, 由客戶端在執行前徵求你的同意.
+- 插件自我描述工具: AutoJs6 插件聲明的工具 (名稱, 說明, 參數格式與風險等級由插件作者撰寫, 例如 3-Hanzi CC 的 opencc_convert) 按插件分組出現在工具列表中, 參數由 AutoJs6 按插件聲明的格式校驗. 在設定頁 "插件提供的工具" 中, 官方插件預設開啟, 第三方插件需先在 AutoJs6 插件中心授權再手動開啟; 會寫入, 刪除或聯網的工具另需開啟分組的第二個開關. 圖片參數接受 "screen" (與 screen_capture 共用截圖上限) 或路徑, 工具產生的文件寫入工作目錄 plugin-outputs 下並返回路徑 (outputPaths 可指定位置, 不覆蓋已有文件), 不超過 1 MiB 的圖片附預覽; device_info 的 pluginTools 欄位列出各插件的狀態與開關.
 - 連接方式: 透過 `adb forward` 的 USB 連接, 須明確開啟的區域網絡連接, 以及面向無 HTTP 傳輸用戶端的電腦端 stdio 橋接程式.
 - 安全: 可輪換的 Bearer 權杖, 手機端首次配對確認, 按分組的工具開關; 伺服器預設只監聽回環介面.
 
@@ -255,6 +256,7 @@ Claude Desktop 及其他只支援 stdio 的客戶端: 用 `npm install -g autojs
 - 配對逾時: 新客戶端的首次呼叫會等待約一分鐘, 直到手機上點擊允許. 解鎖手機, 接受對話框或通知動作, 然後重複呼叫. 拒絕會進入短暫冷卻, 之後下一次呼叫會再次詢問.
 - HOST_UNAVAILABLE: AutoJs6 未執行或外掛程式工作階段已關閉. 開啟 AutoJs6, 保持抽屜開關開啟, 並在設定頁查看連線狀態.
 - 外掛能力工具未出現或返回 PLUGIN_UNAVAILABLE: 對應的 AutoJs6 外掛未安裝, 已停用或版本不兼容, 也可能是 AutoJs6 版本較舊. 呼叫 `device_info` 查看各外掛家族的狀態與提示; 在 AutoJs6 外掛中心安裝或啟用外掛後, 工具清單會自動更新.
+- 插件聲明的工具不出現或返回 TOOL_DISABLED: 第三方插件需先在 AutoJs6 插件中心授權, 再在設定頁 "插件提供的工具" 中開啟其分組; 會寫入, 刪除或聯網的工具還需開啟該組的第二個開關. 調用 `device_info` 查看 pluginTools 中各插件的狀態與提示.
 - 提示工作目錄不存在: 剛安裝且從未開啟過的 AutoJs6 可能尚未建立工作目錄 (預設為 /sdcard/Scripts), 檔案工具與 script_run 會說明這一點. 在手機上建立該文件夾, 或在 AutoJs6 設置 > 文件管理器 > 工作路徑 中選擇已有目錄.
 - 連線被拒 (`ECONNREFUSED`): 抽屜開關未開啟, 或電腦上的 `adb forward` 已失效. adb 服務重新啟動 (重新連接裝置, 或其他工具重啟了 adb) 會清空所有轉發; 重新執行 `adb -s <serial> forward tcp:9637 tcp:9637`, 或讓橋接程式用 `--serial` 自行建立轉發 (橋接程式結束時會移除該轉發).
 - 無障礙未啟用: `ui_*` 工具與截圖需要 AutoJs6 無障礙服務. 呼叫 `device_ensure_accessibility`, 或在系統無障礙設定中啟用該服務.

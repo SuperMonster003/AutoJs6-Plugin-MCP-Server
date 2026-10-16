@@ -5,10 +5,10 @@
   "h3_languages_with_ascii": "语言",
   "p_languages_all_supported_for_readme": "当前 README.md 支持以下语言",
   "h3_introduction": "简介",
-  "p_introduction_what": "MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Protocol]({{ mcp_spec_url }}) 服务器. 电脑上的 AI 代理 (如 Claude Code, Cursor 或 MCP Inspector) 通过 USB 或 Wi-Fi 连接手机, 借助工具运行脚本, 读取日志, 查看无障碍节点树, 点击与输入, 截取屏幕, 以及操作文件与应用. 安装相应的 AutoJs6 插件后, 还能识别屏幕或图片中的文字与条码, 找图找色, 转换拼音以及读取媒体信息.",
+  "p_introduction_what": "MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Protocol]({{ mcp_spec_url }}) 服务器. 电脑上的 AI 代理 (如 Claude Code, Cursor 或 MCP Inspector) 通过 USB 或 Wi-Fi 连接手机, 借助工具运行脚本, 读取日志, 查看无障碍节点树, 点击与输入, 截取屏幕, 以及操作文件与应用. 安装相应的 AutoJs6 插件后, 还能识别屏幕或图片中的文字与条码, 找图找色, 转换拼音以及读取媒体信息. 插件也可以自行声明工具 (例如中文繁简转换), 由 MCP Server 按插件分组提供.",
   "p_introduction_how": "服务器运行在插件自己的进程中, 通过单一的 Streamable HTTP 端点对外提供服务. AutoJs6 通过 Binder 向插件下发能力代理, 每次工具调用都由宿主以其既有的权限, 引擎和无障碍服务执行; 插件不会复制宿主的任何功能.",
   "h3_status": "当前状态",
-  "p_status": "版本 {{ version_name }}: 39 个内置工具 (默认启用 35 个) 与 8 个插件能力工具, MCP 资源与提示, AutoJs6 抽屉开关和插件设置页. 需要 AutoJs6 {{ required_host_version_name }} (构建 {{ required_host_version_code }}) 或更高版本; 插件能力工具只在 AutoJs6 中安装并启用对应插件时出现, 插件能力工具与已登记脚本工具在宿主不支持时自动隐藏, 可选的 autojs6://docs/ 资源还需要 AutoJs6 离线文档插件以及带转读方法的宿主. 进度与证据记录在 [ROADMAP.md]({{ roadmap_url }}).",
+  "p_status": "版本 {{ version_name }}: 39 个内置工具 (默认启用 35 个) 与 8 个插件能力工具, MCP 资源与提示, AutoJs6 抽屉开关和插件设置页. 需要 AutoJs6 {{ required_host_version_name }} (构建 {{ required_host_version_code }}) 或更高版本; 插件能力工具只在 AutoJs6 中安装并启用对应插件时出现, 插件能力工具与已登记脚本工具在宿主不支持时自动隐藏, 可选的 autojs6://docs/ 资源还需要 AutoJs6 离线文档插件以及带转读方法的宿主. AutoJs6 插件自行声明的工具 (如 3-Hanzi CC 的 opencc_convert) 按插件分组另外列出, 需要 AutoJs6 6.8.0 及以上. 进度与证据记录在 [ROADMAP.md]({{ roadmap_url }}).",
   "h3_features": "功能",
   "p_features_intro": "插件提供以下能力",
   "features": [
@@ -20,6 +20,7 @@
     "MCP 资源 (P3.5) 提供只读工作目录文件, 可浏览的宿主示例, 安装 AutoJs6 离线文档插件后的离线文档, 设备信息和最近控制台输出, 遵守配对与分组开关. 文本和二进制读取报告截断状态. write_autojs6_script, automate_task 和 debug_selector 提示提供中英文指导, 其他手机语言回退英语.",
     "插件能力工具: OCR 文字识别, 条码识别, OpenCV 找图找色, Pinyin 与 Pinyin4j 拼音转换, MediaInfo 媒体信息. 各工具只在 AutoJs6 中安装并启用对应插件时出现, 插件安装, 卸载或停用后客户端会收到工具列表变化通知. 识别既可作用于屏幕 (image 为 \"screen\", 与 screen_capture 共用每分钟 30 次的截图上限), 也可作用于工作目录中的图片, 图片不离开手机; 开启 \"允许读取共享存储\" 后还可读取相册与下载目录等位置的文件. device_info 列出各插件家族的状态与安装提示.",
     "已登记脚本: script_catalog 列出你用 @agent 注释或 project.json 登记给模型的脚本 (说明, 参数, 风险等级, 是否需要先确认), script_registered_run 按登记的参数运行并返回脚本上报的结果. 风险等级与确认要求原样交给客户端, 由客户端在运行前征求你的同意.",
+    "插件自描述工具: AutoJs6 插件声明的工具 (名称, 说明, 参数格式与风险等级由插件作者撰写, 例如 3-Hanzi CC 的 opencc_convert) 按插件分组出现在工具列表中, 参数由 AutoJs6 按插件声明的格式校验. 在设置页 \"插件提供的工具\" 中, 官方插件默认开启, 第三方插件需先在 AutoJs6 插件中心授权再手动开启; 会写入, 删除或联网的工具另需开启分组的第二个开关. 图片参数接受 \"screen\" (与 screen_capture 共用截图上限) 或路径, 工具生成的文件写入工作目录 plugin-outputs 下并返回路径 (outputPaths 可指定位置, 不覆盖已有文件), 不超过 1 MiB 的图片附预览; device_info 的 pluginTools 字段列出各插件的状态与开关.",
     "连接方式: 通过 `adb forward` 的 USB 连接, 需显式开启的局域网连接, 以及面向无 HTTP 传输客户端的电脑端 stdio 桥接程序.",
     "安全: 可轮换的 Bearer 令牌, 手机端首次配对确认, 按分组的工具开关; 服务器默认只监听回环接口."
   ],
@@ -68,6 +69,7 @@
     "配对超时: 新客户端的首次调用会等待约一分钟, 直到手机上点击允许. 解锁手机, 接受对话框或通知动作, 然后重复调用. 拒绝会进入短暂冷却, 之后下一次调用会再次询问.",
     "HOST_UNAVAILABLE: AutoJs6 未运行或插件会话已关闭. 打开 AutoJs6, 保持抽屉开关开启, 并在设置页查看连接状态.",
     "插件能力工具不出现或返回 PLUGIN_UNAVAILABLE: 对应的 AutoJs6 插件未安装, 已停用或版本不兼容, 也可能是 AutoJs6 版本较旧. 调用 `device_info` 查看各插件家族的状态与提示; 在 AutoJs6 插件中心安装或启用插件后, 工具列表会自动更新.",
+    "插件声明的工具不出现或返回 TOOL_DISABLED: 第三方插件需先在 AutoJs6 插件中心授权, 再在设置页 \"插件提供的工具\" 中开启其分组; 会写入, 删除或联网的工具还需开启该组的第二个开关. 调用 `device_info` 查看 pluginTools 中各插件的状态与提示.",
     "提示工作目录不存在: 刚安装且从未打开过的 AutoJs6 可能还没有建立工作目录 (默认为 /sdcard/Scripts), 文件工具与 script_run 会说明这一点. 在手机上创建该文件夹, 或在 AutoJs6 设置 > 文件管理器 > 工作路径 中选择已有目录.",
     "连接被拒绝 (`ECONNREFUSED`): 抽屉开关未开启, 或电脑上的 `adb forward` 已失效. adb 服务重启 (重新连接设备, 或其他工具重启了 adb) 会清空所有转发; 重新执行 `adb -s <serial> forward tcp:9637 tcp:9637`, 或让桥接程序用 `--serial` 自行建立转发 (桥接程序退出时会移除该转发).",
     "无障碍未启用: `ui_*` 工具与截屏需要 AutoJs6 无障碍服务. 调用 `device_ensure_accessibility`, 或在系统无障碍设置中启用该服务.",

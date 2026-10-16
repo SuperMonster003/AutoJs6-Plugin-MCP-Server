@@ -1,6 +1,6 @@
-MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol](https://modelcontextprotocol.io) 서버로 만듭니다. Claude Code, Cursor, MCP Inspector 같은 PC의 AI 에이전트가 USB 또는 Wi-Fi로 휴대폰에 연결하고, 도구를 사용해 스크립트 실행, 로그 읽기, 접근성 노드 트리 확인, 탭과 입력, 스크린샷 촬영, 파일과 앱 작업을 수행합니다. 해당 AutoJs6 플러그인을 설치하면 화면이나 이미지의 텍스트와 바코드 인식, 이미지와 색상 찾기, 병음 변환, 미디어 정보 읽기도 할 수 있습니다.
+MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol](https://modelcontextprotocol.io) 서버로 만듭니다. Claude Code, Cursor, MCP Inspector 같은 PC의 AI 에이전트가 USB 또는 Wi-Fi로 휴대폰에 연결하고, 도구를 사용해 스크립트 실행, 로그 읽기, 접근성 노드 트리 확인, 탭과 입력, 스크린샷 촬영, 파일과 앱 작업을 수행합니다. 해당 AutoJs6 플러그인을 설치하면 화면이나 이미지의 텍스트와 바코드 인식, 이미지와 색상 찾기, 병음 변환, 미디어 정보 읽기도 할 수 있습니다. 플러그인은 스스로 도구를 설명할 수도 있으며 (예: 중국어 간체와 번체 변환), MCP Server 가 플러그인별 그룹으로 제공합니다.
 
-버전 1.2.0: 내장 도구 39개 (기본 활성화 35개)와 플러그인 기능 도구 8개, MCP 리소스와 프롬프트, AutoJs6 서랍 스위치와 플러그인 설정 페이지. AutoJs6 6.8.0 (빌드 5298) 이상이 필요합니다. 플러그인 기능 도구는 해당 AutoJs6 플러그인이 설치되고 활성화된 경우에만 나타나며, 플러그인 기능 도구와 등록된 스크립트 도구는 이를 지원하지 않는 호스트에서 자동으로 숨겨집니다. 선택적 autojs6://docs/ 리소스에는 AutoJs6 오프라인 문서 플러그인과 중계 메서드를 갖춘 호스트도 필요합니다. 진행 상황과 증거는 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) 에 기록합니다.
+버전 1.2.0: 내장 도구 39개 (기본 활성화 35개)와 플러그인 기능 도구 8개, MCP 리소스와 프롬프트, AutoJs6 서랍 스위치와 플러그인 설정 페이지. AutoJs6 6.8.0 (빌드 5298) 이상이 필요합니다. 플러그인 기능 도구는 해당 AutoJs6 플러그인이 설치되고 활성화된 경우에만 나타나며, 플러그인 기능 도구와 등록된 스크립트 도구는 이를 지원하지 않는 호스트에서 자동으로 숨겨집니다. 선택적 autojs6://docs/ 리소스에는 AutoJs6 오프라인 문서 플러그인과 중계 메서드를 갖춘 호스트도 필요합니다. AutoJs6 플러그인이 스스로 설명하는 도구 (3-Hanzi CC 의 opencc_convert 등) 는 AutoJs6 6.8.0 이상에서 플러그인별 그룹으로 추가 표시됩니다. 진행 상황과 증거는 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) 에 기록합니다.
 
 ### 사용 방법
 
