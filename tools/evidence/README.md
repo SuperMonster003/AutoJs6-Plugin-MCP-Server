@@ -133,7 +133,12 @@ forward slashes; the token reaches the bridge only through `AUTOJS6_MCP_TOKEN` i
 drawer switched on: holding a host session runs the host instrumentation, which restarts the
 AutoJs6 process and stops its accessibility service until it is switched on again. On MIUI the
 host took more than a minute to rebind the plugin after the helpers, hence the 180 s
-`rebind_timeout` of `evidence_session`.
+`rebind_timeout` of `evidence_session`. ColorOS refuses to bind a plugin whose process is not
+running; the host wakes it, but a wake that lands between two helpers is undone by the second one
+and the host gives up the drawer listener after three attempts (OnePlus OPD2413, 2026-10-16).
+`evidence_session` then holds a session through the host instrumentation instead (the report
+records `listenerRebind`), so on ColorOS run scenarios that need the drawer listener with the
+token from `AUTOJS6_MCP_TOKEN`, which skips the helpers.
 
 `privileged.py` needs a listener the drawer switched on and restores
 `enabled_accessibility_services` afterwards (`--keep-accessibility` leaves it). The host tries its

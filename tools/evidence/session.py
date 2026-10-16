@@ -9,7 +9,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Iterator
 
-from device import Device, progress
+from device import Device, DeviceError, progress
 from mcp_client import McpClient
 
 
@@ -25,11 +25,21 @@ def evidence_session(device: Device, report: dict, client_name: str, hold_second
         progress(f"pre-pairing {client_name}")
         pairing = device.pre_pair(client_name)
         report["pairing"] = {"method": "EvidenceHelperTest#pairClient", "fingerprint": pairing}
-    if was_running:
-        # MIUI took more than a minute to let the host rebind after the helpers (2026-10-11).
-        progress("waiting for the host to rebind the restarted listener")
-        device.wait_listener_with_host(timeout=rebind_timeout)
     try:
+        if was_running:
+            # MIUI took more than a minute to let the host rebind after the helpers (2026-10-11).
+            progress("waiting for the host to rebind the restarted listener")
+            try:
+                device.wait_listener_with_host(timeout=rebind_timeout)
+            except DeviceError:
+                # ColorOS refuses to bind a plugin whose process is not running. The host wakes the plugin, but a wake
+                # that lands while the next helper runs is undone when that helper stops the package, and the host gives
+                # up after three attempts (OnePlus OPD2413, 2026-10-16). A listener that stayed away is then replaced by
+                # a session the host instrumentation holds, as if it had been off.
+                if device.plugin_state()["running"]:
+                    raise
+                progress("the listener did not come back; holding a host session instead")
+                report["listenerRebind"] = "gave up; host instrumentation"
         with device.host_session(hold_seconds) as session:
             report["hostSession"] = {"source": session["source"], "grantedMethods": session.get("grantedMethods")}
             progress(f"host session ready ({session['source']}), port {session['port']}")
