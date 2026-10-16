@@ -24,12 +24,16 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from device import HOST_PACKAGE, PLUGIN_PACKAGE, Device, progress  # noqa: E402
 from session import evidence_session  # noqa: E402
-from tool_calls import call  # noqa: E402
+from tool_calls import call, remove_dir, write_file  # noqa: E402
+from image_fixtures import encode_png  # noqa: E402
 
 CLIENT_NAME = "autojs6-evidence-p12-plugin-tools"
 REPO = pathlib.Path(__file__).resolve().parents[2]
 OPENCC_PACKAGE = "io.github.supermonster003.autojs6.plugin.three.hanzi.cc"
 TOOL = "opencc_convert"
+FAKE_PACKAGE = "org.autojs.plugin.tool.fake"
+FAKE_GROUP = "faketool"
+FIXTURE_DIR = "mcp-evidence-p12"
 
 
 def run(device: Device, args) -> dict:
@@ -83,7 +87,58 @@ def run(device: Device, args) -> dict:
         record("device_info pluginTools reports opencc", opencc.get("status") == "available" and opencc.get("trust") == "official"
                and any(t.get("name") == TOOL and t.get("listed") for t in opencc.get("tools") or []), 0,
                providers=len(plugins), status=opencc.get("status"))
+    if args.fake:
+        fake_checks(device, args, report, record)
     return finish(report)
+
+
+def fake_checks(device: Device, args, report: dict, record) -> None:
+    """The user-granted provider (roadmap P12 D34 / D46 / D47): hidden by default, listed once its group and its writes
+    switch are on, then files in and outputs out. The provider must be authorized in the AutoJs6 plugin center first."""
+    report["packages"]["fake"] = device.package(FAKE_PACKAGE)
+    with evidence_session(device, report, CLIENT_NAME, hold_seconds=args.hold_seconds, token_source=args.token_source, keep_pairing=args.keep_pairing) as client:
+        listed, _elapsed, _metas = client.list_all("tools/list", "tools")
+        names = {tool["name"] for tool in listed}
+        ok, s, _text, ms = call(client, "device_info", {})
+        fake = next((p for p in ((s.get("pluginTools") or {}).get("plugins") or []) if p.get("shortName") == FAKE_GROUP), {})
+        record("user-granted provider reported and authorized", fake.get("status") == "available" and fake.get("trust") == "user_granted", ms,
+               status=fake.get("status"), trust=fake.get("trust"), detail=fake.get("detail"))
+        record("user-granted tools hidden by default", not any(n.startswith(FAKE_GROUP + "_") for n in names) and fake.get("toolGroupEnabled") is False,
+               0, hint=bool(fake.get("hint")))
+        ok, s, text, ms = call(client, "faketool_echo", {"text": "hidden"})
+        record("a hidden user-granted tool answers TOOL_DISABLED", not ok and code_of(s, text) == "TOOL_DISABLED", ms, code=code_of(s, text))
+    previous = device.set_plugin_group(FAKE_GROUP, "true", "true")
+    report["fakeGroupBefore"] = previous
+    try:
+        with evidence_session(device, report, CLIENT_NAME, hold_seconds=args.hold_seconds, token_source=args.token_source, keep_pairing=args.keep_pairing) as client:
+            listed, _elapsed, _metas = client.list_all("tools/list", "tools")
+            names = sorted(n for n in (tool["name"] for tool in listed) if n.startswith(FAKE_GROUP + "_"))
+            record("user-granted tools listed once switched on", {"faketool_echo", "faketool_emit", "faketool_inspect"} <= set(names), 0, tools=len(names))
+            ok, s, text, ms = call(client, "faketool_echo", {"text": "from MCP"})
+            record("user-granted tool runs", ok and text == "from MCP", ms)
+            ok, s, text, ms = call(client, "faketool_emit", {"text": "written by MCP"})
+            out = (s.get("outputs") or [{}])[0]
+            record("output written to an automatic path", ok and str(out.get("path", "")).startswith("plugin-outputs/faketool/emit-") and out.get("bytes") == 14, ms,
+                   path=out.get("path"), bytes=out.get("bytes"))
+            ok, s, text, ms = call(client, "faketool_emit", {"text": "again", "outputPaths": {"data": f"{FIXTURE_DIR}/emit.txt"}})
+            out = (s.get("outputs") or [{}])[0]
+            record("output written to outputPaths", ok and out.get("path") == f"{FIXTURE_DIR}/emit.txt" and out.get("bytes") == 5, ms, path=out.get("path"))
+            ok, s, text, ms = call(client, "faketool_emit", {"text": "third", "outputPaths": {"data": f"{FIXTURE_DIR}/emit.txt"}})
+            record("an existing output is not replaced", not ok, ms, code=code_of(s, text))
+            try:
+                write_file(client, f"{FIXTURE_DIR}/input.txt", b"seven b")
+                write_file(client, f"{FIXTURE_DIR}/pic.png", encode_png(16, 8, b"".join(b"\x00" + bytes((200, 30, 30)) * 16 for _ in range(8))))
+                ok, s, text, ms = call(client, "faketool_inspect", {"image": f"{FIXTURE_DIR}/pic.png", "file": f"{FIXTURE_DIR}/input.txt"})
+                inputs = {i.get("name"): i for i in (s.get("inputs") or [])}
+                record("image and file paths reach the provider as descriptors", ok and inputs.get("file", {}).get("bytes") == 7
+                       and inputs.get("image", {}).get("mimeType") == "image/png" and (inputs.get("image", {}).get("bytes") or 0) > 0, ms,
+                       fileBytes=inputs.get("file", {}).get("bytes"), imageBytes=inputs.get("image", {}).get("bytes"))
+            finally:
+                report["fixtureRemoved"] = remove_dir(client, FIXTURE_DIR)
+                report["outputsRemoved"] = remove_dir(client, "plugin-outputs/faketool")
+    finally:
+        device.set_plugin_group(FAKE_GROUP, *previous)
+        report["fakeGroupRestored"] = True
 
 
 def code_of(structured: dict, text: str) -> str | None:
@@ -105,6 +160,8 @@ def main() -> int:
     parser.add_argument("--keep-pairing", action="store_true", help="leave the evidence client paired")
     parser.add_argument("--hold-seconds", type=int, default=180)
     parser.add_argument("--expect-hidden", action="store_true", help="an older host: the plugin tools must stay hidden")
+    parser.add_argument("--fake", action="store_true",
+                        help="also check the user-granted test provider (org.autojs.plugin.tool.fake, authorized in the AutoJs6 plugin center)")
     parser.add_argument("--report-dir", default=str(REPO / "build" / "evidence"))
     args = parser.parse_args()
     report = run(Device(args.serial), args)
