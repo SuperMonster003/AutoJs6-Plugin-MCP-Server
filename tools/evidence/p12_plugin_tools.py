@@ -19,6 +19,7 @@ import datetime
 import json
 import pathlib
 import sys
+import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
@@ -34,6 +35,9 @@ TOOL = "opencc_convert"
 FAKE_PACKAGE = "org.autojs.plugin.tool.fake"
 YOLO_PACKAGE = "io.github.supermonster003.autojs6.plugin.yolo.ncnn"
 YOLO_MODEL = "models/yolo11n"
+IMAGEQUANT_PACKAGE = "io.github.supermonster003.autojs6.plugin.imagequant"
+IMAGEQUANT_GROUP = "imagequant"
+IMAGEQUANT_DIR = "p12-imagequant-evidence"
 FAKE_GROUP = "faketool"
 FIXTURE_DIR = "mcp-evidence-p12"
 
@@ -91,6 +95,8 @@ def run(device: Device, args) -> dict:
                providers=len(plugins), status=opencc.get("status"))
     if args.yolo:
         yolo_checks(device, args, report, record)
+    if args.imagequant:
+        imagequant_checks(device, args, report, record)
     if args.fake:
         fake_checks(device, args, report, record)
     return finish(report)
@@ -121,6 +127,62 @@ def yolo_checks(device: Device, args, report: dict, record) -> None:
                loadMs=model.get("loadMs"), inferenceMs=s.get("inferenceMs"))
         ok, s, text, ms = call(client, "yolo_detect", {"image": f"{YOLO_MODEL}/bus.jpg", "model": "models/nothing-here"})
         record("a missing model directory is refused", not ok and code_of(s, text) == "INVALID_ARGUMENTS", ms, code=code_of(s, text))
+
+
+def imagequant_checks(device: Device, args, report: dict, record) -> None:
+    """The image quantization pilot (roadmap P12, D51 / D52): an official tool with the write risk, so it is listed only
+    once the writes switch of its group is on; the PNG comes back as an output at an automatic path or at outputPaths,
+    with an image preview."""
+    report["packages"]["imagequant"] = device.package(IMAGEQUANT_PACKAGE)
+    with evidence_session(device, report, CLIENT_NAME, hold_seconds=args.hold_seconds, token_source=args.token_source, keep_pairing=args.keep_pairing) as client:
+        listed, _elapsed, _metas = client.list_all("tools/list", "tools")
+        names = {tool["name"] for tool in listed}
+        ok, s, _text, ms = call(client, "device_info", {})
+        plugin = next((p for p in ((s.get("pluginTools") or {}).get("plugins") or []) if p.get("shortName") == IMAGEQUANT_GROUP), {})
+        record("official write tool hidden while the writes switch is off", plugin.get("status") == "available" and plugin.get("trust") == "official"
+               and "imagequant_quantize" not in names, ms, status=plugin.get("status"), trust=plugin.get("trust"))
+        ok, s, text, ms = call(client, "imagequant_quantize", {"image": f"{IMAGEQUANT_DIR}/gradient.png"})
+        record("a hidden write tool answers TOOL_DISABLED", not ok and code_of(s, text) == "TOOL_DISABLED", ms, code=code_of(s, text))
+    previous = device.set_plugin_group(IMAGEQUANT_GROUP, "true", "true")
+    report["imagequantGroupBefore"] = previous
+    try:
+        with evidence_session(device, report, CLIENT_NAME, hold_seconds=args.hold_seconds, token_source=args.token_source, keep_pairing=args.keep_pairing) as client:
+            listed, _elapsed, _metas = client.list_all("tools/list", "tools")
+            tool = next((t for t in listed if t["name"] == "imagequant_quantize"), None)
+            annotations = (tool or {}).get("annotations") or {}
+            properties = (tool or {}).get("inputSchema", {}).get("properties", {})
+            record("listed with the writes switch on, with outputPaths", tool is not None and annotations.get("readOnlyHint") is False
+                   and annotations.get("destructiveHint") is False and annotations.get("openWorldHint") is True and "outputPaths" in properties, 0)
+            if tool is None:
+                return
+            try:
+                rows = b"".join(b"\x00" + b"".join(bytes((x * 255 // 160, y * 255 // 120, (x + y) * 255 // 280)) for x in range(160)) for y in range(120))
+                write_file(client, f"{IMAGEQUANT_DIR}/gradient.png", encode_png(160, 120, rows))
+                started = time.perf_counter()
+                result, _ = client.request("tools/call", {"name": "imagequant_quantize", "arguments": {"image": f"{IMAGEQUANT_DIR}/gradient.png"}}, timeout=120)
+                ms = round((time.perf_counter() - started) * 1000)
+                s = result.get("structuredContent") or {}
+                out = (s.get("outputs") or [{}])[0]
+                kinds = [item.get("type") for item in result.get("content", [])]
+                record("quantizes to an automatic path with a preview", not result.get("isError") and str(out.get("path", "")).startswith("plugin-outputs/imagequant/quantize-")
+                       and str(out.get("path", "")).endswith(".png") and (out.get("bytes") or 0) > 0 and "image" in kinds, ms,
+                       path=out.get("path"), bytes=out.get("bytes"), content=kinds)
+                ok, s, text, ms = call(client, "imagequant_quantize", {"image": f"{IMAGEQUANT_DIR}/gradient.png", "maxColors": 16, "maxQuality": 80,
+                                                                       "outputPaths": {"png": f"{IMAGEQUANT_DIR}/out.png"}})
+                out = (s.get("outputs") or [{}])[0]
+                result_fields = s.get("result") or s
+                record("writes to outputPaths with the requested options", ok and out.get("path") == f"{IMAGEQUANT_DIR}/out.png" and (out.get("bytes") or 0) > 0, ms,
+                       path=out.get("path"), bytes=out.get("bytes"), quality=result_fields.get("quality"))
+                ok, s, text, ms = call(client, "imagequant_quantize", {"image": f"{IMAGEQUANT_DIR}/gradient.png", "minQuality": 100, "maxColors": 2})
+                record("the pngquant quality floor fails the call", not ok and "QUALITY_TOO_LOW" in text, ms, code=code_of(s, text))
+                ok, s, text, ms = call(client, "imagequant_quantize", {"image": f"{IMAGEQUANT_DIR}/gradient.png", "maxColors": 1})
+                record("an out-of-range option is refused", not ok and code_of(s, text) == "INVALID_ARGUMENTS", ms, code=code_of(s, text))
+            finally:
+                report["fixtureRemoved"] = remove_dir(client, IMAGEQUANT_DIR)
+                report["outputsRemoved"] = remove_dir(client, "plugin-outputs/imagequant")
+    finally:
+        device.set_plugin_group(IMAGEQUANT_GROUP, *previous)
+        report["imagequantGroupRestored"] = True
 
 
 def fake_checks(device: Device, args, report: dict, record) -> None:
@@ -193,6 +255,8 @@ def main() -> int:
     parser.add_argument("--expect-hidden", action="store_true", help="an older host: the plugin tools must stay hidden")
     parser.add_argument("--yolo", action="store_true",
                         help=f"also check yolo_detect with the model pushed to <working directory>/{YOLO_MODEL}")
+    parser.add_argument("--imagequant", action="store_true",
+                        help="also check imagequant_quantize of the Image Quantization plugin 1.1.0 (its writes switch is turned on and restored)")
     parser.add_argument("--fake", action="store_true",
                         help="also check the user-granted test provider (org.autojs.plugin.tool.fake, authorized in the AutoJs6 plugin center)")
     parser.add_argument("--report-dir", default=str(REPO / "build" / "evidence"))
