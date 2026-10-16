@@ -100,6 +100,14 @@ MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平
 | D54 | 压缩包工具集 | `archive_list` (只读, 分页), `archive_read` (只读, 直接返回包内文件前 64 KiB 的文本) 与 `archive_extract` (写入, 目录输出 `files`, 可选 `paths`). 不做 `archive_create`. (维护者 2026-10-16 选择) |
 | D55 | 压缩包密码 | 三个工具都接受可选的 `password` (ZIP / 7z / RAR), 插件以 char 数组持有并在调用结束时擦除, 不进入结果与日志; 它由 MCP 客户端发来, 会出现在客户端与模型上下文中. (维护者 2026-10-16 选择) |
 | D56 | 解压到已有目录 | 目录输出可以指向已存在的文件夹: 已有的同名文件默认不覆盖, 由宿主答 `EXISTS`, 插件读出后丢弃并在结果中报告为保留 (`kept` / `keptPaths`), 脚本传 `overwrite: true` 时替换; 解压使用插件的 COMPATIBLE 资源预算 (10 万条目, 单文件 32 GiB, 总量 256 GiB, 压缩比 100000). (维护者 2026-10-16 选择, 未取推荐的 "空目录 + STRICT 预算") |
+| D57 | 第三方示例仓库 | 新建独立仓库 `AutoJs6-Third-Party-Tool-Sample` (先本地建仓, 是否建 GitHub 仓库由维护者决定): 像真正的第三方一样只依赖分发出去的契约库, 构建出的 APK, 图标与 `index.json` 放进 `Auto.js-SDK-Plugins-Garage`. (维护者 2026-10-16 选择, 仓库名从四个候选中选定) |
+| D58 | 契约库发到 Maven Central | `io.github.supermonster003:autojs6-plugin-tool-api` 与 `:autojs6-common-plugin-api` (Java 包名不变); POM 声明 kotlin-stdlib 等传递依赖. 宿主模块加发布与签名配置, 先发布到本地暂存库验证; 账号, GPG 密钥, 命名空间验证与上传由维护者完成. (维护者 2026-10-16 选择, 未取推荐的 GitHub Release 附件) |
+| D59 | 契约库附带提供者基类 | 封版前在 `plugin-tool-api` 追加可选的提供者基类 (版本检查, 按工具名分发, 工作线程, 取消, 按名字取输入描述符与输出树, 结果与错误的构造), 第三方只写工具本身; 只是追加, 四个试点可以不迁移. 同时给契约里的函数加 `@JvmStatic` 以便 Java 调用. (维护者 2026-10-16 选择) |
+| D60 | 插件中心经工具服务发现插件 | 宿主插件中心也查询 `org.autojs.plugin.TOOL_PROVIDER` (经 `IPluginToolProvider.getInfo`), 第三方插件只需实现一个工具服务, 不必另写 `org.autojs.plugin.INFO` 服务. (维护者 2026-10-16 选择) |
+| D61 | 示例工具 | 三个工具覆盖全部类型且不引入第三方库: `hash` (只读, 文件参数 -> MD5 / SHA-1 / SHA-256), `thumbnail` (写入, 图片或屏幕 -> 缩略 PNG, 文件输出), `split` (写入, 文本文件按行切分到目录输出). (维护者 2026-10-16 选择) |
+| D62 | 示例的两种语言 | Kotlin 与 Java 各一个模块, 实现同一套工具; 两者会同时被宿主发现, 因此短名分别为 `ktsample` 与 `javasample` (同信任等级下撞名会被一并拒绝). (维护者 2026-10-16 选择) |
+| D63 | 第三方接入说明 | 写在示例仓库的 README, 用各仓库通用的 `.readme` 模板与生成器出十种语言: 接入步骤, Maven 依赖, 基类用法, 风险等级与开关, 插件中心授权; 协议细节链接宿主的英文协议文档. (维护者 2026-10-16 选择) |
+| D64 | 示例 APK 的签名 | 新建专用的 "第三方示例" 签名 (不是官方证书), 宿主视其为 `USER_GRANTED`, 以完整演示第三方在插件中心授权, MCP 中默认关闭的流程; keystore 放在仓库外, 密码只进 git-ignored 的 `sign.properties`. (维护者 2026-10-16 选择) |
 
 由 D2 / D10 派生的硬约束:
 
@@ -616,6 +624,7 @@ MCP 插件 (1.2.0, D48):
 - [x] (测试) 其余三个试点 (YOLO, 图片量化, 压缩包) 各经 MCP 与脚本 API 在两台设备上完成真机调用; 随各自试点条目完成后补测 (2026-10-16 自上一条拆出). (三个试点都已在 Sony G8441 (`BH900ASK9E`) 与小米 968e9f18 上经脚本 API (宿主往返测试) 与 MCP (`p12_plugin_tools.py --yolo` / `--imagequant` / `--archive`) 完成, 小米上另用 release 包复测; 证据见上面三个试点条目.)
 - [x] (文档) MCP README / 插件说明 / changelog 10 语言, 附录 A 补充自描述工具的生成规则与错误码, AGENTS.md 第 9 节加入相应约束. (SOURCE: 插件本条提交: README 与插件中心说明 10 语言 (状态段与简介提到自描述插件工具, 新增特性条目: 分组与默认开关, 第三方插件先在插件中心授权, 写入开关, 图片 / 文件参数, 输出路径与 `outputPaths`, 预览, `device_info.pluginTools`; 新增常见问题: 工具不出现或答 `TOOL_DISABLED` 时的处理); changelog v1.2.0 的两条已随接入条目 (`79b6c20`) 写入 10 语言; 附录 A: A.1 计数说明, A.5 的 `TOOL_DISABLED` / `CAPABILITY_DENIED` / `PLUGIN_UNAVAILABLE` 含义与自描述工具的错误映射, A.6 补 `plugin_tools.*` 方法与两个令牌, 新增 A.8 生成规则 (来源, 名称与顺序, 列出条件, schema, 描述与注解, 输出与结果, 调用与令牌, 通知, 设置与状态); AGENTS.md 第 9 节已加入自描述插件工具的约束 (该文件被 `.gitignore` 忽略, 只在本地维护). TEST: `generate_markdown.py --check` 通过 (10 语言 36 个产物), `ApplicationTextPunctuationTest` 通过.)
 - [ ] (发布) 6.8.0 的发布门按 D43: P12 宿主侧与 OpenCC 试点完成即可随 P11 一起进入 6.8.0 发布; 四个试点全部稳定后封版契约 v1, 再对第三方公开 (协议文档, AAR, Garage 示例); MCP 1.2.0 在宿主 6.8.0 公开发布后发布 (D48), 其自描述工具接入只依赖宿主侧, 不等后三个试点.
+- [ ] (封版前准备, D57 - D64) 让契约 v1 可以对第三方公开: 契约库追加提供者基类与 `@JvmStatic` (D59), 宿主插件中心经 `TOOL_PROVIDER` 发现插件 (D60), 契约库的 Maven Central 发布配置与本地暂存验证 (D58), 第三方示例仓库 `AutoJs6-Third-Party-Tool-Sample` 的 Kotlin / Java 两个模块与十语言接入说明 (D57 / D61 - D63), 专用签名的 APK 进 Garage (D64), 真机经脚本 API 与 MCP 验证第三方授权流程. 正式封版与公开仍等宿主 6.8.0 发布 (上一条).
 - [ ] (可选, 不计入本阶段验收, D44) P11 内置工具按家族在有具体收益时迁移为插件自描述: OCR (三个引擎的 7 个插件声明共享家族 `ocr`, 宿主按 D25 选择提供者, 实现 D33 预留的选择逻辑), 条码, OpenCV (D41: OpenCV 插件新增在自身进程运行的工具服务, 宿主 images 模块不变), 拼音, MediaInfo; 迁移的家族工具名保持不变, MCP 删除对应的内置实现. 不设时间点, 每个家族迁移前先在本路线图写明收益.
 
 验收条件: 四个试点经 MCP 与脚本 API 在两台设备上完成真机调用 (OpenCC 已完成, 其余三个见拆出的测试条目); USER_GRANTED 提供者默认不可见; 旧宿主上自描述工具隐藏且其余工具不受影响; 契约测试冻结 AIDL 顺序与目录键.
@@ -1535,3 +1544,8 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 维护者选定 D53 (契约追加目录输出), D54 (list / read / extract), D55 (password) 与 D56 (可合并到已有目录, COMPATIBLE 预算).
 - 宿主 `99729d88f` / `f28606f48` / `727f59fcd` / `c0bd08a3c`, 3-Stack Archive `3246acc` (3.1.0), MCP `42cb3f0` 与本条提交, d.ts 4.43.0, Ace Editor 2.5.0, 文档 122 与离线文档同步. 小米与 G8441 两台设备经脚本 API 与 MCP 通过 (小米另测 release).
 - P12 的四个试点与测试条目全部完成; 剩发布条目 (等宿主 6.8.0 公开, 之后封版契约 v1 并对第三方公开, D36) 与可选的 D44 迁移.
+
+### 2026-10-16: P12 封版前准备的决定
+
+- 维护者决定: 发布条目暂不具备条件 (宿主 6.8.0 暂无发布计划); D44 与 P8 先搁置, 需要时再评估; 三个试点插件发布前的 ColorOS 覆盖用 OnePlus 63751f63, 16 KB 设备需要时由维护者租用.
+- 封版前准备经三轮选择题定为 D57 - D64 (示例仓库, Maven Central, 提供者基类, 工具服务发现, 示例工具, Kotlin 与 Java, 十语言说明, 专用签名), 新增对应条目.
