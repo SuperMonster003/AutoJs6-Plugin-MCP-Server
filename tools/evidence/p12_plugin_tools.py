@@ -32,6 +32,8 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 OPENCC_PACKAGE = "io.github.supermonster003.autojs6.plugin.three.hanzi.cc"
 TOOL = "opencc_convert"
 FAKE_PACKAGE = "org.autojs.plugin.tool.fake"
+YOLO_PACKAGE = "io.github.supermonster003.autojs6.plugin.yolo.ncnn"
+YOLO_MODEL = "models/yolo11n"
 FAKE_GROUP = "faketool"
 FIXTURE_DIR = "mcp-evidence-p12"
 
@@ -87,9 +89,38 @@ def run(device: Device, args) -> dict:
         record("device_info pluginTools reports opencc", opencc.get("status") == "available" and opencc.get("trust") == "official"
                and any(t.get("name") == TOOL and t.get("listed") for t in opencc.get("tools") or []), 0,
                providers=len(plugins), status=opencc.get("status"))
+    if args.yolo:
+        yolo_checks(device, args, report, record)
     if args.fake:
         fake_checks(device, args, report, record)
     return finish(report)
+
+
+def yolo_checks(device: Device, args, report: dict, record) -> None:
+    """The YOLO pilot (roadmap P12, D49): a model directory in the working directory, pushed beforehand with
+    model.json, model.ncnn.param, model.ncnn.bin and bus.jpg (no model ships with the plugin)."""
+    report["packages"]["yolo"] = device.package(YOLO_PACKAGE)
+    with evidence_session(device, report, CLIENT_NAME, hold_seconds=args.hold_seconds, token_source=args.token_source, keep_pairing=args.keep_pairing) as client:
+        listed, _elapsed, _metas = client.list_all("tools/list", "tools")
+        tool = next((t for t in listed if t["name"] == "yolo_detect"), None)
+        properties = (tool or {}).get("inputSchema", {}).get("properties", {})
+        annotations = (tool or {}).get("annotations") or {}
+        record("yolo_detect listed with image and model directory", tool is not None and annotations.get("readOnlyHint") is True
+               and annotations.get("openWorldHint") is True and "directory path" in str(properties.get("model", {}).get("description", "")), 0)
+        if tool is None:
+            return
+        arguments = {"image": f"{YOLO_MODEL}/bus.jpg", "model": YOLO_MODEL}
+        ok, s, text, ms = call(client, "yolo_detect", arguments, timeout=180)
+        labels = [d.get("label") for d in s.get("detections") or []]
+        model = s.get("model") or {}
+        record("detects with a model directory", ok and "bus" in labels and "person" in labels and (s.get("image") or {}).get("width") == 810, ms,
+               count=s.get("count"), loadMs=model.get("loadMs"), cached=model.get("cached"), inferenceMs=s.get("inferenceMs"), code=code_of(s, text) if not ok else None)
+        ok, s, text, ms = call(client, "yolo_detect", {**arguments, "labels": ["bus"], "confidence": 0.5}, timeout=180)
+        model = s.get("model") or {}
+        record("the second call reuses the loaded model", ok and model.get("cached") is True and s.get("count") == 1, ms,
+               loadMs=model.get("loadMs"), inferenceMs=s.get("inferenceMs"))
+        ok, s, text, ms = call(client, "yolo_detect", {"image": f"{YOLO_MODEL}/bus.jpg", "model": "models/nothing-here"})
+        record("a missing model directory is refused", not ok and code_of(s, text) == "INVALID_ARGUMENTS", ms, code=code_of(s, text))
 
 
 def fake_checks(device: Device, args, report: dict, record) -> None:
@@ -160,6 +191,8 @@ def main() -> int:
     parser.add_argument("--keep-pairing", action="store_true", help="leave the evidence client paired")
     parser.add_argument("--hold-seconds", type=int, default=180)
     parser.add_argument("--expect-hidden", action="store_true", help="an older host: the plugin tools must stay hidden")
+    parser.add_argument("--yolo", action="store_true",
+                        help=f"also check yolo_detect with the model pushed to <working directory>/{YOLO_MODEL}")
     parser.add_argument("--fake", action="store_true",
                         help="also check the user-granted test provider (org.autojs.plugin.tool.fake, authorized in the AutoJs6 plugin center)")
     parser.add_argument("--report-dir", default=str(REPO / "build" / "evidence"))

@@ -61,7 +61,7 @@ object PluginToolInvocations {
             if (name == PluginToolSpecs.OUTPUT_PATHS && PluginToolSpecs.takesOutputPaths(tool)) return@forEach
             val path = (value as? JsonPrimitive)?.takeIf { it.isString }?.content
             forwarded[name] = when {
-                path == null || (name !in tool.imageParameters && name !in tool.fileParameters) -> value
+                path == null || (name !in tool.imageParameters && name !in tool.fileParameters && name !in tool.directoryParameters) -> value
                 name in tool.imageParameters && path.trim() == ToolCatalog.Images.SCREEN -> {
                     permissions += TOKEN_SCREEN
                     JsonPrimitive(ToolCatalog.Images.SCREEN)

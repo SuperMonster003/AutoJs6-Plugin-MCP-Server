@@ -54,6 +54,7 @@ object PluginToolSpecs {
                 val note = when (name) {
                     in tool.imageParameters -> IMAGE_NOTE
                     in tool.fileParameters -> FILE_NOTE
+                    in tool.directoryParameters -> DIRECTORY_NOTE
                     else -> null
                 }
                 if (property == null || note == null) {
@@ -110,6 +111,8 @@ object PluginToolSpecs {
     private const val IMAGE_NOTE = "AutoJs6 accepts \"screen\" (a screenshot taken now) or an image path; relative paths are in the AutoJs6 working directory."
 
     private const val FILE_NOTE = "AutoJs6 accepts a file path; relative paths are in the AutoJs6 working directory."
+
+    private const val DIRECTORY_NOTE = "AutoJs6 accepts a directory path, whose files it hands to the plugin; relative paths are in the AutoJs6 working directory."
 
     private fun properties(schema: JsonObject): JsonObject = schema["properties"] as? JsonObject ?: JsonObject(emptyMap())
 

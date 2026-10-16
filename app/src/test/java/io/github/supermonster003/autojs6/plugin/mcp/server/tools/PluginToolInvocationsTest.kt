@@ -63,6 +63,22 @@ class PluginToolInvocationsTest {
     }
 
     @Test
+    fun `directory arguments are paths with the files token and a note`() {
+        val yolo = opencc.copy(
+            name = "yolo_detect", tool = "detect", shortName = "yolo",
+            inputSchema = args("""{"type":"object","properties":{"image":{"type":"string"},"model":{"type":"string","description":"The model."}},"required":["image","model"],"additionalProperties":false}"""),
+            outputSchema = null, imageParameters = listOf("image"), directoryParameters = listOf("model"),
+        )
+        val call = PluginToolInvocations.prepare(yolo, args("""{"image":"screen","model":"models/yolo11n/"}"""), PathAccess.WORKSPACE_ONLY, now)
+        assertEquals(listOf("plugin_tools", "screen_capture", "files"), call.permissions)
+        assertEquals("""["yolo_detect",{"image":"screen","model":"models/yolo11n"}]""", call.args.toString())
+        val note = PluginToolSpecs.inputSchema(yolo)["properties"]!!.jsonObject["model"]!!.jsonObject["description"].toString()
+        assertTrue(note, note.contains("The model. AutoJs6 accepts a directory path, whose files it hands to the plugin"))
+        val parsed = PluginToolsReport.parse(Json.parseToJsonElement(PluginToolSpecsTest.LIST.replace(""""fileParameters":[]},""", """"fileParameters":[],"directoryParameters":["model"]},""")))!!
+        assertEquals(listOf("model"), parsed.tools.first().directoryParameters)
+    }
+
+    @Test
     fun `output paths must name declared outputs inside the working directory`() {
         val unknown = assertThrows(ToolArgumentException::class.java) {
             PluginToolInvocations.prepare(quant, args("""{"image":"screen","outputPaths":{"thumbnail":"t.png"}}"""), PathAccess.WORKSPACE_ONLY, now)

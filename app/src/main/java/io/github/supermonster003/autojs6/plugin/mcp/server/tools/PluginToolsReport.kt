@@ -36,6 +36,8 @@ data class PluginToolInfo(
     val outputs: List<PluginToolOutput>,
     val imageParameters: List<String>,
     val fileParameters: List<String>,
+    /** Directory arguments (roadmap D49): the host opens the files of the directory and hands them over. */
+    val directoryParameters: List<String> = emptyList(),
 ) {
 
     val readOnly: Boolean
@@ -144,6 +146,7 @@ data class PluginToolsReport(
                 }.orEmpty(),
                 imageParameters = (record["imageParameters"] as? JsonArray)?.mapNotNull { it.string() }.orEmpty(),
                 fileParameters = (record["fileParameters"] as? JsonArray)?.mapNotNull { it.string() }.orEmpty(),
+                directoryParameters = (record["directoryParameters"] as? JsonArray)?.mapNotNull { it.string() }.orEmpty(),
             )
         }
 
