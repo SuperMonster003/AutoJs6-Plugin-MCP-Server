@@ -29,6 +29,7 @@ from device import HOST_PACKAGE, PLUGIN_PACKAGE, Device, progress  # noqa: E402
 from session import evidence_session  # noqa: E402
 from tool_calls import call, remove_dir, script, write_file  # noqa: E402
 from image_fixtures import encode_png  # noqa: E402
+import speech_fixtures  # noqa: E402
 
 CLIENT_NAME = "autojs6-evidence-p12-plugin-tools"
 REPO = pathlib.Path(__file__).resolve().parents[2]
@@ -55,6 +56,8 @@ MACAW_WAV = REPO.parent / "AutoJs6-Plugin-Three-Macaw-Speech" / "app" / "src" / 
 MACAW_REFERENCE = "AFTER EARLY NIGHTFALL THE YELLOW LAMPS WOULD LIGHT UP HERE AND THERE THE SQUALID QUARTER OF THE BROTHELS"
 MACAW_SENTENCE = "The quick brown fox jumps over the lazy dog near the river bank"
 MACAW_VOLUME_PERCENT = 70
+# PluginToolLimits.MAX_RESULT_CHARS of the plugin-tool-api contract (host commit 054366be6, MCP D65).
+MAX_RESULT_CHARS = 192 * 1024
 # Plays the fixture through the speaker 300 ms after speech_listen opens its recording (after 20 s without one it
 # plays anyway), with the music volume raised to MACAW_VOLUME_PERCENT for the playback; started detached, so that the
 # MCP call of speech_listen can run meanwhile.
@@ -139,6 +142,8 @@ def run(device: Device, args) -> dict:
         sample_checks(device, args, report, record)
     if args.macaw:
         macaw_checks(device, args, report, record)
+    if args.macaw_large:
+        macaw_large_checks(device, args, report, record)
     return finish(report)
 
 
@@ -529,6 +534,43 @@ def macaw_checks(device: Device, args, report: dict, record) -> None:
         report["macawGroupRestored"] = True
 
 
+def macaw_large_checks(device: Device, args, report: dict, record) -> None:
+    """The result ceiling of speech_transcribe (3-Macaw Speech roadmap P7.6.7, appendix D Q41; MCP D65). Half an hour of
+    single words, the densest transcript real speech gives (about 160 Ki units of JSON), must come back whole before the
+    300 s tool limit, not as a host timeout, and a file longer than the plugin's 30 minutes is refused with
+    LIMIT_EXCEEDED. Real audio stays under PluginToolLimits.MAX_RESULT_CHARS within 30 minutes, so the trimmed result and
+    the LIMIT_EXCEEDED of a transcript too large even without its segment texts are left to the plugin's JVM test
+    TranscribeRulesTest. The long recordings come from speech_fixtures (Windows SAPI and ffmpeg); recognized text stays
+    on the PC, only sizes and counts are reported."""
+    report["packages"]["macaw"] = device.package(MACAW_PACKAGE)
+    progress("building the long recordings")
+    tracks = speech_fixtures.long_recordings(REPO / "build" / "evidence" / "macaw-large")
+    report["macawLarge"] = {"words": tracks["wordCount"], "seconds": tracks["wordSeconds"], "bytes": len(tracks["words"]),
+                            "overSeconds": tracks["overSeconds"], "overBytes": len(tracks["over"])}
+    hold = max(args.hold_seconds, 900)
+    with evidence_session(device, report, CLIENT_NAME, hold_seconds=hold, token_source=args.token_source, keep_pairing=args.keep_pairing) as client:
+        try:
+            progress("uploading the word track")
+            write_file(client, f"{MACAW_DIR}/words.ogg", tracks["words"])
+            progress("transcribing the word track")
+            ok, s, text, ms = call(client, "speech_transcribe", {"file": f"{MACAW_DIR}/words.ogg", "language": "en"}, timeout=330)
+            segments = s.get("segments") or []
+            units = len(json.dumps(s, ensure_ascii=False, separators=(",", ":")))
+            codes = [w.get("code") for w in s.get("warnings") or []]
+            record("half an hour of single words comes back whole before the tool limit", ok and "LIMIT_EXCEEDED" not in codes
+                   and len(segments) > 0 and all("text" in segment for segment in segments) and units <= MAX_RESULT_CHARS and ms < 300_000, ms,
+                   units=units, ceiling=MAX_RESULT_CHARS, segments=len(segments), textChars=len(s.get("text") or ""),
+                   unitsPerSecond=round(units / max(1.0, tracks["wordSeconds"]), 1), durationMillis=s.get("durationMillis"),
+                   modelId=s.get("modelId"), warnings=codes, code=code_of(s, text) if not ok else None)
+            progress("uploading the over-long track")
+            write_file(client, f"{MACAW_DIR}/over.ogg", tracks["over"])
+            ok, s, text, ms = call(client, "speech_transcribe", {"file": f"{MACAW_DIR}/over.ogg", "language": "en"}, timeout=330)
+            record("a file longer than 30 minutes is refused with LIMIT_EXCEEDED", not ok and code_of(s, text) == "LIMIT_EXCEEDED", ms,
+                   code=code_of(s, text))
+        finally:
+            report["fixtureRemoved"] = remove_dir(client, MACAW_DIR)
+
+
 def cer(reference: str, hypothesis: str | None) -> float:
     """Character error rate over upper-case letters and digits."""
     r = "".join(ch for ch in reference.upper() if ch.isalnum())
@@ -574,6 +616,9 @@ def main() -> int:
     parser.add_argument("--macaw", action="store_true",
                         help="also check the tools of 3-Macaw Speech 1.2.0 with an English ASR and TTS model installed (its writes switch is turned on and restored; "
                              "the fixture is played aloud while speech_listen records)")
+    parser.add_argument("--macaw-large", action="store_true",
+                        help="also check speech_transcribe with a 30 minute word track (the largest real result) and an over-long track "
+                             "(Windows: SAPI voice Microsoft Zira and ffmpeg with libopus build them)")
     parser.add_argument("--macaw-wav", default=str(MACAW_WAV), help="the English fixture of the Macaw checks")
     parser.add_argument("--report-dir", default=str(REPO / "build" / "evidence"))
     args = parser.parse_args()
