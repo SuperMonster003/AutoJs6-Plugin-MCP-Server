@@ -108,6 +108,7 @@ MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平
 | D62 | 示例的两种语言 | Kotlin 与 Java 各一个模块, 实现同一套工具; 两者会同时被宿主发现, 因此短名分别为 `ktsample` 与 `javasample` (同信任等级下撞名会被一并拒绝). (维护者 2026-10-16 选择) |
 | D63 | 第三方接入说明 | 写在示例仓库的 README, 用各仓库通用的 `.readme` 模板与生成器出十种语言: 接入步骤, Maven 依赖, 基类用法, 风险等级与开关, 插件中心授权; 协议细节链接宿主的英文协议文档. (维护者 2026-10-16 选择) |
 | D64 | 示例 APK 的签名 | 新建专用的 "第三方示例" 签名 (不是官方证书), 宿主视其为 `USER_GRANTED`, 以完整演示第三方在插件中心授权, MCP 中默认关闭的流程; keystore 放在仓库外, 密码只进 git-ignored 的 `sign.properties`. (维护者 2026-10-16 选择) |
+| D65 | 工具结果上限按 Parcel 计 | 结果 JSON 与文本合计除 512 KiB UTF-8 外, 再限 192 Ki UTF-16 单元 (`PluginToolLimits.MAX_RESULT_CHARS`, 对外导出供插件自限). 原因: 结果经 oneway `onResult` 送达, Parcel 按 UTF-16 存字符串 (每单元 2 字节), oneway 事务最多用接收方 Binder 缓冲的一半 (约 508 KiB, 由进入宿主的全部 oneway 调用共享); 实测 API 24 / 31 约 254 Ki 单元 (Parcel 约 520 KB), API 37 约 248 Ki 单元 (约 508 KB) 起提供方抛 `TransactionTooLargeException`, 报告送不到宿主, 宿主只能等到超时. 基类 `PluginToolProviderService` 发送前检查两个上限, 发送失败时隔 100 / 400 ms 再试两次, 仍失败则改报 `LIMIT_EXCEEDED` (其他异常为 `FAILED`, 消息带 Parcel 字节数), 不再吞掉. 宿主接收侧仍只查 512 KiB UTF-8, 直接实现 AIDL 的四个试点行为不变; 大结果走文件描述符不做 (附录 C Q9). (维护者 2026-10-22 在 3-Macaw Speech 附录 D Q41 选 (a)) |
 
 由 D2 / D10 派生的硬约束:
 
@@ -625,6 +626,7 @@ MCP 插件 (1.2.0, D48):
 - [x] (文档) MCP README / 插件说明 / changelog 10 语言, 附录 A 补充自描述工具的生成规则与错误码, AGENTS.md 第 9 节加入相应约束. (SOURCE: 插件本条提交: README 与插件中心说明 10 语言 (状态段与简介提到自描述插件工具, 新增特性条目: 分组与默认开关, 第三方插件先在插件中心授权, 写入开关, 图片 / 文件参数, 输出路径与 `outputPaths`, 预览, `device_info.pluginTools`; 新增常见问题: 工具不出现或答 `TOOL_DISABLED` 时的处理); changelog v1.2.0 的两条已随接入条目 (`79b6c20`) 写入 10 语言; 附录 A: A.1 计数说明, A.5 的 `TOOL_DISABLED` / `CAPABILITY_DENIED` / `PLUGIN_UNAVAILABLE` 含义与自描述工具的错误映射, A.6 补 `plugin_tools.*` 方法与两个令牌, 新增 A.8 生成规则 (来源, 名称与顺序, 列出条件, schema, 描述与注解, 输出与结果, 调用与令牌, 通知, 设置与状态); AGENTS.md 第 9 节已加入自描述插件工具的约束 (该文件被 `.gitignore` 忽略, 只在本地维护). TEST: `generate_markdown.py --check` 通过 (10 语言 36 个产物), `ApplicationTextPunctuationTest` 通过.)
 - [ ] (发布) 6.8.0 的发布门按 D43: P12 宿主侧与 OpenCC 试点完成即可随 P11 一起进入 6.8.0 发布; 四个试点全部稳定后封版契约 v1, 再对第三方公开 (协议文档, AAR, Garage 示例); MCP 1.2.0 在宿主 6.8.0 公开发布后发布 (D48), 其自描述工具接入只依赖宿主侧, 不等后三个试点.
 - [x] (封版前准备, D57 - D64) 让契约 v1 可以对第三方公开: 契约库追加提供者基类与 `@JvmStatic` (D59), 宿主插件中心经 `TOOL_PROVIDER` 发现插件 (D60), 契约库的 Maven Central 发布配置与本地暂存验证 (D58), 第三方示例仓库 `AutoJs6-Third-Party-Tool-Sample` 的 Kotlin / Java 两个模块与十语言接入说明 (D57 / D61 - D63), 专用签名的 APK 进 Garage (D64), 真机经脚本 API 与 MCP 验证第三方授权流程. 正式封版与公开仍等宿主 6.8.0 发布 (上一条). 2026-10-16 完成: 宿主本地提交 b4ae5535e (基类 `PluginToolProviderService` 与 `@JvmStatic`, 模块 androidTest 11 项含 Java 子类), e03a3cc0d (插件中心对没有其他插件服务的包查询 `TOOL_PROVIDER`, 官方试点的端点不变), 484742790c / 179a25dd9 (Maven Central 发布配置, Java 17 字节码 + Kotlin 2.2, 本地暂存库与上传包已验证, 维护者步骤见宿主 `docs/dev/plugin-api-maven-central.md`), a2b903899 (协议文档), 1bb2af454 (zh-Hans changelog); 示例仓库 e2f0b8c (本地, MIT, `ktsample` / `javasample` 1.0.0 build 1, 十语言 README); Garage c27e9b3 (未推送); 证据 `tools/evidence/p12_plugin_tools.py --sample` 在小米 968e9f18 与 G8441 (宿主 5456) 各 35 项全部通过: USER_GRANTED 提供者被识别, MCP 默认隐藏, 脚本经 `plugins.tools` 调用三个工具 (包括目录输出保留已有分片, `IllegalArgumentException` 报 `INVALID_ARGUMENTS`), 打开分组与写入开关后 MCP 列出并运行. Maven Central 的首次发布 (账号, GPG, 上传) 由维护者在宿主 6.8.0 发布时完成.
+- [x] (宿主, D65) 工具结果上限按 Parcel 计: 契约库 `MAX_RESULT_CHARS` = 192 Ki UTF-16 单元, 基类发送前检查并把回传失败改报为错误 (宿主收到 `LIMIT_EXCEEDED` 而不是等到超时), 跨进程 androidTest 实测阈值, 协议文档与 AIDL 注释同步. (SOURCE: 宿主 `054366be6` (契约库, JVM 与 androidTest, `tools/plugin-tool/module_device_tests.py`) 与 `3e811b0ea` (协议文档, `IPluginToolCallback` 注释), 均为本地提交未推送; 模块 JVM 16/16 (新增 `PluginToolResultLimitTest` 3 项, `limitsMatchTheRoadmap` 加两个上限); 模块 androidTest 17/17 (`PluginToolProviderServiceTest` 12 项含新增 `reportsTheHostRefusesBecomeErrors`, 新增 `PluginToolResultTransportTest` 5 项, 提供方跑在 `:provider` 进程) 在 XQ-AT72 (`QV710AF65F`, API 31), AVD_API_24 (x86) 与 AVD_API_37.1_16K (x86_64, 16 KB 页) 通过; 能送达的最大结果 259879 / 259913 / 253785 单元 (Parcel 519968 / 520036 / 507784 字节), 上限处 Parcel 393428 字节 (API 37 为 393432); 300 Ki 单元的结果 31 / 5 / 99 ms 内报 `LIMIT_EXCEEDED`; 第一个 192 Ki 结果占住缓冲时, 第二个 192 Ki 结果 539 / 521 / 856 ms 后报 `LIMIT_EXCEEDED` (旧基类在 10 s 内无回报); 宿主 JVM `*PluginTool*` 等 6 类 41/41, `:app:assembleAppDebug` 通过. 改动前的复现: 旧基类下 300 Ki 单元与占缓冲时的第二个结果都没有回报.) 兼容性: 旧插件 (旧 AAR) 遇新宿主行为不变; 新插件遇旧宿主正常 (只是更早报 `LIMIT_EXCEEDED`); 已有提供方零改动, 重新内置 `plugin-tool-api.aar` 才获得新行为. 后续 (不在本条): 直接实现 AIDL 的四个试点在 `deliver` 中同样吞掉 `RemoteException` (例如压缩包 list 的长结果), Macaw 与第三方示例重新内置 AAR, Macaw 的 192 Ki 自限可改引用 `MAX_RESULT_CHARS`.
 - [ ] (可选, 不计入本阶段验收, D44) P11 内置工具按家族在有具体收益时迁移为插件自描述: OCR (三个引擎的 7 个插件声明共享家族 `ocr`, 宿主按 D25 选择提供者, 实现 D33 预留的选择逻辑), 条码, OpenCV (D41: OpenCV 插件新增在自身进程运行的工具服务, 宿主 images 模块不变), 拼音, MediaInfo; 迁移的家族工具名保持不变, MCP 删除对应的内置实现. 不设时间点, 每个家族迁移前先在本路线图写明收益.
 
 验收条件: 四个试点经 MCP 与脚本 API 在两台设备上完成真机调用 (OpenCC 已完成, 其余三个见拆出的测试条目); USER_GRANTED 提供者默认不可见; 旧宿主上自描述工具隐藏且其余工具不受影响; 契约测试冻结 AIDL 顺序与目录键.
@@ -833,6 +835,16 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 背景. P0.2 实测 SDK 0.15.0 不支持 2026-07-28 模型, 也不存在单端点双模 (见 D9).
 
 结论 (2026-09-10): 有状态优先; 无状态模型等待 SDK 支持后再考虑, 不纳入 1.0.0 -> D9 修订.
+
+### Q9 (D65 后): 超过 192 Ki 单元的工具结果是否改走文件描述符
+
+背景. D65 把内联结果限在 192 Ki UTF-16 单元 (约 384 KiB Parcel). 更大的结果可以由提供方写进管道或临时文件, 经 `onResult` 的描述符数组交给宿主读取, 需要新的结果键, 宿主在能力里声明支持, 基类与宿主两侧读写, 以及文档与测试.
+
+选项: (a) 不做 (推荐, 已先行): MCP 客户端本身会截断过长的工具输出 (例如 Claude Code 默认约 25000 token), 192 Ki 单元已远超可用长度; 需要更多时由工具分页或写成文件输出. (b) 做: 约 150 - 250 行纯增量 (新键, 宿主声明, 基类写入与宿主读取, 协议文档与测试), 旧宿主不认识新键, 提供方须按宿主声明回退到内联.
+
+影响条目: P12 (D65), 返回长文本的工具 (3-Macaw Speech `speech_transcribe`, 压缩包 list 等). 改选返工量: 纯增量, 不改 D65 已有行为与上限.
+
+结论: 待维护者确认 (按推荐先行: 不做).
 
 ---
 
@@ -1572,3 +1584,11 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 维护者选定: 抽屉监听器的重绑越过 60 s 唤醒退避 (仍要求插件已启用且已授权, 每次进程死亡最多 3 次唤醒), 手动打开抽屉开关也越过退避; 启动 AutoJs6 时的自动恢复仍按需唤醒. 宿主 changelog 不另加条目 (6.8.0 未发布, 已有的 "ColorOS 上自动唤醒插件" 条目即最终行为).
 - 宿主 `c4a23e784` (本地): `PluginAutoWake.Mode.REBIND` 与 `PluginAutoWake.Rebind`, `McpServerSessionController` 的重绑在其中打开会话, `McpServerTool` 手动打开时以 `UserRequest` 运行. JVM `PluginWakePolicyTest` 6/6, OnePlus 上 `McpServerSessionControllerRebindTest` 7/7 (新增: 重绑时 openServer 处于 REBIND 模式).
 - 复现: 唤醒拉起的进程在绑定前又被结束时唤醒无效. 新场景 `tools/evidence/listener_rebind.py` 先用辅助测试停止插件包, 再在设备上循环 `am kill` (只结束进程, 不把包标为停止). OnePlus OPD2413 (宿主 debug 5456 含 `c4a23e784`): `--kill-seconds 6` 4/4 (2 次唤醒无效后又唤醒一次, 监听器在循环结束后 4.8 s 回来); `--kill-seconds 34 --expect-given-up` 3/3 (三次重绑都失败后宿主放弃, 维护者随即打开开关, 唤醒发生在上一次无效唤醒后 4.1 s, 即退避期内). 修复前的失败见上一条会话记录.
+
+### 2026-10-22: P12 工具结果上限按 Parcel 计 (D65)
+
+- 来源: 3-Macaw Speech 附录 D Q41 (按源码推断 192 - 256 Ki 单元的结果会在 oneway 回调中失败), 维护者 2026-10-22 15:15 选 (a) 宿主契约改按 Parcel 计; 由子会话 3-macaw-9 (local_513d9c1c) 实施.
+- 复现 (XQ-AT72, API 31, 旧基类): 绕过基类的裸提供方二分得 259879 单元可送达 (Parcel 519968 字节), 259880 单元起 `TransactionTooLargeException`; 512 KiB ASCII (旧上限允许) 失败; 基类返回 300 Ki 单元时 10 s 内没有任何回报, 宿主只能等超时; 一个 192 Ki 结果在 `onResult` 中未返回时, 第二个 192 Ki 结果同样无回报. 与推断一致.
+- 修改: D65 (契约常量, 基类检查与回传失败改报). 宿主接收侧不加 192 Ki 检查, 以免直接实现 AIDL 的试点在 192 - 248 Ki 之间的结果被新宿主拒收. 宿主 changelog 不加条目 (6.8.0 插件工具契约尚未发布, 宿主行为不变).
+- 证据: 见 P12 的 D65 条目. 大结果走描述符登记为附录 C Q9 (推荐不做, 已先行).
+- 剩余: 宿主两笔本地提交随 6.8.0 推送; 试点与 Macaw / 示例的 AAR 跟进见 P12 条目的后续.
