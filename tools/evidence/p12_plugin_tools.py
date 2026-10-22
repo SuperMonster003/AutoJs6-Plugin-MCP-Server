@@ -27,7 +27,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from device import HOST_PACKAGE, PLUGIN_PACKAGE, Device, progress  # noqa: E402
 from session import evidence_session  # noqa: E402
-from tool_calls import call, remove_dir, write_file  # noqa: E402
+from tool_calls import call, remove_dir, script, write_file  # noqa: E402
 from image_fixtures import encode_png  # noqa: E402
 
 CLIENT_NAME = "autojs6-evidence-p12-plugin-tools"
@@ -48,6 +48,32 @@ SAMPLE_PROVIDERS = (("ktsample", "io.github.supermonster003.autojs6.toolsample.k
                     ("javasample", "io.github.supermonster003.autojs6.toolsample.javasample"))
 SAMPLE_DIR = "p12-sample-evidence"
 FIXTURE_DIR = "mcp-evidence-p12"
+MACAW_PACKAGE = "io.github.supermonster003.autojs6.plugin.three.macaw.speech"
+MACAW_GROUP = "speech"
+MACAW_DIR = "p12-macaw-evidence"
+MACAW_WAV = REPO.parent / "AutoJs6-Plugin-Three-Macaw-Speech" / "app" / "src" / "androidTest" / "assets" / "test-audio" / "en.wav"
+MACAW_REFERENCE = "AFTER EARLY NIGHTFALL THE YELLOW LAMPS WOULD LIGHT UP HERE AND THERE THE SQUALID QUARTER OF THE BROTHELS"
+MACAW_SENTENCE = "The quick brown fox jumps over the lazy dog near the river bank"
+MACAW_VOLUME_PERCENT = 70
+# Plays the fixture through the speaker 300 ms after speech_listen opens its recording (after 20 s without one it
+# plays anyway), with the music volume raised to MACAW_VOLUME_PERCENT for the playback; started detached, so that the
+# MCP call of speech_listen can run meanwhile.
+MACAW_PLAYER = """
+var dir = files.path("%(dir)s");
+var audio = context.getSystemService(android.content.Context.AUDIO_SERVICE);
+function recordings() { try { return audio.getActiveRecordingConfigurations().size(); } catch (e) { return -1; } }
+var before = recordings(), started = Date.now(), volume = audio.getStreamVolume(3);
+var target = Math.max(1, Math.floor(audio.getStreamMaxVolume(3) * %(percent)d / 100));
+var poll = setInterval(function () {
+    var now = recordings();
+    if (now <= before && Date.now() - started <= 20000) return;
+    clearInterval(poll);
+    files.write(dir + "/player.txt", (now > before ? "seen " : "timeout ") + (Date.now() - started));
+    if (volume < target) audio.setStreamVolume(3, target, 0);
+    setTimeout(function () { media.playMusic(dir + "/en.wav"); }, 300);
+    setTimeout(function () { try { media.stopMusic(); } catch (e) {} audio.setStreamVolume(3, volume, 0); exit(); }, 12000);
+}, 100);
+"""
 
 
 def run(device: Device, args) -> dict:
@@ -111,6 +137,8 @@ def run(device: Device, args) -> dict:
         fake_checks(device, args, report, record)
     if args.sample:
         sample_checks(device, args, report, record)
+    if args.macaw:
+        macaw_checks(device, args, report, record)
     return finish(report)
 
 
@@ -426,6 +454,94 @@ def sample_checks(device: Device, args, report: dict, record) -> None:
             report[f"{short_name}GroupRestored"] = True
 
 
+def macaw_checks(device: Device, args, report: dict, record) -> None:
+    """3-Macaw Speech 1.2.0 (its roadmap P7.6.5): listen, speak and transcribe are official read-only tools, listed at
+    once; synthesize writes its audio, so it is listed only once the writes switch of its group is on. The default
+    output of an m4a synthesis takes the extension of the written type (decision Q39). Needs an installed ASR and TTS
+    model that speak English; recognized text stays on the PC and only its character error rate is reported."""
+    report["packages"]["macaw"] = device.package(MACAW_PACKAGE)
+    wav = pathlib.Path(args.macaw_wav).read_bytes()
+    with evidence_session(device, report, CLIENT_NAME, hold_seconds=args.hold_seconds, token_source=args.token_source, keep_pairing=args.keep_pairing) as client:
+        listed, _elapsed, _metas = client.list_all("tools/list", "tools")
+        by_name = {tool["name"]: tool for tool in listed if tool["name"].startswith(MACAW_GROUP + "_")}
+        read_only = all((by_name.get(n, {}).get("annotations") or {}).get("readOnlyHint") is True for n in ("speech_listen", "speech_speak", "speech_transcribe"))
+        ok, s, _text, ms = call(client, "device_info", {})
+        plugin = next((p for p in ((s.get("pluginTools") or {}).get("plugins") or []) if p.get("shortName") == MACAW_GROUP), {})
+        record("listen, speak and transcribe listed read-only, synthesize hidden", read_only and "speech_synthesize" not in by_name
+               and plugin.get("status") == "available" and plugin.get("trust") == "official", ms, tools=sorted(by_name), status=plugin.get("status"))
+        ok, s, text, ms = call(client, "speech_synthesize", {"text": "hidden"})
+        record("a hidden synthesize answers TOOL_DISABLED", not ok and code_of(s, text) == "TOOL_DISABLED", ms, code=code_of(s, text))
+        write_file(client, f"{MACAW_DIR}/en.wav", wav)
+        ok, s, text, ms = call(client, "speech_transcribe", {"file": f"{MACAW_DIR}/en.wav", "language": "en"}, timeout=330)
+        rate = cer(MACAW_REFERENCE, s.get("text")) if ok else None
+        record("transcribes a WAV file", ok and rate <= 0.15, ms, cer=rate, segments=len(s.get("segments") or []),
+               durationMillis=s.get("durationMillis"), modelId=s.get("modelId"), code=code_of(s, text) if not ok else None)
+        ok, s, text, ms = call(client, "speech_speak", {"text": "Spoken through the MCP server.", "language": "en"}, timeout=330)
+        record("speaks and waits until done", ok and s.get("completed") is True and (s.get("durationMillis") or 0) > 0, ms,
+               engine=s.get("engine"), durationMillis=s.get("durationMillis"), code=code_of(s, text) if not ok else None)
+        write_file(client, f"{MACAW_DIR}/player.js", (MACAW_PLAYER % {"dir": MACAW_DIR, "percent": MACAW_VOLUME_PERCENT}).encode("utf-8"))
+        script(client, f'engines.execScriptFile(files.path("{MACAW_DIR}/player.js"));')
+        ok, s, text, ms = call(client, "speech_listen", {"language": "en"}, timeout=180)
+        rate = cer(MACAW_REFERENCE, s.get("text")) if ok else None
+        _ok, player, _text, _ms = call(client, "files_read", {"path": f"{MACAW_DIR}/player.txt"})
+        record("listens to the fixture played aloud", ok and rate <= 0.15, ms, cer=rate, endReason=s.get("endReason"),
+               durationMillis=s.get("durationMillis"), modelId=s.get("modelId"), player=player.get("content"), code=code_of(s, text) if not ok else None)
+    previous = device.set_plugin_group(MACAW_GROUP, "true", "true")
+    report["macawGroupBefore"] = previous
+    try:
+        with evidence_session(device, report, CLIENT_NAME, hold_seconds=args.hold_seconds, token_source=args.token_source, keep_pairing=args.keep_pairing) as client:
+            listed, _elapsed, _metas = client.list_all("tools/list", "tools")
+            tool = next((t for t in listed if t["name"] == "speech_synthesize"), None)
+            annotations = (tool or {}).get("annotations") or {}
+            record("synthesize listed with the writes switch on, with outputPaths", tool is not None and annotations.get("readOnlyHint") is False
+                   and "outputPaths" in (tool or {}).get("inputSchema", {}).get("properties", {}), 0)
+            try:
+                if tool is None:
+                    return
+                ok, s, text, ms = call(client, "speech_synthesize", {"text": MACAW_SENTENCE, "language": "en"}, timeout=330)
+                out = (s.get("outputs") or [{}])[0]
+                record("synthesizes WAV to an automatic .wav path", ok and str(out.get("path", "")).startswith("plugin-outputs/speech/synthesize-")
+                       and str(out.get("path", "")).endswith(".wav") and out.get("mimeType") == "audio/wav" and (out.get("bytes") or 0) > 44, ms,
+                       path=out.get("path"), bytes=out.get("bytes"), durationMillis=(s.get("result") or {}).get("durationMillis"))
+                ok, s, text, ms = call(client, "speech_synthesize", {"text": MACAW_SENTENCE, "language": "en", "format": "m4a"}, timeout=330)
+                out = (s.get("outputs") or [{}])[0]
+                path = str(out.get("path", ""))
+                _ok, renamed, _text, _ms = call(client, "files_stat", {"path": path})
+                _ok, first, _text, _ms = call(client, "files_stat", {"path": path[:-len(".m4a")] + ".wav"})
+                record("an m4a default output takes the .m4a extension", ok and path.endswith(".m4a") and out.get("mimeType") == "audio/mp4"
+                       and renamed.get("exists") is True and renamed.get("size") == out.get("bytes") and first.get("exists") is False
+                       and path in text, ms, path=path, bytes=out.get("bytes"), size=renamed.get("size"), wavLeft=first.get("exists"))
+                ok, s, text, ms = call(client, "speech_synthesize", {"text": MACAW_SENTENCE, "language": "en", "format": "m4a",
+                                                                     "outputPaths": {"audio": f"{MACAW_DIR}/out.wav"}}, timeout=330)
+                out = (s.get("outputs") or [{}])[0]
+                record("a path the caller gives is kept", ok and out.get("path") == f"{MACAW_DIR}/out.wav" and out.get("mimeType") == "audio/mp4", ms,
+                       path=out.get("path"))
+                ok, s, text, ms = call(client, "speech_transcribe", {"file": path, "language": "en"}, timeout=330)
+                rate = cer(MACAW_SENTENCE, s.get("text")) if ok else None
+                record("the synthesized m4a transcribes back", ok and rate <= 0.25, ms, cer=rate, modelId=s.get("modelId"))
+                ok, s, text, ms = call(client, "speech_synthesize", {"text": "hello", "format": "mp3"})
+                record("an unknown format is refused", not ok and code_of(s, text) == "INVALID_ARGUMENTS", ms, code=code_of(s, text))
+            finally:
+                report["fixtureRemoved"] = remove_dir(client, MACAW_DIR)
+                report["outputsRemoved"] = remove_dir(client, "plugin-outputs/speech")
+    finally:
+        device.set_plugin_group(MACAW_GROUP, *previous)
+        report["macawGroupRestored"] = True
+
+
+def cer(reference: str, hypothesis: str | None) -> float:
+    """Character error rate over upper-case letters and digits."""
+    r = "".join(ch for ch in reference.upper() if ch.isalnum())
+    h = "".join(ch for ch in (hypothesis or "").upper() if ch.isalnum())
+    previous = list(range(len(h) + 1))
+    for i, rc in enumerate(r, 1):
+        current = [i] + [0] * len(h)
+        for j, hc in enumerate(h, 1):
+            current[j] = min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (rc != hc))
+        previous = current
+    return round(previous[-1] / max(1, len(r)), 3)
+
+
 def code_of(structured: dict, text: str) -> str | None:
     """The error code of a failed call; a tool with an output schema carries it in the text only (`CODE: message`)."""
     return (structured.get("error") or {}).get("code") or (text.split(":", 1)[0] if ":" in text else None)
@@ -455,6 +571,10 @@ def main() -> int:
                         help="also check the user-granted test provider (org.autojs.plugin.tool.fake, authorized in the AutoJs6 plugin center)")
     parser.add_argument("--sample", action="store_true",
                         help="also check the third-party sample plugins ktsample and javasample (authorized in the AutoJs6 plugin center) through scripts and MCP")
+    parser.add_argument("--macaw", action="store_true",
+                        help="also check the tools of 3-Macaw Speech 1.2.0 with an English ASR and TTS model installed (its writes switch is turned on and restored; "
+                             "the fixture is played aloud while speech_listen records)")
+    parser.add_argument("--macaw-wav", default=str(MACAW_WAV), help="the English fixture of the Macaw checks")
     parser.add_argument("--report-dir", default=str(REPO / "build" / "evidence"))
     args = parser.parse_args()
     report = run(Device(args.serial), args)

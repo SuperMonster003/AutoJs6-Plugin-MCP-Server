@@ -139,13 +139,28 @@ class CatalogToolExecutor(
         return when (outcome) {
             is BridgeOutcome.Failed -> ToolResults.failure(outcome.failure)
             is BridgeOutcome.Ok -> try {
-                val (structured, text) = PluginToolInvocations.shape(tool, outcome.result)
+                val answer = renameOutputs(client, tool, call, outcome.result, clientName)
+                val (structured, text) = PluginToolInvocations.shape(tool, answer)
                 val image = PluginToolInvocations.previewCandidate(structured)?.let { (path, mimeType) -> preview(client, path, mimeType, clientName) }
                 ToolResults.success(structured, text, image)
             } catch (e: ToolFailureException) {
                 ToolResults.failure(e.failure)
             }
         }
+    }
+
+    /**
+     * Gives default output files the extension of the type the plugin wrote ([PluginToolInvocations.renames]); a file
+     * stays at its first path when the grant does not allow `files.rename` or the rename fails.
+     */
+    private suspend fun renameOutputs(client: HostBridgeClient, tool: PluginToolInfo, call: PluginToolCall, answer: JsonElement?, clientName: String?): JsonElement? {
+        val renames = PluginToolInvocations.renames(tool, call, answer)
+        if (renames.isEmpty() || !client.isGranted("files", "rename")) return answer
+        val renamed = renames.filter { (from, to) ->
+            val args = JsonArray(listOf(JsonPrimitive(from), JsonPrimitive(to)))
+            client.call("files", "rename", args, RENAME_TIMEOUT_MS, listOf("files", PluginToolInvocations.TOKEN_FILES_WRITE), clientName) is BridgeOutcome.Ok
+        }
+        return PluginToolInvocations.moved(answer, renamed)
     }
 
     /** The bytes of a written image output as an image block; null when the grant or the host does not allow it. */
@@ -239,6 +254,9 @@ class CatalogToolExecutor(
 
         /** How long reading a written image output for the preview may take. */
         const val PREVIEW_TIMEOUT_MS = 10_000L
+
+        /** How long giving a default output file the extension of its written type may take. */
+        const val RENAME_TIMEOUT_MS = 10_000L
 
         /** How long a heartbeat waits for `console.tail` before going out without a line. */
         const val CONSOLE_PEEK_TIMEOUT_MS = 3_000L

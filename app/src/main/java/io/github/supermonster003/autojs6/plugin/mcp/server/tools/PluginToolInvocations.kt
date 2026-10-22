@@ -25,6 +25,8 @@ data class PluginToolCall(
     val timeoutMs: Long,
     /** Output name to the working-directory path AutoJs6 writes it to. */
     val outputs: Map<String, String>,
+    /** The outputs whose path this side chose, which [PluginToolInvocations.renames] may give another extension. */
+    val defaultOutputs: Set<String> = emptySet(),
 )
 
 /**
@@ -73,7 +75,7 @@ object PluginToolInvocations {
                 }
             }
         }
-        val outputs = outputPaths(tool, arguments, now, sequence)
+        val (outputs, defaults) = outputPaths(tool, arguments, now, sequence)
         if (outputs.isNotEmpty()) permissions += TOKEN_FILES_WRITE
         val args = buildJsonArray {
             add(tool.name)
@@ -84,7 +86,36 @@ object PluginToolInvocations {
                 })
             }
         }
-        return PluginToolCall(args, permissions.toList(), tool.timeoutMs + TIMEOUT_MARGIN_MS, outputs)
+        return PluginToolCall(args, permissions.toList(), tool.timeoutMs + TIMEOUT_MARGIN_MS, outputs, defaults)
+    }
+
+    /**
+     * The default output files whose written type has another extension than the declared one, as path to new path.
+     * Their paths are chosen before the call, but a plugin may write another type by its arguments (3-Macaw Speech's
+     * `speech_synthesize` declares `audio/wav` and writes `audio/mp4` for m4a). Paths the caller gave stay as they are.
+     */
+    fun renames(tool: PluginToolInfo, call: PluginToolCall, answer: JsonElement?): Map<String, String> {
+        val written = ((answer as? JsonObject)?.get("outputs") as? JsonArray).orEmpty().mapNotNull { it as? JsonObject }
+        return written.mapNotNull { output ->
+            val name = output.text("name")?.takeIf { it in call.defaultOutputs } ?: return@mapNotNull null
+            val path = output.text("path")?.takeIf { it == call.outputs[name] } ?: return@mapNotNull null
+            val declared = tool.outputs.firstOrNull { it.name == name }?.takeUnless { it.isDirectory } ?: return@mapNotNull null
+            val actual = extension(output.text("mimeType") ?: return@mapNotNull null)
+            val expected = extension(declared.mimeType)
+            if (actual == FALLBACK_EXTENSION || actual == expected || !path.endsWith(".$expected")) return@mapNotNull null
+            path to "${path.removeSuffix(".$expected")}.$actual"
+        }.toMap()
+    }
+
+    /** [answer] with the outputs at the [renamed] paths (path to new path) pointing at their new paths. */
+    fun moved(answer: JsonElement?, renamed: Map<String, String>): JsonElement? {
+        val root = answer as? JsonObject ?: return answer
+        val outputs = root["outputs"] as? JsonArray ?: return answer
+        if (renamed.isEmpty()) return answer
+        return JsonObject(root + ("outputs" to JsonArray(outputs.map { output ->
+            val to = (output as? JsonObject)?.text("path")?.let { renamed[it] } ?: return@map output
+            JsonObject(output + ("path" to JsonPrimitive(to)))
+        })))
     }
 
     /** The answer of `plugin_tools.invoke` as the MCP result's structured content and text. */
@@ -134,8 +165,9 @@ object PluginToolInvocations {
         }
     }
 
-    private fun outputPaths(tool: PluginToolInfo, arguments: JsonObject, now: Long, sequence: Int): Map<String, String> {
-        if (tool.outputs.isEmpty()) return emptyMap()
+    /** Output name to path, and the names whose path is the default one. */
+    private fun outputPaths(tool: PluginToolInfo, arguments: JsonObject, now: Long, sequence: Int): Pair<Map<String, String>, Set<String>> {
+        if (tool.outputs.isEmpty()) return emptyMap<String, String>() to emptySet()
         val requested = if (PluginToolSpecs.takesOutputPaths(tool)) arguments[PluginToolSpecs.OUTPUT_PATHS] else null
         val given = when (requested) {
             null -> emptyMap()
@@ -147,11 +179,12 @@ object PluginToolInvocations {
             else -> invalid(tool, "${PluginToolSpecs.OUTPUT_PATHS} must be an object of output names to paths")
         }
         val stamp = STAMP.get()!!.format(Date(now))
-        return tool.outputs.associate { output ->
+        val paths = tool.outputs.associate { output ->
             val suffix = if (sequence > 0) "-$sequence" else ""
             val base = "$OUTPUT_DIRECTORY/${tool.shortName}/${tool.tool}-$stamp$suffix${if (tool.outputs.size > 1) "-${output.name}" else ""}"
             output.name to (given[output.name] ?: if (output.isDirectory) base else "$base.${extension(output.mimeType)}")
         }
+        return paths to (paths.keys - given.keys)
     }
 
     private fun extension(mimeType: String): String = when (mimeType.substringBefore(';').trim().lowercase(Locale.ROOT)) {
@@ -164,8 +197,15 @@ object PluginToolInvocations {
         "text/csv" -> "csv"
         "application/pdf" -> "pdf"
         "application/zip" -> "zip"
-        else -> "bin"
+        "audio/wav", "audio/x-wav", "audio/wave" -> "wav"
+        "audio/mp4", "audio/x-m4a" -> "m4a"
+        "audio/mpeg" -> "mp3"
+        "audio/ogg" -> "ogg"
+        "audio/flac" -> "flac"
+        else -> FALLBACK_EXTENSION
     }
+
+    private const val FALLBACK_EXTENSION = "bin"
 
     private fun invalid(tool: PluginToolInfo, message: String): Nothing =
         throw ToolArgumentException(ToolFailure.invalidArguments("${tool.name}: $message"))

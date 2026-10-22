@@ -132,6 +132,33 @@ class PluginToolInvocationsTest {
     }
 
     @Test
+    fun `default output files take the extension of the type the plugin wrote`() {
+        val synthesize = quant.copy(
+            name = "speech_synthesize", tool = "synthesize", shortName = "speech", imageParameters = emptyList(),
+            outputs = listOf(PluginToolOutput("audio", "audio/wav")),
+        )
+        val call = PluginToolInvocations.prepare(synthesize, args("""{"text":"hi","format":"m4a"}"""), PathAccess.WORKSPACE_ONLY, now)
+        val wav = "plugin-outputs/speech/synthesize-$stamp.wav"
+        assertEquals(mapOf("audio" to wav), call.outputs)
+        assertEquals(setOf("audio"), call.defaultOutputs)
+        fun answer(path: String, mimeType: String) = Json.parseToJsonElement(
+            """{"result":{"format":"m4a"},"outputs":[{"name":"audio","path":"$path","bytes":900,"mimeType":"$mimeType"}]}""",
+        )
+        val m4a = answer(wav, "audio/mp4")
+        val renames = PluginToolInvocations.renames(synthesize, call, m4a)
+        assertEquals(mapOf(wav to "plugin-outputs/speech/synthesize-$stamp.m4a"), renames)
+        val (_, summary) = PluginToolInvocations.shape(synthesize, PluginToolInvocations.moved(m4a, renames))
+        assertEquals("{\"format\":\"m4a\"}\nWrote audio to plugin-outputs/speech/synthesize-$stamp.m4a (900 bytes)", summary)
+        assertEquals(m4a, PluginToolInvocations.moved(m4a, emptyMap()))
+
+        assertTrue("the declared type", PluginToolInvocations.renames(synthesize, call, answer(wav, "audio/wav")).isEmpty())
+        assertTrue("a type without an extension", PluginToolInvocations.renames(synthesize, call, answer(wav, "audio/amr")).isEmpty())
+        val given = PluginToolInvocations.prepare(synthesize, args("""{"text":"hi","outputPaths":{"audio":"a.wav"}}"""), PathAccess.WORKSPACE_ONLY, now)
+        assertTrue(given.defaultOutputs.isEmpty())
+        assertTrue("a path the caller gave", PluginToolInvocations.renames(synthesize, given, answer("a.wav", "audio/mp4")).isEmpty())
+    }
+
+    @Test
     fun `the registry lists plugin tools by grant and switches and explains the hidden ones`() = runBlocking {
         var permissions = ToolPermissions.DEFAULT
         var availability = PluginToolAvailability.NONE
