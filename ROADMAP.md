@@ -409,6 +409,8 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 
 ### P3.4 文件, 应用与设备 (`files` / `files_delete` / `device` / `shell` 组)
 
+- [x] (2026-11-03 用户追加) `device_start_remote_server`: 经宿主 `app.startRemoteServer` 开启手机端服务端模式 (TCP 7347), 回报实际监听状态, 保留已有连接; `app.remote_server` 独立令牌, 旧宿主按 grant 隐藏工具, 不改 AIDL / AAR. 覆盖并发启动, 端口占用后重试, 权限拒绝和 MCP 会话结束后的监听生命周期. (SOURCE / TEST: 见 2026-11-03 会话记录; 宿主 29 项 JVM / 5 项真机, 插件 331 项 JVM, 实际 MCP 调用与旧宿主隐藏验证通过.)
+
 - [x] (插件) `files_list(path, recursive, maxEntries)`, `files_stat`, `files_read(path, encoding, maxBytes)`, `files_write(path, content, createDirs, overwrite)`, `files_mkdir`, `files_rename`; `files_delete` 单独成组默认关闭; 二进制文件读取返回 base64 并标注. (SOURCE: `FileTools` / `WorkspacePath` / `ToolCatalog`; 宿主 83f780852. API 24 / 33 / 35 真实 MCP 读取 1049600 字节文件, 返回 1048576 字节 base64 内容并标记 truncated=true, 分别 1174 / 397 / 953 ms; 100000 字符写入按宿主 96 KiB 请求预算拒绝且不留文件. 1 MiB 为内容上限, 写入同时受完整 JSON 请求预算约束, 见 docs/dev/p34-workspace-tools.md)
 - [x] (插件) `editor_open(path, line, column)` (`app.editFile` -> 宿主 `EditActivity.editFileAt`), `app_launch(packageName|appName)`, `app_list(query)` (`package_manager`), `clipboard_get` / `clipboard_set`, `device_info`, `device_ensure_accessibility`, `toast(text)`. (SOURCE: `DeviceTools`, 宿主 `NodeBridgeDeviceActions` / `AccessibilityTool`; app_list 使用新增只读方法 `package_manager.listApps`, 原 list 的脚本依赖包语义保留. API 24 / 33 / 35 编辑器状态栏均显示 3:4, 应用查询与启动, 剪贴板往返, toast 通过; API 24 经临时 WSS 授权实测自动启用无障碍并恢复原授权状态)
 - [x] (插件) `shell_exec(cmd, root, timeoutMs, maxOutputBytes)` (默认关闭组; `root=true` 需 `shell.root` 令牌且组开关另有 "允许 root" 子开关). (SOURCE: `ShellTools` / `ToolPermissions.allowShellRoot` / `HostBridgeClient`, 宿主 `NodeBridgeShellOutput`; 两端按 UTF-8 字节限制 stdout + stderr, 默认 64 KiB / 最大 256 KiB, 超时默认 15 s / 最大 120 s. JVM 与假 broker 验证 root 开关和 grant 独立, 三设备验证默认 TOOL_DISABLED, 合计输出限制和超时 code=124 / timedOut=true; 未执行真机 root Shell. 后续 (2026-10-11): 真机 root Shell 与 Shizuku 自动启用已在 Sony XQ-DQ72 验证, 见 P9)
@@ -1592,3 +1594,23 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 修改: D65 (契约常量, 基类检查与回传失败改报). 宿主接收侧不加 192 Ki 检查, 以免直接实现 AIDL 的试点在 192 - 248 Ki 之间的结果被新宿主拒收. 宿主 changelog 不加条目 (6.8.0 插件工具契约尚未发布, 宿主行为不变).
 - 证据: 见 P12 的 D65 条目. 大结果走描述符登记为附录 C Q9 (推荐不做, 已先行).
 - 剩余: 宿主两笔本地提交随 6.8.0 推送; 试点与 Macaw / 示例的 AAR 跟进见 P12 条目的后续.
+
+
+### 2026-11-03: MCP 开启手机端 AutoJs6 服务端模式
+
+- 用户要求: 为 MCP 增加开启手机端 AutoJs6 远程服务的能力. 实现为 device 分组中的 `device_start_remote_server`, 无参数, 使用宿主的既有 TCP 7347 服务端模式. 返回 `enabled`, `alreadyRunning`, `port`, `connectedClients`, 只在实际监听后成功. 重复调用保留监听器与已有客户端, MCP 会话结束后监听继续, 从宿主抽屉关闭.
+- 宿主: `app.startRemoteServer` / `app.remote_server`, 显式令牌不由 `app` 或 `app.activity` 隐含授权. 缺少 Android 本地网络权限时说明在手机上给 AutoJs6 授权, 不远程打开权限页面. `RemoteServerStarter` 合并并发启动并在应答后清空请求引用, accept 循环由应用持有. 方法通过现有 JSON 能力信封传输, 无 AIDL / AAR 变更, 未增加公开脚本模块方法.
+- 插件: 工具目录, 封闭的空参数 schema, 输出 schema, 幂等与联网注解, DeviceTools 整形和 grant 隐藏. 10 语言 changelog / README 源与生成文件, 宿主协议文档同步. 旧宿主不会列出该工具, 直接调用回 CAPABILITY_DENIED. 新取证脚本 `tools/evidence/remote_server.py` 保留原服务端状态, `--expect-hidden` 验证旧宿主.
+- 真机发现并修复: 旧 JsonSocketServer 在监听端口被占用时吞掉异常; 在停止与 accept 同时发生时, 为刚接入客户端创建的 JsonSocketServer 会再次打开监听. 启动异常现在向调用者传播, 启动失败也释放重入标记; 监听 socket 在发布成功前可供状态查询; 已接入客户端不创建监听器, 关闭后到达的连接会释放. 宿主 changelog 同步 10 语言.
+- TEST: 插件 JVM 331/331, debug / androidTest 构建和 lintDebug 通过, 10 语言 / 36 生成产物只读校验通过. 宿主 JVM 29/29 (启动共享, 失败重试, 授权, 原抽屉订阅的弱引用和静态资源守卫), app debug / androidTest 构建通过. 静态资源清单仅由生成器恢复已有行的排序, 未新增白名单豁免.
+- DEVICE: Xiaomi 23046RP50C (968e9f18, Android 15 / API 35), 宿主 6.8.0 debug / 6623, 插件 1.2.0 debug / 250. `McpRemoteServerTest` 5/5: 端口占用失败后可重试, 重复启动不替换监听, broker 销毁后仍可 TCP 连接, 不带显式令牌与非法参数均拒绝, 关闭时的客户端实例不会重新监听. 真实 MCP: 首次启动 91 ms, 第二次 74 ms 且连接数保持 1; TCP hello, 参数拒绝, MCP DELETE 后再次连接, 原服务端状态恢复均通过. 换回宿主 6551 (95 项 grant, 新宿主为 96 项) 后 `--expect-hidden` 通过: 不列出工具, 直接调用 CAPABILITY_DENIED. Android 17 的系统权限拒绝未在本轮真机重测, 沿用宿主 LocalNetworkPermission 检查.
+- 收尾: 设备原宿主 6551, 插件 242 及各自原测试包均恢复, 四个 APK 的 SHA-256 与备份一致; 临时配对撤销, 测试创建的服务端关闭, MCP 监听恢复关闭. 精简日志与两个 MCP JSON 报告归档到各仓库 `.bak/mcp-remote-server-20261103/`, APK 备份在恢复校验后删除.
+- 已有校验限制: 宿主 HEAD 的简中日志比其它语言多 2 条 fix 与 2 条 improvement, 全量翻译校验因此无法通过, 本次未整理这些既有条目; 本次新 feature / fix 已同步 10 语言, 22 个宿主 Markdown 产物与当前源一致, 未刷新翻译基线. 宿主原有 SET_ALARM 声明 / .plain-stream 删除及插件原有平台版本修改均保留, 按工作区约定不自动提交混有既有用户改动的工作区; 未推送或发布.
+
+
+### 2026-11-03: MCP 仓库拆分提交与远端同步
+
+- 用户后续明确授权提交本仓库全部工作区文件, 推送远端并确认 CI 成功. 本轮范围仅为 MCP Server 仓库, 宿主仓库的实现及其它未提交改动仍单独保留.
+- 按功能拆分: 远程服务工具及其单元 / instrumentation 契约与多语言文档; 真机取证脚本与验证记录; 构建平台和原生库对齐校验插件升级到 1.9.7. 构建号随提交计数更新, 插件版本保持未发布的 1.2.0.
+- CI 准备: 假宿主的 grant 补上 app.startRemoteServer / app.remote_server, workspace 工具往返测试增加返回状态与桥接参数断言, 避免新工具被假宿主隐藏而破坏完整目录断言. 本地已跑通 CI 同款 JVM / debug / release / androidTest 构建, R8, 原生库对齐校验与 lint; 推送前另运行公共 prepush_check.py.
+- 远端同步方式: master 比 origin/master 领先的 70 笔既有提交随新提交正常推送, 不改写历史. 正式 Release 与官方插件索引不在本轮范围内; 新工具继续按宿主能力隐藏, 不提高旧宿主使用其它工具的门槛.
