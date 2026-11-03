@@ -70,6 +70,15 @@ own licenses. Runtime dependencies are added to this list in the same commit tha
 - License: Apache License 2.0
 - The JVM and instrumentation tests also use its decoder (`QRCodeReader`) to read the generated codes back
 
+## AutoJs6 build plugins (build only)
+
+- Components: `io.github.supermonster003.autojs6-platform-versions` and `io.github.supermonster003.autojs6-native-alignment` 1.9.7
+- Published implementation: `io.github.supermonster003:autojs6-gradle-platform-versions:1.9.7` (both plugin implementations are in the same JAR)
+- Source: <https://github.com/SuperMonster003/AutoJs6-Gradle-Platform-Versions>
+- SHA-256: `8e3338e8e8a314fe4991ed4cf0ea14895d5a6857c535d3dea10f6b9d8e120220` (`autojs6-gradle-platform-versions-1.9.7.jar`)
+- License: Mozilla Public License 2.0
+- Used by Gradle to select platform versions and verify native page alignment; not shipped in the APK
+
 ## Test-only dependencies
 
 These libraries are used by the JVM and instrumentation test source sets only and are not shipped

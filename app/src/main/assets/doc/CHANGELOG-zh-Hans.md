@@ -24,6 +24,7 @@
 * `优化` device_info 工具与资源 autojs6://device/info 新增 plugins 字段 (AutoJs6 6.8.0 及以上): 列出 OCR, 条码, OpenCV, 拼音, Pinyin4j, MediaInfo 与离线文档等插件家族的状态 (可用 / 未安装 / 已停用 / 版本不兼容), 各自带来的工具与安装提示, 便于模型提示用户去插件中心安装
 * `优化` device_info 工具与资源 autojs6://device/info 新增 pluginTools 字段 (AutoJs6 6.8.0 及以上): 列出声明了工具的插件, 其状态, 信任级别, 分组开关, 各工具是否已列出, 以及工具缺失时的处理办法
 * `优化` AutoJs6 6.8.0 构建 5333 及以上时, 设置页的通知关闭提示会说明配对请求在 AutoJs6 位于前台时同样会出现
+* `依赖` 升级 AutoJs6 构建平台与原生库对齐校验插件版本 1.9.0 -> 1.9.7
 
 # v1.1.0
 

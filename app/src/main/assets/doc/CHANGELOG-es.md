@@ -24,6 +24,7 @@
 * `Mejora` La herramienta device_info y el recurso autojs6://device/info ganan un campo plugins (AutoJs6 6.8.0 o posterior): el estado de cada familia de plugins, como OCR, códigos de barras, OpenCV, Pinyin, Pinyin4j, MediaInfo y documentación sin conexión (disponible / no instalado / desactivado / incompatible), las herramientas que aporta y una indicación de instalación, para que el modelo pueda decir al usuario qué instalar en el centro de plugins
 * `Mejora` La herramienta device_info y el recurso autojs6://device/info añaden el campo pluginTools (AutoJs6 6.8.0 o posterior): los plugins que declaran herramientas, su estado, nivel de confianza e interruptores de grupo, si cada herramienta aparece en la lista y qué hacer cuando faltan herramientas
 * `Mejora` Con AutoJs6 6.8.0 compilación 5333 o posterior, el aviso de notificaciones desactivadas de la página de ajustes indica que las solicitudes de emparejamiento también aparecen mientras AutoJs6 está en primer plano
+* `Dependencia` Actualizar los complementos de compilación AutoJs6 de versiones de plataforma y verificación de alineación nativa 1.9.0 -> 1.9.7
 
 # v1.1.0
 

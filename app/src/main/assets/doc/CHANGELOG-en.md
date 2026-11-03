@@ -24,6 +24,7 @@
 * `Improvement` The device_info tool and the autojs6://device/info resource gain a plugins field (AutoJs6 6.8.0 or later): the state of each plugin family, such as OCR, barcode, OpenCV, Pinyin, Pinyin4j, MediaInfo and offline docs (available / not installed / disabled / incompatible), the tools it brings and an install hint, so a model can tell the user what to install in the plugin center
 * `Improvement` The device_info tool and the autojs6://device/info resource gain a pluginTools field (AutoJs6 6.8.0 or later): the plugins that declare tools, their status, trust and group switches, whether each tool is listed, and what to do when tools are missing
 * `Improvement` With AutoJs6 6.8.0 build 5333 or later, the settings page notice about turned-off notifications says that pairing requests also appear while AutoJs6 is in the foreground
+* `Dependency` Upgrade AutoJs6 platform versions and native alignment build plugins 1.9.0 -> 1.9.7
 
 # v1.1.0
 
