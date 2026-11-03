@@ -73,6 +73,7 @@ MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Proto
 - 插件自我描述工具: AutoJs6 插件聲明的工具 (名稱, 說明, 參數格式與風險等級由插件作者撰寫, 例如 3-Hanzi CC 的 opencc_convert) 按插件分組出現在工具列表中, 參數由 AutoJs6 按插件聲明的格式校驗. 在設定頁 "插件提供的工具" 中, 官方插件預設開啟, 第三方插件需先在 AutoJs6 插件中心授權再手動開啟; 會寫入, 刪除或聯網的工具另需開啟分組的第二個開關. 圖片參數接受 "screen" (與 screen_capture 共用截圖上限) 或路徑, 工具產生的文件寫入工作目錄 plugin-outputs 下, 副檔名隨文件的實際格式, 並返回路徑 (outputPaths 可指定位置, 不覆蓋已有文件), 不超過 1 MiB 的圖片附預覽; device_info 的 pluginTools 欄位列出各插件的狀態與開關.
 - 連接方式: 透過 `adb forward` 的 USB 連接, 須明確開啟的區域網絡連接, 以及面向無 HTTP 傳輸用戶端的電腦端 stdio 橋接程式.
 - 安全: 可輪換的 Bearer 權杖, 手機端首次配對確認, 按分組的工具開關; 伺服器預設只監聽回環介面.
+- MCP device_start_remote_server 工具, 用於開啟手機端 AutoJs6 伺服器模式 (TCP 7347), 傳回監聽狀態與連線數量, 重複呼叫保留現有連線; 需要支援此功能的主程式, 未授予本機網絡權限時提示在手機上授權.
 
 ******
 
@@ -121,6 +122,7 @@ MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Proto
 | `clipboard_get` | `device` | 開 | Reads clipboard text (up to 64 KiB). Android may restrict clipboard access while AutoJs6 is in the background. |
 | `clipboard_set` | `device` | 開 | Replaces clipboard text, including an empty string to clear it. |
 | `device_ensure_accessibility` | `device` | 開 | Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance. |
+| `device_start_remote_server` | `device` | 開 | Starts AutoJs6 server mode on the phone (TCP port 7347) for the AutoJs6 VS Code extension to connect over LAN or adb forward. This opens the remote script and file-control listener, separate from the MCP endpoint. Returns only after the listening socket opens; an already running server and its clients are kept. No accessibility or root permission is needed. On Android 17+ grant local network / nearby devices access to AutoJs6 on the phone first; the MCP plugin's permission is separate. The server stays on after this call or MCP disconnects; stop it with AutoJs6's Server mode drawer switch. Available only with a host that grants app.startRemoteServer. |
 | `toast` | `device` | 開 | Shows a short Android toast on the phone. |
 | `shell_exec` | `shell` | 關 | Runs an Android shell command in the host workspace. The shell group is off by default; root also requires the separate allow root switch and a shell.root host grant. Reports exit code, timeout, stdout, stderr, and truncation. maxOutputBytes bounds stdout and stderr together. |
 | `ocr_recognize` | `ocr` | 開 | Recognize text on the phone screen or in an image file on the phone with an installed AutoJs6 OCR plugin (ML Kit, Paddle OCR or Rapid OCR). image is "screen" for the current screen, or a POSIX path relative to the AutoJs6 working directory for an image file. region crops before recognition, in screen pixels or file pixels. engine picks the OCR plugin; auto takes the first enabled one in ML Kit, Paddle, Rapid order. Returns the recognized lines as text and, as structured content, items with text, confidence and bounds (file bounds are in the file's own pixels even when AutoJs6 downscaled the image to read it). The screenshot is taken and recognized inside AutoJs6; no image leaves the phone. A first Paddle call loads its model and can take tens of seconds; timeoutMs defaults to 60 s. This tool exists only while an OCR plugin is installed and enabled in AutoJs6. While "Allow reading shared storage" is switched on in the MCP Server settings on the phone, absolute paths in shared storage (such as /storage/emulated/0/DCIM/...) are accepted too, read-only; Android/data and Android/obb never are. Reading the screen counts against the limit of 30 screenshots per minute per client that screen_capture also uses. |
@@ -325,7 +327,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 #### v1.2.0
 
-_2026/10/16_
+_2026/11/03_
 
 - `提示` 插件工具與 script_catalog / script_registered_run 依賴 AutoJs6 6.8.0 正式版中的宿主支持, 宿主不支持或未安裝對應插件時不會出現, 其餘工具照常可用 (最低宿主要求仍為建置 5298)
 - `新增` 6 個插件工具分組開關 (OCR 文字識別, 條碼識別, OpenCV 找圖找色, Pinyin 與 Pinyin4j 拼音轉換, MediaInfo 媒體信息): 這些分組的工具只在對應的 AutoJs6 插件已安裝並啟用時出現在客戶端的工具列表中, 安裝, 卸載或更新插件後列表自動更新, 調用插件缺失的工具會說明原因 (PLUGIN_UNAVAILABLE); 讀取屏幕的識別調用 (image 為 "screen") 與 screen_capture 共用每個客戶端每分鐘 30 次的截屏上限, 識別手機上的圖片文件不計入
@@ -337,6 +339,7 @@ _2026/10/16_
 - `新增` 設置頁 "允許讀取共享存儲" 開關 (默認關閉), 用於讓識別, 媒體信息與列目錄 / 查看屬性工具只讀訪問共享存儲中的絕對路徑 (例如相冊與下載目錄): 開啟前絕對路徑一律被拒絕, Android/data 與 Android/obb 始終不可讀, 其他文件工具仍只能訪問工作目錄 (AutoJs6 需要所有文件存取權限)
 - `新增` script_catalog 與 script_registered_run 工具 (script 分組), 用於列出並運行用戶在 AutoJs6 工作目錄中為模型登記的腳本 (帶 @agent 注釋頭的腳本或 project.json 含 agent 的項目, 需要 AutoJs6 6.8.0 及以上): 目錄列出每個腳本的說明, 參數, 風險等級與是否需要先確認; 運行時由 AutoJs6 按登記的參數檢查實參並補上默認值, 超過登記的時長自動停止, 返回腳本上報的結果與最新的控制台輸出; 只在 AutoJs6 授予相應能力時出現在工具列表中, 運行標記為敏感或需確認的腳本前模型會先徵求用戶同意
 - `新增` AutoJs6 插件自行聲明的工具 (如 3-Hanzi CC 插件的 opencc_convert 中文轉換, 需要 AutoJs6 6.8.0 及以上): 按插件分組出現在工具列表中, 官方插件預設開啟, 第三方插件需在設定頁 "插件提供的工具" 中手動開啟, 會寫入, 刪除或聯網的工具另需開啟所在分組的第二個開關; 圖片參數接受 "screen" 或路徑, 目錄參數接受目錄路徑 (如模型目錄), 工具產生的文件寫入工作目錄 plugin-outputs 下, 副檔名隨文件的實際格式, 並返回路徑 (可用 outputPaths 指定位置; 解壓等工具寫出的是資料夾, 資料夾可以已存在, 其中已有的檔案保留), 不超過 1 MiB 的圖片附預覽; 安裝, 卸載或更新插件後列表自動更新
+- `新增` MCP device_start_remote_server 工具, 用於開啟手機端 AutoJs6 伺服器模式 (TCP 7347), 傳回監聽狀態與連線數量, 重複呼叫保留現有連線; 需要支援此功能的主程式, 未授予本機網絡權限時提示在手機上授權
 - `修復` 設置頁切換工具分組開關後, 客戶端收到數十條重複的 tools/list_changed 通知 (每個工具一條) 的問題
 - `修復` 真機取證指令碼在發行版旁殘留偵錯測試套件時誤啟動測試並導致應用程式程序崩潰的問題
 - `優化` device_info 工具與資源 autojs6://device/info 新增 plugins 字段 (AutoJs6 6.8.0 及以上): 列出 OCR, 條碼, OpenCV, 拼音, Pinyin4j, MediaInfo 與離線文檔等插件家族的狀態 (可用 / 未安裝 / 已停用 / 版本不兼容), 各自帶來的工具與安裝提示, 便於模型提示用戶到插件中心安裝

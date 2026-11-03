@@ -2716,6 +2716,62 @@
     }
   },
   {
+    "name": "device_start_remote_server",
+    "title": "Start AutoJs6 remote server",
+    "description": "Starts AutoJs6 server mode on the phone (TCP port 7347) for the AutoJs6 VS Code extension to connect over LAN or adb forward. This opens the remote script and file-control listener, separate from the MCP endpoint. Returns only after the listening socket opens; an already running server and its clients are kept. No accessibility or root permission is needed. On Android 17+ grant local network / nearby devices access to AutoJs6 on the phone first; the MCP plugin's permission is separate. The server stays on after this call or MCP disconnects; stop it with AutoJs6's Server mode drawer switch. Available only with a host that grants app.startRemoteServer.",
+    "group": "device",
+    "defaultEnabled": true,
+    "bridge": "app.startRemoteServer",
+    "permissions": [
+      "app.remote_server"
+    ],
+    "timeoutMs": 12000,
+    "maxTimeoutMs": 12000,
+    "gatedByGrant": true,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether server mode is listening"
+        },
+        "alreadyRunning": {
+          "type": "boolean",
+          "description": "Whether it was already listening before this call"
+        },
+        "port": {
+          "type": "integer",
+          "description": "TCP listening port",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "connectedClients": {
+          "type": "integer",
+          "description": "Current server-side client count",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "enabled",
+        "alreadyRunning",
+        "port",
+        "connectedClients"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "toast",
     "title": "Show toast",
     "description": "Shows a short Android toast on the phone.",

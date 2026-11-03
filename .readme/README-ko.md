@@ -73,6 +73,7 @@ MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]
 - 플러그인 자체 설명 도구: AutoJs6 플러그인이 선언한 도구 (이름, 설명, 인수 형식, 위험 수준은 플러그인 작성자가 작성, 예: 3-Hanzi CC 의 opencc_convert) 가 플러그인별 그룹으로 도구 목록에 나타나며, 인수는 선언된 형식에 따라 AutoJs6 가 검증합니다. 설정의 "플러그인 도구" 에서 공식 플러그인은 기본으로 켜지고, 서드파티 플러그인은 AutoJs6 플러그인 센터에서 먼저 승인한 뒤 직접 켜야 합니다. 쓰기, 삭제 또는 네트워크 접속을 하는 도구는 그룹의 두 번째 스위치도 켜야 합니다. 이미지 인수는 "screen" (screen_capture 와 스크린샷 한도 공유) 또는 경로를 받고, 도구가 만든 파일은 실제 형식에 맞는 확장자로 작업 디렉터리의 plugin-outputs 에 저장되어 경로가 반환됩니다 (outputPaths 로 위치 지정 가능, 기존 파일은 덮어쓰지 않음). 1 MiB 이하 이미지는 미리보기가 첨부되며, device_info 의 pluginTools 필드에 각 플러그인의 상태와 스위치가 표시됩니다.
 - 연결 경로: `adb forward`를 통한 USB, 명시적으로 켜야 하는 로컬 네트워크, 그리고 HTTP 전송이 없는 클라이언트를 위한 PC 측 stdio 브리지.
 - 보안: 교체 가능한 Bearer 토큰, 휴대폰에서의 최초 페어링 확인, 그룹별 도구 스위치. 서버는 기본적으로 루프백 인터페이스에서만 수신합니다.
+- MCP device_start_remote_server 도구로 휴대폰의 AutoJs6 서버 모드 (TCP 7347)를 시작하고 수신 대기 상태와 연결 수를 반환하며, 반복 호출 시 기존 연결을 유지. 지원 호스트가 필요하며 로컬 네트워크 권한이 없으면 휴대폰에서 권한을 부여하도록 안내.
 
 ******
 
@@ -121,6 +122,7 @@ MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]
 | `clipboard_get` | `device` | 켜짐 | Reads clipboard text (up to 64 KiB). Android may restrict clipboard access while AutoJs6 is in the background. |
 | `clipboard_set` | `device` | 켜짐 | Replaces clipboard text, including an empty string to clear it. |
 | `device_ensure_accessibility` | `device` | 켜짐 | Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance. |
+| `device_start_remote_server` | `device` | 켜짐 | Starts AutoJs6 server mode on the phone (TCP port 7347) for the AutoJs6 VS Code extension to connect over LAN or adb forward. This opens the remote script and file-control listener, separate from the MCP endpoint. Returns only after the listening socket opens; an already running server and its clients are kept. No accessibility or root permission is needed. On Android 17+ grant local network / nearby devices access to AutoJs6 on the phone first; the MCP plugin's permission is separate. The server stays on after this call or MCP disconnects; stop it with AutoJs6's Server mode drawer switch. Available only with a host that grants app.startRemoteServer. |
 | `toast` | `device` | 켜짐 | Shows a short Android toast on the phone. |
 | `shell_exec` | `shell` | 꺼짐 | Runs an Android shell command in the host workspace. The shell group is off by default; root also requires the separate allow root switch and a shell.root host grant. Reports exit code, timeout, stdout, stderr, and truncation. maxOutputBytes bounds stdout and stderr together. |
 | `ocr_recognize` | `ocr` | 켜짐 | Recognize text on the phone screen or in an image file on the phone with an installed AutoJs6 OCR plugin (ML Kit, Paddle OCR or Rapid OCR). image is "screen" for the current screen, or a POSIX path relative to the AutoJs6 working directory for an image file. region crops before recognition, in screen pixels or file pixels. engine picks the OCR plugin; auto takes the first enabled one in ML Kit, Paddle, Rapid order. Returns the recognized lines as text and, as structured content, items with text, confidence and bounds (file bounds are in the file's own pixels even when AutoJs6 downscaled the image to read it). The screenshot is taken and recognized inside AutoJs6; no image leaves the phone. A first Paddle call loads its model and can take tens of seconds; timeoutMs defaults to 60 s. This tool exists only while an OCR plugin is installed and enabled in AutoJs6. While "Allow reading shared storage" is switched on in the MCP Server settings on the phone, absolute paths in shared storage (such as /storage/emulated/0/DCIM/...) are accepted too, read-only; Android/data and Android/obb never are. Reading the screen counts against the limit of 30 screenshots per minute per client that screen_capture also uses. |
@@ -325,7 +327,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 #### v1.2.0
 
-_2026/10/16_
+_2026/11/03_
 
 - `힌트` 플러그인 도구와 script_catalog / script_registered_run 은 AutoJs6 6.8.0 정식 버전의 호스트 지원이 필요하며, 호스트가 지원하지 않거나 해당 플러그인이 없으면 나타나지 않고 다른 도구는 그대로 사용할 수 있음 (최소 호스트 요구 사항은 여전히 빌드 5298)
 - `기능` 플러그인 도구 그룹 6 개와 각각의 스위치 (OCR 문자 인식, 바코드 인식, OpenCV 이미지 및 색상 찾기, Pinyin 과 Pinyin4j 병음 변환, MediaInfo 미디어 정보): 이 도구들은 해당 AutoJs6 플러그인이 설치되어 활성화된 동안에만 클라이언트 도구 목록에 나타나고, 플러그인을 설치, 제거, 업데이트하면 목록이 자동으로 갱신되며, 플러그인이 없는 도구를 호출하면 이유를 알려 줌 (PLUGIN_UNAVAILABLE); 화면을 읽는 인식 호출 (image 가 "screen") 은 screen_capture 와 클라이언트당 분당 30 회의 스크린샷 상한을 공유하며, 기기에 있는 이미지 파일 인식은 세지 않음
@@ -337,6 +339,7 @@ _2026/10/16_
 - `기능` 설정 페이지의 "공유 저장소 읽기 허용" 스위치 (기본 꺼짐), 인식, 미디어 정보, 목록 / 속성 도구가 공유 저장소의 절대 경로 (사진, 다운로드 등) 를 읽기 전용으로 사용하게 함: 켜기 전에는 절대 경로를 모두 거부하고, Android/data 와 Android/obb 는 항상 읽을 수 없으며, 다른 파일 도구는 작업 디렉터리 안으로 제한됨 (AutoJs6 에 모든 파일 접근 권한 필요)
 - `기능` script 그룹의 script_catalog 및 script_registered_run 도구, 사용자가 AutoJs6 작업 디렉터리에서 모델용으로 등록한 스크립트 (@agent 헤더 주석이 있는 스크립트, 또는 project.json 에 agent 가 있는 프로젝트; AutoJs6 6.8.0 이상) 를 나열하고 실행함: 카탈로그에는 각 스크립트의 설명, 매개변수, 위험 등급과 사전 확인 필요 여부가 표시됨; 실행 시 AutoJs6 이 등록된 매개변수로 인수를 검사하고 기본값을 채우며, 등록된 시간을 넘기면 중지하고, 스크립트가 보고한 결과와 최신 콘솔 줄을 반환함; AutoJs6 이 권한을 부여할 때만 도구 목록에 나타나며, 민감 또는 사전 확인으로 표시된 스크립트는 모델이 사용자에게 먼저 묻고 실행함
 - `기능` AutoJs6 플러그인이 스스로 설명하는 도구 (예: 3-Hanzi CC 플러그인의 중국어 변환 opencc_convert, AutoJs6 6.8.0 이상 필요): 플러그인별 그룹으로 도구 목록에 나타나며, 공식 플러그인은 기본으로 켜지고 서드파티 플러그인은 설정의 "플러그인 도구" 에서 직접 켜야 하며, 쓰기, 삭제 또는 네트워크 접속을 하는 도구는 그룹의 두 번째 스위치도 켜야 함; 이미지 인수는 "screen" 또는 경로를, 디렉터리 인수는 디렉터리 경로 (모델 디렉터리 등) 를 받고, 도구가 만든 파일은 실제 형식에 맞는 확장자로 작업 디렉터리의 plugin-outputs 에 저장되어 경로가 반환되며 (outputPaths 로 위치 지정 가능; 압축 해제 같은 도구는 폴더에 쓰며, 폴더가 이미 있어도 되고 기존 파일은 유지됨), 1 MiB 이하 이미지는 미리보기가 첨부됨; 플러그인 설치, 제거, 업데이트에 따라 목록이 자동으로 갱신됨
+- `기능` MCP device_start_remote_server 도구로 휴대폰의 AutoJs6 서버 모드 (TCP 7347)를 시작하고 수신 대기 상태와 연결 수를 반환하며, 반복 호출 시 기존 연결을 유지. 지원 호스트가 필요하며 로컬 네트워크 권한이 없으면 휴대폰에서 권한을 부여하도록 안내
 - `수정` 설정 페이지에서 도구 그룹을 전환하면 클라이언트에 tools/list_changed 알림이 수십 건 중복으로 전달되는 (도구마다 1 건) 문제
 - `수정` 기기 검증 스크립트가 릴리스 앱에 남아 있는 디버그 테스트 APK를 실행하여 앱 프로세스가 중단되는 문제
 - `개선` device_info 도구와 리소스 autojs6://device/info 에 plugins 필드 (AutoJs6 6.8.0 이상): OCR, 바코드, OpenCV, Pinyin, Pinyin4j, MediaInfo, 오프라인 문서 등 플러그인 계열의 상태 (사용 가능 / 미설치 / 비활성 / 호환 안 됨), 각각이 제공하는 도구와 설치 안내를 보여 주어 모델이 플러그인 센터에서의 설치를 안내할 수 있음

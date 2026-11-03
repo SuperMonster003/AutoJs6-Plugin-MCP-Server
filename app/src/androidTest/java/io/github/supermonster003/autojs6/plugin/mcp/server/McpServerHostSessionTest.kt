@@ -773,6 +773,15 @@ class McpServerHostSessionTest {
         success(ToolCatalog.CLIPBOARD_SET, """{"text":"sample"}""")
         assertEquals("sample", success(ToolCatalog.CLIPBOARD_GET).getString("text"))
         success(ToolCatalog.DEVICE_ENSURE_ACCESSIBILITY)
+        val remoteServer = success(ToolCatalog.DEVICE_START_REMOTE_SERVER)
+        assertTrue(remoteServer.getBoolean("enabled"))
+        assertEquals(7347, remoteServer.getInt("port"))
+        assertFalse(remoteServer.has("schema"))
+        val remoteRequest = broker.requests.last()
+        assertEquals("app", remoteRequest.getString("module"))
+        assertEquals("startRemoteServer", remoteRequest.getString("method"))
+        assertEquals(0, remoteRequest.getJSONArray("args").length())
+        assertEquals(listOf("app.remote_server"), remoteRequest.getJSONArray("permissions").toStringList())
         success(ToolCatalog.TOAST, """{"text":"sample"}""")
         val before = broker.requests.size
         assertEquals("INVALID_ARGUMENTS", call(ToolCatalog.FILES_WRITE, """{"path":"../escape","content":"x"}""").getJSONObject("structuredContent").getJSONObject("error").getString("code"))
@@ -919,13 +928,13 @@ class McpServerHostSessionTest {
                     "accessibility.scrollForward", "accessibility.swipe", "accessibility.back", "keys.notifications", "app.currentWindow",
                     "device.isScreenOn", "accessibility.screenshot", "media_projection.requestScreenCapture", "image.captureScreen",
                     "files.list", "files.stat", "files.read", "files.write", "files.mkdir", "files.rename", "files.delete",
-                    "app.editFile", "app.launchPackage", "app.launchApp", "package_manager.listApps", "clipboard.getText", "clipboard.setText",
+                    "app.editFile", "app.launchPackage", "app.launchApp", "app.startRemoteServer", "package_manager.listApps", "clipboard.getText", "clipboard.setText",
                     "accessibility.ensureEnabled", "toast.toast", "shell.exec", "app.listSamples", "app.readSample",
                     "agent.listScripts", "agent.readManifest", "agent.execRegistered",
                 ) + (if (pluginFamilies != null) familyGrantMethods else emptyArray())
                     + if (pluginTools != null) arrayOf("plugin_tools.list", "plugin_tools.invoke", "plugin_tools.cancel") else emptyArray(),
             )
-            putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query", "files", "files.write", "files.delete", "files.shared_read", "agent", "agent.exec", "app.activity", "app.launch", "package_manager", "clipboard", "toast", "shell", "shell.root")
+            putStringArray(McpServerContract.KEY_GRANT_PERMISSIONS, arrayOf("device", "engines", "engines.exec", "console", "accessibility", "accessibility.gesture", "keys", "app.query", "files", "files.write", "files.delete", "files.shared_read", "agent", "agent.exec", "app.activity", "app.launch", "app.remote_server", "package_manager", "clipboard", "toast", "shell", "shell.root")
                 + (if (pluginFamilies != null) arrayOf("ocr", "barcode", "image", "screen_capture", "pinyin", "pinyin4j", "media", "media.metadata") else emptyArray())
                 + if (pluginTools != null) arrayOf("plugin_tools", "plugin_tools.user_granted", "screen_capture") else emptyArray())
             putInt(McpServerContract.KEY_GRANT_MAX_REQUEST_BYTES, McpServerContract.MAX_BRIDGE_INLINE_JSON_BYTES)
@@ -965,6 +974,8 @@ class McpServerHostSessionTest {
                     ok(id, JSONObject().put("payload", JSONObject().put("kind", "descriptor")))
                 }
                 "app.editFile", "app.launchPackage", "app.launchApp", "accessibility.ensureEnabled" -> ok(id, true)
+                "app.startRemoteServer" -> ok(id, JSONObject().put("schema", "autojs6-bridge-remote-server-v1")
+                    .put("enabled", true).put("alreadyRunning", false).put("port", 7347).put("connectedClients", 0))
                 "clipboard.getText" -> ok(id, "sample")
                 "clipboard.setText", "toast.toast" -> ok(id, JSONObject.NULL)
                 "package_manager.listApps" -> ok(id, JSONObject().put("schema", "apps-v1").put("apps", JSONArray()).put("count", 0))

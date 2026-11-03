@@ -292,7 +292,7 @@ class ToolCatalogTest {
         assertEquals(JsonPrimitive("engines.execScript"), (rows[2] as JsonObject)["bridge"])
         assertEquals(JsonPrimitive("accessibility.dump"), (rows[10] as JsonObject)["bridge"])
         assertEquals(JsonPrimitive("ui_gesture"), (rows[21] as JsonObject)["group"])
-        assertEquals(listOf("script_catalog", "script_registered_run"), ToolCatalog.all.filter { it.gatedByGrant }.map { it.name })
+        assertEquals(listOf("script_catalog", "script_registered_run", "device_start_remote_server"), ToolCatalog.all.filter { it.gatedByGrant }.map { it.name })
     }
 
     private companion object {
@@ -303,7 +303,7 @@ class ToolCatalogTest {
         val GESTURE_NAMES = listOf("ui_swipe", "ui_gesture")
         val FILE_NAMES = listOf("files_list", "files_stat", "files_read", "files_write", "files_mkdir", "files_rename", "files_delete", "editor_open")
         val DEFAULT_FILE_NAMES = FILE_NAMES.filter { it != "files_delete" }
-        val NEW_DEVICE_NAMES = listOf("app_launch", "app_list", "clipboard_get", "clipboard_set", "device_ensure_accessibility", "toast")
+        val NEW_DEVICE_NAMES = listOf("app_launch", "app_list", "clipboard_get", "clipboard_set", "device_ensure_accessibility", "device_start_remote_server", "toast")
         val SCREEN_NAMES = listOf("screen_capture", "screen_state")
         val PLUGIN_FAMILY_NAMES = listOf("ocr_recognize", "barcode_detect", "opencv_find_image", "opencv_find_color", "opencv_find_multi_colors", "pinyin_convert", "pinyin4j_convert", "mediainfo_read")
     }

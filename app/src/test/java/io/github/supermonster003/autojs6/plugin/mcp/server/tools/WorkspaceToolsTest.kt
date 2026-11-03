@@ -7,6 +7,32 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WorkspaceToolsTest {
+    @Test fun `remote server startup sends no arguments and preserves verified host status`() = runBlocking {
+        result = args("""{"schema":"autojs6-bridge-remote-server-v1","enabled":true,"alreadyRunning":true,"port":7347,"connectedClients":2}""")
+        val shaped = plan(DeviceTools(), ToolCatalog.DEVICE_START_REMOTE_SERVER, args("{}")).run(caller).structured
+        assertEquals("app", calls.single().module)
+        assertEquals("startRemoteServer", calls.single().method)
+        assertEquals(listOf("app.remote_server"), calls.single().permissions)
+        assertTrue(calls.single().args.isEmpty())
+        assertEquals(args("""{"enabled":true,"alreadyRunning":true,"port":7347,"connectedClients":2}"""), shaped)
+        assertThrows(ToolArgumentException::class.java) {
+            plan(DeviceTools(), ToolCatalog.DEVICE_START_REMOTE_SERVER, args("""{"port":9637}"""))
+        }
+        Unit
+    }
+
+    @Test fun `remote server startup rejects malformed or unsuccessful host results`() = runBlocking {
+        listOf("true", "{}", """{"enabled":false,"alreadyRunning":false,"port":7347,"connectedClients":0}""",
+            """{"enabled":true,"alreadyRunning":true,"port":0,"connectedClients":0}""").forEach {
+            result = Json.parseToJsonElement(it)
+            try {
+                plan(DeviceTools(), ToolCatalog.DEVICE_START_REMOTE_SERVER, args("{}")).run(caller)
+                fail("Accepted $it")
+            } catch (error: ToolFailureException) {
+                assertEquals(ToolErrorCodes.HOST_ERROR, error.failure.code)
+            }
+        }
+    }
     private fun args(text: String) = Json.parseToJsonElement(text).jsonObject
     private val calls = mutableListOf<BridgeRequest>()
     private var result: JsonElement = args("""{"schema":"host-v1","path":"test.js","bytes":3}""")

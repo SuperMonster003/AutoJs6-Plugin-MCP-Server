@@ -53,6 +53,7 @@ object ToolCatalog {
     const val CLIPBOARD_GET = "clipboard_get"
     const val CLIPBOARD_SET = "clipboard_set"
     const val DEVICE_ENSURE_ACCESSIBILITY = "device_ensure_accessibility"
+    const val DEVICE_START_REMOTE_SERVER = "device_start_remote_server"
     const val TOAST = "toast"
     const val SHELL_EXEC = "shell_exec"
     const val OCR_RECOGNIZE = "ocr_recognize"
@@ -65,7 +66,7 @@ object ToolCatalog {
     const val MEDIAINFO_READ = "mediainfo_read"
 
     val FILE_NAMES = listOf(FILES_LIST, FILES_STAT, FILES_READ, FILES_WRITE, FILES_MKDIR, FILES_RENAME, FILES_DELETE)
-    val DEVICE_ACTION_NAMES = listOf(EDITOR_OPEN, APP_LAUNCH, APP_LIST, CLIPBOARD_GET, CLIPBOARD_SET, DEVICE_ENSURE_ACCESSIBILITY, TOAST)
+    val DEVICE_ACTION_NAMES = listOf(EDITOR_OPEN, APP_LAUNCH, APP_LIST, CLIPBOARD_GET, CLIPBOARD_SET, DEVICE_ENSURE_ACCESSIBILITY, DEVICE_START_REMOTE_SERVER, TOAST)
 
     object Files {
         const val MAX_BYTES = 1024 * 1024
@@ -897,6 +898,24 @@ object ToolCatalog {
         ToolGroup.DEVICE, bridge = BridgeMethod("clipboard", "setText"), permissions = listOf("clipboard"))
     val deviceEnsureAccessibility = ToolSpec(DEVICE_ENSURE_ACCESSIBILITY, "Enable accessibility", "Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance.",
         JsonSchemas.objectSchema(), ToolGroup.DEVICE, bridge = BridgeMethod("accessibility", "ensureEnabled"), permissions = listOf("accessibility"), timeoutMs = Device.ENSURE_TIMEOUT_MS)
+    val deviceStartRemoteServer = ToolSpec(
+        DEVICE_START_REMOTE_SERVER, "Start AutoJs6 remote server",
+        "Starts AutoJs6 server mode on the phone (TCP port 7347) for the AutoJs6 VS Code extension to connect over LAN or adb forward. " +
+                "This opens the remote script and file-control listener, separate from the MCP endpoint. " +
+                "Returns only after the listening socket opens; an already running server and its clients are kept. " +
+                "No accessibility or root permission is needed. On Android 17+ grant local network / nearby devices access to AutoJs6 on the phone first; the MCP plugin's permission is separate. " +
+                "The server stays on after this call or MCP disconnects; stop it with AutoJs6's Server mode drawer switch. " +
+                "Available only with a host that grants app.startRemoteServer.",
+        JsonSchemas.objectSchema(), ToolGroup.DEVICE,
+        outputSchema = JsonSchemas.objectSchema(linkedMapOf(
+            "enabled" to JsonSchemas.boolean("Whether server mode is listening"),
+            "alreadyRunning" to JsonSchemas.boolean("Whether it was already listening before this call"),
+            "port" to JsonSchemas.integer("TCP listening port", minimum = 1, maximum = 65535),
+            "connectedClients" to JsonSchemas.integer("Current server-side client count", minimum = 0),
+        ), listOf("enabled", "alreadyRunning", "port", "connectedClients")),
+        bridge = BridgeMethod("app", "startRemoteServer"), permissions = listOf("app.remote_server"),
+        timeoutMs = 12_000, hints = ToolHints(idempotent = true, openWorld = true), gatedByGrant = true,
+    )
     val toast = ToolSpec(TOAST, "Show toast", "Shows a short Android toast on the phone.",
         JsonSchemas.objectSchema(linkedMapOf(Workspace.TEXT to JsonSchemas.string("Toast text", maxLength = 4096)), listOf(Workspace.TEXT)),
         ToolGroup.DEVICE, bridge = BridgeMethod("toast", "toast"), permissions = listOf("toast"))
@@ -1215,7 +1234,7 @@ object ToolCatalog {
         uiSwipe, uiGesture,
         screenCapture, screenState,
         filesList, filesStat, filesRead, filesWrite, filesMkdir, filesRename, filesDelete, editorOpen,
-        appLaunch, appList, clipboardGet, clipboardSet, deviceEnsureAccessibility, toast, shellExec,
+        appLaunch, appList, clipboardGet, clipboardSet, deviceEnsureAccessibility, deviceStartRemoteServer, toast, shellExec,
         // Plugin-family rows (roadmap P11): listed only while the host grants their methods and reports the plugin as available.
         ocrRecognize, barcodeDetect, opencvFindImage, opencvFindColor, opencvFindMultiColors, pinyinConvert, pinyin4jConvert, mediainfoRead,
     )

@@ -29,7 +29,7 @@ class OutputSchemaTest {
     @Test
     fun `exactly the tools with a stable structured result declare an output schema`() {
         val declared = ToolCatalog.all.filter { it.outputSchema != null }.map { it.name }
-        assertEquals(listOf(ToolCatalog.DEVICE_INFO, ToolCatalog.SCRIPT_RUN, ToolCatalog.SCRIPT_RUN_FILE, ToolCatalog.SCREEN_STATE), declared)
+        assertEquals(listOf(ToolCatalog.DEVICE_INFO, ToolCatalog.SCRIPT_RUN, ToolCatalog.SCRIPT_RUN_FILE, ToolCatalog.SCREEN_STATE, ToolCatalog.DEVICE_START_REMOTE_SERVER), declared)
         ToolCatalog.all.filter { it.outputSchema != null }.forEach { spec ->
             val sdk = spec.toSdkTool().outputSchema
             assertNotNull(spec.name, sdk)

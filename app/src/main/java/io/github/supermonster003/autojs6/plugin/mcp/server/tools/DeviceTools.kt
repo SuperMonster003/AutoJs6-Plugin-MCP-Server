@@ -55,6 +55,17 @@ class DeviceTools(private val permissions: () -> ToolPermissions = { ToolPermiss
                                 "AutoJs6 could not enable its accessibility service", ToolFailure.HINT_ACCESSIBILITY_MANUAL))
                         put("enabled", true)
                     }
+                    ToolCatalog.DEVICE_START_REMOTE_SERVER -> {
+                        val obj = result as? JsonObject
+                            ?: throw ToolFailureException(ToolFailure.internal("the host returned an invalid remote server status"))
+                        if ((obj["enabled"] as? JsonPrimitive)?.booleanOrNull != true ||
+                            (obj["alreadyRunning"] as? JsonPrimitive)?.booleanOrNull == null ||
+                            (obj["port"] as? JsonPrimitive)?.intOrNull !in 1..65535 ||
+                            ((obj["connectedClients"] as? JsonPrimitive)?.intOrNull ?: -1) < 0) {
+                            throw ToolFailureException(ToolFailure.internal("the host returned an invalid remote server status"))
+                        }
+                        listOf("enabled", "alreadyRunning", "port", "connectedClients").forEach { put(it, obj.getValue(it)) }
+                    }
                     ToolCatalog.EDITOR_OPEN, ToolCatalog.APP_LAUNCH -> {
                         if ((result as? JsonPrimitive)?.booleanOrNull != true)
                             throw ToolFailureException(ToolFailure.actionFailed("AutoJs6 could not open the requested target", "check that the file or application exists and Android permits opening it"))

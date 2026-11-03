@@ -170,11 +170,11 @@ class PluginToolInvocationsTest {
         assertFalse(registry.refresh())
         assertNull("nobody reported it", registry.disabledFailure("opencc_convert"))
 
-        availability = PluginToolAvailability(AGENT + "plugin_tools.list", null, tools = report)
+        availability = PluginToolAvailability(BUILT_INS + "plugin_tools.list", null, tools = report)
         assertFalse("without plugin_tools.invoke nothing joins", registry.refresh())
         assertEquals(ToolErrorCodes.CAPABILITY_DENIED, registry.disabledFailure("opencc_convert")?.code)
 
-        val granted = AGENT + setOf("plugin_tools.list", "plugin_tools.invoke")
+        val granted = BUILT_INS + setOf("plugin_tools.list", "plugin_tools.invoke")
         availability = PluginToolAvailability(granted, null, tools = report)
         assertTrue(registry.refresh())
         assertEquals(defaults + "opencc_convert", registry.enabledNames)
@@ -216,6 +216,6 @@ class PluginToolInvocationsTest {
 
     private companion object {
         /** The methods of the grant-gated catalog rows, so that they stay listed as without a session. */
-        val AGENT = setOf("agent.listScripts", "agent.readManifest", "agent.execRegistered")
+        val BUILT_INS = setOf("agent.listScripts", "agent.readManifest", "agent.execRegistered", "app.startRemoteServer")
     }
 }

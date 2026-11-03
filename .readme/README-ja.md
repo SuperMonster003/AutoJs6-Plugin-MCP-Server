@@ -73,6 +73,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 - プラグインが自ら記述するツール: AutoJs6 プラグインが宣言したツール (名前, 説明, 引数の形式, リスクはプラグイン作者が記述. 例: 3-Hanzi CC の opencc_convert) がプラグインごとのグループでツール一覧に表示され, 引数は宣言された形式に従って AutoJs6 が検証します. 設定の "プラグインのツール" では, 公式プラグインは既定でオン, サードパーティ製プラグインは AutoJs6 のプラグインセンターで許可してから手動でオンにします. 書き込み, 削除, ネットワーク接続を行うツールにはグループの 2 つ目のスイッチも必要です. 画像引数は "screen" (screen_capture とスクリーンショット上限を共有) またはパスを受け付け, ツールが生成したファイルは実際の形式に合った拡張子で作業ディレクトリの plugin-outputs に書き込まれてパスが返されます (outputPaths で場所を指定でき, 既存のファイルは上書きしません). 1 MiB 以下の画像にはプレビューが付き, device_info の pluginTools フィールドに各プラグインの状態とスイッチが表示されます.
 - 接続経路: `adb forward` による USB 接続, 明示的に有効化するローカルネットワーク接続, および HTTP トランスポートを持たないクライアント向けの PC 側 stdio ブリッジ.
 - セキュリティ: ローテーション可能な Bearer トークン, スマートフォン上での初回ペアリング確認, グループ単位のツールスイッチ. サーバーはデフォルトでループバックインターフェースのみを待ち受けます.
+- MCP device_start_remote_server ツールで端末の AutoJs6 サーバーモード (TCP 7347) を開始し, 待ち受け状態と接続数を返す. 繰り返し呼び出しても既存の接続を維持する. 対応ホストが必要で, ローカルネットワーク権限がない場合は端末での許可を案内する.
 
 ******
 
@@ -121,6 +122,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 | `clipboard_get` | `device` | 有効 | Reads clipboard text (up to 64 KiB). Android may restrict clipboard access while AutoJs6 is in the background. |
 | `clipboard_set` | `device` | 有効 | Replaces clipboard text, including an empty string to clear it. |
 | `device_ensure_accessibility` | `device` | 有効 | Asks AutoJs6 to enable its accessibility service using its configured secure-settings, root, or Shizuku strategy. Waits up to 10 s for an operational service; failure includes manual activation guidance. |
+| `device_start_remote_server` | `device` | 有効 | Starts AutoJs6 server mode on the phone (TCP port 7347) for the AutoJs6 VS Code extension to connect over LAN or adb forward. This opens the remote script and file-control listener, separate from the MCP endpoint. Returns only after the listening socket opens; an already running server and its clients are kept. No accessibility or root permission is needed. On Android 17+ grant local network / nearby devices access to AutoJs6 on the phone first; the MCP plugin's permission is separate. The server stays on after this call or MCP disconnects; stop it with AutoJs6's Server mode drawer switch. Available only with a host that grants app.startRemoteServer. |
 | `toast` | `device` | 有効 | Shows a short Android toast on the phone. |
 | `shell_exec` | `shell` | 無効 | Runs an Android shell command in the host workspace. The shell group is off by default; root also requires the separate allow root switch and a shell.root host grant. Reports exit code, timeout, stdout, stderr, and truncation. maxOutputBytes bounds stdout and stderr together. |
 | `ocr_recognize` | `ocr` | 有効 | Recognize text on the phone screen or in an image file on the phone with an installed AutoJs6 OCR plugin (ML Kit, Paddle OCR or Rapid OCR). image is "screen" for the current screen, or a POSIX path relative to the AutoJs6 working directory for an image file. region crops before recognition, in screen pixels or file pixels. engine picks the OCR plugin; auto takes the first enabled one in ML Kit, Paddle, Rapid order. Returns the recognized lines as text and, as structured content, items with text, confidence and bounds (file bounds are in the file's own pixels even when AutoJs6 downscaled the image to read it). The screenshot is taken and recognized inside AutoJs6; no image leaves the phone. A first Paddle call loads its model and can take tens of seconds; timeoutMs defaults to 60 s. This tool exists only while an OCR plugin is installed and enabled in AutoJs6. While "Allow reading shared storage" is switched on in the MCP Server settings on the phone, absolute paths in shared storage (such as /storage/emulated/0/DCIM/...) are accepted too, read-only; Android/data and Android/obb never are. Reading the screen counts against the limit of 30 screenshots per minute per client that screen_capture also uses. |
@@ -325,7 +327,7 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 #### v1.2.0
 
-_2026/10/16_
+_2026/11/03_
 
 - `ヒント` プラグインツールと script_catalog / script_registered_run には AutoJs6 6.8.0 正式版のホスト側の対応が必要で, ホストが対応していない場合や対応するプラグインがない場合は表示されず, ほかのツールはそのまま使えます (最低ホスト要件は引き続きビルド 5298)
 - `機能` プラグインツールのグループ 6 つとそのスイッチ (OCR 文字認識, バーコード認識, OpenCV の画像と色の検索, Pinyin と Pinyin4j のピンイン変換, MediaInfo のメディア情報): これらのツールは対応する AutoJs6 プラグインがインストールされ有効な間だけクライアントのツール一覧に表示され, プラグインのインストール, 削除, 更新の後に一覧が自動で更新され, プラグインのないツールを呼び出すと理由を返す (PLUGIN_UNAVAILABLE); 画面を読む認識呼び出し (image が "screen") は screen_capture とクライアントごとに毎分 30 回のスクリーンショット上限を共有し, 端末上の画像ファイルの認識は数えない
@@ -337,6 +339,7 @@ _2026/10/16_
 - `機能` 設定ページの "共有ストレージの読み取りを許可" スイッチ (既定はオフ), 認識, メディア情報, 一覧 / 属性ツールが共有ストレージの絶対パス (写真やダウンロードなど) を読み取り専用で扱えるようにする: オンにするまで絶対パスはすべて拒否され, Android/data と Android/obb は常に読めず, ほかのファイルツールは作業ディレクトリ内に限られる (AutoJs6 にすべてのファイルへのアクセス権が必要)
 - `機能` script グループの script_catalog と script_registered_run ツール, ユーザーが AutoJs6 の作業ディレクトリでモデル向けに登録したスクリプト (@agent ヘッダーコメント付きのスクリプト, または project.json に agent を持つプロジェクト; AutoJs6 6.8.0 以降) を一覧表示して実行する: カタログには各スクリプトの説明, パラメーター, リスクと事前確認の要否が並ぶ; 実行時は AutoJs6 が登録されたパラメーターで引数を検査して既定値を補い, 登録された時間を過ぎると停止し, スクリプトが報告した結果と最新のコンソール行を返す; AutoJs6 が権限を与えたときだけツール一覧に現れ, センシティブまたは事前確認と記されたスクリプトはモデルがユーザーに確認してから実行する
 - `機能` AutoJs6 プラグインが自ら記述するツール (例: 3-Hanzi CC プラグインの中国語変換 opencc_convert, AutoJs6 6.8.0 以降が必要): プラグインごとのグループでツール一覧に表示され, 公式プラグインは既定でオン, サードパーティ製プラグインは設定の "プラグインのツール" で手動でオンにする必要があり, 書き込み, 削除, ネットワーク接続を行うツールにはグループの 2 つ目のスイッチも必要; 画像引数は "screen" またはパスを, ディレクトリ引数はディレクトリのパス (モデルのディレクトリなど) を受け付け, ツールが生成したファイルは実際の形式に合った拡張子で作業ディレクトリの plugin-outputs に書き込まれてパスが返され (outputPaths で場所を指定可能; 展開などのツールはフォルダーに書き込み, フォルダーは既存でもよく, 既存のファイルは残る), 1 MiB 以下の画像にはプレビューが付く; プラグインのインストール, 削除, 更新に合わせて一覧が自動更新される
+- `機能` MCP device_start_remote_server ツールで端末の AutoJs6 サーバーモード (TCP 7347) を開始し, 待ち受け状態と接続数を返す. 繰り返し呼び出しても既存の接続を維持する. 対応ホストが必要で, ローカルネットワーク権限がない場合は端末での許可を案内する
 - `修正` 設定ページでツールグループを切り替えると, クライアントに tools/list_changed 通知が数十件重複して届く (ツールごとに 1 件) 問題
 - `修正` 実機検証スクリプトが残存するデバッグ用テスト APK をリリース版アプリに対して起動し, アプリのプロセスがクラッシュする問題
 - `改善` device_info ツールとリソース autojs6://device/info に plugins フィールド (AutoJs6 6.8.0 以降): OCR, バーコード, OpenCV, Pinyin, Pinyin4j, MediaInfo, オフラインドキュメントなどのプラグインファミリーの状態 (利用可能 / 未インストール / 無効 / 非互換), それぞれが提供するツールとインストールのヒントを示し, モデルがプラグインセンターでのインストールを案内できる

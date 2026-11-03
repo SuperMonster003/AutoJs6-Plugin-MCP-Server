@@ -63,7 +63,7 @@ class ToolRegistryTest {
         val report = PluginFamilyReport.parse(Json.parseToJsonElement(
             """{"schema":"autojs6-bridge-app-plugin-capabilities-v1","families":[{"id":"ocr","status":"available","methods":["ocr.recognize"],"plugins":[]}]}""",
         ))!!
-        val granted = setOf("ocr.recognize", "image.readImage", "app.pluginCapabilities", "agent.listScripts", "agent.readManifest", "agent.execRegistered")
+        val granted = setOf("ocr.recognize", "image.readImage", "app.pluginCapabilities", "agent.listScripts", "agent.readManifest", "agent.execRegistered", "app.startRemoteServer")
         var availability = PluginToolAvailability.NONE
         val registry = ToolRegistry(ToolCatalog.all + ocrSpec, { permissions }, { availability }) { _, _, _ -> ToolResults.success(JsonObject(emptyMap())) }
         val defaults = ToolCatalog.enabled(ToolPermissions.DEFAULT).map { it.name }
@@ -113,7 +113,8 @@ class ToolRegistryTest {
         // An older host: its grant has no agent methods (roadmap P11 D42).
         availability = PluginToolAvailability(setOf("engines.execScript", "device.info"), null)
         assertTrue(registry.refresh())
-        assertEquals(defaults - ToolCatalog.SCRIPT_CATALOG - ToolCatalog.SCRIPT_REGISTERED_RUN, registry.enabledNames)
+        assertEquals(defaults - ToolCatalog.SCRIPT_CATALOG - ToolCatalog.SCRIPT_REGISTERED_RUN - ToolCatalog.DEVICE_START_REMOTE_SERVER, registry.enabledNames)
+        assertEquals(ToolErrorCodes.CAPABILITY_DENIED, registry.disabledFailure(ToolCatalog.DEVICE_START_REMOTE_SERVER)?.code)
         val denied = registry.disabledFailure(ToolCatalog.SCRIPT_REGISTERED_RUN)
         assertEquals(ToolErrorCodes.CAPABILITY_DENIED, denied?.code)
         assertEquals("agent", denied?.module)
@@ -123,6 +124,14 @@ class ToolRegistryTest {
         assertTrue(registry.refresh())
         assertTrue(ToolCatalog.SCRIPT_CATALOG in registry.enabledNames)
         assertFalse(ToolCatalog.SCRIPT_REGISTERED_RUN in registry.enabledNames)
+
+        availability = PluginToolAvailability(setOf("agent.listScripts", "app.startRemoteServer"), null)
+        assertTrue(registry.refresh())
+        assertTrue(ToolCatalog.DEVICE_START_REMOTE_SERVER in registry.enabledNames)
+        permissions = ToolPermissions.DEFAULT.with(ToolGroup.DEVICE, false)
+        assertTrue(registry.refresh())
+        assertEquals(ToolErrorCodes.TOOL_DISABLED, registry.disabledFailure(ToolCatalog.DEVICE_START_REMOTE_SERVER)?.code)
+        permissions = ToolPermissions.DEFAULT
 
         // An empty grant means the host did not say: listed, the broker enforces its grant itself.
         availability = PluginToolAvailability(emptySet(), null)
