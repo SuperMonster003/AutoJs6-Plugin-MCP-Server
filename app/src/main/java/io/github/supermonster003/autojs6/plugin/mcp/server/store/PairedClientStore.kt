@@ -31,6 +31,12 @@ class PairedClientStore(context: Context) : PairedClientRepository {
         return removed
     }
 
+    /** Replaces the whole list (settings transfer, roadmap P13); a failure reaches the caller. */
+    @Throws(IOException::class)
+    fun replaceAll(clients: List<PairedClient>) {
+        document.write(if (clients.isEmpty()) null else PairedClientCodec.encode(clients))
+    }
+
     fun clear() {
         modify { emptyList() }
     }

@@ -52,7 +52,7 @@ The server runs inside the plugin's own process and is reached through a single 
 
 ******
 
-Version 1.2.0: 39 built-in tools (35 enabled by default) and 8 plugin capability tools, MCP resources and prompts, an AutoJs6 drawer switch and a plugin settings page. Requires AutoJs6 6.8.0 (build 5298) or later; the plugin capability tools appear only while the matching AutoJs6 plugin is installed and enabled, the plugin capability and registered-script tools stay hidden on hosts that do not support them, and the optional autojs6://docs/ resources also need the AutoJs6 Offline Docs plugin and a host with its relay methods. Tools that AutoJs6 plugins describe themselves (such as opencc_convert of 3-Hanzi CC) are listed in addition, in one group per plugin, with AutoJs6 6.8.0 or later. Progress and evidence are tracked in [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Version 1.3.0: 39 built-in tools (35 enabled by default) and 8 plugin capability tools, MCP resources and prompts, an AutoJs6 drawer switch and a plugin settings page. Requires AutoJs6 6.8.0 (build 5298) or later; the plugin capability tools appear only while the matching AutoJs6 plugin is installed and enabled, the plugin capability and registered-script tools stay hidden on hosts that do not support them, and the optional autojs6://docs/ resources also need the AutoJs6 Offline Docs plugin and a host with its relay methods. Tools that AutoJs6 plugins describe themselves (such as opencc_convert of 3-Hanzi CC) are listed in addition, in one group per plugin, with AutoJs6 6.8.0 or later. Progress and evidence are tracked in [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -280,6 +280,7 @@ The plugin follows explicit boundaries:
 - The server listens on 127.0.0.1 by default. Local network access stays off until you turn it on; the token, the pairing confirmation, the Host allow list and the rate limits still apply on the local network, and a daily notification reminds you while it is on.
 - On Android 17 or later, allow Nearby devices before enabling this plugin in the AutoJs6 plugin center. You can also manage this permission from the Settings page for this plugin. Without permission, the plugin stays disabled and automatic startup is skipped silently. The grant belongs to this plugin, independently of AutoJs6.
 - The access token comes from a secure random source, is wrapped with an AES-GCM key from the Android Keystore and lives in the plugin's private, never-backed-up storage; backups and device transfers are disabled. The settings page shows only its last 4 characters, the full-token dialogs block screenshots, and copies are marked sensitive for the clipboard.
+- When the settings are exported together with AutoJs6's (AutoJs6 6.8.1 or later), the export holds the access token and the paired clients: AutoJs6 leaves the plugin unselected by default and encrypts its part of the archive once it is selected, so keep the exported file as safe as the token itself. Importing an archive replaces the token on the phone; clients that use another token must switch to the imported one.
 - Logs never contain the token, request bodies, file contents or screenshots; the plugin logs tool names, client names and token fingerprints only. This was verified with logcat on two devices during real file and screenshot calls (docs/dev/p6-security-audit.md).
 - Tool calls run through the AutoJs6 capability broker and never exceed what the host itself is allowed to do; shell commands, file deletion and gestures stay off until you enable their groups, and a root shell additionally needs its own switch and a host grant. Reading shared storage (photos, downloads and so on) is off by default as well: only with "Allow reading shared storage" switched on can the recognition, media and list / stat tools read absolute paths there, read-only and never under Android/data or Android/obb.
 - Pairings can be revoked one by one or all at once on the settings page; a revoked client must be confirmed on the phone again before its next tool call. Rotating the token keeps the pairings but cuts off every client that still uses the old token.
@@ -325,6 +326,15 @@ The plugin's plans and progress are maintained as a checkable list in ROADMAP.md
 
 ******
 
+#### v1.3.0
+
+_2026/11/05_
+
+- `Hint` Exporting and importing the settings together with AutoJs6 needs AutoJs6 6.8.1 or later (not released yet); with an earlier AutoJs6 this version works like 1.2.0
+- `Feature` The plugin's settings can be exported and imported together with AutoJs6's settings, so a new phone or a reinstall does not need them set up again: the port, the listening scope (this device only / LAN), developer mode, the extra allowed host names, the LAN access reminder, the idle auto-stop, the switches of the tool groups and plugin tools, the root shell and shared storage reading switches, the access token and the paired clients. Because the token and the pairings are included, the plugin is not selected by default when exporting, and once it is selected AutoJs6 encrypts its part of the archive (set a password when exporting to import it on another phone). Imported settings apply at once and imported pairings join the existing list; when the server is running and the port, the listening scope, developer mode or the host names change, the plugin restarts its server process and AutoJs6 then opens the server again (if the pairing confirmation dialog is open at that moment, they apply the next time the server process starts)
+- `Dependency` Upgrade the common-plugin-api local module to 1.1.0 (from AutoJs6 host build 8fe6d154f9, hash-locked) for the settings export and import
+- `Dependency` Add org.json version 20231013 (JVM tests only)
+
 #### v1.2.0
 
 _2026/11/03_
@@ -358,19 +368,6 @@ _2026/10/11_
 - `Improvement` AutoJs6 connects to the plugin through the capability interface it shares with its other plugins (MCP contract version 2)
 - `Improvement` The #n references of ui_dump are kept by AutoJs6, which finds the node again when you act on it: a reference keeps working while the window and the node stay the same instead of expiring after 60 s, the newest 8 dumps stay available through snapshotId, and a stale reference says why
 - `Dependency` AutoJs6 plugin API files updated to host build 6.8.0 / 5329, with `host-capability-api.aar` (AutoJs6 module `plugin-api/host-capability-api`, MPL 2.0) added; all hash-locked in `locks/host-api-aars.lock`
-
-#### v1.0.3
-
-_2026/10/11_
-
-- `Feature` VS Code mcp.json snippet in the client configuration of the settings page: VS Code asks for the token when the server first starts, so the token stays out of the file (the dialog has a "Copy token" button)
-- `Feature` The client configuration snippets and the token dialog on the settings page can show a QR code holding the same text as the "Copy" button (the token included when the text contains it; the window blocks screenshots)
-- `Feature` The annotate option of screen_capture, which draws the #n references of the latest ui_dump / ui_find on the image (boxes and labels); the annotation field of the result reports how many were drawn
-- `Improvement` Resumable event streams on the stateful MCP endpoint: events carry ids, clients of protocol 2025-11-25 or newer first receive a priming event with the reconnection interval, and a dropped request stream can be resumed with a GET carrying Last-Event-ID, which replays the missed events and the final result (bounded retention per session)
-- `Improvement` device_info, screen_state, script_run and script_run_file declare an output schema (outputSchema) that clients can validate their structured results against; errors of these tools carry the error code and message as text only
-- `Improvement` Plugin Center icons use the sizes, positions, light and dark artwork, and circular backgrounds adjusted in Icon Studio, retaining reproducible sources and parameters
-- `Improvement` Android App info icons share Icon Studio artwork and light/dark backgrounds while preserving transparent Plugin Center artwork and existing launcher choices
-- `Dependency` ZXing Core 3.5.4 (`com.google.zxing:core`) added to draw the settings page QR codes (encoder only, Apache 2.0)
 
 ##### For more release history
 

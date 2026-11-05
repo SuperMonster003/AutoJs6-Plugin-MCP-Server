@@ -24,6 +24,15 @@ class ToolPermissionStore(context: Context) {
         }
     }
 
+    /** The saved switches, or null when none were saved yet (settings transfer, roadmap P13). */
+    fun stored(): ToolPermissions? = document.read()?.let(ToolPermissions::decode)
+
+    /** Replaces the saved switches; unlike [save], a failure reaches the caller (settings transfer, roadmap P13). */
+    @Throws(IOException::class)
+    fun replace(permissions: ToolPermissions) {
+        document.write(permissions.encode())
+    }
+
     fun update(transform: (ToolPermissions) -> ToolPermissions): ToolPermissions =
         ToolPermissions.decode(document.update { transform(ToolPermissions.decode(it)).encode() })
 

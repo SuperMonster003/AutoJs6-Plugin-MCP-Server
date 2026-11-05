@@ -227,6 +227,8 @@ dependencies {
     testImplementation(libs.junit)
     // Runs the SDK transport behind the request gate on Ktor's test engine (roadmap P2.1).
     testImplementation(libs.ktor.server.test.host)
+    // The settings transfer document is an org.json JSONObject (common-plugin-api); android.jar only has stubs (roadmap P13).
+    testImplementation(libs.org.json)
 
     androidTestImplementation(libs.test.runner)
     androidTestImplementation(libs.test.rules)

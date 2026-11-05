@@ -52,7 +52,7 @@ El servidor se ejecuta dentro del propio proceso del plugin y se alcanza mediant
 
 ******
 
-Versión 1.2.0: 39 herramientas integradas (35 activadas por defecto) y 8 herramientas de capacidades de plugins, recursos y plantillas MCP, un interruptor en el panel de AutoJs6 y una página de ajustes del complemento. Requiere AutoJs6 6.8.0 (compilación 5298) o posterior; las herramientas de capacidades de plugins solo aparecen mientras el plugin de AutoJs6 correspondiente está instalado y activado, estas y las herramientas de scripts registrados permanecen ocultas en anfitriones que no las admiten, y los recursos opcionales autojs6://docs/ necesitan además el plugin AutoJs6 Offline Docs y un anfitrión con sus métodos de retransmisión. Las herramientas que describen los propios plugins de AutoJs6 (como opencc_convert de 3-Hanzi CC) se listan además, en un grupo por plugin, con AutoJs6 6.8.0 o posterior. El progreso y las evidencias se registran en [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Versión 1.3.0: 39 herramientas integradas (35 activadas por defecto) y 8 herramientas de capacidades de plugins, recursos y plantillas MCP, un interruptor en el panel de AutoJs6 y una página de ajustes del complemento. Requiere AutoJs6 6.8.0 (compilación 5298) o posterior; las herramientas de capacidades de plugins solo aparecen mientras el plugin de AutoJs6 correspondiente está instalado y activado, estas y las herramientas de scripts registrados permanecen ocultas en anfitriones que no las admiten, y los recursos opcionales autojs6://docs/ necesitan además el plugin AutoJs6 Offline Docs y un anfitrión con sus métodos de retransmisión. Las herramientas que describen los propios plugins de AutoJs6 (como opencc_convert de 3-Hanzi CC) se listan además, en un grupo por plugin, con AutoJs6 6.8.0 o posterior. El progreso y las evidencias se registran en [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -280,6 +280,7 @@ El plugin sigue límites explícitos:
 - El servidor escucha en 127.0.0.1 por defecto. El acceso desde la red local permanece desactivado hasta que lo active; el token, la confirmación de emparejamiento, la lista de Host permitidos y los límites de frecuencia siguen aplicándose en la red local, y una notificación diaria le recuerda que está activo.
 - En Android 17 o posterior, permita Dispositivos cercanos antes de activar este plugin en el centro de plugins de AutoJs6. También puede gestionar el permiso de red local en los ajustes del plugin. Sin permiso, el plugin permanece desactivado y el inicio automático se omite sin avisos. El permiso pertenece al plugin y es independiente del permiso de AutoJs6.
 - El token de acceso procede de una fuente aleatoria segura, se envuelve con una clave AES-GCM del Android Keystore y vive en el almacenamiento privado del plugin, que nunca se respalda; las copias de seguridad y las transferencias entre dispositivos están desactivadas. La página de ajustes muestra solo sus últimos 4 caracteres, los diálogos con el token completo bloquean las capturas de pantalla y las copias se marcan como sensibles en el portapapeles.
+- Al exportar los ajustes junto con los de AutoJs6 (AutoJs6 6.8.1 o posterior), la exportación contiene el token de acceso y los clientes emparejados: AutoJs6 deja el plugin sin seleccionar por defecto y, una vez seleccionado, cifra su parte del archivo; guarde el archivo exportado con el mismo cuidado que el propio token. Importar un archivo sustituye el token del teléfono; los clientes que usen otro token deben pasar al importado.
 - Los registros nunca contienen el token, los cuerpos de las solicitudes, el contenido de archivos ni las capturas de pantalla; el plugin registra solo nombres de herramientas, nombres de clientes y huellas del token. Se verificó con logcat en dos dispositivos durante llamadas reales de archivos y capturas (docs/dev/p6-security-audit.md).
 - Las llamadas a herramientas pasan por el intermediario de capacidades de AutoJs6 y nunca exceden lo que el propio anfitrión tiene permitido; los comandos de shell, la eliminación de archivos y los gestos permanecen desactivados hasta que active sus grupos, y un shell con root necesita además su propio interruptor y una concesión del anfitrión. La lectura del almacenamiento compartido (fotos, descargas, etc.) también está desactivada por defecto: solo con "Permitir leer el almacenamiento compartido" activado las herramientas de reconocimiento, multimedia y lista / propiedades leen allí rutas absolutas, solo en lectura y nunca bajo Android/data o Android/obb.
 - Los emparejamientos se pueden revocar uno a uno o todos a la vez en la página de ajustes; un cliente revocado debe confirmarse de nuevo en el teléfono antes de su siguiente llamada a herramienta. Rotar el token conserva los emparejamientos pero corta a todo cliente que siga usando el token antiguo.
@@ -325,6 +326,15 @@ Los planes y el progreso del plugin se mantienen como una lista verificable en R
 
 ******
 
+#### v1.3.0
+
+_2026/11/05_
+
+- `Aviso` Exportar e importar los ajustes junto con AutoJs6 requiere AutoJs6 6.8.1 o posterior (aún no publicada); con una versión anterior de AutoJs6, esta versión funciona igual que la 1.2.0
+- `Función` Los ajustes del plugin se pueden exportar e importar junto con los de AutoJs6, así que un teléfono nuevo o una reinstalación ya no obliga a configurarlo de nuevo: el puerto, el ámbito de escucha (solo este dispositivo / red local), el modo de desarrollador, los nombres de host adicionales permitidos, el recordatorio de acceso por red local, la parada automática por inactividad, los interruptores de los grupos de herramientas y de las herramientas de plugins, los interruptores de shell root y de lectura del almacenamiento compartido, el token de acceso y los clientes emparejados. Como incluyen el token y los emparejamientos, el plugin no está seleccionado por defecto al exportar y, una vez seleccionado, AutoJs6 cifra su parte del archivo (para importarla en otro teléfono, establezca una contraseña al exportar). Los ajustes importados se aplican al instante y los emparejamientos importados se suman a la lista actual; si el servidor está en marcha y cambian el puerto, el ámbito de escucha, el modo de desarrollador o los nombres de host, el plugin reinicia por sí mismo su proceso de servidor y AutoJs6 vuelve a abrir el servidor (si en ese momento está abierto el diálogo de confirmación de emparejamiento, se aplican la próxima vez que se inicie el proceso de servidor)
+- `Dependencia` Actualizar el módulo local common-plugin-api a 1.1.0 (de la compilación del anfitrión AutoJs6 8fe6d154f9, con el hash fijado) para exportar e importar los ajustes
+- `Dependencia` Agregar org.json versión 20231013 (solo pruebas en JVM)
+
 #### v1.2.0
 
 _2026/11/03_
@@ -358,19 +368,6 @@ _2026/10/11_
 - `Mejora` AutoJs6 se conecta al plugin mediante la interfaz de capacidades que comparte con sus otros plugins (contrato MCP versión 2)
 - `Mejora` AutoJs6 conserva las referencias #n de ui_dump y vuelve a localizar el nodo al actuar: una referencia sigue valiendo mientras la ventana y el nodo no cambien (ya no caduca a los 60 s), los 8 volcados más recientes siguen disponibles mediante snapshotId y una referencia caducada indica el motivo
 - `Dependencia` Archivos de la API de plugins de AutoJs6 actualizados a la compilación del anfitrión 6.8.0 / 5329, con `host-capability-api.aar` (módulo `plugin-api/host-capability-api` de AutoJs6, MPL 2.0) añadido; todos con el hash fijado en `locks/host-api-aars.lock`
-
-#### v1.0.3
-
-_2026/10/11_
-
-- `Función` Fragmento VS Code mcp.json en la configuración de clientes de la página de ajustes: VS Code pide el token al iniciar el servidor por primera vez, por lo que el token no queda en el archivo (el diálogo incluye un botón "Copiar token")
-- `Función` Los fragmentos de configuración de clientes y el diálogo del token en la página de ajustes pueden mostrar un código QR con el mismo texto que copia el botón "Copiar" (con el token cuando el texto lo incluye; la ventana bloquea capturas)
-- `Función` La opción annotate de screen_capture, que dibuja en la imagen las referencias #n del último ui_dump / ui_find (recuadros y etiquetas); el campo annotation del resultado indica cuántas se dibujaron
-- `Mejora` Flujos de eventos reanudables en el endpoint MCP con estado: los eventos llevan id, los clientes con protocolo 2025-11-25 o posterior reciben primero un evento de preparación con el intervalo de reconexión, y un flujo de solicitud interrumpido puede reanudarse con un GET que lleve Last-Event-ID, que reenvía los eventos perdidos y el resultado final (retención limitada por sesión)
-- `Mejora` device_info, screen_state, script_run y script_run_file declaran un esquema de salida (outputSchema) con el que los clientes pueden validar sus resultados estructurados; los errores de estas herramientas llevan el código y el mensaje solo como texto
-- `Mejora` Los iconos del centro de plugins usan los tamaños, posiciones, imágenes claras y oscuras y fondos circulares ajustados en Icon Studio, conservando fuentes y parámetros reproducibles
-- `Mejora` Los iconos de información de la aplicación de Android comparten las imágenes y los fondos claros y oscuros de Icon Studio, conservando las imágenes transparentes del centro de plugins y las opciones del lanzador
-- `Dependencia` ZXing Core 3.5.4 (`com.google.zxing:core`) añadido para dibujar los códigos QR de la página de ajustes (solo codificador, Apache 2.0)
 
 ##### Para más historial de versiones
 

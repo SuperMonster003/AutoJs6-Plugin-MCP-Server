@@ -5,7 +5,8 @@ plugin. Gradle never resolves host artifacts from sibling repositories or from `
 
 Before any Gradle configuration, stage the audited **release** artifact named exactly:
 
-- `common-plugin-api.aar`
+- `common-plugin-api.aar` (1.1.0 release from host `8fe6d154f9`, built 2026-11-05, unsigned: adds the settings
+  transfer contract v1 of roadmap P13 on top of the classes the other two artifacts were built against)
 - `host-capability-api.aar` (host module `plugin-api/host-capability-api`, the shared capability data plane of MCP contract version 2; staged in P10)
 - `mcp-server-api.aar` (host module `plugin-api/mcp-server-api`, the Binder contract of roadmap P1.1; staged in P2.3)
 
@@ -16,6 +17,8 @@ entries, and digest mismatches during configuration.
 All artifacts are release builds of the host modules; `mcp-server-api.aar` depends on
 `common-plugin-api.aar` (the `PluginInfo` parcelable) and on `host-capability-api.aar` (the broker
 of `openServerV2`), so the three must come from the same host build. When the host contract
-changes, restage all of them and update the lock file in the same commit.
+changes, restage all of them and update the lock file in the same commit. The one exception is
+`common-plugin-api.aar` 1.1.0 (roadmap P13): it only adds classes, and the classes the other two
+artifacts use have the same signatures and constants as in their build (compared with `javap`).
 
 Do not commit locally assembled debug AARs or rename debug outputs to bypass this policy.

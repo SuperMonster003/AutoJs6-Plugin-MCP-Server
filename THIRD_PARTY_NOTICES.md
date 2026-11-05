@@ -85,4 +85,5 @@ These libraries are used by the JVM and instrumentation test source sets only an
 in the APK.
 
 - JUnit 4 (`junit:junit`): Eclipse Public License 1.0
+- JSON in Java (`org.json:json`) 20231013: Public Domain; the JVM tests of the settings transfer document (roadmap P13) need the real implementation, since `android.jar` only has stubs
 - AndroidX Test (`androidx.test:runner`, `androidx.test:rules`, `androidx.test.ext:junit`): Apache License 2.0

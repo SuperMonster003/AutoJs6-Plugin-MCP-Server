@@ -9,6 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import javax.xml.parsers.DocumentBuilderFactory
+import org.autojs.plugin.common.api.AutoJs6PluginSettingsTransferContract as Contract
 
 /**
  * Keeps `AndroidManifest.xml` and [McpServerPlugin] from drifting apart: the host discovers the
@@ -119,6 +120,23 @@ class ManifestContractTest {
         val permissions = manifest.children("uses-permission").map { it.androidAttribute("name") }
         assertTrue("android.permission.FOREGROUND_SERVICE" in permissions)
         assertTrue("android.permission.FOREGROUND_SERVICE_SPECIAL_USE" in permissions)
+    }
+
+    @Test
+    fun `settings transfer provider follows contract v1 and shares the listener process`() {
+        val application = manifest.child("application")
+        val metaData = application.children("meta-data").associate { it.androidAttribute("name") to it.androidAttribute("value") }
+        assertEquals(Contract.PROTOCOL_VERSION.toString(), metaData[Contract.META_DATA_SETTINGS_TRANSFER])
+
+        val provider = application.children("provider").single()
+        assertEquals(".transfer.SettingsTransferProvider", provider.androidAttribute("name"))
+        assertEquals("\${applicationId}" + Contract.AUTHORITY_SUFFIX, provider.androidAttribute("authorities"))
+        assertEquals("true", provider.androidAttribute("exported"))
+        assertEquals(Contract.PLUGIN_PERMISSION, provider.androidAttribute("readPermission"))
+        assertEquals(Contract.PLUGIN_PERMISSION, provider.androidAttribute("writePermission"))
+        // restartProcessAfterImport ends the provider's process, which must be the listener's (roadmap P13).
+        assertEquals(":mcp_server", provider.androidAttribute("process"))
+        assertTrue(provider.children("intent-filter").isEmpty())
     }
 
     private fun assertDiscoveryContract(service: Element, action: String) {

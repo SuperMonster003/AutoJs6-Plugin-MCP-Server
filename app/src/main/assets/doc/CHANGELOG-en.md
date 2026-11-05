@@ -4,6 +4,15 @@
 
 ******
 
+# v1.3.0
+
+###### 2026/11/05
+
+* `Hint` Exporting and importing the settings together with AutoJs6 needs AutoJs6 6.8.1 or later (not released yet); with an earlier AutoJs6 this version works like 1.2.0
+* `Feature` The plugin's settings can be exported and imported together with AutoJs6's settings, so a new phone or a reinstall does not need them set up again: the port, the listening scope (this device only / LAN), developer mode, the extra allowed host names, the LAN access reminder, the idle auto-stop, the switches of the tool groups and plugin tools, the root shell and shared storage reading switches, the access token and the paired clients. Because the token and the pairings are included, the plugin is not selected by default when exporting, and once it is selected AutoJs6 encrypts its part of the archive (set a password when exporting to import it on another phone). Imported settings apply at once and imported pairings join the existing list; when the server is running and the port, the listening scope, developer mode or the host names change, the plugin restarts its server process and AutoJs6 then opens the server again (if the pairing confirmation dialog is open at that moment, they apply the next time the server process starts)
+* `Dependency` Upgrade the common-plugin-api local module to 1.1.0 (from AutoJs6 host build 8fe6d154f9, hash-locked) for the settings export and import
+* `Dependency` Add org.json version 20231013 (JVM tests only)
+
 # v1.2.0
 
 ###### 2026/11/03

@@ -4,6 +4,15 @@
 
 ******
 
+# v1.3.0
+
+###### 2026/11/05
+
+* `Aviso` Exportar e importar los ajustes junto con AutoJs6 requiere AutoJs6 6.8.1 o posterior (aún no publicada); con una versión anterior de AutoJs6, esta versión funciona igual que la 1.2.0
+* `Función` Los ajustes del plugin se pueden exportar e importar junto con los de AutoJs6, así que un teléfono nuevo o una reinstalación ya no obliga a configurarlo de nuevo: el puerto, el ámbito de escucha (solo este dispositivo / red local), el modo de desarrollador, los nombres de host adicionales permitidos, el recordatorio de acceso por red local, la parada automática por inactividad, los interruptores de los grupos de herramientas y de las herramientas de plugins, los interruptores de shell root y de lectura del almacenamiento compartido, el token de acceso y los clientes emparejados. Como incluyen el token y los emparejamientos, el plugin no está seleccionado por defecto al exportar y, una vez seleccionado, AutoJs6 cifra su parte del archivo (para importarla en otro teléfono, establezca una contraseña al exportar). Los ajustes importados se aplican al instante y los emparejamientos importados se suman a la lista actual; si el servidor está en marcha y cambian el puerto, el ámbito de escucha, el modo de desarrollador o los nombres de host, el plugin reinicia por sí mismo su proceso de servidor y AutoJs6 vuelve a abrir el servidor (si en ese momento está abierto el diálogo de confirmación de emparejamiento, se aplican la próxima vez que se inicie el proceso de servidor)
+* `Dependencia` Actualizar el módulo local common-plugin-api a 1.1.0 (de la compilación del anfitrión AutoJs6 8fe6d154f9, con el hash fijado) para exportar e importar los ajustes
+* `Dependencia` Agregar org.json versión 20231013 (solo pruebas en JVM)
+
 # v1.2.0
 
 ###### 2026/11/03

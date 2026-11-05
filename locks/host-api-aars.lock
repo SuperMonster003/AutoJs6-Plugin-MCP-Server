@@ -1,8 +1,11 @@
 # AutoJs6 6.8.0 / 5329 release API set, built together for the MCP contract v2 migration (roadmap P10).
 # Host source: 03b37ef76a; mcp-server-api appends openServerV2 and depends on host-capability-api.
+# common-plugin-api: 1.1.0 release from host 8fe6d154f9 (built 2026-11-05, unsigned) for the settings transfer
+# contract v1 (roadmap P13, host settings roadmap P18.2); a superset of the 03b37ef76a build whose shared classes
+# (PluginInfo, IPluginInfoProvider, the contract constants) have the same signatures and constants (javap).
 format=1
 common-plugin-api.file=common-plugin-api.aar
-common-plugin-api.sha256=ed7a71942ffb67255ebad8d8a2c912b01c4a3cdd8aad497baba0687b4072032a
+common-plugin-api.sha256=3597b6f92e3111c55d21abef04764b595fed6c9e0d854042a949651f3458c9fa
 host-capability-api.file=host-capability-api.aar
 host-capability-api.sha256=23024fd981b7846936ef59f595f4da2208adf38d7c2d35594c20c7dfc1a86bd1
 mcp-server-api.file=mcp-server-api.aar

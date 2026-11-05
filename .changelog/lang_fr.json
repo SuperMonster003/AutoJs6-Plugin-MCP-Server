@@ -5,6 +5,19 @@
   "changelog_label_improvement": "Amélioration",
   "changelog_label_dependency": "Dépendance",
   "$data": {
+    "v1.3.0": {
+      "released_date": "2026/11/05",
+      "hint": [
+        "L'export et l'import des paramètres avec AutoJs6 demandent AutoJs6 6.8.1 ou ultérieure (pas encore publiée); avec une version plus ancienne d'AutoJs6, cette version fonctionne comme la 1.2.0"
+      ],
+      "feature": [
+        "Les paramètres du plugin peuvent être exportés et importés avec ceux d'AutoJs6, si bien qu'un nouveau téléphone ou une réinstallation n'oblige plus à tout reconfigurer: le port, la portée d'écoute (cet appareil seulement / réseau local), le mode développeur, les noms d'hôte supplémentaires autorisés, le rappel d'accès en réseau local, l'arrêt automatique en cas d'inactivité, les interrupteurs des groupes d'outils et des outils de plugins, les interrupteurs du shell root et de la lecture du stockage partagé, le jeton d'accès et les clients appairés. Comme ils contiennent le jeton et les appairages, le plugin n'est pas sélectionné par défaut à l'export et, une fois sélectionné, AutoJs6 chiffre sa partie de l'archive (pour l'importer sur un autre téléphone, définissez un mot de passe à l'export). Les paramètres importés s'appliquent aussitôt et les appairages importés s'ajoutent à la liste existante; si le serveur tourne et que le port, la portée d'écoute, le mode développeur ou les noms d'hôte changent, le plugin redémarre lui-même son processus serveur et AutoJs6 rouvre le serveur (si la boîte de dialogue de confirmation d'appairage est ouverte à ce moment-là, ils s'appliquent au prochain démarrage du processus serveur)"
+      ],
+      "dependency": [
+        "Mise à niveau du module local common-plugin-api vers 1.1.0 (build de l'hôte AutoJs6 8fe6d154f9, empreinte verrouillée) pour l'export et l'import des paramètres",
+        "Ajout de org.json version 20231013 (tests JVM uniquement)"
+      ]
+    },
     "v1.2.0": {
       "released_date": "2026/11/03",
       "hint": [

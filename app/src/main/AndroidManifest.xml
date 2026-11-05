@@ -59,6 +59,11 @@
             android:name="org.autojs.plugin.info.AUTHOR"
             android:value="@string/plugin_author" />
 
+        <!-- AutoJs6 settings transfer contract v1 (roadmap P13, host settings roadmap P18.2): see the provider below. -->
+        <meta-data
+            android:name="org.autojs.plugin.contract.SETTINGS_TRANSFER"
+            android:value="1" />
+
         <activity
             android:name=".LocalNetworkPermissionActivity"
             android:excludeFromRecents="true"
@@ -166,6 +171,20 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Hosts the local Model Context Protocol endpoint for PC agents while the user keeps it switched on" />
         </service>
+
+        <!--
+            AutoJs6 settings transfer (contract v1, roadmap P13): exportSettings / importSettings through call(),
+            behind the PLUGIN permission (the provider base class checks it itself, since android:permission does not
+            cover call()). It runs in the :mcp_server process next to the listener, so that an import which changes
+            the listener settings can end that process and let AutoJs6 reopen the session (restartProcessAfterImport).
+        -->
+        <provider
+            android:name=".transfer.SettingsTransferProvider"
+            android:authorities="${applicationId}.autojs6.settings"
+            android:exported="true"
+            android:process=":mcp_server"
+            android:readPermission="org.autojs.permission.PLUGIN"
+            android:writePermission="org.autojs.permission.PLUGIN" />
 
     </application>
 

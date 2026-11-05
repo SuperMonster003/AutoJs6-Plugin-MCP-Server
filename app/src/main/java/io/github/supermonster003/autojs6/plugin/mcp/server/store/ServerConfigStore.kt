@@ -33,6 +33,15 @@ class ServerConfigStore(context: Context) {
         }
     }
 
+    /** The saved configuration, or null when nothing was saved yet (settings transfer, roadmap P13). */
+    fun stored(): ServerConfig? = document.read()?.let { ServerConfig.fromMap(decode(it)) }
+
+    /** Replaces the saved configuration; unlike [save], a failure reaches the caller (settings transfer, roadmap P13). */
+    @Throws(IOException::class)
+    fun replace(config: ServerConfig) {
+        document.write(encode(config))
+    }
+
     fun update(transform: (ServerConfig) -> ServerConfig): ServerConfig {
         val stored = document.update { encode(transform(ServerConfig.fromMap(decode(it)))) }
         return ServerConfig.fromMap(decode(stored))

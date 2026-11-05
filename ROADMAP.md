@@ -109,6 +109,9 @@ MCP 规范修订版 `2026-07-28`, 官方 Kotlin SDK `0.15.0` (Ktor `3.5.1`), 平
 | D63 | 第三方接入说明 | 写在示例仓库的 README, 用各仓库通用的 `.readme` 模板与生成器出十种语言: 接入步骤, Maven 依赖, 基类用法, 风险等级与开关, 插件中心授权; 协议细节链接宿主的英文协议文档. (维护者 2026-10-16 选择) |
 | D64 | 示例 APK 的签名 | 新建专用的 "第三方示例" 签名 (不是官方证书), 宿主视其为 `USER_GRANTED`, 以完整演示第三方在插件中心授权, MCP 中默认关闭的流程; keystore 放在仓库外, 密码只进 git-ignored 的 `sign.properties`. (维护者 2026-10-16 选择) |
 | D65 | 工具结果上限按 Parcel 计 | 结果 JSON 与文本合计除 512 KiB UTF-8 外, 再限 192 Ki UTF-16 单元 (`PluginToolLimits.MAX_RESULT_CHARS`, 对外导出供插件自限). 原因: 结果经 oneway `onResult` 送达, Parcel 按 UTF-16 存字符串 (每单元 2 字节), oneway 事务最多用接收方 Binder 缓冲的一半 (约 508 KiB, 由进入宿主的全部 oneway 调用共享); 实测 API 24 / 31 约 254 Ki 单元 (Parcel 约 520 KB), API 37 约 248 Ki 单元 (约 508 KB) 起提供方抛 `TransactionTooLargeException`, 报告送不到宿主, 宿主只能等到超时. 基类 `PluginToolProviderService` 发送前检查两个上限, 发送失败时隔 100 / 400 ms 再试两次, 仍失败则改报 `LIMIT_EXCEEDED` (其他异常为 `FAILED`, 消息带 Parcel 字节数), 不再吞掉. 宿主接收侧仍只查 512 KiB UTF-8, 直接实现 AIDL 的四个试点行为不变; 大结果走文件描述符不做 (附录 C Q9). (维护者 2026-10-22 在 3-Macaw Speech 附录 D Q41 选 (a)) |
+| D66 | 设置导出与导入的文档形状 | 宿主 settings 契约 v1 (授权名 `<包名>.autojs6.settings`, 宿主 `docs/settings/ROADMAP.md` P18.2) 的 `settings` 由四个 store 组成, 插件有对应文件时才出现: `server` (`config.json` 的 6 个键: `port` int, `bind_scope` string (`loopback` / `lan`), `developer_mode` bool, `extra_allowed_hosts` string (主机名以逗号连接, 无则为空), `lan_reminder` bool, `idle_stop_minutes` int); `tools` (`tool_groups.json`: 每个内置分组 `group.<id>` bool, `allow_shell_root` / `allow_shared_storage_read` bool, 用户动过的插件分组 `plugin.<短名>.enabled` / `plugin.<短名>.writes` bool); `token` (`bearer` string); `pairing` (每个已配对客户端一个 json 条目, 键为指纹, 值含 `name`, `version` (可为 null), `addressClass`, `firstPairedAt`, `lastSeenAt`). 有令牌或配对时 `sensitive` 为 true (宿主封信封, 导出向导默认不勾选), 导出不签发令牌. 导入宽松: 未知 store / 键, 错标签, 设置页存不下的值, 指纹与名称 / 地址类不符的配对, 超过 32 个上限的新配对都计 skipped; 文档没有的键保持原值, 配对并入现有列表 (同指纹替换, 不删除), 可重复导入; 每个 store 只写一次, 写入失败则整次导入失败. (子会话 settings-p18 2026-11-05 按宿主 settings T31 自定) |
+| D67 | 导入后的生效方式 | provider 与监听器同在 `:mcp_server` 进程. 监听运行中且端口, 监听范围, 开发者模式或额外主机名有变化时返回 `restartNeeded`, 由契约库基类的 `restartProcessAfterImport` (宿主 settings T30) 约 500 ms 后在该进程没有前台 Activity 时结束进程; 宿主按重绑策略重开会话, 抽屉开关以保存的设置启动监听, 即用上导入的配置; 配对确认对话框开着时不退出, 改为下次进程启动时生效. 其余导入经 `McpSettingsReceiver` 即时生效, 与设置页保存相同 (服务器其他键变化为 APPLY, 只有工具开关, 令牌或配对变化为 REFRESH). 宿主脚本 API 显式传入的监听参数仍覆盖保存的设置. (子会话 settings-p18 2026-11-05) |
+| D68 | 工具分组开关随设置导出 | `tools` store 超出宿主 settings D24 的字面 ("`ServerConfigStore` JSON"): 工具分组与子开关决定 MCP 客户端能做什么, 换手机后应保持一致, 所以一并导出 (不含密钥, 不影响 `sensitive`). 宿主 settings 附录 C Q63 待拍板 (推荐包含, 已先行); 改选不包含时删去 `tools` store 约 40 行与对应测试, 改 10 语言 changelog. (子会话 settings-p18 2026-11-05) |
 
 由 D2 / D10 派生的硬约束:
 
@@ -272,6 +275,7 @@ McpServerCapabilityKeys.kt     REQUIRES_HOST_VERSION, CONTRACT_VERSION, TOOL_GRO
 | P10 | 1.1.0: 迁移到宿主 MCP 契约 v2 (共享能力数据面) 与宿主侧节点快照引用 | 插件 (宿主只读同步 AAR) | 宿主 v2 契约 (已就绪) |
 | P11 | 1.2.0: 官方插件能力作为 MCP 工具 (OCR, 条码, OpenCV 找图找色, 拼音, MediaInfo), 软探测, 共享存储只读开关; 已登记脚本为可选项 | 宿主 (6.8.0) + 插件 | P10; 决策 D23 - D28 |
 | P12 | 1.2.0 (D48): 插件自描述工具契约 (宿主桥接层, MCP / Agent / 脚本 API), 试点 OpenCC, YOLO, 图片量化, 压缩包 | 宿主 (6.8.0) + 试点插件 + 插件 | P11 的路径范围与截屏句柄; 决策 D29 - D37 |
+| P13 | 1.3.0: 设置随 AutoJs6 导出与导入 (宿主 settings 契约 v1, 宿主 settings ROADMAP P18.2) | 插件 (宿主只读同步 AAR) | 宿主 settings P15.3 (`common-plugin-api` 1.1.0 暂存); 决策 D66 - D68 |
 
 建议会话切分: P0 一次会话; P1 一到两次 (契约 + 代理为一次, bridge 新方法 + 注册为一次); P2 两次 (传输与鉴权; 目录与前台服务); P3 按工具组各一次; P4 一次; P5 两次 (路径与矩阵; 桥接程序); P6 一到两次; P7 一次.
 
@@ -632,6 +636,23 @@ MCP 插件 (1.2.0, D48):
 - [ ] (可选, 不计入本阶段验收, D44) P11 内置工具按家族在有具体收益时迁移为插件自描述: OCR (三个引擎的 7 个插件声明共享家族 `ocr`, 宿主按 D25 选择提供者, 实现 D33 预留的选择逻辑), 条码, OpenCV (D41: OpenCV 插件新增在自身进程运行的工具服务, 宿主 images 模块不变), 拼音, MediaInfo; 迁移的家族工具名保持不变, MCP 删除对应的内置实现. 不设时间点, 每个家族迁移前先在本路线图写明收益.
 
 验收条件: 四个试点经 MCP 与脚本 API 在两台设备上完成真机调用 (OpenCC 已完成, 其余三个见拆出的测试条目); USER_GRANTED 提供者默认不可见; 旧宿主上自描述工具隐藏且其余工具不受影响; 契约测试冻结 AIDL 顺序与目录键.
+
+---
+
+## P13: 1.3.0 设置导出与导入 (宿主 settings P18.2)
+
+目标: AutoJs6 6.8.1 的设置导出 / 导入 (宿主 `docs/settings/ROADMAP.md` 第 6 节, 协议 `docs/dev/plugin-settings-transfer-protocol-v1.md`) 可以把官方插件的设置一起写进归档. MCP Server 是三个试点之一 (宿主 settings D24), 覆盖 "JSON 文件 + 密钥" 的存储形态. 契约版本 v1 (`org.autojs.plugin.contract.SETTINGS_TRANSFER` = 1), 最低宿主版本不变 (宿主 settings D31: provider 被动, 旧宿主不调用). 子会话 settings-p18 (2026-11-05) 实施.
+
+- [x] (插件) 依赖: `libs/common-plugin-api.aar` 升到 1.1.0 (宿主 `8fe6d154f9` 的本地暂存库, release, 未签名, sha256 `3597b6f9...58c9fa`, 63705 字节), `locks/host-api-aars.lock` 与 `libs/README.md` 同步; `plugin-tool-api.aar` 本仓库未锁定, 不涉及. JVM 测试附加 `org.json` 20231013 (`testImplementation`, Android 的 `org.json` 在单测中只是桩). (SOURCE: 本条提交)
+- [x] (插件) 文档形状 (D66): `transfer/McpSettingsTransfer` (纯 JVM) 把 `config.json`, `tool_groups.json`, 令牌与配对列表映射为四个 store; 有令牌或配对时 `sensitive` 为 true; 各存储类新增 `stored()` / `replace()` (`PairedClientStore.replaceAll`), 只在有文件时导出, 导出不签发令牌. (SOURCE: 本条提交)
+- [x] (插件) provider (D67): 清单加 meta-data `org.autojs.plugin.contract.SETTINGS_TRANSFER` = 1 与 `transfer.SettingsTransferProvider` (授权名 `<包名>.autojs6.settings`, exported, 读写权限 `org.autojs.permission.PLUGIN`, 进程 `:mcp_server`), 继承契约库基类 `PluginSettingsTransferProvider`, `restartProcessAfterImport` 为 true; 只有监听运行中且监听设置变化时返回 `restartNeeded`, 其余导入经 `McpSettingsReceiver` 即时生效. (SOURCE: 本条提交)
+- [x] (测试) JVM: `McpSettingsTransferTest` 8 项 (四个 store 的文档与 sensitive 判定, 空插件导出空文档且不签发令牌, 往返与重复导入, 未知 store / 键, 错标签与无效值的 skipped 计数, 整数形式的浮点值, 配对上限, 导入后的 RESTART / APPLY / REFRESH / NOTHING, 写入失败), `ManifestContractTest` 加 provider 与 meta-data 断言. (TEST: 2026-11-05: `:app:testDebugUnitTest` 59 个类 340 例 0 失败 (`McpSettingsTransferTest` 8 例, `ManifestContractTest` 5 例); `assembleDebug` / `assembleDebugAndroidTest` / `assembleRelease` 通过; `lintDebug` 0 错误 14 警告, 新增的 1 条是 `org.json` 有新版本 (与宿主同用 20231013); 生成器 `--check` 通过 (36 个产物))
+- [x] (文档) changelog v1.3.0 (10 语言: hint 需要 AutoJs6 6.8.1, feature 一条, dependency 两条), README 安全要点加一条 (导出含令牌与配对, 默认不勾选, 加密; 导入会替换令牌), 生成器重新生成 36 个产物. (SOURCE: 本条提交)
+- [x] (真机, 只核对清单) Redmi 22120RN86C (`bek749scrwv4wo8h`) 装 1.3.0 debug (256), `dumpsys package` 核对授权名, 读写权限, exported 与 meta-data. (DEVICE: 2026-11-05 14:42, 覆盖安装 1.2.0 (236, 同签名) 成功; 授权名 `<包名>.autojs6.settings` 对应 `.transfer.SettingsTransferProvider`, 已装 base.apk 的清单 (aapt2) 中应用级 meta-data `SETTINGS_TRANSFER` = 1, provider 只有一个, exported, 读写权限均为 `org.autojs.permission.PLUGIN`, shell (无该权限) 调用被拒; 6 / 6 PASS. 未开 MCP 开关, 未动宿主)
+- [ ] (真机, 宿主 settings P19.1) Redmi 上用 debug 宿主导出含本插件的归档, 改设置后导入恢复; Redmi -> OnePlus 跨设备导入时信封 LOCKED, 口令槽解锁后配对可用; 监听运行中导入新端口后进程自行重启, 宿主重开会话并在新端口监听.
+- [ ] (发布) 按宿主 settings D31: 在 debug 宿主上验通 (P19.1) 后按本仓库推送策略发版 1.3.0 并登记官方索引.
+
+验收条件: 插件单测通过; 清单在设备上可见; 宿主侧真机验证待 settings P19.1.
 
 ---
 
@@ -1614,3 +1635,11 @@ window: com.android.settings/.Settings$WifiSettingsActivity  size=1080x2400  nod
 - 按功能拆分: 远程服务工具及其单元 / instrumentation 契约与多语言文档; 真机取证脚本与验证记录; 构建平台和原生库对齐校验插件升级到 1.9.7. 构建号随提交计数更新, 插件版本保持未发布的 1.2.0.
 - CI 准备: 假宿主的 grant 补上 app.startRemoteServer / app.remote_server, workspace 工具往返测试增加返回状态与桥接参数断言, 避免新工具被假宿主隐藏而破坏完整目录断言. 本地已跑通 CI 同款 JVM / debug / release / androidTest 构建, R8, 原生库对齐校验与 lint; 推送前另运行公共 prepush_check.py.
 - 远端同步方式: master 比 origin/master 领先的 70 笔既有提交随新提交正常推送, 不改写历史. 正式 Release 与官方插件索引不在本轮范围内; 新工具继续按宿主能力隐藏, 不提高旧宿主使用其它工具的门槛.
+
+
+### 2026-11-05: P13 设置导出与导入 (宿主 settings P18.2)
+
+- 来源: 宿主 settings ROADMAP 第 6 节 (插件设置迁移契约 v1), 由调度会话 local_f0afb29a 分给子会话 settings-p18, 与 3-Macaw Speech 1.5.0, 3-Stove Agent 1.4.0 同批.
+- 决定: D66 (文档形状), D67 (导入后的生效方式), D68 (工具分组开关随设置导出, 宿主 settings 附录 C Q63 待拍板, 已按推荐先行).
+- 证据: 见 P13 各条. 端到端 (宿主导出 / 导入, 跨设备信封, 重启后在新端口监听) 统一放到宿主 settings P19.1.
+- 剩余: 不推送, 不发版, 不登记索引 (宿主 settings D31: P19.1 验通后由维护者发版).

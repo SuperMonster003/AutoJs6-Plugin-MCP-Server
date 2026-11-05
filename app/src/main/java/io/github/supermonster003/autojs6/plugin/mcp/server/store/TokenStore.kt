@@ -50,6 +50,22 @@ class TokenStore(context: Context) {
     /** Replaces the token; clients must present the new value from now on. */
     fun rotate(): String = issue(force = true)
 
+    /** The stored token without issuing one, or null when there is none or it cannot be unwrapped (settings transfer, roadmap P13). */
+    fun stored(): String? = document.read()?.let(::unwrap)
+
+    /**
+     * Stores [token] (well formed, from a settings import of roadmap P13), wrapped with this device's Keystore key;
+     * clients must present it from now on. A failure reaches the caller.
+     */
+    @Throws(IOException::class)
+    fun replace(token: String) {
+        require(BearerTokens.isWellFormed(token)) { "Not a bearer token" }
+        val text = encode(token)
+        document.write(text)
+        cached = text to token
+        Log.i(TAG, "Token imported (fingerprint ${BearerTokens.fingerprint(token)})")
+    }
+
     fun fingerprint(): String = BearerTokens.fingerprint(current())
 
     fun tail(): String = BearerTokens.tail(current())

@@ -630,6 +630,10 @@ class McpServerRuntime private constructor(context: Context) : PairingCoordinato
         @Volatile
         private var instance: McpServerRuntime? = null
 
+        /** The runtime of this process if one was created, without creating it (settings transfer, roadmap P13). */
+        val existing: McpServerRuntime?
+            get() = instance
+
         /** The runtime of this process, created on first use. */
         fun get(context: Context): McpServerRuntime =
             instance ?: synchronized(this) { instance ?: McpServerRuntime(context.applicationContext).also { instance = it } }
