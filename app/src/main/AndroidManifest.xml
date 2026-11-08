@@ -59,6 +59,14 @@
             android:name="org.autojs.plugin.info.AUTHOR"
             android:value="@string/plugin_author" />
 
+        <!--
+            Settings page entry of the AutoJs6 plugin settings page (AutoJs6 6.8.1 and later, host feedback-680 P12):
+            the action McpServerSettingsActivity answers. AutoJs6 opens the same action by package name without it.
+        -->
+        <meta-data
+            android:name="org.autojs.plugin.SETTINGS_ACTION"
+            android:value="org.autojs.plugin.mcp.server.action.OPEN_SETTINGS" />
+
         <!-- AutoJs6 settings transfer contract v1 (roadmap P13, host settings roadmap P18.2): see the provider below. -->
         <meta-data
             android:name="org.autojs.plugin.contract.SETTINGS_TRANSFER"

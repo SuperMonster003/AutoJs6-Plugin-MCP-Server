@@ -85,6 +85,8 @@ class ManifestContractTest {
         assertNull(settings.androidAttributeOrNull("process"))
         assertEquals(org.autojs.plugin.mcp.server.api.McpServerActions.OPEN_SETTINGS,
             settings.child("intent-filter").children("action").single().androidAttribute("name"))
+        // The AutoJs6 plugin settings page opens the settings through this action (host feedback-680 P12).
+        assertEquals(org.autojs.plugin.mcp.server.api.McpServerActions.OPEN_SETTINGS, metaData["org.autojs.plugin.SETTINGS_ACTION"])
         val history = activities.single { it.androidAttribute("name") == ".ui.ReleaseHistoryActivity" }
         assertEquals("false", history.androidAttribute("exported"))
     }
