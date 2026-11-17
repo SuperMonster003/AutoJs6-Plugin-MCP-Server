@@ -3,8 +3,8 @@
 <div align="center">
   <p>
     <picture>
-      <source srcset="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap-night/ic_launcher.png?raw=true" media="(prefers-color-scheme: dark)" />
-      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap/ic_launcher.png?raw=true" alt="autojs6-plugin-mcp-server-ic-launcher" border="0" width="128" />
+      <source srcset="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap-night/ic_plugin_center.png?raw=true" media="(prefers-color-scheme: dark)" />
+      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap/ic_plugin_center.png?raw=true" alt="autojs6-plugin-mcp-server-ic-launcher" border="0" width="128" />
     </picture>
   </p>
 
@@ -52,7 +52,7 @@ MCP Server 讓執行 AutoJs6 的 Android 裝置成為一台 [Model Context Proto
 
 ******
 
-版本 1.3.0: 39 個內建工具 (預設啟用 35 個) 與 8 個外掛能力工具, MCP 資源與提示, AutoJs6 抽屜開關與外掛程式設定頁. 需要 AutoJs6 6.8.0 (組建 5298) 或更高版本; 外掛能力工具只在 AutoJs6 中安裝並啟用對應外掛時出現, 外掛能力工具與已登記指令碼工具在宿主不支援時自動隱藏, 可選的 autojs6://docs/ 資源還需要 AutoJs6 離線文件外掛以及帶轉讀方法的宿主. AutoJs6 外掛自行宣告的工具 (如 3-Hanzi CC 的 opencc_convert) 依外掛分組另外列出, 需要 AutoJs6 6.8.0 及以上. 進度與證據記錄在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+版本 1.3.1: 39 個內建工具 (預設啟用 35 個) 與 8 個外掛能力工具, MCP 資源與提示, AutoJs6 抽屜開關與外掛程式設定頁. 需要 AutoJs6 6.8.0 (組建 5298) 或更高版本; 外掛能力工具只在 AutoJs6 中安裝並啟用對應外掛時出現, 外掛能力工具與已登記指令碼工具在宿主不支援時自動隱藏, 可選的 autojs6://docs/ 資源還需要 AutoJs6 離線文件外掛以及帶轉讀方法的宿主. AutoJs6 外掛自行宣告的工具 (如 3-Hanzi CC 的 opencc_convert) 依外掛分組另外列出, 需要 AutoJs6 6.8.0 及以上. 進度與證據記錄在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -326,6 +326,12 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 ******
 
+#### v1.3.1
+
+_2026/11/17_
+
+- `優化` 外掛程式圖示移除綠色背景, 保留原有圖案, 圖案顏色會隨淺色與深色主題變化
+
 #### v1.3.0
 
 _2026/11/05_
@@ -356,18 +362,6 @@ _2026/11/03_
 - `優化` device_info 工具與資源 autojs6://device/info 新增 pluginTools 欄位 (AutoJs6 6.8.0 及以上): 列出宣告了工具的外掛, 其狀態, 信任等級, 群組開關, 各工具是否已列出, 以及工具缺少時的處理方式
 - `優化` AutoJs6 6.8.0 建置 5333 以上時, 設定頁的通知關閉提示會說明配對請求在 AutoJs6 位於前景時同樣會出現
 - `相依性` 升級 AutoJs6 建置平台與原生程式庫對齊檢查外掛程式版本 1.9.0 -> 1.9.7
-
-#### v1.1.0
-
-_2026/10/11_
-
-- `提示` 需要 AutoJs6 6.8.0 建置 5298 以上 (先前為 5279), 因為節點編號改由 AutoJs6 維護
-- `提示` ui 工具的行為變化: ui_find 與 ui_wait_for 為每個節點傳回選擇器而非 #n 編號, ui_dump 的 json 與 xml 格式不含編號, ui_set_text 的 append 需要使用選擇器, ui_dump 顯示完整的資源 id
-- `修復` 設定頁與發行歷史頁的狀態列在 Android 15 以上版本未跟隨主題色 (僅標題列著色) 的問題
-- `修復` Android 14 以上版本未允許通知時, 來自電腦的配對請求在手機上可能完全看不到的問題 (現在開啟設定頁會顯示待確認的請求並提示通知已關閉)
-- `優化` AutoJs6 透過與其他外掛共用的能力介面連接本外掛 (MCP 契約版本 2)
-- `優化` ui_dump 的 #n 編號改由 AutoJs6 保存, 操作時由 AutoJs6 重新定位節點: 只要視窗和節點未變, 編號就持續有效 (不再 60 秒過期), 可透過 snapshotId 使用最近 8 次 dump, 編號失效時會說明原因
-- `相依性` 更新 AutoJs6 外掛介面檔案至主程式建置 6.8.0/5329, 並附加 host-capability-api 本機模組 (MPL 2.0, 鎖定檔案雜湊)
 
 ##### 更多發行歷史
 

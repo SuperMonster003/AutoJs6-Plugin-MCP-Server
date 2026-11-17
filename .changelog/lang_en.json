@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Improvement",
   "changelog_label_dependency": "Dependency",
   "$data": {
+    "v1.3.1": {
+      "released_date": "2026/11/17",
+      "improvement": [
+        "Removed the green background of the plugin icon and kept its original glyph, which now follows the light and dark themes"
+      ]
+    },
     "v1.3.0": {
       "released_date": "2026/11/05",
       "hint": [

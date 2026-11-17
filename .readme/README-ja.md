@@ -3,8 +3,8 @@
 <div align="center">
   <p>
     <picture>
-      <source srcset="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap-night/ic_launcher.png?raw=true" media="(prefers-color-scheme: dark)" />
-      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap/ic_launcher.png?raw=true" alt="autojs6-plugin-mcp-server-ic-launcher" border="0" width="128" />
+      <source srcset="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap-night/ic_plugin_center.png?raw=true" media="(prefers-color-scheme: dark)" />
+      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap/ic_plugin_center.png?raw=true" alt="autojs6-plugin-mcp-server-ic-launcher" border="0" width="128" />
     </picture>
   </p>
 
@@ -52,7 +52,7 @@ MCP Server は, AutoJs6 を実行している Android デバイスを [Model Con
 
 ******
 
-バージョン 1.3.0: 組み込みツール 39 個 (既定で 35 個が有効) とプラグイン機能ツール 8 個, MCP リソースとプロンプト, AutoJs6 のドロワースイッチとプラグイン設定画面. AutoJs6 6.8.0 (ビルド 5298) 以降が必要です. プラグイン機能ツールは対応する AutoJs6 プラグインがインストールされ有効なときだけ表示され, プラグイン機能ツールと登録済みスクリプトのツールはそれらに対応しないホストでは自動的に隠れます. オプションの autojs6://docs/ リソースには AutoJs6 オフラインドキュメントプラグインと中継メソッドを持つホストも必要です. AutoJs6 プラグインが自ら記述するツール (3-Hanzi CC の opencc_convert など) は, AutoJs6 6.8.0 以降でプラグインごとのグループとして追加で一覧に出ます. 進捗と証跡は [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) に記録しています.
+バージョン 1.3.1: 組み込みツール 39 個 (既定で 35 個が有効) とプラグイン機能ツール 8 個, MCP リソースとプロンプト, AutoJs6 のドロワースイッチとプラグイン設定画面. AutoJs6 6.8.0 (ビルド 5298) 以降が必要です. プラグイン機能ツールは対応する AutoJs6 プラグインがインストールされ有効なときだけ表示され, プラグイン機能ツールと登録済みスクリプトのツールはそれらに対応しないホストでは自動的に隠れます. オプションの autojs6://docs/ リソースには AutoJs6 オフラインドキュメントプラグインと中継メソッドを持つホストも必要です. AutoJs6 プラグインが自ら記述するツール (3-Hanzi CC の opencc_convert など) は, AutoJs6 6.8.0 以降でプラグインごとのグループとして追加で一覧に出ます. 進捗と証跡は [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) に記録しています.
 
 ******
 
@@ -326,6 +326,12 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 ******
 
+#### v1.3.1
+
+_2026/11/17_
+
+- `改善` プラグインのアイコンから緑色の背景を取り除き, 元の図案はそのままに, 図案の色がライトテーマとダークテーマに合わせて変わるように
+
 #### v1.3.0
 
 _2026/11/05_
@@ -356,18 +362,6 @@ _2026/11/03_
 - `改善` device_info ツールとリソース autojs6://device/info に pluginTools フィールドを追加 (AutoJs6 6.8.0 以降): ツールを宣言したプラグイン, その状態, 信頼レベル, グループのスイッチ, 各ツールが一覧に出ているか, ツールが無いときの対処を示す
 - `改善` AutoJs6 6.8.0 のビルド 5333 以降では, 設定ページの通知オフの案内で, AutoJs6 が前面にあるときもペアリング要求が表示されることを説明するようにした
 - `依存関係` AutoJs6 プラットフォームバージョン管理とネイティブライブラリ配置検証のビルドプラグインを更新 1.9.0 -> 1.9.7
-
-#### v1.1.0
-
-_2026/10/11_
-
-- `ヒント` AutoJs6 6.8.0 のビルド 5298 以降が必要 (以前は 5279). ノード参照を AutoJs6 側で管理するようになったため
-- `ヒント` ui ツールの動作の変更: ui_find と ui_wait_for はノードごとに #n 参照ではなくセレクターを返し, ui_dump の json と xml 形式には参照が含まれず, ui_set_text の append にはセレクターが必要で, ui_dump は完全なリソース ID を表示する
-- `修正` Android 15 以降で設定ページと更新履歴ページのステータスバーがテーマカラーにならない (ツールバーのみ色が付く) 問題
-- `修正` Android 14 以降で通知が許可されていないと, パソコンからのペアリング要求が端末にまったく表示されないことがある問題 (設定ページを開くと保留中の要求を表示し, 通知がオフであることを案内するようにした)
-- `改善` AutoJs6 がほかのプラグインと共有する機能インターフェースでこのプラグインに接続するようになった (MCP コントラクト バージョン 2)
-- `改善` ui_dump の #n 参照を AutoJs6 が保持し, 操作時に AutoJs6 がノードを再特定するようになった: ウィンドウとノードが変わらない限り参照は有効で (60 秒で失効しない), snapshotId で直近 8 回の dump を使え, 失効した参照は理由を示す
-- `依存関係` AutoJs6 プラグイン API ファイルをホストビルド 6.8.0 / 5329 に更新し, `host-capability-api.aar` (AutoJs6 のモジュール `plugin-api/host-capability-api`, MPL 2.0) を追加. すべて `locks/host-api-aars.lock` でハッシュを固定
 
 ##### さらに詳しいリリース履歴
 

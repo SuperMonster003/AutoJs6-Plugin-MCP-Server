@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatorVersion": "1.3.0",
+  "generatorVersion": "1.4.0",
   "profile": "catalog",
   "repository": "AutoJs6-Plugin-MCP-Server",
   "packages": [
@@ -9,37 +9,37 @@
   "launcher": false,
   "params": {
     "sources": {
-      "day": "a9f8b8d73da664ed7f1b73985a6d27b5543f1cb0c60a47dda544adfe6a6a7800",
-      "night": "7ca7919acc3034e37c074e20de57f55ae039bdbcaa3c031198c3c834fd2f6743",
+      "day": "d40e80a8e3847d85bd4314746e72e123507aab2106d928a15c0cfd98f0a68411",
+      "night": "d40e80a8e3847d85bd4314746e72e123507aab2106d928a15c0cfd98f0a68411",
       "alphaMode": "alpha"
     },
     "geometry": {
-      "mode": "preserve",
-      "scale": 0.93,
-      "offsetX": 0,
-      "offsetY": 0
+      "mode": "normalized",
+      "scale": 1.0,
+      "offsetX": 0.0,
+      "offsetY": 0.0
     },
     "day": {
-      "mode": "original",
+      "mode": "mask",
       "foreground": "#272727",
-      "brightness": 1,
-      "contrast": 1,
-      "gamma": 1,
+      "brightness": 1.0,
+      "contrast": 1.0,
+      "gamma": 1.0,
       "threshold": 128,
       "invert": false
     },
     "night": {
-      "mode": "original",
+      "mode": "mask",
       "foreground": "#d8d8d8",
-      "brightness": 1,
-      "contrast": 1,
-      "gamma": 1,
+      "brightness": 1.0,
+      "contrast": 1.0,
+      "gamma": 1.0,
       "threshold": 128,
       "invert": false
     },
     "backgrounds": {
-      "day": "#0f766e",
-      "night": "#115e59"
+      "day": "transparent",
+      "night": "transparent"
     }
   },
   "baseline": {
@@ -128,15 +128,22 @@
     }
   },
   "assets": [
+    "7812bd46e0c821c15cc40a91ed1dbf890da44eefb953ae16f4327c60360b585b",
     "7ca7919acc3034e37c074e20de57f55ae039bdbcaa3c031198c3c834fd2f6743",
-    "a9f8b8d73da664ed7f1b73985a6d27b5543f1cb0c60a47dda544adfe6a6a7800"
+    "a9f8b8d73da664ed7f1b73985a6d27b5543f1cb0c60a47dda544adfe6a6a7800",
+    "d40e80a8e3847d85bd4314746e72e123507aab2106d928a15c0cfd98f0a68411"
   ],
   "legacyGenerator": ".python/generate_launcher_icons.py",
   "backgroundDefaults": {
     "day": "#0f766e",
     "night": "#115e59"
   },
-  "originalSources": {},
+  "originalSources": {
+    "d40e80a8e3847d85bd4314746e72e123507aab2106d928a15c0cfd98f0a68411": {
+      "asset": "7812bd46e0c821c15cc40a91ed1dbf890da44eefb953ae16f4327c60360b585b",
+      "filename": "mcp-server-icon.png"
+    }
+  },
   "systemIcon": true,
   "systemIconMinSdk": 24,
   "systemIconObsolete": []

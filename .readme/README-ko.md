@@ -3,8 +3,8 @@
 <div align="center">
   <p>
     <picture>
-      <source srcset="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap-night/ic_launcher.png?raw=true" media="(prefers-color-scheme: dark)" />
-      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap/ic_launcher.png?raw=true" alt="autojs6-plugin-mcp-server-ic-launcher" border="0" width="128" />
+      <source srcset="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap-night/ic_plugin_center.png?raw=true" media="(prefers-color-scheme: dark)" />
+      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap/ic_plugin_center.png?raw=true" alt="autojs6-plugin-mcp-server-ic-launcher" border="0" width="128" />
     </picture>
   </p>
 
@@ -52,7 +52,7 @@ MCP Server는 AutoJs6가 실행되는 Android 기기를 [Model Context Protocol]
 
 ******
 
-버전 1.3.0: 내장 도구 39개 (기본 활성화 35개)와 플러그인 기능 도구 8개, MCP 리소스와 프롬프트, AutoJs6 서랍 스위치와 플러그인 설정 페이지. AutoJs6 6.8.0 (빌드 5298) 이상이 필요합니다. 플러그인 기능 도구는 해당 AutoJs6 플러그인이 설치되고 활성화된 경우에만 나타나며, 플러그인 기능 도구와 등록된 스크립트 도구는 이를 지원하지 않는 호스트에서 자동으로 숨겨집니다. 선택적 autojs6://docs/ 리소스에는 AutoJs6 오프라인 문서 플러그인과 중계 메서드를 갖춘 호스트도 필요합니다. AutoJs6 플러그인이 스스로 설명하는 도구 (3-Hanzi CC 의 opencc_convert 등) 는 AutoJs6 6.8.0 이상에서 플러그인별 그룹으로 추가 표시됩니다. 진행 상황과 증거는 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) 에 기록합니다.
+버전 1.3.1: 내장 도구 39개 (기본 활성화 35개)와 플러그인 기능 도구 8개, MCP 리소스와 프롬프트, AutoJs6 서랍 스위치와 플러그인 설정 페이지. AutoJs6 6.8.0 (빌드 5298) 이상이 필요합니다. 플러그인 기능 도구는 해당 AutoJs6 플러그인이 설치되고 활성화된 경우에만 나타나며, 플러그인 기능 도구와 등록된 스크립트 도구는 이를 지원하지 않는 호스트에서 자동으로 숨겨집니다. 선택적 autojs6://docs/ 리소스에는 AutoJs6 오프라인 문서 플러그인과 중계 메서드를 갖춘 호스트도 필요합니다. AutoJs6 플러그인이 스스로 설명하는 도구 (3-Hanzi CC 의 opencc_convert 등) 는 AutoJs6 6.8.0 이상에서 플러그인별 그룹으로 추가 표시됩니다. 진행 상황과 증거는 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) 에 기록합니다.
 
 ******
 
@@ -326,6 +326,12 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 ******
 
+#### v1.3.1
+
+_2026/11/17_
+
+- `개선` 플러그인 아이콘에서 녹색 배경을 없애고 기존 그림은 그대로 두었으며 그림 색상이 밝은 테마와 어두운 테마를 따르도록 함
+
 #### v1.3.0
 
 _2026/11/05_
@@ -356,18 +362,6 @@ _2026/11/03_
 - `개선` device_info 도구와 리소스 autojs6://device/info 에 pluginTools 필드 추가 (AutoJs6 6.8.0 이상): 도구를 선언한 플러그인, 상태, 신뢰 수준, 그룹 스위치, 각 도구의 목록 표시 여부, 도구가 없을 때의 해결 방법을 표시
 - `개선` AutoJs6 6.8.0 빌드 5333 이상에서는 설정 페이지의 알림 꺼짐 안내가 AutoJs6가 앞에 표시된 동안에도 페어링 요청이 나타난다고 알려 줌
 - `의존성` AutoJs6 플랫폼 버전 관리 및 네이티브 라이브러리 정렬 검사 빌드 플러그인 업그레이드 1.9.0 -> 1.9.7
-
-#### v1.1.0
-
-_2026/10/11_
-
-- `힌트` AutoJs6 6.8.0 빌드 5298 이상이 필요함 (이전에는 5279). 노드 참조를 AutoJs6가 관리하게 되었기 때문
-- `힌트` ui 도구 동작 변경: ui_find와 ui_wait_for는 노드마다 #n 참조 대신 선택자를 반환하고, ui_dump의 json 및 xml 형식에는 참조가 없으며, ui_set_text의 append에는 선택자가 필요하고, ui_dump는 전체 리소스 ID를 표시함
-- `수정` Android 15 이상에서 설정 페이지와 릴리스 기록 페이지의 상태 표시줄에 테마 색상이 적용되지 않던 문제 (툴바에만 적용됨)
-- `수정` Android 14 이상에서 알림이 허용되지 않으면 컴퓨터의 페어링 요청이 휴대전화에 전혀 표시되지 않을 수 있던 문제 (이제 설정 페이지를 열면 대기 중인 요청을 표시하고 알림이 꺼져 있음을 안내함)
-- `개선` AutoJs6가 다른 플러그인과 함께 쓰는 기능 인터페이스로 이 플러그인에 연결함 (MCP 계약 버전 2)
-- `개선` ui_dump의 #n 참조를 AutoJs6가 보관하고 동작할 때 AutoJs6가 노드를 다시 찾음: 창과 노드가 그대로인 동안 참조가 계속 유효하며 (60초 후 만료되지 않음), snapshotId로 최근 8번의 dump를 사용할 수 있고, 만료된 참조는 이유를 알려 줌
-- `의존성` AutoJs6 플러그인 API 파일을 호스트 빌드 6.8.0 / 5329로 업데이트하고 `host-capability-api.aar` (AutoJs6 모듈 `plugin-api/host-capability-api`, MPL 2.0)를 추가함. 모두 `locks/host-api-aars.lock`에 해시를 고정
 
 ##### 더 많은 릴리스 기록
 

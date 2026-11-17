@@ -5,6 +5,12 @@
   "changelog_label_improvement": "改善",
   "changelog_label_dependency": "依存関係",
   "$data": {
+    "v1.3.1": {
+      "released_date": "2026/11/17",
+      "improvement": [
+        "プラグインのアイコンから緑色の背景を取り除き, 元の図案はそのままに, 図案の色がライトテーマとダークテーマに合わせて変わるように"
+      ]
+    },
     "v1.3.0": {
       "released_date": "2026/11/05",
       "hint": [

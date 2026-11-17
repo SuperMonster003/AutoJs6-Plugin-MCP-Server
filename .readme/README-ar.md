@@ -3,8 +3,8 @@
 <div align="center">
   <p>
     <picture>
-      <source srcset="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap-night/ic_launcher.png?raw=true" media="(prefers-color-scheme: dark)" />
-      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap/ic_launcher.png?raw=true" alt="autojs6-plugin-mcp-server-ic-launcher" border="0" width="128" />
+      <source srcset="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap-night/ic_plugin_center.png?raw=true" media="(prefers-color-scheme: dark)" />
+      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap/ic_plugin_center.png?raw=true" alt="autojs6-plugin-mcp-server-ic-launcher" border="0" width="128" />
     </picture>
   </p>
 
@@ -52,7 +52,7 @@
 
 ******
 
-الإصدار 1.3.0: 39 أداة مدمجة (35 مفعلة افتراضيا) و 8 أدوات لقدرات الإضافات, موارد وقوالب MCP, مفتاح في قائمة AutoJs6 وصفحة إعدادات للإضافة. يتطلب AutoJs6 6.8.0 (البناء 5298) أو أحدث; تظهر أدوات قدرات الإضافات فقط عند تثبيت إضافة AutoJs6 المطابقة وتفعيلها, وتبقى أدوات قدرات الإضافات والسكربتات المسجلة مخفية على المضيفات التي لا تدعمها, كما تحتاج موارد autojs6://docs/ الاختيارية إلى إضافة AutoJs6 Offline Docs ومضيف يملك طرق التمرير. تدرج الأدوات التي تصفها إضافات AutoJs6 بنفسها (مثل opencc_convert من 3-Hanzi CC) إضافة إلى ذلك, في مجموعة لكل إضافة, مع AutoJs6 6.8.0 أو أحدث. يسجل التقدم والأدلة في [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+الإصدار 1.3.1: 39 أداة مدمجة (35 مفعلة افتراضيا) و 8 أدوات لقدرات الإضافات, موارد وقوالب MCP, مفتاح في قائمة AutoJs6 وصفحة إعدادات للإضافة. يتطلب AutoJs6 6.8.0 (البناء 5298) أو أحدث; تظهر أدوات قدرات الإضافات فقط عند تثبيت إضافة AutoJs6 المطابقة وتفعيلها, وتبقى أدوات قدرات الإضافات والسكربتات المسجلة مخفية على المضيفات التي لا تدعمها, كما تحتاج موارد autojs6://docs/ الاختيارية إلى إضافة AutoJs6 Offline Docs ومضيف يملك طرق التمرير. تدرج الأدوات التي تصفها إضافات AutoJs6 بنفسها (مثل opencc_convert من 3-Hanzi CC) إضافة إلى ذلك, في مجموعة لكل إضافة, مع AutoJs6 6.8.0 أو أحدث. يسجل التقدم والأدلة في [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -326,6 +326,12 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 ******
 
+#### v1.3.1
+
+_2026/11/17_
+
+- `تحسين` أُزيلت الخلفية الخضراء من أيقونة الملحق مع الإبقاء على الرسم الأصلي, وأصبح لونه يتبع السمتين الفاتحة والداكنة
+
 #### v1.3.0
 
 _2026/11/05_
@@ -356,18 +362,6 @@ _2026/11/03_
 - `تحسين` تضيف أداة device_info والمورد autojs6://device/info الحقل pluginTools (AutoJs6 6.8.0 أو أحدث): الإضافات التي تعلن أدوات, وحالتها ومستوى الثقة ومفاتيح مجموعتها, وما إذا كانت كل أداة مدرجة, وما يجب فعله عند غياب الأدوات
 - `تحسين` مع AutoJs6 6.8.0 البناء 5333 أو أحدث, يوضح تنبيه الإشعارات المتوقفة في صفحة الإعدادات أن طلبات الاقتران تظهر أيضا عندما يكون AutoJs6 في المقدمة
 - `تبعية` ترقية إضافتي بناء AutoJs6 لإصدارات المنصة والتحقق من محاذاة المكتبات الأصلية 1.9.0 -> 1.9.7
-
-#### v1.1.0
-
-_2026/10/11_
-
-- `تلميح` يتطلب AutoJs6 6.8.0 البناء 5298 أو أحدث (كان 5279 سابقا), لأن مراجع العقد أصبحت تدار من AutoJs6
-- `تلميح` تغيير في سلوك أدوات ui: تعيد ui_find وui_wait_for محددا لكل عقدة بدلا من مرجع #n, ولا تحتوي صيغتا json وxml في ui_dump على مراجع, ويحتاج append في ui_set_text إلى محدد, ويعرض ui_dump معرفات الموارد كاملة
-- `إصلاح` شريط الحالة في صفحتي الإعدادات وسجل الإصدارات لم يكن يأخذ لون السمة في Android 15 وما بعده (كان شريط الأدوات فقط يأخذه)
-- `إصلاح` قد لا تظهر طلبات الاقتران من الكمبيوتر على الهاتف إطلاقا في Android 14 وما بعده إذا لم تكن الإشعارات مسموحة (تعرض صفحة الإعدادات الآن الطلب المعلق عند فتحها وتنبه إلى أن الإشعارات متوقفة)
-- `تحسين` يتصل AutoJs6 بالإضافة عبر واجهة القدرات التي يتشاركها مع إضافاته الأخرى (عقد MCP الإصدار 2)
-- `تحسين` يحتفظ AutoJs6 بمراجع #n الخاصة بـ ui_dump ويعيد تحديد موقع العقدة عند تنفيذ إجراء: يبقى المرجع صالحا ما دامت النافذة والعقدة دون تغيير (لا ينتهي بعد 60 ثانية), وتبقى أحدث 8 عمليات dump متاحة عبر snapshotId, ويذكر المرجع المنتهي السبب
-- `تبعية` تحديث ملفات واجهة إضافات AutoJs6 إلى بناء المضيف 6.8.0 / 5329 مع إضافة `host-capability-api.aar` (وحدة AutoJs6 `plugin-api/host-capability-api`, MPL 2.0), مع تثبيت تجزئة جميع الملفات في `locks/host-api-aars.lock`
 
 ##### لمزيد من سجل الإصدارات
 

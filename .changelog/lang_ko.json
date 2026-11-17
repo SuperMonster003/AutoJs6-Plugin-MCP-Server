@@ -5,6 +5,12 @@
   "changelog_label_improvement": "개선",
   "changelog_label_dependency": "의존성",
   "$data": {
+    "v1.3.1": {
+      "released_date": "2026/11/17",
+      "improvement": [
+        "플러그인 아이콘에서 녹색 배경을 없애고 기존 그림은 그대로 두었으며 그림 색상이 밝은 테마와 어두운 테마를 따르도록 함"
+      ]
+    },
     "v1.3.0": {
       "released_date": "2026/11/05",
       "hint": [

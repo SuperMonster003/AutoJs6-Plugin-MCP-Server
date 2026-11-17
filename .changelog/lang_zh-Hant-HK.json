@@ -5,6 +5,12 @@
   "changelog_label_improvement": "優化",
   "changelog_label_dependency": "依賴",
   "$data": {
+    "v1.3.1": {
+      "released_date": "2026/11/17",
+      "improvement": [
+        "外掛程式圖示移除綠色背景, 保留原有圖案, 圖案顏色跟隨淺色與深色主題"
+      ]
+    },
     "v1.3.0": {
       "released_date": "2026/11/05",
       "hint": [

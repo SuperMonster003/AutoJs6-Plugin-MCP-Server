@@ -4,6 +4,12 @@
 
 ******
 
+# v1.3.1
+
+###### 2026/11/17
+
+* `Improvement` Removed the green background of the plugin icon and kept its original glyph, which now follows the light and dark themes
+
 # v1.3.0
 
 ###### 2026/11/05

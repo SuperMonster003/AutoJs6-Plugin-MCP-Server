@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Mejora",
   "changelog_label_dependency": "Dependencia",
   "$data": {
+    "v1.3.1": {
+      "released_date": "2026/11/17",
+      "improvement": [
+        "Fondo verde del icono del plugin eliminado, se conserva la figura original y su color sigue ahora los temas claro y oscuro"
+      ]
+    },
     "v1.3.0": {
       "released_date": "2026/11/05",
       "hint": [

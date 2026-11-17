@@ -3,8 +3,8 @@
 <div align="center">
   <p>
     <picture>
-      <source srcset="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap-night/ic_launcher.png?raw=true" media="(prefers-color-scheme: dark)" />
-      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap/ic_launcher.png?raw=true" alt="autojs6-plugin-mcp-server-ic-launcher" border="0" width="128" />
+      <source srcset="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap-night/ic_plugin_center.png?raw=true" media="(prefers-color-scheme: dark)" />
+      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap/ic_plugin_center.png?raw=true" alt="autojs6-plugin-mcp-server-ic-launcher" border="0" width="128" />
     </picture>
   </p>
 
@@ -52,7 +52,7 @@ El servidor se ejecuta dentro del propio proceso del plugin y se alcanza mediant
 
 ******
 
-Versión 1.3.0: 39 herramientas integradas (35 activadas por defecto) y 8 herramientas de capacidades de plugins, recursos y plantillas MCP, un interruptor en el panel de AutoJs6 y una página de ajustes del complemento. Requiere AutoJs6 6.8.0 (compilación 5298) o posterior; las herramientas de capacidades de plugins solo aparecen mientras el plugin de AutoJs6 correspondiente está instalado y activado, estas y las herramientas de scripts registrados permanecen ocultas en anfitriones que no las admiten, y los recursos opcionales autojs6://docs/ necesitan además el plugin AutoJs6 Offline Docs y un anfitrión con sus métodos de retransmisión. Las herramientas que describen los propios plugins de AutoJs6 (como opencc_convert de 3-Hanzi CC) se listan además, en un grupo por plugin, con AutoJs6 6.8.0 o posterior. El progreso y las evidencias se registran en [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+Versión 1.3.1: 39 herramientas integradas (35 activadas por defecto) y 8 herramientas de capacidades de plugins, recursos y plantillas MCP, un interruptor en el panel de AutoJs6 y una página de ajustes del complemento. Requiere AutoJs6 6.8.0 (compilación 5298) o posterior; las herramientas de capacidades de plugins solo aparecen mientras el plugin de AutoJs6 correspondiente está instalado y activado, estas y las herramientas de scripts registrados permanecen ocultas en anfitriones que no las admiten, y los recursos opcionales autojs6://docs/ necesitan además el plugin AutoJs6 Offline Docs y un anfitrión con sus métodos de retransmisión. Las herramientas que describen los propios plugins de AutoJs6 (como opencc_convert de 3-Hanzi CC) se listan además, en un grupo por plugin, con AutoJs6 6.8.0 o posterior. El progreso y las evidencias se registran en [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -326,6 +326,12 @@ Los planes y el progreso del plugin se mantienen como una lista verificable en R
 
 ******
 
+#### v1.3.1
+
+_2026/11/17_
+
+- `Mejora` Fondo verde del icono del plugin eliminado, se conserva la figura original y su color sigue ahora los temas claro y oscuro
+
 #### v1.3.0
 
 _2026/11/05_
@@ -356,18 +362,6 @@ _2026/11/03_
 - `Mejora` La herramienta device_info y el recurso autojs6://device/info añaden el campo pluginTools (AutoJs6 6.8.0 o posterior): los plugins que declaran herramientas, su estado, nivel de confianza e interruptores de grupo, si cada herramienta aparece en la lista y qué hacer cuando faltan herramientas
 - `Mejora` Con AutoJs6 6.8.0 compilación 5333 o posterior, el aviso de notificaciones desactivadas de la página de ajustes indica que las solicitudes de emparejamiento también aparecen mientras AutoJs6 está en primer plano
 - `Dependencia` Actualizar los complementos de compilación AutoJs6 de versiones de plataforma y verificación de alineación nativa 1.9.0 -> 1.9.7
-
-#### v1.1.0
-
-_2026/10/11_
-
-- `Aviso` Requiere AutoJs6 6.8.0 compilación 5298 o posterior (antes 5279), porque ahora AutoJs6 gestiona las referencias de nodos
-- `Aviso` Cambio de comportamiento de las herramientas ui: ui_find y ui_wait_for devuelven un selector por nodo en lugar de una referencia #n, las formas json y xml de ui_dump no tienen referencias, append de ui_set_text necesita un selector y ui_dump muestra los identificadores de recurso completos
-- `Corrección` La barra de estado de las páginas de ajustes e historial de versiones no tomaba el color del tema en Android 15 y posteriores (solo la barra de herramientas)
-- `Corrección` Las solicitudes de emparejamiento desde un ordenador podían no aparecer en el teléfono en Android 14 y posteriores si las notificaciones no estaban permitidas (ahora la página de ajustes muestra la solicitud pendiente al abrirse e indica que las notificaciones están desactivadas)
-- `Mejora` AutoJs6 se conecta al plugin mediante la interfaz de capacidades que comparte con sus otros plugins (contrato MCP versión 2)
-- `Mejora` AutoJs6 conserva las referencias #n de ui_dump y vuelve a localizar el nodo al actuar: una referencia sigue valiendo mientras la ventana y el nodo no cambien (ya no caduca a los 60 s), los 8 volcados más recientes siguen disponibles mediante snapshotId y una referencia caducada indica el motivo
-- `Dependencia` Archivos de la API de plugins de AutoJs6 actualizados a la compilación del anfitrión 6.8.0 / 5329, con `host-capability-api.aar` (módulo `plugin-api/host-capability-api` de AutoJs6, MPL 2.0) añadido; todos con el hash fijado en `locks/host-api-aars.lock`
 
 ##### Para más historial de versiones
 

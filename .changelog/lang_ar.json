@@ -5,6 +5,12 @@
   "changelog_label_improvement": "تحسين",
   "changelog_label_dependency": "تبعية",
   "$data": {
+    "v1.3.1": {
+      "released_date": "2026/11/17",
+      "improvement": [
+        "أُزيلت الخلفية الخضراء من أيقونة الملحق مع الإبقاء على الرسم الأصلي, وأصبح لونه يتبع السمتين الفاتحة والداكنة"
+      ]
+    },
     "v1.3.0": {
       "released_date": "2026/11/05",
       "hint": [

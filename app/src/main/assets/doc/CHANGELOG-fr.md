@@ -4,6 +4,12 @@
 
 ******
 
+# v1.3.1
+
+###### 2026/11/17
+
+* `Amélioration` Fond vert de l'icône du plugin supprimé, motif d'origine conservé, sa couleur suit désormais les thèmes clair et sombre
+
 # v1.3.0
 
 ###### 2026/11/05

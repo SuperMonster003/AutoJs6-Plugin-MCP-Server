@@ -3,8 +3,8 @@
 <div align="center">
   <p>
     <picture>
-      <source srcset="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap-night/ic_launcher.png?raw=true" media="(prefers-color-scheme: dark)" />
-      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap/ic_launcher.png?raw=true" alt="autojs6-plugin-mcp-server-ic-launcher" border="0" width="128" />
+      <source srcset="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap-night/ic_plugin_center.png?raw=true" media="(prefers-color-scheme: dark)" />
+      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/app/src/main/res/mipmap/ic_plugin_center.png?raw=true" alt="autojs6-plugin-mcp-server-ic-launcher" border="0" width="128" />
     </picture>
   </p>
 
@@ -52,7 +52,7 @@ MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Proto
 
 ******
 
-版本 1.3.0: 39 个内置工具 (默认启用 35 个) 与 8 个插件能力工具, MCP 资源与提示, AutoJs6 抽屉开关和插件设置页. 需要 AutoJs6 6.8.0 (构建 5298) 或更高版本; 插件能力工具只在 AutoJs6 中安装并启用对应插件时出现, 插件能力工具与已登记脚本工具在宿主不支持时自动隐藏, 可选的 autojs6://docs/ 资源还需要 AutoJs6 离线文档插件以及带转读方法的宿主. AutoJs6 插件自行声明的工具 (如 3-Hanzi CC 的 opencc_convert) 按插件分组另外列出, 需要 AutoJs6 6.8.0 及以上. 进度与证据记录在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+版本 1.3.1: 39 个内置工具 (默认启用 35 个) 与 8 个插件能力工具, MCP 资源与提示, AutoJs6 抽屉开关和插件设置页. 需要 AutoJs6 6.8.0 (构建 5298) 或更高版本; 插件能力工具只在 AutoJs6 中安装并启用对应插件时出现, 插件能力工具与已登记脚本工具在宿主不支持时自动隐藏, 可选的 autojs6://docs/ 资源还需要 AutoJs6 离线文档插件以及带转读方法的宿主. AutoJs6 插件自行声明的工具 (如 3-Hanzi CC 的 opencc_convert) 按插件分组另外列出, 需要 AutoJs6 6.8.0 及以上. 进度与证据记录在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
 
 ******
 
@@ -326,6 +326,12 @@ default endpoint: http://127.0.0.1:9637/mcp
 
 ******
 
+#### v1.3.1
+
+_2026/11/17_
+
+- `优化` 插件图标去掉绿色背景, 保留原有图案, 图案颜色跟随亮色与暗色主题
+
 #### v1.3.0
 
 _2026/11/05_
@@ -356,18 +362,6 @@ _2026/11/03_
 - `优化` device_info 工具与资源 autojs6://device/info 新增 pluginTools 字段 (AutoJs6 6.8.0 及以上): 列出声明了工具的插件, 其状态, 信任级别, 分组开关, 各工具是否已列出, 以及工具缺失时的处理办法
 - `优化` AutoJs6 6.8.0 构建 5333 及以上时, 设置页的通知关闭提示会说明配对请求在 AutoJs6 位于前台时同样会出现
 - `依赖` 升级 AutoJs6 构建平台与原生库对齐校验插件版本 1.9.0 -> 1.9.7
-
-#### v1.1.0
-
-_2026/10/11_
-
-- `提示` 需要 AutoJs6 6.8.0 构建 5298 或以上 (此前为 5279), 因为节点编号改由 AutoJs6 维护
-- `提示` ui 工具的行为变化: ui_find 与 ui_wait_for 为每个节点返回选择器而不是 #n 编号, ui_dump 的 json 与 xml 格式不含编号, ui_set_text 的 append 需要使用选择器, ui_dump 显示完整的资源 id
-- `修复` 设置页与发行历史页的状态栏在 Android 15 及以上未跟随主题色 (仅标题栏着色) 的问题
-- `修复` Android 14 及以上未允许通知时, 来自电脑的配对请求在手机上可能完全不可见的问题 (现在打开设置页会显示待确认的请求并提示通知已关闭)
-- `优化` AutoJs6 通过与其他插件共用的能力接口连接本插件 (MCP 契约版本 2)
-- `优化` ui_dump 的 #n 编号改由 AutoJs6 保存, 操作时由 AutoJs6 重新定位节点: 只要窗口和节点未变, 编号就一直有效 (不再 60 秒过期), 可通过 snapshotId 使用最近 8 次 dump, 编号失效时会说明原因
-- `依赖` 更新 AutoJs6 插件接口文件至宿主构建 6.8.0/5329, 并附加 host-capability-api 本地模块 (MPL 2.0, 锁定文件哈希)
 
 ##### 更多发行历史
 
