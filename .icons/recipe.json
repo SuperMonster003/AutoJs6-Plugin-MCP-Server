@@ -38,8 +38,8 @@
       "invert": false
     },
     "backgrounds": {
-      "day": "transparent",
-      "night": "transparent"
+      "day": "#FAFAFA",
+      "night": "#212121"
     }
   },
   "baseline": {
