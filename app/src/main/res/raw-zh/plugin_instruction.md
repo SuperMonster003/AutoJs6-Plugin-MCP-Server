@@ -1,13 +1,47 @@
-MCP Server 让运行 AutoJs6 的 Android 设备成为一台 [Model Context Protocol](https://modelcontextprotocol.io) 服务器. 电脑上的 AI 代理 (如 Claude Code, Cursor 或 MCP Inspector) 通过 USB 或 Wi-Fi 连接手机, 借助工具运行脚本, 读取日志, 查看无障碍节点树, 点击与输入, 截取屏幕, 以及操作文件与应用. 安装相应的 AutoJs6 插件后, 还能识别屏幕或图片中的文字与条码, 找图找色, 转换拼音以及读取媒体信息. 插件也可以自行声明工具 (例如中文繁简转换), 由 MCP Server 按插件分组提供.
+MCP Server 让电脑上的 AI 客户端 (例如 Claude Code, Cursor) 通过 [Model Context Protocol](https://modelcontextprotocol.io) 操作这台手机. 客户端经 USB 或局域网连接后, 可以借助 AutoJs6 运行脚本, 查看并操作界面, 截取屏幕, 读写工作目录中的文件. 每个新客户端首次调用都需要在手机上确认.
 
-版本 1.3.1: 39 个内置工具 (默认启用 35 个) 与 8 个插件能力工具, MCP 资源与提示, AutoJs6 抽屉开关和插件设置页. 需要 AutoJs6 6.8.0 (构建 5298) 或更高版本; 插件能力工具只在 AutoJs6 中安装并启用对应插件时出现, 插件能力工具与已登记脚本工具在宿主不支持时自动隐藏, 可选的 autojs6://docs/ 资源还需要 AutoJs6 离线文档插件以及带转读方法的宿主. AutoJs6 插件自行声明的工具 (如 3-Hanzi CC 的 opencc_convert) 按插件分组另外列出, 需要 AutoJs6 6.8.0 及以上. 进度与证据记录在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+### 开始使用
 
-### 使用方法
+1. 在 AutoJs6 抽屉中打开 "MCP 服务器" 开关, 首次使用时按提示启用插件.
+2. 长按该条目, 或在 "插件中心" 打开本插件的设置, 然后在 "客户端配置" 中复制所用客户端的配置, 加入电脑上的 MCP 客户端.
+3. 用 USB 连接电脑后, 在电脑上执行 "连接" 中的 adb forward 命令 (可点按 "复制 adb forward 命令" 复制).
+4. 客户端首次调用工具时, 在手机上点按 "允许" 确认配对.
 
-1. 在安装了 AutoJs6 构建 5298 (6.8.0) 或更高版本的设备上, 从 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) 下载并安装插件 APK.
-2. 打开 AutoJs6 插件中心, 确认 `MCP Server` 已被识别并启用. 官方发布包会自动通过签名校验.
-3. 在 AutoJs6 抽屉中打开 MCP 服务器. 长按条目标题或点击插件中心的设置入口, 进入设置页并复制电脑客户端所需配置.
-4. 在电脑上执行 `adb forward tcp:9637 tcp:9637`, 并让 MCP 客户端连接 `http://127.0.0.1:9637/mcp`, 以令牌作为 Bearer 凭据.
-5. 首次连接时在手机上确认配对请求. 使用完毕后可从抽屉, 设置页或通知中停止服务.
+### 主要功能
 
-连接指南与当前进度请参阅 [项目 README](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server) 与 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+- **脚本与界面**: 客户端可以在 AutoJs6 中运行脚本并读取控制台输出, 导出无障碍节点树, 查找控件并点按, 输入或滚动, 也可以截取屏幕.
+- **文件与设备**: 读写 AutoJs6 工作目录中的文件, 启动应用, 读写剪贴板. 开启 "允许读取共享存储" 后, 还可以只读访问相册与下载目录等位置.
+- **工具权限**: 按分组开关客户端可用的工具, 关闭的分组不会出现在客户端的工具列表中. "文件删除", "坐标手势" 与 "Shell 命令" 默认关闭.
+- **插件工具**: 安装 OCR, Barcode, OpenCV 等插件后, 客户端可以识别文字与条码, 找图找色. 其他插件声明的工具在 "插件提供的工具" 中开启.
+- **已登记脚本**: 用 `@agent` 注释登记的脚本会列给客户端, 模型可以按登记的参数运行它们; 需要先确认的脚本由客户端在运行前征求你的同意.
+- **令牌与配对**: 客户端以访问令牌连接, 设置页只显示令牌末 4 位. 在 "已配对客户端" 中可以撤销配对, "轮换令牌" 后旧令牌立即失效.
+- **局域网连接**: 开启 "允许局域网连接" 后, 同一网络中的电脑无需 USB 即可连接, 令牌与配对确认仍然生效.
+- **空闲时自动停止**: 可以在所选时间内没有请求时自动停止服务器, 默认关闭.
+
+### 运行要求
+
+- Android 7.0 或更高版本, AutoJs6 6.8.0 或更高版本.
+- 电脑上需要支持 MCP 的客户端; USB 连接还需要 adb. 只支持 stdio 的客户端 (例如 Claude Desktop) 需要另装 [桥接程序](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge).
+- 界面操作与截图需要 AutoJs6 的无障碍服务, 部分设备上截图还需要在手机上授权.
+- 通知权限用于在任何界面确认配对请求; Android 17 及以上还需要允许本插件访问附近的设备 (用于局域网).
+- 文字识别, 条码识别等插件工具需要在 AutoJs6 中安装并启用对应插件.
+
+### 常见问题
+
+**客户端提示 401 Unauthorized 的原因**
+
+令牌缺失, 输错或已轮换. 从设置页重新复制配置; 轮换令牌后, 每个客户端都需要换用新令牌.
+
+**连接被拒绝时的处理**
+
+确认抽屉中的 "MCP 服务器" 开关已开启. 重新连接设备或 adb 重启会清空端口转发, 此时在电脑上重新执行 adb forward 命令.
+
+**息屏后服务器停止的原因**
+
+系统限制了本应用的电池用量时, 息屏后可能停止服务器. 设置页此时会显示提示, 点按 "电池设置" 并为 MCP Server 选择 "无限制".
+
+**工具未出现在客户端中的原因**
+
+所在分组在 "工具权限" 中已关闭, 或所需插件未在 AutoJs6 中安装或启用. 启用后客户端的工具列表会自动更新.
+
+各客户端的接入方法, 工具清单与安全说明见 [项目主页](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server).

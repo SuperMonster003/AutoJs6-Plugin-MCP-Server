@@ -1,13 +1,47 @@
-MCP Server turns an Android device running AutoJs6 into a [Model Context Protocol](https://modelcontextprotocol.io) server. AI agents on a PC, such as Claude Code, Cursor, or the MCP Inspector, connect to the phone over USB or Wi-Fi and use tools to run scripts, read logs, inspect the accessibility node tree, tap and type, take screenshots, and work with files and apps. With the matching AutoJs6 plugins installed, they can also read text and barcodes on the screen or in images, find images and colors, convert Chinese to pinyin, and read media information. Plugins can also describe their own tools (for example Simplified and Traditional Chinese conversion), which MCP Server offers in one group per plugin.
+MCP Server lets AI clients on your computer, such as Claude Code and Cursor, operate this phone through the [Model Context Protocol](https://modelcontextprotocol.io). Once connected over USB or the local network, a client can use AutoJs6 to run scripts, inspect and operate the screen, take screenshots, and read and write files in the working directory. Every new client must be confirmed on the phone the first time it calls a tool.
 
-Version 1.3.1: 39 built-in tools (35 enabled by default) and 8 plugin capability tools, MCP resources and prompts, an AutoJs6 drawer switch and a plugin settings page. Requires AutoJs6 6.8.0 (build 5298) or later; the plugin capability tools appear only while the matching AutoJs6 plugin is installed and enabled, the plugin capability and registered-script tools stay hidden on hosts that do not support them, and the optional autojs6://docs/ resources also need the AutoJs6 Offline Docs plugin and a host with its relay methods. Tools that AutoJs6 plugins describe themselves (such as opencc_convert of 3-Hanzi CC) are listed in addition, in one group per plugin, with AutoJs6 6.8.0 or later. Progress and evidence are tracked in [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+### Getting started
 
-### Usage
+1. Turn on the "MCP Server" switch in the AutoJs6 drawer, and enable the plugin when prompted the first time.
+2. Long-press the item, or open the plugin's settings in the "Plugin center", then copy the configuration of your client from "Client configuration" and add it to the MCP client on your computer.
+3. Connect the phone to the computer over USB and run the adb forward command shown under "Connection" on the computer (tap "Copy adb forward command" to copy it).
+4. When the client calls a tool for the first time, tap "Allow" on the phone to confirm the pairing.
 
-1. Install the plugin APK from [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) on a device with AutoJs6 build 5298 (6.8.0) or later.
-2. Open the AutoJs6 plugin center, confirm that `MCP Server` is recognized, and enable it. Official release packages pass signature verification automatically.
-3. Turn on MCP Server in the AutoJs6 drawer. Long-press its title to open settings, or use Settings in its Plugin Center entry. Copy the configuration for your PC client.
-4. On the PC, run `adb forward tcp:9637 tcp:9637` and point the MCP client at `http://127.0.0.1:9637/mcp` with the token as a bearer credential.
-5. Confirm the first pairing request on the phone. Stop the server from the drawer, settings, or the notification when finished.
+### Main features
 
-See the [project README](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server) and [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md) for the connection guide and the current progress.
+- **Scripts and screen**: Clients can run scripts in AutoJs6 and read the console output, dump the accessibility node tree, find controls and tap, type or scroll, and take screenshots.
+- **Files and device**: Read and write files in the AutoJs6 working directory, launch apps, and read or write the clipboard. With "Allow reading shared storage" on, clients can also read places such as the gallery and the Download folder.
+- **Tool permissions**: Turn the tool groups available to clients on or off; a group that is off does not appear in the client's tool list. "File deletion", "Coordinate gestures" and "Shell commands" are off by default.
+- **Plugin tools**: With plugins such as OCR, Barcode and OpenCV installed, clients can recognize text and barcodes and find images and colors. Tools that other plugins declare are turned on in "Plugin tools".
+- **Registered scripts**: Scripts registered with an `@agent` comment are listed to clients, and the model can run them with the registered parameters; for scripts that need confirmation, the client asks for your consent before running them.
+- **Token and pairing**: Clients connect with an access token, of which the settings page shows only the last 4 characters. Revoke pairings in "Paired clients"; after "Rotate token", the old token stops working at once.
+- **Local network connections**: With "Allow local network connections" on, computers on the same network can connect without USB; the token and pairing confirmation still apply.
+- **Stop automatically when idle**: Stop the server when no request arrives within the chosen time; off by default.
+
+### Requirements
+
+- Android 7.0 or later, AutoJs6 6.8.0 or later.
+- An MCP client on the computer; USB connections also need adb. Clients that only support stdio, such as Claude Desktop, need the separate [bridge](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge).
+- Screen operations and screenshots need the AutoJs6 accessibility service; on some devices, screenshots also need permission granted on the phone.
+- The notification permission lets you confirm pairing requests from any screen; Android 17 and later also require allowing this plugin to access nearby devices (for the local network).
+- Plugin tools such as text and barcode recognition need the corresponding plugin installed and enabled in AutoJs6.
+
+### FAQ
+
+**Why the client reports 401 Unauthorized**
+
+The token is missing, mistyped or rotated. Copy the configuration from the settings page again; after rotating the token, every client needs the new one.
+
+**When the connection is refused**
+
+Make sure the "MCP Server" switch in the drawer is on. Reconnecting the device or restarting adb clears the port forwarding; run the adb forward command on the computer again.
+
+**Why the server stops when the screen is off**
+
+When the system restricts the battery usage of this app, it may stop the server while the screen is off. The settings page then shows a warning; tap "Battery settings" and choose "Unrestricted" for MCP Server.
+
+**Why a tool does not appear in the client**
+
+Its group is off in "Tool permissions", or the plugin it needs is not installed or enabled in AutoJs6. The client's tool list updates automatically once it is enabled.
+
+See the [project home page](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server) for setting up each client, the tool list and the security notes.

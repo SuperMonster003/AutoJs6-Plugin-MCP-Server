@@ -1,9 +1,19 @@
-{{ p_introduction_what }}
+{{ instruction_p_what }}
 
-{{ p_status }}
+### {{ instruction_h3_start }}
 
-### {{ h3_usage }}
+{{ placeholder_instruction_start_steps }}
 
-{{ placeholder_usage_steps }}
+### {{ instruction_h3_features }}
 
-{{ p_instruction_more }}
+{{ placeholder_instruction_features }}
+
+### {{ instruction_h3_requirements }}
+
+{{ placeholder_instruction_requirements }}
+
+### {{ instruction_h3_faq }}
+
+{{ placeholder_instruction_faq }}
+
+{{ instruction_p_more }}

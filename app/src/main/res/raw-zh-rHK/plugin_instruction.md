@@ -1,13 +1,47 @@
-MCP Server 讓運行 AutoJs6 的 Android 裝置成為一台 [Model Context Protocol](https://modelcontextprotocol.io) 伺服器. 電腦上的 AI 代理 (例如 Claude Code, Cursor 或 MCP Inspector) 透過 USB 或 Wi-Fi 連接手機, 借助工具執行腳本, 讀取日誌, 檢視無障礙節點樹, 點擊與輸入, 擷取螢幕, 以及操作檔案與應用程式. 安裝相應的 AutoJs6 外掛後, 還能識別螢幕或圖片中的文字與條碼, 找圖找色, 轉換拼音以及讀取媒體信息. 插件也可以自行聲明工具 (例如中文繁簡轉換), 由 MCP Server 按插件分組提供.
+MCP Server 讓電腦上的 AI 用戶端 (例如 Claude Code, Cursor) 透過 [Model Context Protocol](https://modelcontextprotocol.io) 操作這部手機. 用戶端經 USB 或區域網絡連線後, 可以藉助 AutoJs6 運行腳本, 查看並操作介面, 擷取螢幕, 讀寫工作目錄中的檔案. 每個新用戶端首次調用都需要在手機上確認.
 
-版本 1.3.1: 39 個內建工具 (預設啟用 35 個) 與 8 個外掛能力工具, MCP 資源與提示, AutoJs6 抽屜開關與外掛程式設定頁. 需要 AutoJs6 6.8.0 (組建 5298) 或更高版本; 外掛能力工具只在 AutoJs6 中安裝並啟用對應外掛時出現, 外掛能力工具與已登記腳本工具在宿主不支援時自動隱藏, 可選的 autojs6://docs/ 資源還需要 AutoJs6 離線文件外掛以及帶轉讀方法的宿主. AutoJs6 插件自行聲明的工具 (如 3-Hanzi CC 的 opencc_convert) 按插件分組另外列出, 需要 AutoJs6 6.8.0 及以上. 進度與證據記錄在 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+### 開始使用
 
-### 使用方法
+1. 在 AutoJs6 抽屜中開啟 "MCP 伺服器" 開關, 首次使用時按提示啟用插件.
+2. 長按該項目, 或在 "插件中心" 開啟本插件的設定, 然後在 "用戶端設定" 中複製所用用戶端的設定, 加入電腦上的 MCP 用戶端.
+3. 以 USB 連接電腦後, 在電腦上執行 "連線" 中的 adb forward 指令 (可點按 "複製 adb forward 指令" 複製).
+4. 用戶端首次調用工具時, 在手機上點按 "允許" 確認配對.
 
-1. 在安裝了 AutoJs6 組建 5298 (6.8.0) 或更高版本的裝置上, 從 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/releases) 下載並安裝外掛 APK.
-2. 開啟 AutoJs6 外掛中心, 確認 `MCP Server` 已被識別並啟用. 官方發佈套件會自動通過簽章驗證.
-3. 在 AutoJs6 抽屜中開啟 MCP 伺服器. 長按項目標題或點選外掛程式中心的設定入口, 進入設定頁並複製電腦用戶端所需設定.
-4. 在電腦上執行 `adb forward tcp:9637 tcp:9637`, 並讓 MCP 用戶端連接 `http://127.0.0.1:9637/mcp`, 以權杖作為 Bearer 憑證.
-5. 首次連線時在手機上確認配對要求. 使用完畢後可從抽屜, 設定頁或通知中停止服務.
+### 主要功能
 
-連接指南與目前進度請參閱 [專案 README](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server) 與 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server/blob/master/ROADMAP.md).
+- **腳本與介面**: 用戶端可以在 AutoJs6 中運行腳本並讀取控制台輸出, 匯出無障礙節點樹, 尋找控件並點按, 輸入或捲動, 也可以擷取螢幕.
+- **檔案與裝置**: 讀寫 AutoJs6 工作目錄中的檔案, 啟動應用程式, 讀寫剪貼簿. 開啟 "允許讀取共享存儲" 後, 還可以唯讀存取相簿與下載目錄等位置.
+- **工具權限**: 按分組開關用戶端可用的工具, 關閉的分組不會出現在用戶端的工具清單中. "檔案刪除", "座標手勢" 與 "Shell 指令" 預設關閉.
+- **插件工具**: 安裝 OCR, Barcode, OpenCV 等插件後, 用戶端可以識別文字與條碼, 找圖找色. 其他插件聲明的工具在 "插件提供的工具" 中開啟.
+- **已登記腳本**: 以 `@agent` 註釋登記的腳本會列給用戶端, 模型可以按登記的參數運行它們; 需要先確認的腳本由用戶端在運行前徵求你的同意.
+- **權杖與配對**: 用戶端以存取權杖連線, 設定頁只顯示權杖末 4 位. 在 "已配對用戶端" 中可以撤銷配對, "輪換權杖" 後舊權杖立即失效.
+- **區域網絡連線**: 開啟 "允許區域網絡連線" 後, 同一網絡中的電腦無需 USB 即可連線, 權杖與配對確認仍然生效.
+- **閒置時自動停止**: 可以在所選時間內沒有請求時自動停止伺服器, 預設關閉.
+
+### 運行要求
+
+- Android 7.0 或更高版本, AutoJs6 6.8.0 或更高版本.
+- 電腦上需要支援 MCP 的用戶端; USB 連線還需要 adb. 只支援 stdio 的用戶端 (例如 Claude Desktop) 需要另行安裝 [橋接程式](https://github.com/SuperMonster003/AutoJs6-MCP-Bridge).
+- 介面操作與截圖需要 AutoJs6 的無障礙服務, 部分裝置上截圖還需要在手機上授權.
+- 通知權限用於在任何介面確認配對請求; Android 17 或以上還需要允許本插件存取附近的裝置 (用於區域網絡).
+- 文字識別, 條碼識別等插件工具需要在 AutoJs6 中安裝並啟用對應插件.
+
+### 常見問題
+
+**用戶端提示 401 Unauthorized 的原因**
+
+權杖缺失, 輸錯或已輪換. 從設定頁重新複製設定; 輪換權杖後, 每個用戶端都需要改用新權杖.
+
+**連線被拒絕時的處理**
+
+確認抽屜中的 "MCP 伺服器" 開關已開啟. 重新連接裝置或 adb 重新啟動會清空連接埠轉發, 此時在電腦上重新執行 adb forward 指令.
+
+**熄屏後伺服器停止的原因**
+
+系統限制了本應用程式的電池用量時, 熄屏後可能停止伺服器. 設定頁此時會顯示提示, 點按 "電池設定" 並為 MCP Server 選擇 "無限制".
+
+**工具未出現在用戶端中的原因**
+
+所在分組在 "工具權限" 中已關閉, 或所需插件未在 AutoJs6 中安裝或啟用. 啟用後用戶端的工具清單會自動更新.
+
+各用戶端的接入方法, 工具清單與安全說明見 [項目主頁](https://github.com/SuperMonster003/AutoJs6-Plugin-MCP-Server).
