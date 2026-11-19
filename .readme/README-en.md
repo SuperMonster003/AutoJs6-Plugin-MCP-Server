@@ -331,6 +331,10 @@ The plugin's plans and progress are maintained as a checkable list in ROADMAP.md
 _2026/11/17_
 
 - `Improvement` Removed the green background of the plugin icon and kept its original glyph, which now follows the light and dark themes
+- `Improvement` The release history page expands and collapses by version: a collapsed version shows its date and the number of entries per category, an expanded one names each category once; all versions can be expanded or collapsed at once, the newest one opens expanded and the subtitle shows the plugin name
+- `Improvement` Rewrote the instructions shown in Plugin center in four parts: getting started, main features, requirements and FAQ
+- `Improvement` The menu at the top right of the settings page adds "Open general settings", which opens the general settings page of this plugin in AutoJs6 (requires AutoJs6 6.8.1 or later; earlier versions do not show the menu item)
+- `Dependency` Add Jetpack Compose BOM version 2026.09.00 and androidx.activity:activity-compose version 1.12.2 (release history page)
 
 #### v1.3.0
 

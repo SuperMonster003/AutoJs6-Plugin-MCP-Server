@@ -9,6 +9,10 @@
 ###### 2026/11/17
 
 * `Amélioration` Fond vert de l'icône du plugin supprimé, motif d'origine conservé, sa couleur suit désormais les thèmes clair et sombre
+* `Amélioration` La page Historique des versions se développe et se réduit par version: une version réduite affiche sa date et le nombre d'entrées par catégorie, une version développée ne nomme chaque catégorie qu'une fois; toutes les versions peuvent être développées ou réduites d'un coup, la plus récente s'ouvre développée et le sous-titre affiche le nom du plugin
+* `Amélioration` Réécriture des instructions affichées dans le Centre des plugins en quatre parties: prise en main, fonctionnalités principales, prérequis et questions fréquentes
+* `Amélioration` Le menu en haut à droite de la page des paramètres ajoute "Ouvrir les paramètres généraux", qui ouvre la page des paramètres généraux de ce plugin dans AutoJs6 (nécessite AutoJs6 6.8.1 ou version ultérieure; les versions antérieures n'affichent pas cet élément de menu)
+* `Dépendance` Ajout de Jetpack Compose BOM version 2026.09.00 et de androidx.activity:activity-compose version 1.12.2 (page Historique des versions)
 
 # v1.3.0
 

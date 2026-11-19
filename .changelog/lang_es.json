@@ -8,7 +8,13 @@
     "v1.3.1": {
       "released_date": "2026/11/17",
       "improvement": [
-        "Fondo verde del icono del plugin eliminado, se conserva la figura original y su color sigue ahora los temas claro y oscuro"
+        "Fondo verde del icono del plugin eliminado, se conserva la figura original y su color sigue ahora los temas claro y oscuro",
+        "La página Historial de versiones se expande y contrae por versión: una versión contraída muestra su fecha y el número de entradas por categoría, una expandida nombra cada categoría una sola vez; todas las versiones se pueden expandir o contraer a la vez, la más reciente se abre expandida y el subtítulo muestra el nombre del plugin",
+        "Se reescribieron las instrucciones del Centro de plugins en cuatro partes: primeros pasos, funciones principales, requisitos y preguntas frecuentes",
+        "El menú de la esquina superior derecha de la página de ajustes añade \"Abrir la configuración general\", que abre la página de configuración general de este plugin en AutoJs6 (requiere AutoJs6 6.8.1 o posterior; las versiones anteriores no muestran este elemento del menú)"
+      ],
+      "dependency": [
+        "Agregar Jetpack Compose BOM versión 2026.09.00 y androidx.activity:activity-compose versión 1.12.2 (página Historial de versiones)"
       ]
     },
     "v1.3.0": {
