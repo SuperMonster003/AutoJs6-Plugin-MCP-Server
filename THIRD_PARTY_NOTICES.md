@@ -70,6 +70,13 @@ own licenses. Runtime dependencies are added to this list in the same commit tha
 - License: Apache License 2.0
 - The JVM and instrumentation tests also use its decoder (`QRCodeReader`) to read the generated codes back
 
+## Jetpack Compose
+
+- Component: Jetpack Compose `runtime`, `ui`, `foundation`, `material3` and `animation` at the BOM version `androidx.compose:compose-bom` 2026.09.00, with `androidx.activity:activity-compose` 1.12.2 (the BOM does not manage it); used only by the release history page (plugin-center P21.8)
+- Source: <https://developer.android.com/jetpack/androidx>, Google Maven
+- License: Apache License 2.0
+- `ui-graphics` depends on `androidx.graphics:graphics-path`, whose `libandroidx.graphics.path.so` (arm64-v8a, armeabi-v7a, x86, x86_64; stored uncompressed, 16 KB aligned) is the only native library in the APK
+
 ## AutoJs6 build plugins (build only)
 
 - Components: `io.github.supermonster003.autojs6-platform-versions` and `io.github.supermonster003.autojs6-native-alignment` 1.9.7
@@ -87,3 +94,4 @@ in the APK.
 - JUnit 4 (`junit:junit`): Eclipse Public License 1.0
 - JSON in Java (`org.json:json`) 20231013: Public Domain; the JVM tests of the settings transfer document (roadmap P13) need the real implementation, since `android.jar` only has stubs
 - AndroidX Test (`androidx.test:runner`, `androidx.test:rules`, `androidx.test.ext:junit`): Apache License 2.0
+- Espresso (`androidx.test.espresso:espresso-core`) 3.7.0 and Compose UI Test (`androidx.compose.ui:ui-test-junit4`, `ui-test-manifest` in debug builds only) at the Compose BOM version: Apache License 2.0
