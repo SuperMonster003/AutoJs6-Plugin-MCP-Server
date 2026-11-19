@@ -6,7 +6,7 @@
 
 # v1.3.1
 
-###### 2026/11/17
+###### 2026/11/20
 
 * `Mejora` Fondo verde del icono del plugin eliminado, se conserva la figura original y su color sigue ahora los temas claro y oscuro
 * `Mejora` La página Historial de versiones se expande y contrae por versión: una versión contraída muestra su fecha y el número de entradas por categoría, una expandida nombra cada categoría una sola vez; todas las versiones se pueden expandir o contraer a la vez, la más reciente se abre expandida y el subtítulo muestra el nombre del plugin

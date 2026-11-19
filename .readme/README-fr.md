@@ -328,7 +328,7 @@ Les plans et l'avancement du plugin sont tenus sous forme de liste cochable dans
 
 #### v1.3.1
 
-_2026/11/17_
+_2026/11/20_
 
 - `Amélioration` Fond vert de l'icône du plugin supprimé, motif d'origine conservé, sa couleur suit désormais les thèmes clair et sombre
 - `Amélioration` La page Historique des versions se développe et se réduit par version: une version réduite affiche sa date et le nombre d'entrées par catégorie, une version développée ne nomme chaque catégorie qu'une fois; toutes les versions peuvent être développées ou réduites d'un coup, la plus récente s'ouvre développée et le sous-titre affiche le nom du plugin

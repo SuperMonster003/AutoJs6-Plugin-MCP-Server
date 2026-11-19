@@ -328,7 +328,7 @@ The plugin's plans and progress are maintained as a checkable list in ROADMAP.md
 
 #### v1.3.1
 
-_2026/11/17_
+_2026/11/20_
 
 - `Improvement` Removed the green background of the plugin icon and kept its original glyph, which now follows the light and dark themes
 - `Improvement` The release history page expands and collapses by version: a collapsed version shows its date and the number of entries per category, an expanded one names each category once; all versions can be expanded or collapsed at once, the newest one opens expanded and the subtitle shows the plugin name
