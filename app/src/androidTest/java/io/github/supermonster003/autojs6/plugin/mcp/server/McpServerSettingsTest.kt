@@ -104,7 +104,8 @@ class McpServerSettingsTest {
         assertNotNull(history)
         onMain {
             assertEquals(settings.getString(R.string.settings_release_history), history.title)
-            assertTrue(views(history.window.decorView).filterIsInstance<TextView>().any { it.text.toString().contains("1.0.0") })
+            // The Compose page itself is checked by ReleaseHistoryPageInstrumentationTest.
+            assertTrue(history is ReleaseHistoryActivity)
         }
         await("history in foreground") { onMain { history.hasWindowFocus() } }
         saveEvidence("history")

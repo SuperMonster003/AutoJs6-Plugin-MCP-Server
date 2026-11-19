@@ -97,6 +97,7 @@
     <string name="settings_notifications">Notificaciones</string>
     <string name="settings_notifications_off">Las notificaciones de MCP Server están desactivadas, así que una solicitud de emparejamiento desde un ordenador solo aparece mientras esta página está abierta. Permite las notificaciones para confirmar solicitudes desde cualquier pantalla.</string>
     <string name="settings_notifications_off_host">Las notificaciones de MCP Server están desactivadas, así que una solicitud de emparejamiento desde un ordenador solo aparece mientras esta página o AutoJs6 están en primer plano. Permite las notificaciones para confirmar solicitudes desde cualquier pantalla.</string>
+    <string name="settings_open_general_settings">Abrir la configuración general</string>
     <string name="settings_open_host">Abrir AutoJs6</string>
     <string name="settings_paired_clients">Clientes vinculados</string>
     <string name="settings_plugin_groups_hint">Los grupos siguientes necesitan un plugin de AutoJs6. Sus herramientas solo aparecen en la lista de herramientas del cliente mientras el plugin correspondiente está instalado y habilitado en AutoJs6.</string>
@@ -116,6 +117,11 @@
     <string name="settings_qr_image">Código QR del texto de arriba</string>
     <string name="settings_qr_show">Mostrar código QR</string>
     <string name="settings_release_history">Historial de versiones</string>
+    <string name="settings_release_history_collapse_all">Contraer todo</string>
+    <string name="settings_release_history_collapsed">Contraído</string>
+    <string name="settings_release_history_expand_all">Expandir todo</string>
+    <string name="settings_release_history_expanded">Expandido</string>
+    <string name="settings_release_history_load_failed">No se pudo cargar el historial de versiones</string>
     <string name="settings_revoke">Revocar vinculación</string>
     <string name="settings_revoke_all">Revocar todas las vinculaciones</string>
     <string name="settings_revoke_client">Revocar vinculación de %1$s</string>

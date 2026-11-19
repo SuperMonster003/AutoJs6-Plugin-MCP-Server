@@ -97,6 +97,7 @@
     <string name="settings_notifications">الإشعارات</string>
     <string name="settings_notifications_off">إشعارات MCP Server متوقفة, لذلك لا يظهر طلب الاقتران من الكمبيوتر إلا أثناء فتح هذه الصفحة. اسمح بالإشعارات لتأكيد الطلبات من أي مكان.</string>
     <string name="settings_notifications_off_host">إشعارات MCP Server متوقفة, لذلك لا يظهر طلب الاقتران من الكمبيوتر إلا أثناء ظهور هذه الصفحة أو AutoJs6 في المقدمة. اسمح بالإشعارات لتأكيد الطلبات من أي مكان.</string>
+    <string name="settings_open_general_settings">فتح صفحة الإعدادات العامة</string>
     <string name="settings_open_host">فتح AutoJs6</string>
     <string name="settings_paired_clients">العملاء المقترنون</string>
     <string name="settings_plugin_groups_hint">تحتاج المجموعات أدناه إلى إضافة AutoJs6. تظهر أدواتها في قائمة أدوات العميل فقط عندما تكون الإضافة المقابلة مثبتة ومفعلة في AutoJs6.</string>
@@ -116,6 +117,11 @@
     <string name="settings_qr_image">رمز QR للنص أعلاه</string>
     <string name="settings_qr_show">إظهار رمز QR</string>
     <string name="settings_release_history">سجل الإصدارات</string>
+    <string name="settings_release_history_collapse_all">طيّ الكل</string>
+    <string name="settings_release_history_collapsed">مطوي</string>
+    <string name="settings_release_history_expand_all">توسيع الكل</string>
+    <string name="settings_release_history_expanded">موسَّع</string>
+    <string name="settings_release_history_load_failed">تعذر تحميل سجل الإصدارات</string>
     <string name="settings_revoke">إلغاء الاقتران</string>
     <string name="settings_revoke_all">إلغاء كل الاقترانات</string>
     <string name="settings_revoke_client">إلغاء اقتران %1$s</string>

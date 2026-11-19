@@ -19,6 +19,10 @@ data class HostAppearance(val languageTag: String, val dark: Boolean, val primar
         return context.createConfigurationContext(config)
     }
 
+    /** The platform theme the plugin's pages start from. */
+    val themeResource: Int
+        get() = if (dark) android.R.style.Theme_Material_NoActionBar else android.R.style.Theme_Material_Light_NoActionBar
+
     companion object {
         fun read(context: Context): HostAppearance {
             val config = context.resources.configuration

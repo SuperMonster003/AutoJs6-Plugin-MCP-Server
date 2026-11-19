@@ -4,6 +4,8 @@ import org.gradle.api.file.RelativePath
 import org.gradle.api.provider.Property
 import java.security.MessageDigest
 import java.util.Properties
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 
 plugins {
     id("io.github.supermonster003.autojs6-native-alignment")
@@ -12,6 +14,8 @@ plugins {
     id("org.autojs.build.signs")
     id("org.autojs.build.jvm-convention")
     id("com.android.application")
+    // The release history page is Jetpack Compose (plugin-center P21.8, Q115 A).
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 val globalApplicationId = "io.github.supermonster003.autojs6.plugin.mcp.server"
@@ -160,6 +164,7 @@ android {
 
     buildFeatures {
         aidl = true
+        compose = true
         resValues = true
     }
 
@@ -173,8 +178,9 @@ android {
         kotlin.directories += "src/main/java"
     }
 
-    // No ABI splits on purpose: the plugin ships Kotlin bytecode and resources only, so every
-    // device installs the same single APK and getInfo() reports supportedAbis = emptyArray().
+    // No ABI splits on purpose: the plugin has no native code of its own (the only libraries are the four
+    // libandroidx.graphics.path.so files that Compose brings, see allowedNativeLibraries), so every device
+    // installs the same single APK and getInfo() reports supportedAbis = emptyArray().
     packaging {
         resources.pickFirsts.addAll(
             listOf(
@@ -223,6 +229,16 @@ dependencies {
     implementation(libs.mcp.kotlin.sdk.server)
     // QR codes of the client configuration snippets on the settings page (roadmap P4 / P9); encoder only, no camera.
     implementation(libs.zxing.core)
+    // Jetpack Compose for the release history page (plugin-center P21.8, Q115 A): the BOM is the single version source;
+    // activity-compose has its own version. No tooling, navigation or image libraries.
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.runtime)
+    implementation(libs.compose.ui)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.animation)
+    implementation(libs.compose.activity)
+    debugImplementation(libs.compose.ui.test.manifest)
 
     testImplementation(libs.junit)
     // Runs the SDK transport behind the request gate on Ktor's test engine (roadmap P2.1).
@@ -233,6 +249,10 @@ dependencies {
     androidTestImplementation(libs.test.runner)
     androidTestImplementation(libs.test.rules)
     androidTestImplementation(libs.test.ext.junit)
+    // Compose UI tests pull Espresso 3.5.0, whose idling sync reflects on InputManager.getInstance (gone on API 36).
+    androidTestImplementation(libs.test.espresso.core)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
 }
 
 tasks {
@@ -284,8 +304,33 @@ extra {
     versions.handleIfNeeded(project, "", listOf(buildTypeDebug, buildTypeRelease))
 }
 
-// Reject accidental native dependencies on every ABI.
-nativeAlignment { expectNoNativeLibraries.set(true) }
+// Native code inventory (plugin-center P21.8, Q115 A): the plugin has no native code of its own, but Compose ui-graphics
+// depends on androidx.graphics:graphics-path, whose libandroidx.graphics.path.so is packaged for four ABIs. The APK stays
+// one universal package without ABI splits; the shared gate keeps the 16 KB alignment checks for the 64-bit ABIs and
+// verifyReleaseNativeLibraries below asserts that exactly these libraries are present and stored uncompressed.
+val allowedNativeLibraries = listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86").map { "lib/$it/libandroidx.graphics.path.so" }
+nativeAlignment { expectNoNativeLibraries.set(false) }
+
+// Any other native library (an accidental native dependency) fails the release build before collection.
+val verifyReleaseNativeLibraries = tasks.register("verifyReleaseNativeLibraries") {
+    group = "verification"
+    description = "Checks that the release APK carries exactly the allowed native libraries, stored uncompressed"
+    dependsOn("assembleRelease")
+    val apkDirectory = layout.buildDirectory.dir("outputs/apk/$buildTypeRelease")
+    val allowed = allowedNativeLibraries.sorted()
+    doLast {
+        val apks = apkDirectory.get().asFile.listFiles { file -> file.isFile && file.extension == "apk" }.orEmpty()
+        check(apks.size == 1) { "Expected one release APK, found ${apks.map { it.name }.sorted()}" }
+        ZipFile(apks.single()).use { zip ->
+            val natives = zip.entries().asSequence().filter { it.name.startsWith("lib/") }.toList()
+            check(natives.map { it.name }.sorted() == allowed) {
+                "Unexpected native library set: ${natives.map { it.name }.sorted()}"
+            }
+            check(natives.all { it.method == ZipEntry.STORED }) { "Native libraries must be stored uncompressed" }
+        }
+    }
+}
+tasks.named("appendDigestToReleasedFiles") { dependsOn(verifyReleaseNativeLibraries) }
 
 tasks.withType<VerifyNativePageAlignment>().configureEach {
     // The 1.8.0 plugin also finalizes assemble*UnitTest, which never produces an APK.

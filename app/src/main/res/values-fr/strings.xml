@@ -97,6 +97,7 @@
     <string name="settings_notifications">Notifications</string>
     <string name="settings_notifications_off">Les notifications de MCP Server sont désactivées, donc une demande d\'appairage depuis un ordinateur n\'apparaît que lorsque cette page est ouverte. Autorisez les notifications pour confirmer les demandes depuis n\'importe quel écran.</string>
     <string name="settings_notifications_off_host">Les notifications de MCP Server sont désactivées, donc une demande d\'appairage depuis un ordinateur n\'apparaît que lorsque cette page ou AutoJs6 est au premier plan. Autorisez les notifications pour confirmer les demandes depuis n\'importe quel écran.</string>
+    <string name="settings_open_general_settings">Ouvrir les paramètres généraux</string>
     <string name="settings_open_host">Ouvrir AutoJs6</string>
     <string name="settings_paired_clients">Clients associés</string>
     <string name="settings_plugin_groups_hint">Les groupes ci-dessous nécessitent un plugin AutoJs6. Leurs outils n\'apparaissent dans la liste d\'outils du client que lorsque le plugin correspondant est installé et activé dans AutoJs6.</string>
@@ -116,6 +117,11 @@
     <string name="settings_qr_image">Code QR du texte ci-dessus</string>
     <string name="settings_qr_show">Afficher le code QR</string>
     <string name="settings_release_history">Historique des versions</string>
+    <string name="settings_release_history_collapse_all">Tout réduire</string>
+    <string name="settings_release_history_collapsed">Réduit</string>
+    <string name="settings_release_history_expand_all">Tout développer</string>
+    <string name="settings_release_history_expanded">Développé</string>
+    <string name="settings_release_history_load_failed">Impossible de charger l\'historique des versions</string>
     <string name="settings_revoke">Révoquer l\'association</string>
     <string name="settings_revoke_all">Révoquer toutes les associations</string>
     <string name="settings_revoke_client">Révoquer l\'association de %1$s</string>

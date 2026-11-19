@@ -97,6 +97,7 @@
     <string name="settings_notifications">通知設定</string>
     <string name="settings_notifications_off">MCP Server 的通知已關閉, 來自電腦的配對請求只會在開啟本頁時出現. 允許通知後可在任何畫面確認請求.</string>
     <string name="settings_notifications_off_host">MCP Server 的通知已關閉, 來自電腦的配對請求只會在本頁或 AutoJs6 位於前景時出現. 允許通知後可在任何畫面確認請求.</string>
+    <string name="settings_open_general_settings">開啟通用設定頁</string>
     <string name="settings_open_host">開啟 AutoJs6</string>
     <string name="settings_paired_clients">已配對用戶端</string>
     <string name="settings_plugin_groups_hint">以下群組需要 AutoJs6 插件. 其工具只在對應插件已在 AutoJs6 中安裝並啟用時出現在用戶端工具清單中.</string>
@@ -116,6 +117,11 @@
     <string name="settings_qr_image">上方文字的二維碼</string>
     <string name="settings_qr_show">顯示二維碼</string>
     <string name="settings_release_history">發行歷史</string>
+    <string name="settings_release_history_collapse_all">收起全部</string>
+    <string name="settings_release_history_collapsed">已收起</string>
+    <string name="settings_release_history_expand_all">展開全部</string>
+    <string name="settings_release_history_expanded">已展開</string>
+    <string name="settings_release_history_load_failed">無法載入發行歷史</string>
     <string name="settings_revoke">撤銷配對</string>
     <string name="settings_revoke_all">撤銷全部配對</string>
     <string name="settings_revoke_client">撤銷 %1$s 的配對</string>

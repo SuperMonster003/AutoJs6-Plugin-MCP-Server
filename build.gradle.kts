@@ -6,8 +6,12 @@
 //  ! zh-CN: 这些插件原先经由 settings buildscript classpath 提供, 现已被 platform-versions 插件取代.
 //  ! 在此声明一次可使版本只出现在一处, 且模块脚本无须改动 -- 这对 Groovy 模块是必需的:
 //  ! 它们的 plugins 块只接受字符串字面量, 无法写入运行时计算出的版本.
+//  ! The Compose compiler plugin ships with every Kotlin release since Kotlin 2.0, so it follows the
+//  ! Kotlin version the platform plugin selected (plugin-center P21.8); never hardcode it.
+//  ! zh-CN: Compose 编译器插件自 Kotlin 2.0 起随 Kotlin 发布, 因此跟随平台插件选定的 Kotlin 版本 (plugin-center P21.8), 不硬编码.
 plugins {
     id("com.android.application") version System.getProperty("gradle.agp.version") apply false
+    id("org.jetbrains.kotlin.plugin.compose") version System.getProperty("gradle.kotlin.version") apply false
 }
 
 // Top-level build file where you can add configuration options common to all sub-projects/modules.

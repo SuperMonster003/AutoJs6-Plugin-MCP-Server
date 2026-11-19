@@ -97,6 +97,7 @@
     <string name="settings_notifications">Notifications</string>
     <string name="settings_notifications_off">Notifications are off for MCP Server, so a pairing request from a computer only appears while this page is open. Allow notifications to confirm requests from anywhere.</string>
     <string name="settings_notifications_off_host">Notifications are off for MCP Server, so a pairing request from a computer only appears while this page or AutoJs6 is in the foreground. Allow notifications to confirm requests from anywhere.</string>
+    <string name="settings_open_general_settings">Open general settings</string>
     <string name="settings_open_host">Open AutoJs6</string>
     <string name="settings_paired_clients">Paired clients</string>
     <string name="settings_plugin_groups_hint">The groups below need an AutoJs6 plugin. Their tools appear in the client tool list only while the matching plugin is installed and enabled in AutoJs6.</string>
@@ -116,6 +117,11 @@
     <string name="settings_qr_image">QR code of the text above</string>
     <string name="settings_qr_show">Show QR code</string>
     <string name="settings_release_history">Release history</string>
+    <string name="settings_release_history_collapse_all">Collapse all</string>
+    <string name="settings_release_history_collapsed">Collapsed</string>
+    <string name="settings_release_history_expand_all">Expand all</string>
+    <string name="settings_release_history_expanded">Expanded</string>
+    <string name="settings_release_history_load_failed">Unable to load the release history</string>
     <string name="settings_revoke">Revoke pairing</string>
     <string name="settings_revoke_all">Revoke all pairings</string>
     <string name="settings_revoke_client">Revoke pairing for %1$s</string>

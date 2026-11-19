@@ -97,6 +97,7 @@
     <string name="settings_notifications">알림 설정</string>
     <string name="settings_notifications_off">MCP Server 알림이 꺼져 있어 컴퓨터의 페어링 요청은 이 페이지를 열어 둔 동안에만 표시됩니다. 알림을 허용하면 어느 화면에서든 요청을 확인할 수 있습니다.</string>
     <string name="settings_notifications_off_host">MCP Server 알림이 꺼져 있어 컴퓨터의 페어링 요청은 이 페이지나 AutoJs6가 앞에 표시된 동안에만 나타납니다. 알림을 허용하면 어느 화면에서든 요청을 확인할 수 있습니다.</string>
+    <string name="settings_open_general_settings">일반 설정 페이지 열기</string>
     <string name="settings_open_host">AutoJs6 열기</string>
     <string name="settings_paired_clients">페어링된 클라이언트</string>
     <string name="settings_plugin_groups_hint">아래 그룹은 AutoJs6 플러그인이 필요합니다. 해당 플러그인이 AutoJs6에 설치되어 활성화된 동안에만 그 도구가 클라이언트 도구 목록에 나타납니다.</string>
@@ -115,7 +116,12 @@
     <string name="settings_qr_hint">QR 코드에는 위의 텍스트가 담기며, 텍스트에 토큰이 있으면 토큰도 담깁니다. 본인 기기로만 스캔하세요.</string>
     <string name="settings_qr_image">위 텍스트의 QR 코드</string>
     <string name="settings_qr_show">QR 코드 표시</string>
-    <string name="settings_release_history">출시 기록</string>
+    <string name="settings_release_history">릴리스 기록</string>
+    <string name="settings_release_history_collapse_all">모두 접기</string>
+    <string name="settings_release_history_collapsed">접힘</string>
+    <string name="settings_release_history_expand_all">모두 펼치기</string>
+    <string name="settings_release_history_expanded">펼쳐짐</string>
+    <string name="settings_release_history_load_failed">릴리스 기록을 불러올 수 없습니다</string>
     <string name="settings_revoke">페어링 해제</string>
     <string name="settings_revoke_all">모든 페어링 해제</string>
     <string name="settings_revoke_client">%1$s 페어링 해제</string>

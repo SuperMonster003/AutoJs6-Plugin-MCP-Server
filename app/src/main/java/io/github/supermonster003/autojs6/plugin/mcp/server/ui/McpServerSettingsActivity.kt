@@ -3,6 +3,7 @@ package io.github.supermonster003.autojs6.plugin.mcp.server.ui
 import android.Manifest
 import android.app.AlertDialog
 import android.app.NotificationManager
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipDescription
 import android.content.ClipboardManager
@@ -17,6 +18,8 @@ import android.os.PersistableBundle
 import android.provider.Settings
 import android.text.InputFilter
 import android.text.InputType
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
@@ -70,6 +73,8 @@ class McpServerSettingsActivity : SettingsPageActivity() {
         private set
     internal var secretDialog: AlertDialog? = null
         private set
+    /** "Open general settings": shown only when the installed AutoJs6 has that page (6.8.1 and later). */
+    private var generalSettingsItem: MenuItem? = null
     private lateinit var stateText: TextView
     private lateinit var endpointText: TextView
     private lateinit var portButton: Button
@@ -102,6 +107,17 @@ class McpServerSettingsActivity : SettingsPageActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         page(getString(R.string.settings_title))
+        generalSettingsItem = toolbar.menu.add(Menu.NONE, MENU_GENERAL_SETTINGS, Menu.NONE, R.string.settings_open_general_settings).apply {
+            setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
+            isVisible = false
+        }
+        toolbar.overflowIcon = toolbar.overflowIcon?.mutate()?.apply { setTint(toolbarForeground) }
+        toolbar.setOnMenuItemClickListener { item ->
+            if (item.itemId != MENU_GENERAL_SETTINGS) return@setOnMenuItemClickListener false
+            openGeneralSettings()
+            true
+        }
+        updateGeneralSettingsItem()
         card(R.string.settings_connection).also { box ->
             stateText = label(getString(R.string.settings_loading), box, 20f)
             endpointText = label("", box).apply { setTextIsSelectable(true) }
@@ -196,7 +212,7 @@ class McpServerSettingsActivity : SettingsPageActivity() {
                 if (enabled) confirm(R.string.settings_developer, R.string.settings_developer_warning) { saveConfig { it.copy(developerMode = true) } }
                 else saveConfig { it.copy(developerMode = false) }
             }
-            button(R.string.settings_release_history, box) { startActivity(Intent(this, ReleaseHistoryActivity::class.java)) }
+            button(R.string.settings_release_history, box) { openReleaseHistory() }
             button(R.string.settings_about, box) {
                 val info = mcpServerPluginRuntimeInfo()
                 dialog = AlertDialog.Builder(this).setTitle(R.string.settings_about)
@@ -210,9 +226,17 @@ class McpServerSettingsActivity : SettingsPageActivity() {
     override fun onResume() {
         super.onResume()
         if (HostAppearance.read(this) != appearance) { recreate(); return }
+        updateGeneralSettingsItem()
         resumed = true
         pairingNudge = true
         main.post(refresh)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // The general settings page of AutoJs6 brings this page back (CLEAR_TOP | SINGLE_TOP) instead of opening a
+        // second one; the page reads nothing from the intent, so it keeps its state.
+        setIntent(intent)
     }
 
     override fun onPause() {
@@ -487,6 +511,35 @@ class McpServerSettingsActivity : SettingsPageActivity() {
             .setPositiveButton(android.R.string.ok) { _, _ -> action() }.showThemed()
     }
 
+    /** The general settings page that AutoJs6 shows for this plugin (plugin-center P17). */
+    private fun generalSettingsIntent() = Intent(ACTION_HOST_PLUGIN_SETTINGS)
+        .setPackage(McpServerPlugin.HOST_PACKAGE_NAME)
+        .putExtra(EXTRA_HOST_PLUGIN_PACKAGE, packageName)
+
+    /** AutoJs6 6.8.0 and earlier have no such page, so the item stays hidden; checked again on resume (host updated). */
+    private fun updateGeneralSettingsItem() {
+        val item = generalSettingsItem ?: return
+        val visible = packageManager.resolveActivity(generalSettingsIntent(), 0) != null
+        if (item.isVisible == visible) return
+        item.isVisible = visible
+        // The toolbar adds or removes its overflow button; keep Tab going back, overflow, page.
+        toolbar.post { linkToolbarFocus() }
+    }
+
+    /**
+     * Opens the general page in this task (no NEW_TASK), so Back returns here; when this page was opened from the
+     * general page, AutoJs6 returns to that one instead of stacking another. AutoJs6 shows its own message when it
+     * refuses the request; a build signed with another key resolves the page but the system refuses the start.
+     */
+    private fun openGeneralSettings() {
+        try {
+            startActivity(generalSettingsIntent())
+        } catch (_: SecurityException) {
+        } catch (_: ActivityNotFoundException) {
+            updateGeneralSettingsItem()
+        }
+    }
+
     private fun openHost() {
         val intent = packageManager.getLaunchIntentForPackage(McpServerPlugin.HOST_PACKAGE_NAME)
         if (intent == null || runCatching { startActivity(intent); true }.getOrDefault(false).not()) toast(R.string.settings_host_unavailable)
@@ -522,6 +575,11 @@ class McpServerSettingsActivity : SettingsPageActivity() {
     private fun toast(id: Int) = Toast.makeText(this, id, Toast.LENGTH_SHORT).show()
 
     companion object {
+        /** The action and extra of the AutoJs6 general plugin settings page, as literal values (plugin-center T65). */
+        internal const val ACTION_HOST_PLUGIN_SETTINGS = "org.autojs.autojs6.action.PLUGIN_SETTINGS"
+        internal const val EXTRA_HOST_PLUGIN_PACKAGE = "packageName"
+        private const val MENU_GENERAL_SETTINGS = 1
+
         /** Minutes offered by the idle auto-stop dialog; 0 is off (the default). */
         internal val IDLE_STOP_CHOICES = listOf(0, 5, 15, 30, 60, 120)
 

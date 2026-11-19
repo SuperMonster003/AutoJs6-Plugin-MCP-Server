@@ -97,6 +97,7 @@
     <string name="settings_notifications">Уведомления</string>
     <string name="settings_notifications_off">Уведомления MCP Server отключены, поэтому запрос сопряжения с компьютера появляется, только пока открыта эта страница. Разрешите уведомления, чтобы подтверждать запросы с любого экрана.</string>
     <string name="settings_notifications_off_host">Уведомления MCP Server отключены, поэтому запрос сопряжения с компьютера появляется, только пока на переднем плане эта страница или AutoJs6. Разрешите уведомления, чтобы подтверждать запросы с любого экрана.</string>
+    <string name="settings_open_general_settings">Открыть общие настройки</string>
     <string name="settings_open_host">Открыть AutoJs6</string>
     <string name="settings_paired_clients">Сопряженные клиенты</string>
     <string name="settings_plugin_groups_hint">Группам ниже нужен плагин AutoJs6. Их инструменты появляются в списке инструментов клиента только пока соответствующий плагин установлен и включен в AutoJs6.</string>
@@ -116,6 +117,11 @@
     <string name="settings_qr_image">QR-код текста выше</string>
     <string name="settings_qr_show">Показать QR-код</string>
     <string name="settings_release_history">История выпусков</string>
+    <string name="settings_release_history_collapse_all">Свернуть всё</string>
+    <string name="settings_release_history_collapsed">Свёрнуто</string>
+    <string name="settings_release_history_expand_all">Развернуть всё</string>
+    <string name="settings_release_history_expanded">Развёрнуто</string>
+    <string name="settings_release_history_load_failed">Не удалось загрузить историю выпусков</string>
     <string name="settings_revoke">Отозвать сопряжение</string>
     <string name="settings_revoke_all">Отозвать все сопряжения</string>
     <string name="settings_revoke_client">Отозвать сопряжение с %1$s</string>

@@ -97,6 +97,7 @@
     <string name="settings_notifications">通知設定</string>
     <string name="settings_notifications_off">MCP Server の通知がオフのため, パソコンからのペアリング要求はこのページを開いている間しか表示されません. 通知を許可すると, どの画面でも要求を確認できます.</string>
     <string name="settings_notifications_off_host">MCP Server の通知がオフのため, パソコンからのペアリング要求はこのページまたは AutoJs6 が前面にある間しか表示されません. 通知を許可すると, どの画面でも要求を確認できます.</string>
+    <string name="settings_open_general_settings">共通設定ページを開く</string>
     <string name="settings_open_host">AutoJs6 を開く</string>
     <string name="settings_paired_clients">ペアリング済みクライアント</string>
     <string name="settings_plugin_groups_hint">以下のグループには AutoJs6 プラグインが必要です. 対応するプラグインが AutoJs6 にインストールされ有効な間だけ, そのツールがクライアントのツール一覧に表示されます.</string>
@@ -116,6 +117,11 @@
     <string name="settings_qr_image">上のテキストの QR コード</string>
     <string name="settings_qr_show">QR コードを表示</string>
     <string name="settings_release_history">リリース履歴</string>
+    <string name="settings_release_history_collapse_all">すべて折りたたむ</string>
+    <string name="settings_release_history_collapsed">折りたたみ中</string>
+    <string name="settings_release_history_expand_all">すべて展開する</string>
+    <string name="settings_release_history_expanded">展開中</string>
+    <string name="settings_release_history_load_failed">リリース履歴を読み込めませんでした</string>
     <string name="settings_revoke">ペアリングを解除</string>
     <string name="settings_revoke_all">すべてのペアリングを解除</string>
     <string name="settings_revoke_client">%1$s のペアリングを解除</string>

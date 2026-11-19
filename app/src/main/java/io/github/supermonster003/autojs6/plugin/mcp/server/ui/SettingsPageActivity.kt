@@ -16,6 +16,7 @@ import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.widget.AbsListView
+import android.widget.ActionMenuView
 import android.widget.Button
 import android.widget.CheckedTextView
 import android.widget.EditText
@@ -31,17 +32,17 @@ import io.github.supermonster003.autojs6.plugin.mcp.server.R
 abstract class SettingsPageActivity : Activity() {
     protected lateinit var appearance: HostAppearance
     protected lateinit var content: LinearLayout
+    protected lateinit var toolbar: Toolbar
     private var backButton: ImageButton? = null
-    protected val textColor get() = if (appearance.dark) Color.WHITE else 0xff202522.toInt()
-    protected val secondary get() = if (appearance.dark) 0xffbdbdbd.toInt() else 0xff575757.toInt()
-    protected val surface get() = if (appearance.dark) 0xff242424.toInt() else Color.WHITE
-    private val pageBackground get() = blend(if (appearance.dark) 0xff141414.toInt() else 0xfff5f5f5.toInt(), appearance.primary, .04f)
-    protected val controlColor get(): Int {
-        val base = appearance.accent or (0xff shl 24)
-        val target = if (appearance.dark) Color.WHITE else Color.BLACK
-        return (0..20).asSequence().map { blend(base, target, it / 20f) }
-            .firstOrNull { contrast(it, surface) >= 4.5 } ?: target
-    }
+    private var firstContentFocusable: View? = null
+    private val colors get() = PageColors(appearance)
+    protected val textColor get() = colors.text
+    protected val secondary get() = colors.secondary
+    protected val surface get() = colors.surface
+    private val pageBackground get() = colors.pageBackground
+    protected val controlColor get() = colors.control
+    /** Text and icons on the app bar. */
+    protected val toolbarForeground get() = colors.onPrimary
     private val controlStates get() = arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf(android.R.attr.state_checked), intArrayOf())
     private val selectionTint get() = ColorStateList(controlStates, intArrayOf(blend(surface, secondary, .3f), controlColor, secondary))
 
@@ -51,7 +52,7 @@ abstract class SettingsPageActivity : Activity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(if (appearance.dark) android.R.style.Theme_Material_NoActionBar else android.R.style.Theme_Material_Light_NoActionBar)
+        setTheme(appearance.themeResource)
         super.onCreate(savedInstanceState)
     }
 
@@ -61,9 +62,9 @@ abstract class SettingsPageActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(pageBackground)
         }
-        val toolbar = Toolbar(this).apply {
+        toolbar = Toolbar(this).apply {
             title = titleText
-            val foreground = if (Color.luminance(appearance.primary) > .179) Color.BLACK else Color.WHITE
+            val foreground = toolbarForeground
             setTitleTextColor(foreground)
             setBackgroundColor(appearance.primary)
             navigationIcon = getDrawable(R.drawable.ic_settings_back)?.mutate()?.apply { setTint(foreground) }
@@ -90,7 +91,7 @@ abstract class SettingsPageActivity : Activity() {
         window.statusBarColor = appearance.primary
         @Suppress("DEPRECATION")
         window.navigationBarColor = if (Build.VERSION.SDK_INT < 26) 0xff141414.toInt() else pageBackground
-        val lightStatus = Color.luminance(appearance.primary) > .179
+        val lightStatus = colors.lightPrimary
         if (Build.VERSION.SDK_INT >= 30) {
             val flags = (if (lightStatus) WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS else 0) or
                 (if (!appearance.dark) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0)
@@ -123,8 +124,28 @@ abstract class SettingsPageActivity : Activity() {
         val first = focusables.firstOrNull() ?: return
         val last = focusables.last()
         if (first.id == View.NO_ID) first.id = View.generateViewId()
-        back.nextFocusForwardId = first.id
+        firstContentFocusable = first
         last.nextFocusForwardId = back.id
+        linkToolbarFocus()
+    }
+
+    /**
+     * Tab goes from the back button to the overflow button when the toolbar shows one, then to the page. Call it again
+     * after a menu item turns visible or hidden, since the toolbar adds or removes its overflow button then.
+     */
+    protected fun linkToolbarFocus() {
+        val back = backButton ?: return
+        val first = firstContentFocusable ?: return
+        val overflow = (0 until toolbar.childCount).map(toolbar::getChildAt).filterIsInstance<ActionMenuView>()
+            .flatMap { menu -> (0 until menu.childCount).map(menu::getChildAt) }
+            .firstOrNull { it is ImageButton && it.visibility == View.VISIBLE }
+        if (overflow == null) {
+            back.nextFocusForwardId = first.id
+            return
+        }
+        if (overflow.id == View.NO_ID) overflow.id = View.generateViewId()
+        back.nextFocusForwardId = overflow.id
+        overflow.nextFocusForwardId = first.id
     }
 
     protected fun card(titleId: Int): LinearLayout = LinearLayout(this).apply {
@@ -150,7 +171,7 @@ abstract class SettingsPageActivity : Activity() {
         setText(titleId); isAllCaps = false; minHeight = dp(48)
         setTextColor(ColorStateList(arrayOf(intArrayOf(android.R.attr.state_enabled), intArrayOf()), intArrayOf(controlColor, secondary)))
         backgroundTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_enabled), intArrayOf()),
-            intArrayOf(blend(surface, appearance.primary, .14f), blend(surface, secondary, .06f)))
+            intArrayOf(colors.controlContainer, blend(surface, secondary, .06f)))
         (background as? RippleDrawable)?.setColor(ColorStateList.valueOf(blend(surface, controlColor, .25f)))
         setOnClickListener { action() }
         parent.addView(this, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
@@ -194,17 +215,7 @@ abstract class SettingsPageActivity : Activity() {
         })
     }
 
-    private fun blend(background: Int, foreground: Int, amount: Float): Int = Color.rgb(
-        (Color.red(background) * (1 - amount) + Color.red(foreground) * amount).toInt(),
-        (Color.green(background) * (1 - amount) + Color.green(foreground) * amount).toInt(),
-        (Color.blue(background) * (1 - amount) + Color.blue(foreground) * amount).toInt(),
-    )
-
-    private fun contrast(first: Int, second: Int): Double {
-        val a = Color.luminance(first) + .05
-        val b = Color.luminance(second) + .05
-        return maxOf(a, b) / minOf(a, b)
-    }
+    private fun blend(background: Int, foreground: Int, amount: Float): Int = PageColors.blend(background, foreground, amount)
 
     protected fun dp(value: Int): Int = (value * resources.displayMetrics.density + .5f).toInt()
 }

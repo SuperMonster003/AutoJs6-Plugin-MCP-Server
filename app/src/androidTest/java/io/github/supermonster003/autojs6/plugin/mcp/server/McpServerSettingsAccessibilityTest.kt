@@ -13,12 +13,14 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityNodeInfo
+import android.widget.ActionMenuView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Switch
 import android.widget.TextView
+import android.widget.Toolbar
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.zxing.BinaryBitmap
@@ -96,12 +98,14 @@ class McpServerSettingsAccessibilityTest {
         val targets = onMain { views(settings.window.decorView).filter { it is Button && it.isEnabled && it.isShown } }
         assertTrue("the page has controls", targets.size > 10)
         val back = onMain { views(settings.window.decorView).filterIsInstance<ImageButton>().first { it.contentDescription == settings.getString(R.string.settings_back) } }
+        // The overflow button exists only when the installed AutoJs6 has the general settings page (6.8.1 and later).
+        val overflow = onMain { overflowButtons(settings) }
         val focused = linkedSetOf<View>()
         repeat(targets.size + 8) {
             key(KeyEvent.KEYCODE_TAB)
             onMain { settings.currentFocus?.let { focused += it } }
         }
-        val missed = onMain { (targets + back).filter { it !in focused }.map { label(it) } }
+        val missed = onMain { (targets + back + overflow).filter { it !in focused }.map { label(it) } }
         val visited = onMain { focused.map { it.javaClass.simpleName + ":" + label(it) } }
         assertEquals("controls the Tab key never reached: $missed; visited $visited", emptyList<String>(), missed)
 
@@ -206,6 +210,28 @@ class McpServerSettingsAccessibilityTest {
         await("QR code hidden and released") { onMain { image.visibility == View.GONE && image.drawable == null } }
         onMain { settings.secretDialog?.dismiss() }
     }
+
+    /**
+     * Plugin center P21.8: "Open general settings" is shown only when the installed AutoJs6 resolves its general
+     * plugin settings page (6.8.1 and later); on AutoJs6 6.8.0 and earlier the toolbar has no overflow button.
+     */
+    @Test fun theGeneralSettingsItemAppearsOnlyWhenAutoJs6HasThePage() {
+        val settings = launch()
+        awaitLoaded(settings)
+        val intent = Intent(McpServerSettingsActivity.ACTION_HOST_PLUGIN_SETTINGS).setPackage(McpServerPlugin.HOST_PACKAGE_NAME)
+            .putExtra(McpServerSettingsActivity.EXTRA_HOST_PLUGIN_PACKAGE, context.packageName)
+        val resolvable = context.packageManager.resolveActivity(intent, 0) != null
+        val title = settings.getString(R.string.settings_open_general_settings)
+        onMain {
+            val toolbar = views(settings.window.decorView).filterIsInstance<Toolbar>().single()
+            val item = (0 until toolbar.menu.size()).map(toolbar.menu::getItem).single { it.title.toString() == title }
+            assertEquals("item visible when AutoJs6 resolves the page (resolvable: $resolvable)", resolvable, item.isVisible)
+            assertEquals("overflow button shown with the item", resolvable, overflowButtons(settings).isNotEmpty())
+        }
+    }
+
+    private fun overflowButtons(settings: Activity): List<View> = views(settings.window.decorView)
+        .filter { it is ImageButton && it.parent is ActionMenuView && it.isShown }
 
     private fun launch(): McpServerSettingsActivity =
         (instrumentation.startActivitySync(Intent(context, McpServerSettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as McpServerSettingsActivity).also { activity = it }
