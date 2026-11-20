@@ -238,7 +238,8 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.animation)
     implementation(libs.compose.activity)
-    debugImplementation(libs.compose.ui.test.manifest)
+    // No ui-test-manifest: the Compose tests use createEmptyComposeRule and launch the real activities, while
+    // ui-test-manifest would merge an exported androidx.activity.ComponentActivity into the debug APK.
 
     testImplementation(libs.junit)
     // Runs the SDK transport behind the request gate on Ktor's test engine (roadmap P2.1).
