@@ -98,7 +98,10 @@ jobs:
           target: google_apis
           arch: ${{ matrix.arch }}
           profile: ${{ matrix.profile }}
+          # A freshly booted emulator may show "System UI isn't responding", whose dialog takes the window focus that the
+          # device tests wait for; hide_error_dialogs keeps such dialogs from appearing.
           script: |
+            adb shell settings put global hide_error_dialogs 1
             chmod +x gradlew
             ./gradlew :app:connectedDebugAndroidTest --console=plain --stacktrace
 
