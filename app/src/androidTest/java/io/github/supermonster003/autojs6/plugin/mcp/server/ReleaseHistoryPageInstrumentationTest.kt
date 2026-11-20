@@ -2,12 +2,15 @@ package io.github.supermonster003.autojs6.plugin.mcp.server
 
 import android.app.Activity
 import android.content.Intent
+import android.os.ParcelFileDescriptor
+import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
@@ -31,6 +34,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -157,11 +161,15 @@ class ReleaseHistoryPageInstrumentationTest {
         ActivityScenario.launch(ReleaseHistoryActivity::class.java).use { scenario ->
             compose.waitUntil(TIMEOUT) { exists("mcp.releaseHistory.list") }
             val versions = versions(scenario)
+            awaitWindowFocus(scenario)
             leaveTouchMode()
-            val visited = tabCycle()
-            assertTrue(visited.toString(), "mcp.topBar.navigation" in visited)
-            assertTrue(visited.toString(), "mcp.releaseHistory.toggleAll" in visited)
-            assertEquals(versions.map { "mcp.releaseHistory.entry.$it" }, visited.filter { it.startsWith("mcp.releaseHistory.entry.") })
+            val visited = tabCycle(scenario)
+            fun expect(ok: Boolean, what: String) { if (!ok) fail("$what; visited: $visited; ${focusedWindow()}") }
+            expect("mcp.topBar.navigation" in visited, "Tab never reached the back button")
+            expect("mcp.releaseHistory.toggleAll" in visited, "Tab never reached the expand / collapse all button")
+            val expected = versions.map { "mcp.releaseHistory.entry.$it" }
+            val entries = visited.filter { it.startsWith("mcp.releaseHistory.entry.") }
+            expect(entries == expected, "the releases in Tab order: expected $expected, got $entries")
         }
     }
 
@@ -182,10 +190,51 @@ class ReleaseHistoryPageInstrumentationTest {
         return generateSequence(node) { it.parent }.mapNotNull { it.config.getOrNull(SemanticsProperties.TestTag) }.firstOrNull() ?: UNTAGGED
     }
 
+    /** Runs [command] as the shell user (it connects UiAutomation) and returns its output. */
+    private fun shell(command: String): String =
+        ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand(command)).bufferedReader().use { it.readText() }
+
+    /**
+     * The focused window and app as `dumpsys window` reports them, for diagnostics only. API 33 and 35 leave
+     * mCurrentFocus out of `dumpsys window windows`, so the whole dump is read.
+     */
+    private fun focusedWindow(): String = runCatching {
+        shell("dumpsys window").lineSequence().map(String::trim)
+            .filter { it.startsWith("mCurrentFocus=") || it.startsWith("mFocusedApp=") }.distinct().joinToString()
+            .ifEmpty { "mCurrentFocus not in dumpsys" }
+    }.getOrElse { "dumpsys failed: $it" }
+
+    private fun windowFocused(scenario: ActivityScenario<*>): Boolean = try {
+        var focused = false
+        compose.waitUntil(TIMEOUT) { scenario.onActivity { focused = it.hasWindowFocus() }; focused }
+        true
+    } catch (timeout: ComposeTimeoutException) {
+        false
+    }
+
+    /**
+     * Keys go to the focused window: while a system dialog has focus (an ANR or crash dialog of another app on a slow
+     * emulator, say), every Tab would be lost. When focus does not come, the test closes system dialogs (error dialogs
+     * take that as "wait" or "close") and brings the page back to the front, once, before it gives up.
+     */
+    private fun awaitWindowFocus(scenario: ActivityScenario<*>, visited: List<String> = emptyList()) {
+        if (windowFocused(scenario)) return
+        val before = focusedWindow()
+        Log.w(LOG_TAG, "no window focus after $TIMEOUT ms ($before), closing system dialogs")
+        shell("am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS")
+        scenario.onActivity { it.startActivity(Intent(it, it.javaClass).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
+        if (!windowFocused(scenario)) {
+            fail("the page has no window focus after $TIMEOUT ms, nor after closing system dialogs; visited: $visited; " +
+                "before: $before; after: ${focusedWindow()}")
+        }
+        Log.i(LOG_TAG, "window focus is back: ${focusedWindow()}")
+    }
+
     /** Presses Tab until focus returns to a control seen before; every focused control must be on screen. */
-    private fun tabCycle(): List<String> {
+    private fun tabCycle(scenario: ActivityScenario<*>): List<String> {
         val visited = mutableListOf<String>()
         repeat(MAX_TABS) {
+            awaitWindowFocus(scenario, visited)
             key(KeyEvent.KEYCODE_TAB)
             val tag = focusedTag() ?: return@repeat
             if (tag in visited) return visited
@@ -199,6 +248,7 @@ class ReleaseHistoryPageInstrumentationTest {
         listOf(root) + if (root is ViewGroup) (0 until root.childCount).flatMap { views(root.getChildAt(it)) } else emptyList()
 
     private companion object {
+        const val LOG_TAG = "ReleaseHistoryTest"
         const val TIMEOUT = 15_000L
         const val MAX_TABS = 120
         const val UNTAGGED = "(untagged)"
